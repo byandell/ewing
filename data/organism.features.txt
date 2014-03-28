@@ -1,0 +1,4 @@
+	  units	offspring attack   birth  substrate	deplete subclass parasite	move
+host      DD	20	  NA	   gravid substrate	100	  host     NA		crawler
+parasite  hr	host      host      NA	  substrate	48	  adult    ecto		adult
+substrate NA	NA	  NA	   NA	  NA		NA	  NA       NA		NA

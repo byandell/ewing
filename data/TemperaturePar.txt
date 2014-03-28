@@ -1,0 +1,9 @@
+	value	description
+Unit	24	"hours in day"
+Days	200	"number of days"
+Min	52	"minimum temperature for degree-day calculation (Fahrenheit)"
+LowBeg	70	"begining daily low temperature"
+LowEnd	75	"ending daily low temperature"
+HighBeg	85	"begining daily high temperature"
+HighEnd	90	"ending daily high temperature"
+Length	8	"number of nodes for interpolating spline"

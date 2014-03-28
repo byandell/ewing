@@ -1,0 +1,8 @@
+      fr1 fr2 fr3 fr4 twig lftop lfbot
+fr1     0   1   1   1    1     1     1
+fr2     1   0   1   1    1     1     1
+fr3     1   1   0   1    1     1     1
+fr4     1   1   1   0    1     1     1
+twig    1   1   1   1    1     1     1
+lftop   1   1   1   1    1     1     1
+lfbot   1   1   1   1    1     1     1

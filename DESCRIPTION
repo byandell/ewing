@@ -1,0 +1,10 @@
+Package: ewing
+Version: 1.1-1
+Date: 2003/10/29
+Author: Brian S. Yandell <yandell@stat.wisc.edu>
+Maintainer: Brian S. Yandell <yandell@stat.wisc.edu>
+Title: Ewing's Quantitative Population Ethology
+Description: QPE event-driven individual-based simulation modeling system.
+Depends: MASS,splines
+License: GPL version 2 or newer
+URL: http://www.stat.wisc.edu/~yandell/ewing

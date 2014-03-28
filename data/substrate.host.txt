@@ -1,0 +1,8 @@
+      substrate side init find move fruit twig leaf
+fr1   fruit        1    1    5    1     3    2    1
+fr2   fruit        2    1    5    1     3    2    1
+fr3   fruit        3    1    5    1     3    2    1
+fr4   fruit        4    1    5    1     3    2    1
+twig  twig        NA    1    1    5     3    1    2
+lftop leaf       top    5    3    3     3    2    1
+lfbot leaf    bottom    0    2    4     3    1    2
