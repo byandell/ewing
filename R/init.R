@@ -24,6 +24,27 @@
 ##
 ## also includes routines to get objects from Organism files
 ###########################################################################################
+
+
+#' Initialize simulation run
+#' 
+#' Initializes simulation using organizm features.
+#' 
+#' 
+#' @param package package where community data features can be found
+#' @param species list of species to simulate
+#' @param hosts list of hosts for species
+#' @param count number of individuals per species
+#' @return Object with elements for each species that are created by
+#' init.population.
+#' @author Brian S. Yandell
+#' @seealso \code{\link{init.population}}
+#' @references \url{www.stat.wisc.edu/~yandell/ewing}
+#' @keywords utilities
+#' @examples
+#' 
+#' \dontrun{init.simulation(myrun)}
+#' 
 init.simulation <- function( package = "ewing", 
                             species = getOrgFeature( community )[1:2],
                             hosts = getOrgHosts( community, species ),
@@ -59,6 +80,41 @@ init.simulation <- function( package = "ewing",
   community
 }
 ##########################################################################################
+
+
+#' Initialize Organism Population
+#' 
+#' Create data structure with n organisms distributed across life stages.
+#' Includes leftist tree structure
+#' 
+#' Does various initializations based in information in \code{future.xxx},
+#' where \code{xxx} is replaced by the name of the dataset. Normally,
+#' \code{init.population} is called by \code{init.simulation}.
+#' 
+#' @param community community structure
+#' @param species species name(s) as character string vector
+#' @param n number of organisms in population
+#' @param width maximum width of dispersal on tridiagonal coordinate system
+#' @param units time units (default is
+#' \code{getOrgFeature(community,species,"units")})
+#' @param timeit print timing information if \code{TRUE}
+#' @param reject rejection time (default is \code{Inf})
+#' @param position initial positions in triangular coordinate system (generated
+#' randomly)
+#' @param colnames names of columns in data structure (do not change)
+#' @param init.stage initial stage of all organisms (default values generated
+#' randomly)
+#' @param init.weight initial weights for life stages (default taken for
+#' organism features)
+#' @return \item{comp1 }{Description of `comp1'} \item{comp2 }{Description of
+#' `comp2'} ...
+#' @author Brian S. Yandell
+#' @seealso \code{\link{init.simulation}}
+#' @keywords utilities
+#' @examples
+#' 
+#' \dontrun{init.population( redscale )}
+#' 
 init.population <- function( community, species, n = 200, width = 100,
                             units = getOrgFeature( community, species, "units" ),
                             timeit = FALSE,

@@ -365,6 +365,26 @@ fini.timing <- function( community )
   community
 }
 ###########################################################################################
+
+
+#' summary of Ewing simulation models
+#' 
+#' Summary of various aspects of simulation.
+#' 
+#' 
+#' @param object object of class \code{ewing} with population data by species
+#' @param ... other summary parameters
+#' @author Brian S. Yandell, \email{yandell@@stat.wisc.edu}
+#' @seealso \code{\link{init.simulation}}, \code{\link{future.events}},
+#' \code{\link{plot.ewing}}
+#' @references \url{www.stat.wisc.edu/~yandell/ewing}
+#' @keywords utilities
+#' @examples
+#' 
+#' \dontrun{
+#' summary.ewing( community )
+#' }
+#' 
 summary.ewing <- function( object, ... )
 {
   cat( "Data initialization package:", object$org$package, "\n" )

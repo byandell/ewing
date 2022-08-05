@@ -26,6 +26,37 @@
 ## temp.design( )
 ## temp.plot( )
 ###########################################################################################
+
+
+#' graphical adjustment of daily high and low temperature
+#' 
+#' Graphical interface updates daily high and low temperatures, along with
+#' rescaling the days and temperature range.
+#' 
+#' 
+#' @aliases temp.design temp.plot
+#' @param community object with population data by species
+#' @param nspline number of spline nodes
+#' @param n number of steps to perform
+#' @param horizontal use horizontal orientation if TRUE
+#' @param col colors of \code{low} and \code{high} temperature ranges
+#' @param lo.hour lower limit of hours to plot
+#' @param hi.hour upper limit of hours to plot
+#' @param length number of interpolation points for plot
+#' @param derivative show derivative of temperature
+#' @param ... other arguments to pass to plot
+#' @param printit print out hours and temperatures if \code{TRUE}
+#' @author Brian S. Yandell
+#' @seealso \code{\link{TemperatureBase}}
+#' @references See \url{www.stat.wisc.edu/~yandell/ewing}.
+#' @keywords utilities
+#' @examples
+#' 
+#' \dontrun{
+#' temp.design()
+#' temp.plot()
+#' }
+#' 
 temp.design <- function( community, nspline = 8, n = 1, horizontal = TRUE,
   col = c(low="blue",high="red") )
 {

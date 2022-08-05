@@ -29,6 +29,27 @@
 ###########################################################################################
 # Curve Designing routines -- under development
 ###########################################################################################
+
+
+#' design mean value curves for future events in Ewing simulation models
+#' 
+#' Uses interactive spline tool to design curves.
+#' 
+#' 
+#' @param community object with population data by species
+#' @param species name of species
+#' @param event name of future event
+#' @param data data if available
+#' @author Brian S. Yandell, \email{yandell@@stat.wisc.edu}
+#' @seealso \code{\link{init.simulation}}, \code{\link{future.events}}
+#' @references \url{www.stat.wisc.edu/~yandell/ewing}
+#' @keywords utilities
+#' @examples
+#' 
+#' \dontrun{
+#' future.meanvalue( community, "host", "first.instar" )
+#' }
+#' 
 future.meanvalue <- function( community, species, event = future$current[1],
                              data )
 {

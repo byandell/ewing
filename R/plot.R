@@ -36,6 +36,28 @@ count.join <- function( ... )
   numnum
 }
 ###########################################################################################
+
+
+#' plot of Ewing simulation models
+#' 
+#' Plot of various aspects of simulation.
+#' 
+#' 
+#' @param x object of class \code{ewing} with population data by species
+#' @param substrate include substrate plot if TRUE
+#' @param mfcol par parameter reset by default
+#' @param ... other plot parameters
+#' @author Brian S. Yandell, \email{yandell@@stat.wisc.edu}
+#' @seealso \code{\link{init.simulation}}, \code{\link{future.events}},
+#' \code{\link{summary.ewing}}
+#' @references \url{www.stat.wisc.edu/~yandell/ewing}
+#' @keywords utilities
+#' @examples
+#' 
+#' \dontrun{
+#' plot.ewing( community )
+#' }
+#' 
 plot.ewing <- function( x, substrate = TRUE, mfcol = mfcols, ... )
 {
   count <- readCount( x )
