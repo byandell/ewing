@@ -318,7 +318,7 @@ event.death <- function( community, species,
 #' @aliases event.future event.birth event.death event.attack
 #' @param community list with initial population data by species
 #' @param species name of species with current event
-#' @param id individual identifier (default = base)
+#' 
 #' @return List containing the updated community of species data structures.
 #' @author Brian S. Yandell
 #' @seealso \code{\link{future.events}}, \code{\link{organism.features}},

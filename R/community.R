@@ -156,7 +156,6 @@ initCount <- function( community, species, file, append = FALSE, debugit = FALSE
       simmin[units]<- tmp
   }
   if( max( simmin ) < Inf ) {
-    require( splines )
     community <- activeTemp( community, simmin["hr"], , simmin["DD"] )
   }
   esums <- c("initial","during","final")
@@ -273,17 +272,16 @@ initTemp <- function( community, lo.hour = 0, hi.hour = getTemp( community, "Uni
                      days = TemperaturePar["Days"] )
 {
   cat( "Initializing Temperature Profile ...\n" )
-  require( splines )
   Temperature <- list()
   
-  data( TemperaturePar )
+  utils::data( TemperaturePar )
   TemperaturePar <- array( TemperaturePar[,"value"],
                           dimnames = list( row.names( TemperaturePar )))
   Temperature$Unit <- TemperaturePar["Unit"]
   Temperature$Min <- TemperaturePar["Min"]
 
   ## set up daily temperature base
-  data( TemperatureBase )
+  utils::data( TemperatureBase )
   Temperature$Time <- split( TemperatureBase$Time, TemperatureBase$Day )
   Temperature$Base <- split( TemperatureBase$Base, TemperatureBase$Day )
   remove( TemperatureBase, pos = 1 )
@@ -295,10 +293,10 @@ initTemp <- function( community, lo.hour = 0, hi.hour = getTemp( community, "Uni
              length = TemperaturePar["Length"] )
   tmp0 <- seq( 0, 1, length = TemperaturePar["Length"] )
   tmp1 <-  0.25 * ( TemperaturePar["HighBeg"] - TemperaturePar["LowBeg"] )
-  Temperature$Low <- interpSpline( tmp, TemperaturePar["LowBeg"] * ( 1 - tmp0 ) +
+  Temperature$Low <- splines::interpSpline( tmp, TemperaturePar["LowBeg"] * ( 1 - tmp0 ) +
                                   TemperaturePar["LowEnd"] * tmp0 +
                                   sin( pi * 4 * tmp0 ) * tmp1 )
-  Temperature$High <- interpSpline( tmp, TemperaturePar["HighBeg"] * ( 1 - tmp0 ) +
+  Temperature$High <- splines::interpSpline( tmp, TemperaturePar["HighBeg"] * ( 1 - tmp0 ) +
                                    TemperaturePar["HighEnd"] * tmp0 +
                                    sin( pi * ( 0.125 + 4 * tmp0 )) * tmp1 )
   remove( TemperaturePar, pos = 1 )
@@ -385,6 +383,9 @@ fini.timing <- function( community )
 #' summary.ewing( community )
 #' }
 #' 
+#' @importFrom splines interpSpline
+#' @importFrom utils data
+#'
 summary.ewing <- function( object, ... )
 {
   cat( "Data initialization package:", object$org$package, "\n" )

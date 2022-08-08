@@ -57,13 +57,16 @@
 #' temp.plot()
 #' }
 #' 
+#' @export temp.design
+#' @importFrom splines interpSpline
+#' @importFrom stats predict
+#' 
 temp.design <- function( community, nspline = 8, n = 1, horizontal = TRUE,
   col = c(low="blue",high="red") )
 {
   low <- getTemp( community, "Low" )
   high <- getTemp( community, "High" )
   is.data <- !is.null( low )
-  require( splines )
   if( !is.data ) {
     tmp <- seq( 0, 60, length = nspline )
     low <- interpSpline( tmp, 60 + 0.125 * tmp + sin( 0.25 * tmp ))
@@ -75,8 +78,8 @@ temp.design <- function( community, nspline = 8, n = 1, horizontal = TRUE,
 
   plotit <- function( low, high, fig = fig, horizontal = FALSE, strip = .25, margin = 0 )
   {
-    lowpred <- predict( low, low$knots )
-    highpred <- predict( high, high$knots )
+    lowpred <- stats::predict( low, low$knots )
+    highpred <- stats::predict( high, high$knots )
     ylim <- range( c( lowpred$y, highpred$y ))
     xlim <- range( c( lowpred$x, highpred$x))
     xlim <- xlim + c(-1,1) * margin * diff( xlim )
@@ -190,8 +193,8 @@ temp.design <- function( community, nspline = 8, n = 1, horizontal = TRUE,
   cmds <- row.names( cmdlocs )
   use.data <- FALSE
   plotcmd( ans, fig, cmds, cmdlocs, usr, data = use.data )
-  rescale.data <- c( range( predict( low, low$knots )$y,
-    predict( high, high$knots )$y ), range( low$knots, high$knots ))
+  rescale.data <- c( range( stats::predict( low, low$knots )$y,
+    stats::predict( high, high$knots )$y ), range( low$knots, high$knots ))
   repeat {
     ## get command from plot using cursor
     z <- locator(1,"n")
@@ -230,7 +233,7 @@ temp.design <- function( community, nspline = 8, n = 1, horizontal = TRUE,
           tmpans <- tmpcmds[ cmds == "rescale" ] <-
             "rescale: Switch to Character Screen"
           plotcmd( tmpans, fig, tmpcmds, cmdlocs, usr, data = use.data )
-          ry <- range( c( predict( low, low$knots )$y, predict( high, high$knots )$y ))
+          ry <- range( c( stats::predict( low, low$knots )$y, stats::predict( high, high$knots )$y ))
           cat( "\nEnter new minimum/maximum followed by RETURN key\n" )
           newry <- ry
           show <- c("minimum","maximum")
@@ -273,8 +276,8 @@ temp.design <- function( community, nspline = 8, n = 1, horizontal = TRUE,
           low <- getTemp( community, "Low" )
           high <- getTemp( community, "High" )
           if( is.data )
-            rescale.data <- c( range( predict( low, low$knots )$y,
-              predict( high, high$knots )$y ), range( low$knots, high$knots ))
+            rescale.data <- c( range( stats::predict( low, low$knots )$y,
+              stats::predict( high, high$knots )$y ), range( low$knots, high$knots ))
           separator <- plotit( low, high, fig, horizontal )
           usr <- par("usr")
           cmdlocs <- newlocs( cmds, data = is.data, usr = usr)
@@ -288,7 +291,7 @@ temp.design <- function( community, nspline = 8, n = 1, horizontal = TRUE,
           rescale.data[1:2], rescale.data[3:4] )
         for( i in c("low","high") ) {
           datax <- tmp[[i]]$knots
-          lines( datax, predict( tmp[[i]], datax )$y )
+          lines( datax, stats::predict( tmp[[i]], datax )$y )
         }
       }
       plotcmd( ans, fig, cmds, cmdlocs, usr, data = use.data )
@@ -296,7 +299,7 @@ temp.design <- function( community, nspline = 8, n = 1, horizontal = TRUE,
     else { # modify the curve knots
       fit <- get( fig )
       if( z$x >= min( fit$knots ) & z$x <= max( fit$knots )) {
-        fit <- curve.plot( as.data.frame( predict( fit, fit$knots )), n = n, action = ans,
+        fit <- curve.plot( as.data.frame( stats::predict( fit, fit$knots )), n = n, action = ans,
           z = z, fit = fit, backfit = FALSE, save.ends = 2, col = col[fig] )
         assign( fig, fit$fit )
       }
@@ -313,7 +316,7 @@ temp.design <- function( community, nspline = 8, n = 1, horizontal = TRUE,
 }
 ###########################################################################################
 rescale.temp <- function( low, high, newry = ry, newrx = knotrange,
-  ry = range( c( predict( low, low$knots )$y, predict( high, high$knots )$y )))
+  ry = range( c( stats::predict( low, low$knots )$y, stats::predict( high, high$knots )$y )))
 {
   if( max( abs( ry - newry )) > 0 ) {
     tmpy <- diff( newry ) / diff( ry )
@@ -404,7 +407,6 @@ temp.spline <- function( community, hour, temp, start = 0,
     sep = "." ), c("const","linear","quad","cubic") )
   attr(s,"formula") <- temp ~ hour
   class( s ) <- c("npolySpline","polySpline","spline")
-  require( splines )
   if( !cumulative )
     return( s )
 
@@ -444,17 +446,17 @@ temp.plot <- function( community, lo.hour = s$knots[1], hi.hour = max( s$knots )
     for( i in seq( 2, ncol( s$coefficients )))
       s$coefficients[,i] <- s$coefficients[,i] * i
   }
-  y <- predict( s, x )$y
+  y <- stats::predict( s, x )$y
   plot( x / getTemp( community, "Unit" ), y, type = "l", xlab = "day",
     ylab = ylab, ... )
   if( printit )
-    print( cbind( hour, predict( s, hour )$y ))
+    print( cbind( hour, stats::predict( s, hour )$y ))
   if( !is.null( col ))
     points( s$knots, coef(s)[,1], col = col )
   if( !derivative ) {
     s <- getTemp( community, "Hour" )
     x <- seq( min( y ), max( y ), length = length )
-    tmp <- predict( s, x )
+    tmp <- stats::predict( s, x )
     lines( tmp$y / getTemp( community, "Unit" ), tmp$x, col = "blue" )
   }
 }
@@ -463,7 +465,7 @@ temp.lines <- function( s, mult = 24, col = "red" )
 {
   x <- seq( s$knots[1], max( s$knots ), length = 51 )
   x <- unique( sort( c( x, s$knots )))
-  p <- predict( s, x )
+  p <- stats::predict( s, x )
   lines( p$x, p$y, col = col )
   if( !is.null( col ))
     points( s$knots / mult, coef(s)[,1], col = col )
@@ -471,7 +473,6 @@ temp.lines <- function( s, mult = 24, col = "red" )
 ###########################################################################################
 temp.repeat <- function( community, period = range( days ))
 {
-  require( splines )
   lodays <- range( getTemp( community, "Low" )$knots )
   hidays <- range( getTemp( community, "High" )$knots )
   days <- c( max( lodays[1], hidays[1] ), min( lodays[2], hidays[2] ))
@@ -489,8 +490,8 @@ temp.repeat <- function( community, period = range( days ))
   period <- days
 
   days <- seq( days[1], days[2] )
-  low <- predict( getTemp( community, "Low" ), days )$y
-  high <- predict( getTemp( community, "High" ), days )$y
+  low <- stats::predict( getTemp( community, "Low" ), days )$y
+  high <- stats::predict( getTemp( community, "High" ), days )$y
   periods <- c( as.numeric( names( getTemp( community, "Time" ))), Inf )
   temps <- hours <- numeric( )
   period[2] <- period[2] + 1
@@ -527,10 +528,10 @@ showTemp <- function( community )
   cat( "Temperature set for days",
       paste( range( getTemp( community, "Low" )$knots ), collapse = " to " ), "\n" )
   cat( "Daily low temperature range:",
-      paste( round( range( predict( getTemp( community, "Low" ))$y )),
+      paste( round( range( stats::predict( getTemp( community, "Low" ))$y )),
             collapse = " to " ), "\n" )
   cat( "Daily high temperature range:",
-      paste( round( range( predict( getTemp( community, "High" ))$y )),
+      paste( round( range( stats::predict( getTemp( community, "High" ))$y )),
             collapse = " to " ), "\n" )
   if( !is.null( getTemp( community, "DegreeDay" ) ))
     cat( "Active temperature range:",
@@ -616,7 +617,7 @@ updateTemp <- function( community,
 ramp.backSpline <- function( s )
 {
   ## ramped backspline is a trick to get backSpline when curve is flat in spots
-  ## if tmp <- predict( ramp.backSpline( s ))
+  ## if tmp <- stats::predict( ramp.backSpline( s ))
   ## then plot tmp$y versus tmp$x-tmp$y to "recover" original curve.
   ## problem is that one cannot recover particular x this way!
 
@@ -663,12 +664,12 @@ break.backSpline <- function( tmp )
 ###########################################################################################
 getDegreeDay <- function( community, hour )
 {
-  predict( getTemp( community, "DegreeDay" ), hour )$y
+  stats::predict( getTemp( community, "DegreeDay" ), hour )$y
 }
 ###########################################################################################
 getHour <- function( community, dd )
 {
-  predict( getTemp( community, "Hour" ), dd )$y
+  stats::predict( getTemp( community, "Hour" ), dd )$y
 }
 ###########################################################################################
 getTime <- function( community, species, x )

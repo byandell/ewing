@@ -229,7 +229,7 @@ event.ovip <- function( community, species, host, dead, gender=TRUE )
     ## get new births
     newbirths <- get.birth( community, species, offspring )
     ## gender preference for offspring
-    if( get.interact( community, species, host, dead, "male" ) < runif( 1 ) |
+    if( get.interact( community, species, host, dead, "male" ) < stats::runif( 1 ) |
       !gender ){
       ## set offspring for female eggs based on dead host
       newbirths["offspring", ] <- set.offspring( community, species, host, dead )

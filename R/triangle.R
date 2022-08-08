@@ -31,7 +31,7 @@ rtri <- function( n, width, tri = matrix(0,3,n), roundoff = TRUE )
 {
   tri <- as.matrix( tri )
   if( n == 1 ) {
-    xy <- runif( 2, 0, width )
+    xy <- stats::runif( 2, 0, width )
     if( roundoff )
       xy <- round( xy )
 
@@ -44,8 +44,8 @@ rtri <- function( n, width, tri = matrix(0,3,n), roundoff = TRUE )
     return( tri )
   }
   else {
-    xy <- data.frame( x = runif( n, 0, width ),
-      y = - runif( n, 0, width ))
+    xy <- data.frame( x = stats::runif( n, 0, width ),
+      y = - stats::runif( n, 0, width ))
     if( roundoff )
       xy <- round( xy )
 
@@ -120,10 +120,10 @@ plot.current <- function( x,
     if( any( u ))
       text( tmp$x[u], tmp$y[u], pch[u], col = i, cex = cex )  
   }
-  usr <- par( "usr" )[1:2]
+  usr <- graphics::par( "usr" )[1:2]
   usr <- c(usr[1],mean(usr),usr[2])
-  mtext( c( units, "future event", right ), 3, 1.5, at = usr, adj = adj )
-  mtext( headstuff, 3, 0.5, at = usr, adj = adj )
+  graphics::mtext( c( units, "future event", right ), 3, 1.5, at = usr, adj = adj )
+  graphics::mtext( headstuff, 3, 0.5, at = usr, adj = adj )
   invisible( usr )
 }
 ###########################################################################################
@@ -142,7 +142,7 @@ text.current <- function( x, species,
 sierpinski <- function( stage = 5, reset = TRUE )
 {
   if( reset )
-    tmpar <- par( pty = "s", bty = "n", xaxt = "n", yaxt = "n", omi = rep(0,4),
+    tmpar <- graphics::par( pty = "s", bty = "n", xaxt = "n", yaxt = "n", omi = rep(0,4),
       mar = rep(0,4) )
   aa <- 0:1
   bb <- - aa
@@ -153,12 +153,12 @@ sierpinski <- function( stage = 5, reset = TRUE )
     tri <- tri2car.default( aa, bb )
     r <- range( unlist( tri ))
     plot( r, r, type = "n", xlab = "", ylab = "" )
-    lines(tri )
-    mtext( paste( "(", letters[1+i], ") Gasket of Order ", i, sep = "" ), 3, -2 )
-#    mtext( paste( "Gasket of order", i ), 3, -2 )
+    graphics::lines(tri )
+    graphics::mtext( paste( "(", letters[1+i], ") Gasket of Order ", i, sep = "" ), 3, -2 )
+#    graphics::mtext( paste( "Gasket of order", i ), 3, -2 )
   }
   if( reset )
-    par( tmpar )
+    graphics::par( tmpar )
   invisible( tri )
 }
 ###########################################################################################

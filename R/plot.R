@@ -58,6 +58,9 @@ count.join <- function( ... )
 #' plot.ewing( community )
 #' }
 #' 
+#' @importFrom graphics axis lines mtext par
+#' @importFrom stats runif
+#' 
 plot.ewing <- function( x, substrate = TRUE, mfcol = mfcols, ... )
 {
   count <- readCount( x )
@@ -111,7 +114,7 @@ substrate.plot <- function( community, count,
 
     mar <- c( 6, 0.5, 1, 0.5 )
     mar[extra] <- 1 + 1.5 * maxpaths
-    par( mar = .1 + mar )
+    graphics::par( mar = .1 + mar )
     if( debugit )
       browser()
 
@@ -121,35 +124,35 @@ substrate.plot <- function( community, count,
     rx <- range( mytime, na.rm = TRUE )
     maxtime <- c( maxtime, rx[2] )
 
-    opar <- par( cex = cex, yaxt = "n" )
+    opar <- graphics::par( cex = cex, yaxt = "n" )
     if( any( is.na( rx )) | max( rx ) == 0 ) {
       cat( "Warning: no times for species", i, "\n" )
       plot( c(1,1),c(1,1), type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "" )
-      mtext( paste( i, 0, sep = ": " ), 1, 2.5, cex = cex )
+      graphics::mtext( paste( i, 0, sep = ": " ), 1, 2.5, cex = cex )
       break
     }
     plot( rx, ry, type = "n", xlab = "", ylab = "", col = col[1], cex = cex )
     usr <- par("usr")
-    mtext( paste( getOrgFeature( community, i, "subclass" ), mytotal[ncount], sep = ": " ),
+    graphics::mtext( paste( getOrgFeature( community, i, "subclass" ), mytotal[ncount], sep = ": " ),
           1, 2.5, cex = cex )
     if( i == species[1] )
-      mtext( main, 1, 4.5 )
-    par( opar )
-    opar <- par( cex = cex )
-    axis( extra, pretty( c(0,1) ))
-    par( opar )
+      graphics::mtext( main, 1, 4.5 )
+    graphics::par( opar )
+    opar <- graphics::par( cex = cex )
+    graphics::axis( extra, pretty( c(0,1) ))
+    graphics::par( opar )
 
     for( j in seq( npaths )) {
       y <- mycount[,paths[j]]
       ## add extra colored axes
-      mtext( paths[j], extra, 1.5 * j + 1, col = col[j+1], cex = cex, at = y[ncount],
+      graphics::mtext( paths[j], extra, 1.5 * j + 1, col = col[j+1], cex = cex, at = y[ncount],
             adj = 0.5 )
-      lines( mytime, y, col = col[j+1] )
+      graphics::lines( mytime, y, col = col[j+1] )
     }
   }
   options( opwarn )
   if( extra == 2 )
-    mtext( paste( paste( round( maxtime ), unitss, collapse = ", " ),
+    graphics::mtext( paste( paste( round( maxtime ), unitss, collapse = ", " ),
       ", ", ncounts, " events", sep = "" ), 3, outer = TRUE )
   invisible()
 }
@@ -172,7 +175,7 @@ ageclass.plot <- function( community, count,
   maxpaths <- maxpaths + 1
 
   if( extra == 2 )
-    par( mfcol = mfcol, omi = c(0.5,0.5,0.5,0.5) )
+    graphics::par( mfcol = mfcol, omi = c(0.5,0.5,0.5,0.5) )
   opwarn <- options( warn = -1 ) ## turn off warning of log(0)
   maxtime <- NULL
   unitss <- NULL
@@ -190,7 +193,7 @@ ageclass.plot <- function( community, count,
     
     mar <- c( 6, 0.5, 1, 0.5 )
     mar[extra] <- 1 + 1.5 * maxpaths
-    par( mar = .1 + mar )
+    graphics::par( mar = .1 + mar )
     if( debugit )
       browser()
 
@@ -202,20 +205,20 @@ ageclass.plot <- function( community, count,
     rx <- range( mytime, na.rm = TRUE )
     maxtime <- c( maxtime, rx[2] )
 
-    opar <- par( cex = cex, yaxt = "n" )
+    opar <- graphics::par( cex = cex, yaxt = "n" )
     if( any( is.na( rx )) | max( rx ) == 0 ) {
       cat( "Warning: no times for species", i, "\n" )
       plot( c(1,1),c(1,1), type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "" )
-      mtext( paste( i, 0, sep = ": " ), 1, 2.5, cex = cex )
+      graphics::mtext( paste( i, 0, sep = ": " ), 1, 2.5, cex = cex )
       break
     }
     plot( rx, 1 + ry, log = "y", type = "n", xlab = "", ylab = "", col = col[1], cex = cex )
-    usr <- par("usr")
-    mtext( paste( paths[1], " " ), extra, 1, cex = cex, at = 10^usr[3], adj = 1 )
-    mtext( paste( i, mycount[ncount,"total"], sep = ": " ), 1, 2.5, cex = cex )
+    usr <- graphics::par("usr")
+    graphics::mtext( paste( paths[1], " " ), extra, 1, cex = cex, at = 10^usr[3], adj = 1 )
+    graphics::mtext( paste( i, mycount[ncount,"total"], sep = ": " ), 1, 2.5, cex = cex )
     if( i == species[1] )
-      mtext( main, 1, 4.5 )
-    par( opar )
+      graphics::mtext( main, 1, 4.5 )
+    graphics::par( opar )
 
     if( !diff( ry ))
       ry <- 10 ^ ( usr[3:4] * c(1.02,.98) )
@@ -223,12 +226,12 @@ ageclass.plot <- function( community, count,
       y <- mycount[ , paths[j] ]
       p1 <- logpretty( y, 4 )
       if( j == 1 ) {
-        opar <- par( cex = cex )
+        opar <- graphics::par( cex = cex )
         if( diff( range( y, na.rm = TRUE )))
-          axis( extra, 1 + p1, as.character( p1 ))
+          graphics::axis( extra, 1 + p1, as.character( p1 ))
         else
-          axis( extra, 1 + y[1], as.character( y[1] ))
-        par( opar )
+          graphics::axis( extra, 1 + y[1], as.character( y[1] ))
+        graphics::par( opar )
       }
       else {
         ## rescale values and add extra colored axes
@@ -244,22 +247,22 @@ ageclass.plot <- function( community, count,
         {
           p1 <- y[1]
           tmp <- diff( usr[3:4] )
-          p2 <- 10 ^ ( mean( usr[3:4] ) + .04 * runif( 1, -tmp, tmp ))
+          p2 <- 10 ^ ( mean( usr[3:4] ) + .04 * stats::runif( 1, -tmp, tmp ))
           y <- p2 + y - p1
         }
 	  tmp <- log10( p2 ) > usr[3] & log10( p2 ) < usr[4]
         tmp[ is.na( tmp ) ] <- FALSE
-        mtext( as.character( p1[tmp] ), extra, 1.5 * j - .5, at = 1 + p2[tmp],
+        graphics::mtext( as.character( p1[tmp] ), extra, 1.5 * j - .5, at = 1 + p2[tmp],
           col = col[j], cex = cex )
-        mtext( paste( paths[j], " " ), extra, 1.5 * j - .5, col = col[j], cex = cex,
+        graphics::mtext( paste( paths[j], " " ), extra, 1.5 * j - .5, col = col[j], cex = cex,
           at = 10^usr[3], adj = 1 )
       }
-      lines( mytime, 1 + y, col = col[j] )
+      graphics::lines( mytime, 1 + y, col = col[j] )
     }
   }
   options( opwarn )
   if( extra == 2 )
-    mtext( paste( paste( round( maxtime ), unitss, collapse = ", " ),
+    graphics::mtext( paste( paste( round( maxtime ), unitss, collapse = ", " ),
       ", ", ncounts, " events", sep = "" ), 3, outer = TRUE )
   invisible()
 }

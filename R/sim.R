@@ -117,7 +117,7 @@ writeCount <- function( community, species, time, future, countage, countsub )
 readCount <- function( community, species = levels( counts$species ))
 {
   file <- getCount( community,, "file" )
-  counts <- read.table( file, header = TRUE, fill = TRUE )
+  counts <- utils::read.table( file, header = TRUE, fill = TRUE )
   count <- list()
   for( i in species ) {
     colnames <- c( levels( getOrgFuture( community, i, "ageclass" )),

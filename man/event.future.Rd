@@ -14,8 +14,6 @@ event.future(community, species)
 \item{community}{list with initial population data by species}
 
 \item{species}{name of species with current event}
-
-\item{id}{individual identifier (default = base)}
 }
 \value{
 List containing the updated community of species data structures.

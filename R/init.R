@@ -45,6 +45,9 @@
 #' 
 #' \dontrun{init.simulation(myrun)}
 #' 
+#' @importFrom stats rexp rpois
+#' @importFrom utils data
+#' 
 init.simulation <- function( package = "ewing", 
                             species = getOrgFeature( community )[1:2],
                             hosts = getOrgHosts( community, species ),
@@ -138,7 +141,7 @@ init.population <- function( community, species, n = 200, width = 100,
   organism["rejection",-1] <- if( reject == Inf )
                                 rep( Inf, n )
                               else
-                                reject * rexp( n )
+                                reject * stats::rexp( n )
 
   ## triangular coordinates
   organism[posnames,-1] <- position
@@ -208,7 +211,7 @@ initOffspring <- function( community, species )
 
   if( length( orgoffspring ) == 1 ) {
     ## mean offspring does not depend on any host
-    offspring <- rpois( norganism, orgoffspring )
+    offspring <- stats::rpois( norganism, orgoffspring )
   }
   else {
     orgoffspring <- orgoffspring[ orgoffspring > 0 ]
@@ -453,7 +456,7 @@ my.eval <- function(species, extension, element, checkdata = FALSE )
     organism <- get( species )
   else {
     if( checkdata ) {
-      organism <- data( list = species )
+      organism <- utils::data( list = species )
       if( organism == species )
         organism <- NULL
     }
@@ -473,7 +476,7 @@ mydata <- function( dataname, package, restart = FALSE )
     edata <- !edata
   }
   if( !edata ) {
-    data( list = dataname, package = eval( package ))
+    utils::data( list = dataname, package = eval( package ))
     cat( "Data", dataname, "loaded\n" )
   }
   else
