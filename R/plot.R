@@ -58,6 +58,7 @@ count.join <- function( ... )
 #' plot.ewing( community )
 #' }
 #' 
+#' @export
 #' @importFrom graphics axis lines mtext par
 #' @importFrom stats runif
 #' 

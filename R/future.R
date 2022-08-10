@@ -75,6 +75,8 @@
 #' step.further <- future.events( step.mystuff,4000 )
 #' }
 #' 
+#' @export future.events
+#'
 future.events <- function( community,
                           file,
                           nstep = 4000,
@@ -135,10 +137,10 @@ future.events <- function( community,
     if( species.now != species.prev )
       future <- getOrgFuture( community, species.now )
     ## make future event the current stage
-    current <- individual["future"]
+    current <- individual["stage"]
     stage <- as.character( future$current[current] )
-    print(stage)
-    if(!length(stage)) browser()
+    if(!length(stage))
+      stop(paste("no stage", current))
     community <- updateCount( community, species.now, individual, stage == "death",
                              istep )
     individual["stage"] <- current
@@ -237,11 +239,11 @@ get.future <- function (community, species,
     futures <- future$current == future$current[current]
     times <- rep( individual["time"], sum( futures ))
     cur <- seq(nrow(future))[futures]
-    for( i in seq( sum( futures ))) {
-      meantime <- future[cur[i], "time"]
+    for( j in seq( sum( futures ))) {
+      meantime <- future[cur[j], "time"]
       if( meantime > 0 ) {
-        for.stage <- as.character(future$current[future$fid[ cur[i] ]])
-        times[i] <- rspline( meantime, individual,
+        for.stage <- as.character(future$current[future$fid[ cur[j] ]])
+        times[j] <- rspline( meantime, individual,
                               getOrgMeanValue(community, species)[[for.stage]])
       }
     }

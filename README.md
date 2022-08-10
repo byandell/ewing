@@ -30,6 +30,7 @@ Reference: B Ewing, BS Yandell, JF Barbieri, and RF Luck (2002) "Event-driven co
 - hour, knotrange undefined in temp.R
 - lo.hour, hi.hour etc in temp.plot?
 - File ‘ewing/R/init.R’: assign(toto, get(from), ".GlobalEnv")
+- somehow crawler count ends up being negative, which throws off plot (future.events?)
 
 
 

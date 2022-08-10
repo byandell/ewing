@@ -31,7 +31,7 @@ updateCount <- function( community, species, individual, is.death = FALSE, step 
   ageclass <- getOrgAgeClass( community, species, individual["stage"] )
   if( !is.na( ageclass )) {
     ageclass <- as.character( ageclass )
-    countage[ageclass] <- countage[ageclass] - 1
+    countage[ageclass] <- max(countage[ageclass] - 1, 0)
   }
   ageclass <- getOrgAgeClass( community, species, individual["future"] )
   if( !is.na( ageclass )) {
@@ -45,10 +45,12 @@ updateCount <- function( community, species, individual, is.death = FALSE, step 
   element <- elements[ individual["sub.stage"] ]
   subclass <- getOrgFeature( community, species, "subclass" )
   include <- subclass == getOrgAgeClass( community, species, individual[c("stage","future")] )
+  # not sure why this is needed
+  include <- rep_len(include, 2)
   ## leave old substrate
   if( !is.na( element ) & include[1] ) {
     element <- as.character( element )
-    countsub[element] <- countsub[element] - 1
+    countsub[element] <- max(countsub[element] - 1, 0)
   }
   if( !is.death & include[2] ) {
     ## move to new substrate
@@ -114,7 +116,7 @@ writeCount <- function( community, species, time, future, countage, countsub )
   cat( species, nstep, time, future, countage, countsub, "\n", file = file, append = TRUE )
 }
 ###########################################################################################
-readCount <- function( community, species = levels( counts$species ))
+readCount <- function( community, species = unique(counts$species))
 {
   file <- getCount( community,, "file" )
   counts <- utils::read.table( file, header = TRUE, fill = TRUE )
@@ -123,7 +125,8 @@ readCount <- function( community, species = levels( counts$species ))
     colnames <- c( levels( getOrgFuture( community, i, "ageclass" )),
                   levels( getOrgInteract( community,, i, "substrate" )))
     count[[i]] <- as.matrix( counts[ counts$species == i, seq( 2, 4 + length( colnames )) ] )
-    dimnames( count[[i]] ) <- list( count[[i]]$step, c( "step", "time", "future", colnames ))
+    dimnames( count[[i]] ) <- list( count[[i]][,"step"],
+                                    c( "step", "time", "future", colnames ))
   }
   count
 }

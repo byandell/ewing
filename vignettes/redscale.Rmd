@@ -1,0 +1,64 @@
+---
+title: "Model Vignette"
+author: "Brian Yandell"
+date: "8/10/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ewing)
+```
+
+## Modular approach 18 Nov 2002
+
+A big change is that I have modularized things. The default species are now 
+"host" and "parasite". There is a second library called "[redscale](https://github.com/byandell/redscale)" that 
+has redscale and aphytis and comperiella and encarsia. (Actually, host is 
+just redscale, and parasite is just aphytis). Now you can set up a new 
+system by just creating a new library package.
+
+The second big change is that I use R conventions of passing arguments, 
+rather than hiding things as I have done inthe past. Now you do
+
+```
+	mysim <- init.simulation()
+	simres <- future.events(mysim, "mysim.out")
+```
+
+The object "mysim" has the initial populations and the organism and 
+temperature structures. The object "simres" has the populations after 
+running future.events (used to be step.future), along with summary 
+information from the run.
+
+I have also modularized the immediate, pending and future events. The functions
+
+	event.birth	birth immediate event
+	event.attack	attack immediate event
+	event.death	death pending event
+	event.future	generic future event
+
+You can supply your own version of these if you don't like mine. And you 
+can add new ones by making appropriate changes in the "event" column of the 
+future.host and future.parasite column. Adding a new kind of event, such as 
+migrate means the routine now looks for a routine called "event.migrate".
+Also, event.attack uses the type of parasite (endo,ecto) and the actual 
+event (feed,ovip) to look for routines like event.ecto.feed to process 
+attack details.
+
+
+## One attempt
+
+One begins a simulation by initializing a species. At present, this is done by setting up a space- or tab-delimited file with various fields. Each row represents a stage in the Red Scale's life, although the first two rows are dummies for parasitization for now. The fields are mostly self-explanatory. DD represents mean degree days to that future event. Thus the mean time to "virgin" from "third.3" is 560-465=95 DD. The next two fields concern the Aphytis parasite, comprising the relative risk of being killed by an Aphytis that is feeding or is laying eggs, respectively. There was no explicit information on feeding risk, so these are made up following Luck's papers. The egg-laying risks are directly from the IPM pamphlet. The next two fields have the relative risks for the other two parasites. Then follows the gender (only females modeled here). The next field has the plotting symbol (pch), followed by the plotting color. The last and most important column is the life stage.
+
+```{r}
+data(redscale)
+```
+
+```{r}
+redscale.run <- init.population(redscale, 200)
+```
+

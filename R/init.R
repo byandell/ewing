@@ -45,6 +45,7 @@
 #' 
 #' \dontrun{init.simulation(myrun)}
 #' 
+#' @export
 #' @importFrom stats rexp rpois
 #' @importFrom utils data
 #' 
@@ -117,6 +118,8 @@ init.simulation <- function( package = "ewing",
 #' @examples
 #' 
 #' \dontrun{init.population( redscale )}
+#' 
+#' @export
 #' 
 init.population <- function( community, species, n = 200, width = 100,
                             units = getOrgFeature( community, species, "units" ),

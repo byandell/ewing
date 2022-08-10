@@ -1,0 +1,16 @@
+DD	aphytis.feed	aphytis	comperiella	encarsia	gender	pch	color	stage
+-5	0	0	0	0	either	P	white	parasite
+0	0	0	0	0	either	P	white	parasite
+0	0	0	0	0	neuter	0	brown	crawler
+55	5	0	3	4	neuter	1	green	first.instar
+147	2	0	3	3.5	neuter	1	green	first.molt
+195	5	0	2	5	neuter	2	turquoise	second.1
+225	2	3	2	5	neuter	2	turquoise	second.2
+255	1	4	3	5	neuter	2	Turquoise  second.3	
+307	0	2	4	4.5	female	2	turquoise  second.molt	
+355	0	3	5	4.5	female	3	blue	third.1
+410	0	5	5	4	female	3	blue	third.2
+465	0	5	5	3	female	3	blue	third.3
+560	0	2	3.5	3	female	V	violet	virgin
+650	0	0	0	0	female	G	black	gravid
+651	0	0	0	0	female	D	red	death

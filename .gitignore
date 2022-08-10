@@ -1,5 +1,6 @@
 *~
 .Rhistory
+*.out
 tags
 build
 CMakeFiles
