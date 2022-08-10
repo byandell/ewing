@@ -8,7 +8,8 @@ init.simulation(
   package = "ewing",
   species = getOrgFeature(community)[1:2],
   hosts = getOrgHosts(community, species),
-  count = 200
+  count = 200,
+  interact = interactive()
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ init.simulation(
 \item{hosts}{list of hosts for species}
 
 \item{count}{number of individuals per species}
+
+\item{interact}{ask for species count if true and interactive}
 }
 \value{
 Object with elements for each species that are created by

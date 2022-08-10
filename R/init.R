@@ -35,6 +35,7 @@
 #' @param species list of species to simulate
 #' @param hosts list of hosts for species
 #' @param count number of individuals per species
+#' @param interact ask for species count if true and interactive
 #' @return Object with elements for each species that are created by
 #' init.population.
 #' @author Brian S. Yandell
@@ -52,7 +53,8 @@
 init.simulation <- function( package = "ewing", 
                             species = getOrgFeature( community )[1:2],
                             hosts = getOrgHosts( community, species ),
-                            count = 200 )
+                            count = 200,
+                            interact = interactive())
 {
   community <- initOrgInfo( package )
   community <- initTemp( community )
@@ -68,12 +70,13 @@ init.simulation <- function( package = "ewing",
   for( i in species ) {
     num[i] <- reuse <- count
     cat( paste( "Initialize ", i, " at size ", reuse, sep = "" ),":")
-    r <- readline( )
-    if( r != "" & is.na( pmatch( substring( r, 1, 1 ), c("y","Y") )))
-      reuse <- as.numeric( r )
-    if( is.na( reuse ))
-      reuse <- count
-
+    if(interact & interactive()) {
+      r <- readline( )
+      if( r != "" & is.na( pmatch( substring( r, 1, 1 ), c("y","Y") )))
+        reuse <- as.numeric( r )
+      if( is.na( reuse ))
+        reuse <- count
+    }
     if( reuse ) {
       cat( "...\n" )
       community <- init.population( community, i, n = reuse )
