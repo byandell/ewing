@@ -9,3 +9,7 @@ Imports: splines, graphics, stats, utils
 License: GPL-3
 URL: http://www.stat.wisc.edu/~yandell/ewing
 RoxygenNote: 7.2.1
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

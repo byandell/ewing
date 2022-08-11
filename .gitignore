@@ -45,3 +45,4 @@ pkg
 .Rproj.user
 *.Rproj
 old/
+inst/doc
