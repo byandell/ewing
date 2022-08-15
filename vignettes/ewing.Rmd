@@ -18,6 +18,7 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(ewing)
+library(tidyverse)
 ```
 
 ## Modular approach 
@@ -42,7 +43,27 @@ simres <- future.events(mysim, "mysim.out", plotit = FALSE)
 ```
 
 ```{r}
+ages <- ravel.count(simres)
+```
+
+```{r}
+ggplot_ewing(simres)
+```
+
+```{r}
+ggplot_ewing(simres, total = FALSE, normalize = FALSE)
+```
+
+```{r}
+ggplot_ewing(simres, normalize = FALSE, substrate = FALSE)
+```
+
+```{r}
 plot(simres)
+```
+
+```{r}
+plot(simres, substrate = FALSE)
 ```
 
 The object "mysim" has the initial populations and the organism and 
