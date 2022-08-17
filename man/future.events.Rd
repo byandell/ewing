@@ -69,7 +69,7 @@ A plot is created periodically unless \code{plotit=FALSE}.  An external
 ## step through 4000 future events
 step.mystuff <- future.events(mystuff,4000)
 ## replot the results
-plot.totals( step.mystuff )
+plot.ewing( step.mystuff )
 ## reprint timing of most recent future.events run
 print.timing()
 ## or of the one you want

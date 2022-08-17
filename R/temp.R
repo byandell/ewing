@@ -57,7 +57,7 @@
 #' temp.plot()
 #' }
 #' 
-#' @export temp.design
+#' @export
 #' @importFrom splines interpSpline
 #' @importFrom stats predict
 #' 
@@ -431,6 +431,7 @@ spline.deriv <- function( s )
   s
 }
 ###########################################################################################
+#' @export
 temp.plot <- function( community, lo.hour = s$knots[1], hi.hour = max( s$knots ),
                       length = 201,
                       col = NULL, derivative = FALSE, ..., printit = FALSE )

@@ -491,3 +491,16 @@ updateCount( community, species, individual, is.death = FALSE, step )
 #### triangle.R
 
 rtri()
+
+# Plot routines
+
+The primary summary plot is `plot.ewing`, or `ggplot_ewing`, in `plot.R`.
+This gives a summary over the whole simulation.
+However, other plot routines were created, some being interactive:
+
+- spline.R/five.plot # interactive plot to design curve with spline and backspline
+- spline.R/five.show # interactive plot (same thing or different?)
+- temp.R/temp.plot # plot of day to degree-day to see effect of temp variation
+- temp.R/temp.design # interactive plot to design hi and lo temp ranges
+- triangle.R/plot_current # plot spatial positions of hosts and parasites
+- triangle.R/text_current # text add (not sure if needed?)

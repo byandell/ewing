@@ -616,7 +616,8 @@ five.find <- function( fit = gencurve$fit, pick, vals, goal = .9,
   vals[2]
 }
 ###########################################################################################
-five.show <- function( fit = gencurve, goal = .9,
+#' @export
+five.show <- function( fit = spline.meanvalue(), goal = .9,
   tol = 1e-5, legend.flag = 1, cex = 0.5, ylim = ylims, prefix = "" )
 {
   fives <- c("dispersion","location","intensity","truncation","rejection")
@@ -669,6 +670,7 @@ five.show <- function( fit = gencurve, goal = .9,
   invisible( list( ref = ref, lines = five.lines ))
 }
 ###########################################################################################
+#' @export
 five.plot <- function( gencurve = spline.meanvalue(), fit = gencurve$fit, pick, vals, ylim = ylims )
 {
   tmpx <- seq(0.01,.99,by=.01)

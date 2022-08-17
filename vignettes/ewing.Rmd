@@ -86,6 +86,39 @@ Also, event.attack uses the type of parasite (endo,ecto) and the actual
 event (feed,ovip) to look for routines like event.ecto.feed to process 
 attack details.
 
+## Other plots
+
+```{r}
+plot_current(simres, "host")
+text_current(simres, "host")
+```
+
+```{r}
+plot_current(simres, "parasite")
+text_current(simres, "parasite")
+```
+
+Interactive plots showing splines. Use `graphics::locator()`.
+
+```{r eval=FALSE}
+five.plot()
+```
+
+```{r eval=FALSE}
+five.show()
+```
+
+Plot to relate day to degree-day based on temperature regime.
+
+```{r}
+temp.plot(simres)
+```
+
+interactive design plot for high and low temperatures. Uses `graphics::locator()`.
+
+```{r eval=FALSE}
+temp.design(simres)
+```
 
 ## Another attempt
 

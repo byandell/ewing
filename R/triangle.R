@@ -95,7 +95,8 @@ cardist <- function( xy )
 tridist <- function( tri )
   apply( tri, 1, max )
 ###########################################################################################
-plot.current <- function( x,
+#' @export
+plot_current <- function( x,
                          species,
                          col = as.character( future$color[stage] ),
                          headstuff = c( 0, "start", sum( to.plot )),
@@ -123,11 +124,13 @@ plot.current <- function( x,
   usr <- graphics::par( "usr" )[1:2]
   usr <- c(usr[1],mean(usr),usr[2])
   graphics::mtext( c( units, "future event", right ), 3, 1.5, at = usr, adj = adj )
+  to.plot <- 0 # not sure what this is
   graphics::mtext( headstuff, 3, 0.5, at = usr, adj = adj )
   invisible( usr )
 }
 ###########################################################################################
-text.current <- function( x, species,
+#' @export
+text_current <- function( x, species,
   col = as.character( future$color[stage] ),
   pch = as.character( future$pch[stage] ), cex = 0.5,
   position = paste( "pos", letters[1:3], sep = "." ),
