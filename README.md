@@ -504,3 +504,8 @@ However, other plot routines were created, some being interactive:
 - temp.R/temp.design # interactive plot to design hi and lo temp ranges
 - triangle.R/plot_current # plot spatial positions of hosts and parasites
 - triangle.R/text_current # text add (not sure if needed?)
+
+# Data organization
+
+The object `community` has element `pop` which has elements for the `species`.
+For some reason, I set these up by row rather than column, and I think this trashes things like the substrate labels. Somehow in the `plot_ewing` this works OK, but in `plot_current` for position, it is lost. Seems this may take some work, and best to wait on that for now.

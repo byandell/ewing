@@ -98,6 +98,15 @@ plot_current(simres, "parasite")
 text_current(simres, "parasite")
 ```
 
+The following plot is supposed to break out by substrate, which is in `sub.stage` in the `community` object (`simres`). But the way it is saved right now makes this goofy somehow.
+Changing should be done carefully as this is used in multiple places. For now just leave it.
+Note also that the color and text should correspond but not into the legend as I need
+to formally assign the colors in a more intuitive way a la ggplot2. Later.
+
+```{r}
+ggplot_current(simres, "host")
+```
+
 Interactive plots showing splines. Use `graphics::locator()`.
 
 ```{r eval=FALSE}

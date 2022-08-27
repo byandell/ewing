@@ -96,6 +96,36 @@ tridist <- function( tri )
   apply( tri, 1, max )
 ###########################################################################################
 #' @export
+ggplot_current <- function( x,
+                          species,
+                          headstuff = c( 0, "start", sum( to.plot )),
+                          units = getOrgFeature( x, species, "units" ),
+                          right = species, adj = c(0,.5,1),
+                          cex = 0.5,
+                          xlab = "horizontal", ylab = "vertical",
+                          ...)
+{
+  ## plot current stages for species (except random parasites)
+  organism <- get.species( x, species )[,-1]
+  future = getOrgFuture( x, species, c("color","pch") )
+  position = paste( "pos", letters[1:3], sep = "." )
+  xy <- tri2car( organism[position,] )
+  
+  dat <- tibble(xy) %>%
+    mutate(stage = organism["stage",],
+           substrate = organism["sub.stage",],
+           pchar = as.character( future$pch[stage] ),
+           color = as.character( future$color[stage] ))
+  
+  ggplot(dat) +
+    aes(x, y, label = pchar, col = color) +
+    geom_text() +
+    facet_wrap(~ substrate) +
+    xlab(xlab) +
+    ylab(ylab)
+}
+###########################################################################################
+#' @export
 plot_current <- function( x,
                          species,
                          col = as.character( future$color[stage] ),
