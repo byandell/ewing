@@ -16,6 +16,12 @@ You will also need pdflatex, which means you need a TeX distribution such as Mik
 > install_github("byandell/ewing")
 ```
 
+Better yet, install with vignette:
+
+```
+> install_github("byandell/ewing", build_vignettes = TRUE)
+```
+
 See [vignettes/ewing.Rmd](https://github.com/byandell/ewing/blob/master/vignettes/ewing.Rmd) for example use of code. A simple example is below:
 
 ```
