@@ -16,27 +16,57 @@ You will also need pdflatex, which means you need a TeX distribution such as Mik
 > install_github("byandell/ewing")
 ```
 
-Alternatively, you can visit <http://www.stat.wisc.edu/~yandell/ewing>
+See [vignettes/ewing.Rmd](https://github.com/byandell/ewing/blob/master/vignettes/ewing.Rmd) for example use of code. A simple example is below:
 
-Reference: B Ewing, BS Yandell, JF Barbieri, and RF Luck (2002) "Event-driven competing risks," _Ecological Modelling 158_: 35--50.
+```
+> library(ewing) # attach package
+> mysim <- init.simulation() # initialize simulation
+> simres <- future.events(mysim, "mysim.out", plotit = FALSE) # simulate future events
+> plot(simres) # plot populations by stage or substrate over time
+> plot_current(simres, "host") # plot current (last) individuals over space
+```
 
-### Code Issues
+For more information, visit <http://www.stat.wisc.edu/~yandell/ewing>
 
-- gencurve in spline.R internal to five.plot but used elsewise
-- dead used in init, event
-- organsim.features in community.R using mydata() nonstandard
-- TemperatureBase in init.R community.R/initTemp
-- to.plot in triangle.R plot.current not defined
-- hour, knotrange undefined in temp.R
-- lo.hour, hi.hour etc in temp.plot?
-- File ‘ewing/R/init.R’: assign(toto, get(from), ".GlobalEnv")
-- somehow crawler count ends up being negative, which throws off plot (future.events) [FIXED]
-- looks like end of event.R/get.birth has hanging `get.future`
+Reference: B Ewing, BS Yandell, JF Barbieri, and RF Luck (2002) "Event-driven competing risks," _Ecological Modelling 158_: 35--50. <http://doi.org/10.1016/S0304-3800(02)00218-1>
 
-## Code layout
+# Data organization
 
-The `init.simulation` and `future.events` are the high level routines to initialize and run a simulation. They draw on default settings pulled from global datafiles.
-Plan is to make this more adaptable, of course.
+### Community object
+
+The object `community` has several elements that contain the current state of a simulation. This object is updated at every simulation step, which then changes the future event structure. Past events are removed and cannot be recovered, except in the sense that each individual has their current state and anticipated future state recorded.
+
+- `pop` matrices for each `species` of information (rows) by individual (columns)
+  + use `get.species/put.species` and `get.individual/put.individual`
+- `org` structure with information about organisms, including interactions
+  + use `getOrgInfo`, `getOrgInteract` and other routines
+- `temp` structure about degree-day and temperature patterns
+- `count` structure of summary counts
+- `cpu` CPU time used for various activities
+
+For some reason, I set up `community$pop` entries for each species as matrices by row rather than column, with each column being an individual. It may be useful to flip it. The row names for each individual provide a complete picture of their current and next potential future state. It will take more digging to explain each of these row labels.
+
+- `dist`
+- `left`, `right`, `up` leftist tree links
+- `dispersion`
+- `location`
+- `intensity` 
+- `truncation`
+- `rejection`
+- `pos.a`, `pos.b`, `pos.c` position on substrate in triangular coordinates
+- `time`
+- `stage` current stage
+- `future` future stage
+- `offspring`
+- `sex` sex
+- `sub.stage` current substrate
+- `sub.future` future substrate
+
+At each time step, the individual at the top of the leftist tree is examined, and actions may be taken. This typically involves a change in the leftist tree affecting just a few individuals. It might involve scheduling a `future` event for that individual, a `death`, one or more `birth` events. Events are either monadic, involving only that individual, or dyadic, involving two individuals, such as a parasite ovipositing (preying) on a host. In the case of a dyadic event, both individuals have altered futures.
+
+At each time step where there is a change in the population structure, totals are written out with `writeCount` to a file, which can be read by `readCount` for instance to create plots over time using `ggplot_ewing` or `plot_ewing`. This file loses the individual information, which is only maintained in the `community` object at the current step. That is, there is temporal information without individual information.
+
+It might be possible to store the updates as the simulation goes along in such a way that one could construct intermediate snapshots of the community. One interesting question is how to capture the spatial migration of individuals over the substrates (see `ggplot_current`).
 
 #### Global datafiles
 
@@ -47,12 +77,12 @@ organism.features
 
 future.host
 
-- columns:         current       future fid time pch   color ageclass  event init
+- columns:  current future fid time pch color ageclass event init
 - rows: 1-17
 - current values:
-  + crawler      first.instar first.molt   second.1-3 female       male         second.molt  third.1-3 virgin gravid       death        starved
+  + crawler first.instar first.molt second.1-3 female male second.molt third.1-3 virgin gravid death starved
 - future values:
-  + first.instar first.molt   second.1-3     female       male second.molt  death        third.1-3      virgin       gravid gravid       death        death
+  + first.instar first.molt second.1-3 female male second.molt  death third.1-3 virgin       gravid gravid death death
 
 future.parasite
 
@@ -75,6 +105,37 @@ TemperatureBase
 - Day: 0, 30
 - Time: 0, 8, 12, 15, 18, 20
 - Base: various values between 0 and 100
+
+# Plot routines
+
+The primary summary plot is `plot.ewing`, or `ggplot_ewing`, in `plot.R`.
+This gives a summary over the whole simulation.
+However, other plot routines were created, some being interactive:
+
+- spline.R/five.plot # interactive plot to design curve with spline and backspline
+- spline.R/five.show # interactive plot (same thing or different?)
+- temp.R/temp.plot # plot of day to degree-day to see effect of temp variation
+- temp.R/temp.design # interactive plot to design hi and lo temp ranges
+- triangle.R/plot_current # plot spatial positions of hosts and parasites
+- triangle.R/text_current # text add (not sure if needed?)
+
+## Code layout
+
+The `init.simulation` and `future.events` are the high level routines to initialize and run a simulation. They draw on default settings pulled from global datafiles.
+Plan is to make this more adaptable, of course.
+
+### Code Issues
+
+- gencurve in spline.R internal to five.plot but used elsewise
+- dead used in init, event
+- organsim.features in community.R using mydata() nonstandard
+- TemperatureBase in init.R community.R/initTemp
+- to.plot in triangle.R plot.current not defined
+- hour, knotrange undefined in temp.R
+- lo.hour, hi.hour etc in temp.plot?
+- File ‘ewing/R/init.R’: assign(toto, get(from), ".GlobalEnv")
+- somehow crawler count ends up being negative, which throws off plot (future.events) [FIXED]
+- looks like end of event.R/get.birth has hanging `get.future`
 
 #### init.R
 
@@ -491,34 +552,3 @@ updateCount( community, species, individual, is.death = FALSE, step )
 #### triangle.R
 
 rtri()
-
-# Plot routines
-
-The primary summary plot is `plot.ewing`, or `ggplot_ewing`, in `plot.R`.
-This gives a summary over the whole simulation.
-However, other plot routines were created, some being interactive:
-
-- spline.R/five.plot # interactive plot to design curve with spline and backspline
-- spline.R/five.show # interactive plot (same thing or different?)
-- temp.R/temp.plot # plot of day to degree-day to see effect of temp variation
-- temp.R/temp.design # interactive plot to design hi and lo temp ranges
-- triangle.R/plot_current # plot spatial positions of hosts and parasites
-- triangle.R/text_current # text add (not sure if needed?)
-
-# Data organization
-
-The object `community` has several elements that contain the current state of a simulation:
-
-- `pop` matrices for each `species` of information (rows) by individual (columns)
-  + use `get.species/put.species` and `get.individual/put.individual`
-- `org` structure with information about organisms, including interactions
-  + use `getOrgInfo`, `getOrgInteract` and other routines
-- `temp` structure about degree-day and temperature patterns
-- `count` structure of summary counts
-- `cpu` CPU time used for various activities
-
-For some reason, I set up `community$pop` entries for each species as matrices by row rather than column, with each column being an individual. It may be useful to flip it.Somehow in the `plot_ewing` this works OK, but in `plot_current` for position, it is lost. Seems this may take some work, and best to wait on that for now.
-
-At each time step where there is a change in the population structure, totals are written out with `writeCount` to a file, which can be read by `readCount` for instance to create plots over time using `ggplot_ewing` or `plot_ewing`. This file loses the individual information, which is only maintained in the `community` object at the current step. That is, there is temporal information without individual information.
-
-It might be possible to store the updates as the simulation goes along in such a way that one could construct intermediate snapshots of the community. One interesting question is how to capture the spatial migration of individuals over the substrates (see `ggplot_current`).
