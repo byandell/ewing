@@ -27,7 +27,7 @@ ring.add <- function( ring = data.frame( root = c( key = NA, left = 1 + nx, righ
   nx <- length( x )
   n1 <- ring["left","root"]
   ring[[ as.character( n1 + 1 ) ]] <- c( key = x[1],
-    left = as.numeric( ring["left","root"] ), right = 1 )
+    left = suppressWarnings(as.numeric( ring["left","root"] ), right = 1 ))
   
   if( nx > 1 ) for( i in seq( 2, nx ))
   {

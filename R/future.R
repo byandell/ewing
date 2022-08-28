@@ -49,6 +49,8 @@
 #' @param extinct stop when first specied becomes extinct
 #' @param timeit record timing by event
 #' @param debugit detailed debug for advanced users
+#' @param ggplots use ggplot if `TRUE` and `plotit` is `TRUE`
+#' 
 #' @return List containing the following items: \item{pop}{updated community of
 #' species} \item{org}{organism information (from \code{init.simulation}}
 #' \item{temp}{temperature and time curve structure} \item{count}{simulation
@@ -84,7 +86,7 @@ future.events <- function( community,
 
                           refresh = nstep / 20, cex = 0.5, append = FALSE,
                           plotit = TRUE, substrate.plot = TRUE, extinct = TRUE,
-                          timeit = TRUE, debugit = FALSE)
+                          timeit = TRUE, debugit = FALSE, ggplots = TRUE)
   
 {
   ## Integrity check of dataset, and initialization of tallies.
@@ -180,7 +182,11 @@ future.events <- function( community,
     if( refresh & ! ( istep %% refresh )) {
       community <- set.timing( community, "refresh" )
       if( plotit ) {
-        plot.ewing( community, substrate = substrate.plot, cex = cex )
+        if(ggplots) {
+          print(ggplot_ewing( community, substrate = substrate.plot, cex = cex ))
+        } else {
+          plot( community, substrate = substrate.plot, cex = cex )
+        }
       }
       cat( "refresh", istep )
       for( j in get.species( community ))

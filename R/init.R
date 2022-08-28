@@ -33,11 +33,11 @@
 #' 
 #' @param package package where community data features can be found
 #' @param species list of species to simulate
-#' @param hosts list of hosts for species
-#' @param count number of individuals per species
-#' @param interact ask for species count if true and interactive
-#' @return Object with elements for each species that are created by
-#' init.population.
+#' @param hosts list of hosts among species
+#' @param count number of individuals per species (single number or count in order of `species`)
+#' @param interact ask for species count if `TRUE` and interactive
+#' @return Object with elements for each species that are created by init.population.
+#' 
 #' @author Brian S. Yandell
 #' @seealso \code{\link{init.population}}
 #' @references \url{www.stat.wisc.edu/~yandell/ewing}
@@ -54,7 +54,7 @@ init.simulation <- function( package = "ewing",
                             species = getOrgFeature( community )[1:2],
                             hosts = getOrgHosts( community, species ),
                             count = 200,
-                            interact = interactive())
+                            interact = FALSE)
 {
   community <- initOrgInfo( package )
   community <- initTemp( community )
@@ -69,11 +69,12 @@ init.simulation <- function( package = "ewing",
   names( num ) <- species
   for( i in species ) {
     num[i] <- reuse <- count
-    cat( paste( "Initialize ", i, " at size ", reuse, sep = "" ),":")
+    cat( paste( "Initialize ", i, " at size ", reuse, sep = "" ))
     if(interact & interactive()) {
+      cat(" :")
       r <- readline( )
       if( r != "" & is.na( pmatch( substring( r, 1, 1 ), c("y","Y") )))
-        reuse <- as.numeric( r )
+        reuse <- suppressWarnings(as.numeric( r ))
       if( is.na( reuse ))
         reuse <- count
     }
@@ -302,7 +303,7 @@ getOrgFeature <- function( community, species, feature = names( OrgFeature ))
   f <- c( unlist( f ))
   ## try to interpret f as numeric
   opwarn <- options( warn = -1 )
-  numf <- as.numeric( f )
+  numf <- suppressWarnings(as.numeric( f ))
   options( opwarn )
   if( all( !is.na( numf )))
     f <- numf

@@ -9,7 +9,7 @@ init.simulation(
   species = getOrgFeature(community)[1:2],
   hosts = getOrgHosts(community, species),
   count = 200,
-  interact = interactive()
+  interact = FALSE
 )
 }
 \arguments{
@@ -17,15 +17,14 @@ init.simulation(
 
 \item{species}{list of species to simulate}
 
-\item{hosts}{list of hosts for species}
+\item{hosts}{list of hosts among species}
 
-\item{count}{number of individuals per species}
+\item{count}{number of individuals per species (single number or count in order of `species`)}
 
-\item{interact}{ask for species count if true and interactive}
+\item{interact}{ask for species count if `TRUE` and interactive}
 }
 \value{
-Object with elements for each species that are created by
-init.population.
+Object with elements for each species that are created by init.population.
 }
 \description{
 Initializes simulation using organizm features.

@@ -57,7 +57,7 @@ initOrgInfo <- function( package )
   community$org <- list( )
   community$org$package <- package
   ## Get data
-  mydata( "organism.features", package, restart = TRUE )
+  mydata( "organism.features", package )
   community$org$Feature <- organism.features
   rm( list = "organism.features", pos = ".GlobalEnv" )
   community$pop <- list()
@@ -82,7 +82,7 @@ setOrgInfo <- function( community, species, hosts, package )
 
   for( i in species ) {
     tmp <- paste( "future", i, sep = "." )
-    mydata( tmp, getOrgInfo( community, "package" ), restart = TRUE )
+    mydata( tmp, getOrgInfo( community, "package" ))
     future <- my.eval( tmp )
     rm( list = tmp, pos = ".GlobalEnv" )
     level.ageclass <- unique( future$ageclass )
@@ -92,7 +92,7 @@ setOrgInfo <- function( community, species, hosts, package )
     for( j in hosts )
       if( i != j ) {
         tmp <- paste( j, i, sep = "." )
-        mydata( tmp, getOrgInfo( community, "package" ), restart = TRUE )
+        mydata( tmp, getOrgInfo( community, "package" ))
         Organism$Interact[[j]][[i]] <- my.eval( tmp )
         rm( list = tmp, pos = ".GlobalEnv" )
       }
@@ -103,7 +103,7 @@ setOrgInfo <- function( community, species, hosts, package )
   }
   for( i in unique( getOrgFeature( community, species, "substrate" ))) {
     substrate <- paste( i, i, sep = "." )
-    mydata( substrate, getOrgInfo( community, "package" ), restart = TRUE )
+    mydata( substrate, getOrgInfo( community, "package" ))
     Organism$Interact[[i]][[i]] <- my.eval( substrate )
     rm( list = substrate, pos = ".GlobalEnv" )
   }
@@ -274,14 +274,14 @@ initTemp <- function( community, lo.hour = 0, hi.hour = getTemp( community, "Uni
   cat( "Initializing Temperature Profile ...\n" )
   Temperature <- list()
   
-  utils::data( TemperaturePar )
+  mydata( "TemperaturePar", getOrgInfo( community, "package" ))
   TemperaturePar <- array( TemperaturePar[,"value"],
                           dimnames = list( row.names( TemperaturePar )))
   Temperature$Unit <- TemperaturePar["Unit"]
   Temperature$Min <- TemperaturePar["Min"]
 
   ## set up daily temperature base
-  utils::data( TemperatureBase )
+  mydata( "TemperatureBase", getOrgInfo( community, "package" ))
   Temperature$Time <- split( TemperatureBase$Time, TemperatureBase$Day )
   Temperature$Base <- split( TemperatureBase$Base, TemperatureBase$Day )
   remove( TemperatureBase, pos = 1 )

@@ -915,7 +915,7 @@ spline.design <- function (y = yinit, x = xinit, nspline = 8, xy = data.frame(x 
           tmpy <- readline( paste( "maximum ", fig, "(",
             round( max( xy$y ), 2 ), "):", sep = "" ))
           if( tmpy != "" ) {
-            tmpy <- as.numeric( tmpy ) / max( xy$y )
+            tmpy <- suppressWarnings(as.numeric( tmpy )) / max( xy$y )
             xy$y <- tmpy * xy$y
             if( is.data )
               rescale.data <- rescale.data * tmpy
@@ -923,7 +923,7 @@ spline.design <- function (y = yinit, x = xinit, nspline = 8, xy = data.frame(x 
           tmpx <- readline( paste( "maximum time(", 
             round( max( xy$x ), 2 ), "):", sep = "" ))
           if( tmpx != "" ) {
-            tmpx <- as.numeric( tmpx ) / max( xy$x )
+            tmpx <- suppressWarnings(as.numeric( tmpx )) / max( xy$x )
             xy$x <- tmpx * xy$x
           }
           fit <- splines::interpSpline( xy$x, xy$y )

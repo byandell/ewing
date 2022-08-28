@@ -16,7 +16,8 @@ future.events(
   substrate.plot = TRUE,
   extinct = TRUE,
   timeit = TRUE,
-  debugit = FALSE
+  debugit = FALSE,
+  ggplots = TRUE
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ future.events(
 \item{timeit}{record timing by event}
 
 \item{debugit}{detailed debug for advanced users}
+
+\item{ggplots}{use ggplot if `TRUE` and `plotit` is `TRUE`}
 }
 \value{
 List containing the following items: \item{pop}{updated community of
