@@ -35,6 +35,7 @@ See [vignettes/ewing.Rmd](https://github.com/byandell/ewing/blob/master/vignette
 Here are some commands to use `tidyverse` for newer plots:
 
 ```
+> library(tidyverse)
 > ggplot_ewing(simres)
 > ggplot_current(simres, "host")
 ``
