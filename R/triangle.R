@@ -96,33 +96,43 @@ tridist <- function( tri )
   apply( tri, 1, max )
 ###########################################################################################
 #' @export
-ggplot_current <- function( x,
+ggplot_current <- function( community,
                           species,
                           headstuff = c( 0, "start", sum( to.plot )),
-                          units = getOrgFeature( x, species, "units" ),
+                          units = getOrgFeature( community, species, "units" ),
                           right = species, adj = c(0,.5,1),
                           cex = 0.5,
                           xlab = "horizontal", ylab = "vertical",
                           ...)
 {
   ## plot current stages for species (except random parasites)
-  organism <- get.species( x, species )[,-1]
-  future = getOrgFuture( x, species, c("color","pch") )
+  organism <- get.species( community, species )[,-1]
+  future = getOrgFuture( community, species, c("color","pch") )
+  
+  # Substrate names
+  substrates <- names(getOrgInteract(community, "substrate", "substrate"))
+  
+  # Convert triangular coordinates into Cartesian (xy) coordinates
   position = paste( "pos", letters[1:3], sep = "." )
   xy <- tri2car( organism[position,] )
   
   dat <- tibble(xy) %>%
     mutate(stage = organism["stage",],
-           substrate = organism["sub.stage",],
+           substrate = substrates[organism["sub.stage",]],
            pchar = as.character( future$pch[stage] ),
            color = as.character( future$color[stage] ))
   
+  # This is klunky but might work
+  col.palate <- unique(dat$color)
+  names(col.palate) <- unique(dat$pchar)
+  
   ggplot(dat) +
-    aes(x, y, label = pchar, col = color) +
+    aes(x, y, label = pchar, col = pchar) +
     geom_text() +
     facet_wrap(~ substrate) +
     xlab(xlab) +
-    ylab(ylab)
+    ylab(ylab) +
+    scale_color_manual(name = "Stage", values = col.palate)
 }
 ###########################################################################################
 #' @export

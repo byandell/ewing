@@ -507,5 +507,18 @@ However, other plot routines were created, some being interactive:
 
 # Data organization
 
-The object `community` has element `pop` which has elements for the `species`.
-For some reason, I set these up by row rather than column, and I think this trashes things like the substrate labels. Somehow in the `plot_ewing` this works OK, but in `plot_current` for position, it is lost. Seems this may take some work, and best to wait on that for now.
+The object `community` has several elements that contain the current state of a simulation:
+
+- `pop` matrices for each `species` of information (rows) by individual (columns)
+  + use `get.species/put.species` and `get.individual/put.individual`
+- `org` structure with information about organisms, including interactions
+  + use `getOrgInfo`, `getOrgInteract` and other routines
+- `temp` structure about degree-day and temperature patterns
+- `count` structure of summary counts
+- `cpu` CPU time used for various activities
+
+For some reason, I set up `community$pop` entries for each species as matrices by row rather than column, with each column being an individual. It may be useful to flip it.Somehow in the `plot_ewing` this works OK, but in `plot_current` for position, it is lost. Seems this may take some work, and best to wait on that for now.
+
+At each time step where there is a change in the population structure, totals are written out with `writeCount` to a file, which can be read by `readCount` for instance to create plots over time using `ggplot_ewing` or `plot_ewing`. This file loses the individual information, which is only maintained in the `community` object at the current step. That is, there is temporal information without individual information.
+
+It might be possible to store the updates as the simulation goes along in such a way that one could construct intermediate snapshots of the community. One interesting question is how to capture the spatial migration of individuals over the substrates (see `ggplot_current`).

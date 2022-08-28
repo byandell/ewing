@@ -103,6 +103,8 @@ Changing should be done carefully as this is used in multiple places. For now ju
 Note also that the color and text should correspond but not into the legend as I need
 to formally assign the colors in a more intuitive way a la ggplot2. Later.
 
+Need an explanation of single letter codes (say from future.host)
+
 ```{r}
 ggplot_current(simres, "host")
 ```

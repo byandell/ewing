@@ -55,7 +55,7 @@ ggplot_ewing <- function( x, ... )
 #' @importFrom tidyr pivot_longer 
 #' 
 ravel.count <- function(community, substrate = TRUE, total = TRUE, normalize = TRUE, ...) {
-  count <- ewing:::readCount(community)
+  count <- readCount(community)
   species <- names( count )
   ageclass <- list()
   for( i in species ) {
