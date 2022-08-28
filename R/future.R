@@ -184,6 +184,10 @@ future.events <- function( community,
       if( plotit ) {
         if(ggplots) {
           print(ggplot_ewing( community, substrate = substrate.plot, cex = cex ))
+          for(j in species) {
+            print(ggplot_current(community, j) + 
+                    ggtitle(paste(j, "on substrate at", istep, "steps")))
+          }
         } else {
           plot( community, substrate = substrate.plot, cex = cex )
         }
