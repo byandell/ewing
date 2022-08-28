@@ -16,7 +16,7 @@ You will also need pdflatex, which means you need a TeX distribution such as Mik
 > install_github("byandell/ewing")
 ```
 
-Better yet, install with vignette:
+If you have `pandoc`, you can install with vignette:
 
 ```
 > install_github("byandell/ewing", build_vignettes = TRUE)
@@ -31,6 +31,13 @@ See [vignettes/ewing.Rmd](https://github.com/byandell/ewing/blob/master/vignette
 > plot(simres) # plot populations by stage or substrate over time
 > plot_current(simres, "host") # plot current (last) individuals over space
 ```
+
+Here are some commands to use `tidyverse` for newer plots:
+
+```
+> ggplot_ewing(simres)
+> ggplot_current(simres, "host")
+``
 
 For more information, visit <http://www.stat.wisc.edu/~yandell/ewing>
 
