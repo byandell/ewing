@@ -103,6 +103,7 @@ ggplot_current <- function( community,
                           right = species, adj = c(0,.5,1),
                           cex = 0.5,
                           xlab = "horizontal", ylab = "vertical",
+                          show_sub = substrates,
                           ...)
 {
   ## plot current stages for species (except random parasites)
@@ -120,7 +121,8 @@ ggplot_current <- function( community,
     mutate(stage = organism["stage",],
            substrate = substrates[organism["sub.stage",]],
            pchar = as.character( future$pch[stage] ),
-           color = as.character( future$color[stage] ))
+           color = as.character( future$color[stage] )) %>%
+    filter(substrate %in% show_sub)
   
   # This is klunky but might work
   col.palate <- unique(dat$color)
@@ -129,7 +131,7 @@ ggplot_current <- function( community,
   ggplot(dat) +
     aes(x, y, label = pchar, col = pchar) +
     geom_text() +
-    facet_wrap(~ substrate) +
+    facet_grid(. ~ substrate) +
     xlab(xlab) +
     ylab(ylab) +
     scale_color_manual(name = "Stage", values = col.palate)

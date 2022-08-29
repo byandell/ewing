@@ -22,10 +22,15 @@ ui <- fluidPage(
                     max = 500,
                     value = 200),
         sliderInput(inputId = "parasite",
-                    label = "Number of parasite:",
+                    label = "Number of parasites:",
                     min = 100,
                     max = 500,
-                    value = 200)
+                    value = 200),
+        sliderInput(inputId = "steps",
+                    label = "Simulation steps:",
+                    min = 100,
+                    max = 10000,
+                    value = 4000)
       )      
     ),
     
@@ -52,9 +57,9 @@ server <- function(input, output) {
   #    re-executed when inputs (input$bins) change
   # 2. Its output type is a plot
   simres <- reactive({
-    req(input$host, input$parasite)
+    req(input$host, input$parasite, input$steps)
     mysim <- init.simulation(count = as.numeric(c(input$host, input$parasite))) # initialize simulation
-    future.events(mysim, "mysim.out", plotit = FALSE) # simulate future events
+    future.events(mysim, "mysim.out", nstep = input$steps, plotit = FALSE) # simulate future events
   })
   output$distPlot <- renderPlot({
     ggplot_ewing(simres())
