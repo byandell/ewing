@@ -20,17 +20,20 @@ ui <- fluidPage(
                     label = "Number of hosts:",
                     min = 100,
                     max = 500,
-                    value = 200),
+                    value = 200,
+                    step = 20),
         sliderInput(inputId = "parasite",
                     label = "Number of parasites:",
                     min = 100,
                     max = 500,
-                    value = 200),
+                    value = 200,
+                    step = 20),
         sliderInput(inputId = "steps",
                     label = "Simulation steps:",
-                    min = 100,
+                    min = 1000,
                     max = 10000,
-                    value = 4000)
+                    value = 4000,
+                    step = 500)
       )      
     ),
     
