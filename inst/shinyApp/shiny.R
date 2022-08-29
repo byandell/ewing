@@ -33,7 +33,13 @@ ui <- fluidPage(
                     min = 1000,
                     max = 10000,
                     value = 4000,
-                    step = 500)
+                    step = 500),
+        checkboxInput("norm",
+                      "Normalize Plot",
+                      TRUE),
+        checkboxInput("total",
+                      "Include Total",
+                      TRUE)
       )      
     ),
     
@@ -42,9 +48,9 @@ ui <- fluidPage(
       
       tagList(
         # Output: Histogram ----
-        plotOutput(outputId = "distPlot"),
-        plotOutput(outputId = "hostPlot"),
-        plotOutput(outputId = "parasitePlot")
+        plotOutput(outputId = "distPlot", height = "4in"),
+        plotOutput(outputId = "hostPlot", height = "2in"),
+        plotOutput(outputId = "parasitePlot", height = "2in")
       )
     )
   )
@@ -65,7 +71,7 @@ server <- function(input, output) {
     future.events(mysim, "mysim.out", nstep = input$steps, plotit = FALSE) # simulate future events
   })
   output$distPlot <- renderPlot({
-    ggplot_ewing(simres())
+    ggplot_ewing(simres(), total = input$total, normalize = input$norm)
   })
   output$hostPlot <- renderPlot({
     ggplot_current(simres(), "host") + 
