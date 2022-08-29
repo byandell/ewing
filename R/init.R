@@ -67,8 +67,12 @@ init.simulation <- function( package = "ewing",
   species <- unique( species )
   num <- numeric( length( species ))
   names( num ) <- species
+  
+  count <- rep_len(count, length(species))
+  names(count) <- species
+  
   for( i in species ) {
-    num[i] <- reuse <- count
+    num[i] <- reuse <- count[i]
     cat( paste( "Initialize ", i, " at size ", reuse, sep = "" ))
     if(interact & interactive()) {
       cat(" :")
@@ -76,7 +80,7 @@ init.simulation <- function( package = "ewing",
       if( r != "" & is.na( pmatch( substring( r, 1, 1 ), c("y","Y") )))
         reuse <- suppressWarnings(as.numeric( r ))
       if( is.na( reuse ))
-        reuse <- count
+        reuse <- count[i]
     }
     if( reuse ) {
       cat( "...\n" )
