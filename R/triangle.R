@@ -184,6 +184,7 @@ text_current <- function( x, species,
   text( tmp$x, tmp$y, pch, col = col, cex = cex )
 }
 ###########################################################################################
+#' @export
 sierpinski <- function( stage = 5, reset = TRUE )
 {
   if( reset )

@@ -32,6 +32,14 @@ See [vignettes/ewing.Rmd](https://github.com/byandell/ewing/blob/master/vignette
 > plot_current(simres, "host") # plot current (last) individuals over space
 ```
 
+To change the number of initial individuals, do something like:
+
+```
+> mysim <- init.simulation(count = c(200, 100))
+```
+
+will simulate 200 hosts and 100 parasites.
+
 Here are some commands to use `tidyverse` for newer plots:
 
 ```
