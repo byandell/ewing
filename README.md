@@ -38,7 +38,11 @@ To change the number of initial individuals, do something like:
 > mysim <- init.simulation(count = c(200, 100))
 ```
 
-will simulate 200 hosts and 100 parasites.
+will simulate 200 hosts and 100 parasites. You can also change the name of simulation file results from "sim.out" to something like "sim_200_100.out" to reflect the conditions of the simulation. Note that this file is written into the directory where you are using R.
+
+```
+> simres <- future.events(mysim, "mysim_200_100.out", plotit = FALSE)
+```
 
 Here are some commands to use `tidyverse` for newer plots:
 
