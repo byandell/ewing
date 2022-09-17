@@ -48,7 +48,7 @@ ui <- shiny::fluidPage(
     shiny::mainPanel(
       
       shiny::tagList(
-        # Output: Histogram ----
+        shiny::uiOutput("uifile"),
         shiny::plotOutput(outputId = "distPlot", height = "4in"),
         shiny::plotOutput(outputId = "hostPlot", height = "2in"),
         shiny::plotOutput(outputId = "parasitePlot", height = "2in")
@@ -87,17 +87,21 @@ server <- function(input, output) {
     ggplot_current(simres(), "host") + 
       ggplot2::ggtitle(paste("host", "on substrate"))
   })
-  output$hostPlot <- renderPlot({
+  output$hostPlot <- shiny::renderPlot({
     hostplot()
   })
-  parasiteplot <- reactive({
+  parasiteplot <- shiny::reactive({
     ggplot_current(simres(), "parasite") + 
       ggplot2::ggtitle(paste("parasite", "on substrate"))
   })
-  output$parasitePlot <- renderPlot({
+  output$parasitePlot <- shiny::renderPlot({
     parasiteplot()
   })
 
+  output$uifile <- shiny::renderUI({
+    simres()$count$file
+  })
+  
   output$downloadRun <- shiny::downloadHandler(
     filename = function() {
       file.path(req(input$outfile)) },
