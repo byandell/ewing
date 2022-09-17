@@ -30,6 +30,6 @@ data(redscale)
 \url{www.stat.wisc.edu/~yandell/ewing}
 }
 \seealso{
-\code{\link{init.species}}
+\code{\link{init.population}}
 }
 \keyword{datasets}

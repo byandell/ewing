@@ -16,7 +16,7 @@
 #'  \item{color}{plot color}
 #'  \item{stage}{life stage of organism}
 #' }
-#' @seealso \code{\link{init.species}}
+#' @seealso \code{\link{init.population}}
 #' @references \url{www.stat.wisc.edu/~yandell/ewing}
 #' @keywords datasets
 #' @examples

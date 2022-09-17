@@ -10,8 +10,6 @@ ggplot_ewing(x, ...)
 \item{x}{object of class \code{ewing} with population data by species}
 
 \item{...}{other plot parameters}
-
-\item{normalize}{normalize counts to 1 if TRUE}
 }
 \description{
 GGPlot of various aspects of simulation.

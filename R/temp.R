@@ -315,7 +315,7 @@ temp.design <- function( community, nspline = 8, n = 1, horizontal = TRUE,
   activeTemp( community )
 }
 ###########################################################################################
-rescale.temp <- function( low, high, newry = ry, newrx = knotrange,
+rescale.temp <- function( low, high, newry = ry, newrx = rx,
   ry = range( c( stats::predict( low, low$knots )$y, stats::predict( high, high$knots )$y )))
 {
   if( max( abs( ry - newry )) > 0 ) {
@@ -451,7 +451,7 @@ temp.plot <- function( community, lo.hour = s$knots[1], hi.hour = max( s$knots )
   plot( x / getTemp( community, "Unit" ), y, type = "l", xlab = "day",
     ylab = ylab, ... )
   if( printit )
-    print( cbind( hour, stats::predict( s, hour )$y ))
+    print( cbind( hi.hour, stats::predict( s, hi.hour )$y ))
   if( !is.null( col ))
     points( s$knots, coef(s)[,1], col = col )
   if( !derivative ) {

@@ -1,6 +1,7 @@
 *~
 .Rhistory
 *.out
+.DS_Store
 tags
 build
 CMakeFiles

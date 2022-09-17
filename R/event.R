@@ -174,7 +174,7 @@ host.ecto <- function( community, species, host, dead )
   update.mintime( community, host )
 }
 ###############################################################################
-host.endo <- function( community, species, host, harm )
+host.endo <- function( community, species, host, dead, harm )
 {
   ## endoparasites reduces capacity of host (assumed by half here)
   

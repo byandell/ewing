@@ -96,6 +96,10 @@ tridist <- function( tri )
   apply( tri, 1, max )
 ###########################################################################################
 #' @export
+#' @importFrom dplyr filter mutate
+#' @importFrom tibble tibble
+#' @importFrom ggplot2 aes facet_grid geom_text ggplot scale_color_manual xlab ylab
+#' @importFrom rlang .data
 ggplot_current <- function( community,
                           species,
                           headstuff = c( 0, "start", sum( to.plot )),
@@ -117,27 +121,30 @@ ggplot_current <- function( community,
   position = paste( "pos", letters[1:3], sep = "." )
   xy <- tri2car( organism[position,] )
   
-  dat <- tibble(xy) %>%
-    mutate(stage = organism["stage",],
-           substrate = substrates[organism["sub.stage",]],
-           pchar = as.character( future$pch[stage] ),
-           color = as.character( future$color[stage] )) %>%
-    filter(substrate %in% show_sub)
-  
+  dat <- dplyr::filter(
+    dplyr::mutate(
+      tibble::tibble(xy), 
+      stage = organism["stage",],
+      substrate = substrates[organism["sub.stage",]],
+      pchar = as.character( future$pch[.data$stage] ),
+      color = as.character( future$color[.data$stage] )),
+    .data$substrate %in% show_sub)
+      
   # This is klunky but might work
   col.palate <- unique(dat$color)
   names(col.palate) <- unique(dat$pchar)
   
-  ggplot(dat) +
-    aes(x, y, label = pchar, col = pchar) +
-    geom_text() +
-    facet_grid(. ~ substrate) +
-    xlab(xlab) +
-    ylab(ylab) +
-    scale_color_manual(name = "Stage", values = col.palate)
+  ggplot2::ggplot(dat) +
+    ggplot2::aes(.data$x, .data$y, label = .data$pchar, col = .data$pchar) +
+    ggplot2::geom_text() +
+    ggplot2::facet_grid(. ~ substrate) +
+    ggplot2::xlab(xlab) +
+    ggplot2::ylab(ylab) +
+    ggplot2::scale_color_manual(name = "Stage", values = col.palate)
 }
 ###########################################################################################
 #' @export
+#' @importFrom graphics lines mtext par text
 plot_current <- function( x,
                          species,
                          col = as.character( future$color[stage] ),
@@ -161,7 +168,7 @@ plot_current <- function( x,
   for( i in levels( future$color )) {
     u <- i == col
     if( any( u ))
-      text( tmp$x[u], tmp$y[u], pch[u], col = i, cex = cex )  
+      graphics::text( tmp$x[u], tmp$y[u], pch[u], col = i, cex = cex )  
   }
   usr <- graphics::par( "usr" )[1:2]
   usr <- c(usr[1],mean(usr),usr[2])
@@ -181,7 +188,7 @@ text_current <- function( x, species,
 {
   organism <- as.matrix( get.species( x, species ))[,-1]
   tmp <- tri2car( organism[position,] )
-  text( tmp$x, tmp$y, pch, col = col, cex = cex )
+  graphics::text( tmp$x, tmp$y, pch, col = col, cex = cex )
 }
 ###########################################################################################
 #' @export

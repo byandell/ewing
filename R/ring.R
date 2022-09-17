@@ -26,12 +26,17 @@ ring.add <- function( ring = data.frame( root = c( key = NA, left = 1 + nx, righ
 {
   nx <- length( x )
   n1 <- ring["left","root"]
-  ring[[ as.character( n1 + 1 ) ]] <- c( key = x[1],
-    left = suppressWarnings(as.numeric( ring["left","root"] ), right = 1 ))
+  ring[[ as.character( n1 + 1 ) ]] <- c(
+    key = x[1],
+    left = suppressWarnings(as.numeric( ring["left","root"] )),
+    right = 1 )
   
   if( nx > 1 ) for( i in seq( 2, nx ))
   {
-    ring[[ as.character( n1 + i ) ]] <- c( key = x[i], left = n1+i-1, right = 1 )
+    ring[[ as.character( n1 + i ) ]] <- c(
+      key = x[i],
+      left = n1+i-1,
+      right = 1 )
     ring[ "right", as.character( n1 + i - 1 ) ] <- n1+i
   }
   ring["left","root"] <- n1 + nx

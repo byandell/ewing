@@ -78,6 +78,7 @@
 #' }
 #' 
 #' @export future.events
+#' @importFrom ggplot2 ggtitle
 #'
 future.events <- function( community,
                           file,
@@ -186,7 +187,7 @@ future.events <- function( community,
           print(ggplot_ewing( community, substrate = substrate.plot, cex = cex ))
           for(j in species) {
             print(ggplot_current(community, j) + 
-                    ggtitle(paste(j, "on substrate at", istep, "steps")))
+                    ggplot2::ggtitle(paste(j, "on substrate at", istep, "steps")))
           }
         } else {
           plot( community, substrate = substrate.plot, cex = cex )
@@ -310,7 +311,7 @@ event.death <- function( community, species,
 #' of hosts. A crude sex determination strategy is in place, with smaller
 #' (younger) hosts more likely to get male parasite eggs.
 #' 
-#' The external file \code{community.out} is written with simulation counts
+#' The external \code{file} is written with simulation counts
 #' following each event that changes the number or stage of individuals.
 #' 
 #' The routine \code{future.events} builds the name of the event processor

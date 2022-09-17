@@ -47,7 +47,7 @@ hosts are crude. However, search is over substrates and depends on the stage
 of hosts. A crude sex determination strategy is in place, with smaller
 (younger) hosts more likely to get male parasite eggs.
 
-The external file \code{community.out} is written with simulation counts
+The external \code{file} is written with simulation counts
 following each event that changes the number or stage of individuals.
 
 The routine \code{future.events} builds the name of the event processor
