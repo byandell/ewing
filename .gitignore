@@ -2,6 +2,7 @@
 .Rhistory
 *.out
 .DS_Store
+rsconnect/
 tags
 build
 CMakeFiles
