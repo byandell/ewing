@@ -6,7 +6,7 @@
 \usage{
 future.events(
   community,
-  file,
+  file = NULL,
   nstep = 4000,
   species = get.species(community),
   refresh = nstep/20,
@@ -23,7 +23,7 @@ future.events(
 \arguments{
 \item{community}{object with population data by species}
 
-\item{file}{file name for simulation output}
+\item{file}{file name for simulation output (temporary if `NULL`)}
 
 \item{nstep}{number of steps to perform}
 

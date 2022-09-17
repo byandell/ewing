@@ -67,14 +67,15 @@ server <- function(input, output) {
   #    re-executed when inputs (input$bins) change
   # 2. Its output type is a plot
   siminit <- shiny::reactive({
-    shiny::req(input$host, input$parasite, input$steps, input$outfile)
+    shiny::req(input$host, input$parasite)
     mysim <- init.simulation(count = as.numeric(c(input$host, input$parasite))) # initialize simulation
   })
   simres <- shiny::reactive({
     # Ideally, would like to continue simulation. That would require
     # - feed simres() back into future.events, which requires some logic
     # - use option "append = TRUE" to append to outfile
-    future.events(siminit(), input$outfile, nstep = input$steps, plotit = FALSE) # simulate future events
+    shiny::req(input$steps)
+    future.events(siminit(), nstep = input$steps, plotit = FALSE) # simulate future events
   })
   distplot <- shiny::reactive({
     ggplot_ewing(simres(), total = input$total, normalize = input$norm)
@@ -101,7 +102,8 @@ server <- function(input, output) {
     filename = function() {
       file.path(req(input$outfile)) },
     content = function(file) {
-      write.csv(data, file)
+      out <- readCount(simres())
+      write.csv(out, file, row.names = FALSE)
     }
   )
   

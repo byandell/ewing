@@ -38,7 +38,7 @@
 #' \code{file} is written with simulation counts for re-plotting.
 #' 
 #' @param community object with population data by species
-#' @param file file name for simulation output
+#' @param file file name for simulation output (temporary if `NULL`)
 #' @param nstep number of steps to perform
 #' @param species list of species to simulate
 #' @param refresh plot refresh rate
@@ -81,7 +81,7 @@
 #' @importFrom ggplot2 ggtitle
 #'
 future.events <- function( community,
-                          file,
+                          file = NULL,
                           nstep = 4000,
                           species = get.species( community ),
 
@@ -93,8 +93,9 @@ future.events <- function( community,
   ## Integrity check of dataset, and initialization of tallies.
   if( missing( community ))
     stop( "Must specify a community." )
-  if( missing( file ))
-    stop( "Must specify a simulation file." )
+  if(is.null( file )) {
+    file <- file.path(tempfile())
+  }
 
   if( debugit ) cat( "initialization\n" )
   community <- initCount( community, species, file, append, debugit )
