@@ -38,9 +38,17 @@ ui <- shiny::fluidPage(
         shiny::checkboxInput("total",
                       "Include Total",
                       TRUE),
-        shiny::textInput("outfile", "Output File", "mysim.out"),
-        shiny::textInput("plotfile", "Plot File", "myplot.pdf"),
-        shiny::downloadButton("downloadPlot", "Plots")
+        shiny::fluidRow(
+          shiny::column(8,
+                        shiny::textInput("outfile", "Output File", "mysim.out")),
+          shiny::column(4,
+                        shiny::downloadButton("downloadRun", "Table"))),
+        shiny::fluidRow(
+          shiny::column(8,
+                        shiny::textInput("plotfile", "Plot File", "myplot.pdf")),
+          shiny::column(4,
+                        shiny::downloadButton("downloadPlot", "Plots"))),
+        shiny::uiOutput("uifile")
       )      
     ),
     
@@ -48,7 +56,6 @@ ui <- shiny::fluidPage(
     shiny::mainPanel(
       
       shiny::tagList(
-        shiny::uiOutput("uifile"),
         shiny::plotOutput(outputId = "distPlot", height = "4in"),
         shiny::plotOutput(outputId = "hostPlot", height = "2in"),
         shiny::plotOutput(outputId = "parasitePlot", height = "2in")
@@ -101,7 +108,8 @@ server <- function(input, output) {
   output$uifile <- shiny::renderUI({
     out <- "nada"
     if(shiny::isTruthy(simres())) {
-      out <- paste("Size of counts table:", dim(simres()$count$counts), collapse = " ")
+      out <- paste("Size of counts table:", 
+                   paste(dim(simres()$count$counts), collapse = " "))
     }
     out
   })
