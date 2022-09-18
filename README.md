@@ -11,45 +11,45 @@ This is an executable that will install some applications in c:\Rtools.
 You will also need pdflatex, which means you need a TeX distribution such as MikTeX or TeX Live.
 
 ```
-> library(devtools)
+library(devtools)
 
-> install_github("byandell/ewing")
+install_github("byandell/ewing")
 ```
 
 If you have `pandoc`, you can install with vignette:
 
 ```
-> install_github("byandell/ewing", build_vignettes = TRUE)
+install_github("byandell/ewing", build_vignettes = TRUE)
 ```
 
 See [vignettes/ewing.Rmd](https://github.com/byandell/ewing/blob/master/vignettes/ewing.Rmd) for example use of code. A simple example is below:
 
 ```
-> library(ewing) # attach package
-> mysim <- init.simulation() # initialize simulation
-> simres <- future.events(mysim, plotit = FALSE) # simulate future events
-> plot(simres) # plot populations by stage or substrate over time
-> plot_current(simres, "host") # plot current (last) individuals over space
+library(ewing) # attach package
+mysim <- init.simulation() # initialize simulation
+simres <- future.events(mysim, plotit = FALSE) # simulate future events
+plot(simres) # plot populations by stage or substrate over time
+plot_current(simres, "host") # plot current (last) individuals over space
 ```
 
 To change the number of initial individuals, do something like:
 
 ```
-> mysim <- init.simulation(count = c(200, 100))
+mysim <- init.simulation(count = c(200, 100))
 ```
 
 will simulate 200 hosts and 100 parasites. You can also change the name of simulation file results from "sim.out" to something like "sim_200_100.out" to reflect the conditions of the simulation. Note that this file is written into the directory where you are using R.
 
 ```
-> simres <- future.events(mysim, "mysim_200_100.out", plotit = FALSE)
+simres <- future.events(mysim, "mysim_200_100.out", plotit = FALSE)
 ```
 
 Here are some commands to use `tidyverse` for newer plots:
 
 ```
-> library(tidyverse)
-> ggplot_ewing(simres)
-> ggplot_current(simres, "host")
+library(tidyverse)
+ggplot_ewing(simres)
+ggplot_current(simres, "host")
 ``
 
 For more information, visit <http://www.stat.wisc.edu/~yandell/ewing>
@@ -96,12 +96,16 @@ It might be possible to store the updates as the simulation goes along in such a
 
 #### Global datafiles
 
-organism.features
+These datafiles are in the package directory [ewing/data](https://github.com/byandell/ewing/tree/master/data) and are hard-wired into the code through calls in [community.R](https://github.com/byandell/ewing/blob/master/R/community.R) file to internal function `mydata`.
+In the future, these will be adapted to user input.
+The file [redscale.txt](https://github.com/byandell/ewing/blob/master/data/redscale.txt) is an initial attempt to adapt to redscale-aphytis system. See <https://github.com/byandell/redscale> for more ideas on this system.
+
+[organism.features](https://github.com/byandell/ewing/blob/master/data/organism.features.txt)
 
 - columns: 	  units	offspring attack   birth  substrate	deplete subclass parasite	move
 - rows: host parasite substrate
 
-future.host
+[future.host](https://github.com/byandell/ewing/blob/master/data/future.host.txt)
 
 - columns:  current future fid time pch color ageclass event init
 - rows: 1-17
@@ -110,7 +114,12 @@ future.host
 - future values:
   + first.instar first.molt second.1-3 female male second.molt  death third.1-3 virgin       gravid gravid death death
 
-future.parasite
+[substrate.host](https://github.com/byandell/ewing/blob/master/data/substrate.host.txt)
+
+- columns: substrate side init find move fruit twig leaf
+- rows: fr1-4 twig lftop lfbot
+
+[future.parasite](https://github.com/byandell/ewing/blob/master/data/future.parasite.txt)
 
 - columns:     current   future fid time pch    color ageclass   event init
 - rows: 1-11
@@ -119,12 +128,22 @@ future.parasite
 - future values:
   + larvae   prepupae pupae    adult    feed     ovip     adult    adult    death    death death
 
-TemperaturePar
+[substrate.PARASITE](https://github.com/byandell/ewing/blob/master/data/substrate.parasite.txt)
+
+- columns: substrate side init find move fruit twig leaf
+- rows: fr1-4 twig lftop lfbot
+
+[host.parasite](https://github.com/byandell/ewing/blob/master/data/host.parasite.txt)
+
+- columns:  ovip feed offspring male
+- rows: crawler first.instar first.molt second.1-3 female male second.molt third.1-3 virgin gravid death starved
+
+[TemperaturePar](https://github.com/byandell/ewing/blob/master/data/TemperaturePar.txt)
 
 - columns: value description
 - rows: Unit Days Min LowBeg LowEnd HighBeg HighEnd Length
 
-TemperatureBase
+[TemperatureBase](https://github.com/byandell/ewing/blob/master/data/TemperatureBase.txt)
 
 - columns: Day	Time	Base
 - rows: 12 rows
