@@ -75,7 +75,7 @@ server <- function(input, output) {
     # - feed simres() back into future.events, which requires some logic
     # - use option "append = TRUE" to append to outfile
     shiny::req(input$steps)
-    future.events(siminit(), nstep = input$steps, plotit = FALSE) # simulate future events
+    ewing::future.events(siminit(), nstep = input$steps, plotit = FALSE) # simulate future events
   })
   distplot <- shiny::reactive({
     ewing::ggplot_ewing(simres(), total = input$total, normalize = input$norm)
