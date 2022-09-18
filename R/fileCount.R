@@ -85,6 +85,8 @@ writeCount <- function( community, species, time, future, countage, countsub)
 }
 ###########################################################################################
 #' @export
+#' @importFrom utils read.table
+#' 
 readCount <- function( community, species = unique(counts$species) )
 {
   file <- getCount( community,, "file" )
