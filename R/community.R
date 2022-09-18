@@ -125,7 +125,7 @@ setOrgMeanValue <- function( community, species, stage, mvalue )
 ###########################################################################################
 ### Simulation count object administration
 ###########################################################################################
-initCount <- function( community, species, file, append = FALSE, debugit = FALSE )
+initCount <- function( community, species, debugit = FALSE, file = NULL, append = FALSE, ... )
 {
   cat( "initial" )
   for( i in species)
@@ -197,18 +197,15 @@ initCount <- function( community, species, file, append = FALSE, debugit = FALSE
     }
   }
   count$debug <- debugit
+
+  # If file is NULL, then don't write to file; keep counts internal
   count$file <- file
-  if( !( file.exists( count$file ) & append ))
-    cat( "species step time future",
-        paste( "count", seq( max( unlist( lapply( count$countage, length )) +
-                                 unlist( lapply( count$countsub, length )))),
-              sep = "" ), "\n", file = count$file )
-  for( i in species ) {
-    cat( i, 0, get.species.element( community, i, c("time","stage"), count$base[i] ),
-        count$countage[[i]], count$countsub[[i]], "\n",
-        file = count$file, append = TRUE )
-  }
+  
   community$count <- count
+  
+  ## Put counts in file
+  community <- putCount( community, append )
+  
   ## tally events at start of simulation
   setEvents( community, "initial" )
 }

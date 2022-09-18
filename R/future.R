@@ -28,22 +28,22 @@
 #' realize future events in quantitative population ethology simulation
 #' 
 #' Steps through future events for community with one or more species. Keeps
-#' track of counts by age classes and substrates in external file.
+#' track of counts by age classes and substrates.
 #' 
 #' This is the main routine for Ewing's Quantitative Population Ethology. It
 #' steps through future events for individuals starting with the next minimum
 #' future event time.
 #' 
-#' A plot is created periodically unless \code{plotit=FALSE}.  An external
-#' \code{file} is written with simulation counts for re-plotting.
+#' A plot is created periodically unless \code{plotit=FALSE}.
+#' If argument `file` is set to a file name, an external
+#' file is written with simulation counts for re-plotting.
 #' 
 #' @param community object with population data by species
-#' @param file file name for simulation output (temporary if `NULL`)
+#' @param ... additional arguments passed to `initCount`
 #' @param nstep number of steps to perform
 #' @param species list of species to simulate
 #' @param refresh plot refresh rate
 #' @param cex character expansion
-#' @param append append simulation output to file
 #' @param plotit new plot at each refresh
 #' @param substrate.plot show plots of substrate use
 #' @param extinct stop when first specied becomes extinct
@@ -80,12 +80,11 @@
 #' @export future.events
 #' @importFrom ggplot2 ggtitle
 #'
-future.events <- function( community,
-                          file = NULL,
+future.events <- function( community, ...,
                           nstep = 4000,
                           species = get.species( community ),
 
-                          refresh = nstep / 20, cex = 0.5, append = FALSE,
+                          refresh = nstep / 20, cex = 0.5,
                           plotit = TRUE, substrate.plot = TRUE, extinct = TRUE,
                           timeit = TRUE, debugit = FALSE, ggplots = TRUE)
   
@@ -93,12 +92,9 @@ future.events <- function( community,
   ## Integrity check of dataset, and initialization of tallies.
   if( missing( community ))
     stop( "Must specify a community." )
-  if(is.null( file )) {
-    file <- file.path(tempfile())
-  }
 
   if( debugit ) cat( "initialization\n" )
-  community <- initCount( community, species, file, append, debugit )
+  community <- initCount( community, species, debugit, ... )
   if( timeit )
     community <- init.timing( community )
 
@@ -312,8 +308,9 @@ event.death <- function( community, species,
 #' of hosts. A crude sex determination strategy is in place, with smaller
 #' (younger) hosts more likely to get male parasite eggs.
 #' 
-#' The external \code{file} is written with simulation counts
-#' following each event that changes the number or stage of individuals.
+#' Simulation counts are stored internally unless the argument `file` is set
+#' to the name of an external file.
+#' Following each event, counts are recorded of changes to the number or stage of individuals.
 #' 
 #' The routine \code{future.events} builds the name of the event processor
 #' function based on event type, which is established in the \code{future.host}
@@ -325,8 +322,7 @@ event.death <- function( community, species,
 #' User-supplied \code{event.blah} functions can be specified in user-supplied
 #' libraries. Note that user code needs to comply with the arguments and
 #' values, and needs to process future events for individuals as they progress
-#' through life. Further, user routines need to properly update counts to the
-#' external file. This is at present an advanced topic, but can be figured out
+#' through life. This is at present an advanced topic, but can be figured out
 #' by examining the above routines.
 #' 
 #' @aliases event.future event.birth event.death event.attack

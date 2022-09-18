@@ -39,11 +39,11 @@ mysim <- init.simulation(interact = FALSE)
 ```
 
 ```{r}
-simres <- future.events(mysim, "mysim.out", refresh = 1000, plotit = TRUE)
+simres <- future.events(mysim, refresh = 1000, plotit = TRUE)
 ```
 
 ```{r}
-simres <- future.events(mysim, "mysim.out", plotit = FALSE)
+simres <- future.events(mysim, plotit = FALSE)
 ```
 
 ```{r}

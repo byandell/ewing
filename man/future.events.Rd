@@ -6,12 +6,11 @@
 \usage{
 future.events(
   community,
-  file = NULL,
+  ...,
   nstep = 4000,
   species = get.species(community),
   refresh = nstep/20,
   cex = 0.5,
-  append = FALSE,
   plotit = TRUE,
   substrate.plot = TRUE,
   extinct = TRUE,
@@ -23,7 +22,7 @@ future.events(
 \arguments{
 \item{community}{object with population data by species}
 
-\item{file}{file name for simulation output (temporary if `NULL`)}
+\item{...}{additional arguments passed to `initCount`}
 
 \item{nstep}{number of steps to perform}
 
@@ -32,8 +31,6 @@ future.events(
 \item{refresh}{plot refresh rate}
 
 \item{cex}{character expansion}
-
-\item{append}{append simulation output to file}
 
 \item{plotit}{new plot at each refresh}
 
@@ -55,15 +52,16 @@ counts} \item{cpu}{CPU use summary}
 }
 \description{
 Steps through future events for community with one or more species. Keeps
-track of counts by age classes and substrates in external file.
+track of counts by age classes and substrates.
 }
 \details{
 This is the main routine for Ewing's Quantitative Population Ethology. It
 steps through future events for individuals starting with the next minimum
 future event time.
 
-A plot is created periodically unless \code{plotit=FALSE}.  An external
-\code{file} is written with simulation counts for re-plotting.
+A plot is created periodically unless \code{plotit=FALSE}.
+If argument `file` is set to a file name, an external
+file is written with simulation counts for re-plotting.
 }
 \examples{
 

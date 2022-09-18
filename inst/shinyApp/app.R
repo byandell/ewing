@@ -1,4 +1,4 @@
-devtools::install_github("byandell/ewing")
+#devtools::install_github("byandell/ewing")
 
 # Define UI for app that draws a histogram ----
 ui <- shiny::fluidPage(

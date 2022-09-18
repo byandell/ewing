@@ -68,7 +68,6 @@ updateCount <- function( community, species, individual, is.death = FALSE, step 
                         list( countage = countage, countsub = countsub ))
   writeCount( community, species, individual["time"], individual["future"],
                countage, countsub )
-  community
 }
 ###########################################################################################
 updateCounts <- function( community, species, newbirths )
@@ -93,8 +92,7 @@ updateCounts <- function( community, species, newbirths )
   }
   community <- setCount( community, species,
                         list( countage = countage, countsub = countsub ))
-    writeCount( community, species, individual["time"], 1, countage, countsub )
-  community
+  writeCount( community, species, individual["time"], 1, countage, countsub )
 }
 ###########################################################################################
 put.base <- function( community, species, id,
@@ -108,26 +106,3 @@ put.base <- function( community, species, id,
                          get.species.element( community, species, "time", base )))
   setCount( community, species, list( base = base, free = free, mintime = mintime ))
 }
-###########################################################################################
-writeCount <- function( community, species, time, future, countage, countsub )
-{
-  file <- getCount( community,, "file" )
-  nstep <- getCount( community,, "step" )
-  cat( species, nstep, time, future, countage, countsub, "\n", file = file, append = TRUE )
-}
-###########################################################################################
-readCount <- function( community, species = unique(counts$species))
-{
-  file <- getCount( community,, "file" )
-  counts <- utils::read.table( file, header = TRUE, fill = TRUE )
-  count <- list()
-  for( i in species ) {
-    colnames <- c( levels( getOrgFuture( community, i, "ageclass" )),
-                  levels( getOrgInteract( community,, i, "substrate" )))
-    count[[i]] <- as.matrix( counts[ counts$species == i, seq( 2, 4 + length( colnames )) ] )
-    dimnames( count[[i]] ) <- list( count[[i]][,"step"],
-                                    c( "step", "time", "future", colnames ))
-  }
-  count
-}
-
