@@ -114,12 +114,15 @@ server <- function(input, output) {
     out
   })
   
+  data <- reactive({
+    out <- ewing::readCount(simres())
+    out
+  })
   output$downloadRun <- shiny::downloadHandler(
     filename = function() {
       file.path(req(input$outfile)) },
     content = function(file) {
-      out <- ewing::readCount(simres())
-      write.csv(out, file, row.names = FALSE)
+      vroom::vroom_write(data(), file)
     }
   )
   
