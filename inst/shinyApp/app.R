@@ -39,14 +39,16 @@ ui <- shiny::fluidPage(
                       "Include Total",
                       TRUE),
         shiny::fluidRow(
-          shiny::column(8,
-                        shiny::textInput("outfile", "Output File", "mysim.out")),
-          shiny::column(4,
+          shiny::column(6,
+                        shiny::textInput("outfile", "Species Table", "mysim.csv")),
+          shiny::column(3,
+                        shiny::selectInput("species", "", c("host", "parasite"), "host")),
+          shiny::column(3,
                         shiny::downloadButton("downloadRun", "Table"))),
         shiny::fluidRow(
-          shiny::column(8,
+          shiny::column(9,
                         shiny::textInput("plotfile", "Plot File", "myplot.pdf")),
-          shiny::column(4,
+          shiny::column(3,
                         shiny::downloadButton("downloadPlot", "Plots"))),
         shiny::uiOutput("uifile")
       )      
@@ -115,14 +117,13 @@ server <- function(input, output) {
   })
   
   data <- reactive({
-    out <- ewing::readCount(simres())
-    out
+    ewing::readCount(simres())[[shiny::req(input$species)]]
   })
   output$downloadRun <- shiny::downloadHandler(
     filename = function() {
-      file.path(req(input$outfile)) },
+      paste(req(input$species), req(input$outfile), sep = ".") },
     content = function(file) {
-      vroom::vroom_write(data(), file)
+      write.csv(data(), file, row.names = FALSE)
     }
   )
   
