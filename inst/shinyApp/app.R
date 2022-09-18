@@ -99,7 +99,7 @@ server <- function(input, output) {
   })
 
   output$uifile <- shiny::renderUI({
-    simres()$count$file
+    paste("Size of counts table:", dim(simres()$count$counts), collapse = " ")
   })
   
   output$downloadRun <- shiny::downloadHandler(
