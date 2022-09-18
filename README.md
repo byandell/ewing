@@ -1,5 +1,8 @@
 Ewing's Quantitative Population Ethology
 
+Before installing the package, you may want to examine the interactive Shiny app
+<https://data-viz.it.wisc.edu/ewing/>, which provides web access to this package.
+
 To install, first do
 
 ```
