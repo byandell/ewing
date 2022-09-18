@@ -50,7 +50,8 @@ ui <- shiny::fluidPage(
                         shiny::textInput("plotfile", "Plot File", "myplot.pdf")),
           shiny::column(3,
                         shiny::downloadButton("downloadPlot", "Plots"))),
-        shiny::uiOutput("uifile")
+        shiny::uiOutput("uifile"),
+        shiny::HTML("See <a href='https://github.com/byandell/ewing'>ewing package on github</a>")
       )      
     ),
     
