@@ -3,7 +3,7 @@ Ewing's Quantitative Population Ethology
 To install, first do
 
 ```
-> install.packages("devtools")
+install.packages("devtools")
 ```
 
 If on Windows, you will then need to install Rtools from <http://cran.r-project.org/bin/windows/Rtools>.
