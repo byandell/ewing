@@ -27,7 +27,7 @@ See [vignettes/ewing.Rmd](https://github.com/byandell/ewing/blob/master/vignette
 ```
 > library(ewing) # attach package
 > mysim <- init.simulation() # initialize simulation
-> simres <- future.events(mysim, "mysim.out", plotit = FALSE) # simulate future events
+> simres <- future.events(mysim, plotit = FALSE) # simulate future events
 > plot(simres) # plot populations by stage or substrate over time
 > plot_current(simres, "host") # plot current (last) individuals over space
 ```
