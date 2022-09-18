@@ -18,19 +18,19 @@ ui <- shiny::fluidPage(
                     label = "Number of hosts:",
                     min = 100,
                     max = 500,
-                    value = 200,
+                    value = 100,
                     step = 20),
         shiny::sliderInput(inputId = "parasite",
                     label = "Number of parasites:",
                     min = 100,
                     max = 500,
-                    value = 200,
+                    value = 100,
                     step = 20),
         shiny::sliderInput(inputId = "steps",
                     label = "Simulation steps:",
                     min = 1000,
                     max = 10000,
-                    value = 4000,
+                    value = 1000,
                     step = 500),
         shiny::checkboxInput("norm",
                       "Normalize Plot",
@@ -68,7 +68,7 @@ server <- function(input, output) {
   # 2. Its output type is a plot
   siminit <- shiny::reactive({
     shiny::req(input$host, input$parasite)
-    mysim <- init.simulation(count = as.numeric(c(input$host, input$parasite))) # initialize simulation
+    mysim <- ewing::init.simulation(count = as.numeric(c(input$host, input$parasite))) # initialize simulation
   })
   simres <- shiny::reactive({
     # Ideally, would like to continue simulation. That would require
@@ -78,20 +78,20 @@ server <- function(input, output) {
     future.events(siminit(), nstep = input$steps, plotit = FALSE) # simulate future events
   })
   distplot <- shiny::reactive({
-    ggplot_ewing(simres(), total = input$total, normalize = input$norm)
+    ewing::ggplot_ewing(simres(), total = input$total, normalize = input$norm)
   })
   output$distPlot <- shiny::renderPlot({
     distplot()
   })
   hostplot <- shiny::reactive({
-    ggplot_current(simres(), "host") + 
+    ewing::ggplot_current(simres(), "host") + 
       ggplot2::ggtitle(paste("host", "on substrate"))
   })
   output$hostPlot <- shiny::renderPlot({
     hostplot()
   })
   parasiteplot <- shiny::reactive({
-    ggplot_current(simres(), "parasite") + 
+    ewing::ggplot_current(simres(), "parasite") + 
       ggplot2::ggtitle(paste("parasite", "on substrate"))
   })
   output$parasitePlot <- shiny::renderPlot({
@@ -99,14 +99,18 @@ server <- function(input, output) {
   })
 
   output$uifile <- shiny::renderUI({
-    paste("Size of counts table:", dim(simres()$count$counts), collapse = " ")
+    out <- "nada"
+    if(shiny::isTruthy(simres())) {
+      out <- paste("Size of counts table:", dim(simres()$count$counts), collapse = " ")
+    }
+    out
   })
   
   output$downloadRun <- shiny::downloadHandler(
     filename = function() {
       file.path(req(input$outfile)) },
     content = function(file) {
-      out <- readCount(simres())
+      out <- ewing::readCount(simres())
       write.csv(out, file, row.names = FALSE)
     }
   )
