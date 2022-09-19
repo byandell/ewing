@@ -53,7 +53,7 @@ Here are some commands to use `tidyverse` for newer plots:
 library(tidyverse)
 ggplot_ewing(simres)
 ggplot_current(simres, "host")
-``
+```
 
 For more information, visit <http://www.stat.wisc.edu/~yandell/ewing>
 
