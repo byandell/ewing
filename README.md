@@ -3,6 +3,11 @@ Ewing's Quantitative Population Ethology
 Before installing the package, you may want to examine the interactive Shiny app
 <https://data-viz.it.wisc.edu/ewing/>, which provides web access to this package.
 
+Right now, any time you change one of the values on the Shiny app, say number or hosts or parasites, or number of simulation steps, it will redo the simulation. This is potentially annoying if you want to change several things. Also, if you _don't_ want to change anything but instead redo a simulation with the same settings, you can’t, except by restarting or changing something and changing it back. That will improve when I figure out how to add a SUBMIT button. I get the general idea how to do create it using [bindEvent](https://shiny.rstudio.com/reference/shiny/1.6.0/bindEvent.html), but the exact details with shiny are somewhat obscure. 
+
+
+# Install and Run Package
+
 To install, first do
 
 ```
