@@ -1,4 +1,4 @@
-devtools::install_github("byandell/ewing")
+#devtools::install_github("byandell/ewing")
 
 # Define UI for app that draws a histogram ----
 ui <- shiny::fluidPage(
@@ -13,16 +13,15 @@ ui <- shiny::fluidPage(
     shiny::sidebarPanel(
       
       shiny::tagList(
-        # Input: Slider for the number of bins ----
         shiny::sliderInput(inputId = "host",
                     label = "Number of hosts:",
-                    min = 100,
+                    min = 0,
                     max = 500,
                     value = 100,
                     step = 20),
         shiny::sliderInput(inputId = "parasite",
                     label = "Number of parasites:",
-                    min = 100,
+                    min = 0,
                     max = 500,
                     value = 100,
                     step = 20),
@@ -78,7 +77,7 @@ server <- function(input, output) {
   # 2. Its output type is a plot
   siminit <- shiny::reactive({
     shiny::req(input$host, input$parasite)
-    mysim <- ewing::init.simulation(count = as.numeric(c(input$host, input$parasite))) # initialize simulation
+    ewing::init.simulation(count = as.numeric(c(input$host, input$parasite))) # initialize simulation
   })
   simres <- shiny::reactive({
     # Ideally, would like to continue simulation. That would require

@@ -100,7 +100,9 @@ It might be possible to store the updates as the simulation goes along in such a
 #### Global datafiles
 
 These datafiles are in the package directory [ewing/data](https://github.com/byandell/ewing/tree/master/data) and are hard-wired into the code through calls in [community.R](https://github.com/byandell/ewing/blob/master/R/community.R) file to internal function `mydata`.
-In the future, these will be adapted to user input.
+If the objects already exist, say by user supplying them, then the provided versions will be used.
+However, this is tricky, as one cannot at present provide user versions to the shiny app. In the future, these will be adapted more robustly to user input.
+
 The file [redscale.txt](https://github.com/byandell/ewing/blob/master/data/redscale.txt) is an initial attempt to adapt to redscale-aphytis system. See <https://github.com/byandell/redscale> for more ideas on this system.
 
 [organism.features](https://github.com/byandell/ewing/blob/master/data/organism.features.txt)
