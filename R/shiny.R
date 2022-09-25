@@ -78,6 +78,7 @@ ewingUI <- function() {
 #' @importFrom shiny isTruthy reactive req
 #'                   renderPlot renderUI
 #'                   downloadHandler
+#' @importFrom utils write.csv
 #'                   
 ewingServer <- function(input, output) {
   
@@ -130,7 +131,7 @@ ewingServer <- function(input, output) {
     filename = function() {
       paste(shiny::req(input$species), shiny::req(input$outfile), sep = ".") },
     content = function(file) {
-      write.csv(data(), file, row.names = FALSE)
+      utils::write.csv(data(), file, row.names = FALSE)
     }
   )
   

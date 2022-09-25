@@ -45,6 +45,7 @@ pkg
 ..Rcheck/
 *.pdf
 *.tex
+*.html
 .Rproj.user
 *.Rproj
 old/

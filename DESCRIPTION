@@ -1,18 +1,17 @@
 Package: ewing
-Version: 1.3-6
+Version: 1.3-7
 Date: 2022/09/25
 Author: Brian S. Yandell <yandell@stat.wisc.edu>
 Maintainer: Brian S. Yandell <yandell@stat.wisc.edu>
 Title: Ewing's Quantitative Population Ethology
 Description: QPE event-driven individual-based simulation modeling system.
 Imports: splines, graphics, stats, utils,
-    tidyr, dplyr, ggplot2, tibble, rlang, purrr, GET
+    tidyr, dplyr, ggplot2, tibble, rlang, purrr, GET, shiny
 License: GPL-3
 URL: http://www.stat.wisc.edu/~yandell/ewing
 RoxygenNote: 7.2.1
 Encoding: UTF-8
 Suggests: 
     knitr,
-    rmarkdown,
-    shiny
+    rmarkdown
 VignetteBuilder: knitr

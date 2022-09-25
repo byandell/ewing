@@ -39,7 +39,7 @@ ewing_envelope <- function(msim, species, item) {
         tidyr::pivot_wider(
           dplyr::bind_rows(
             purrr::map(
-              out,
+              msim,
               function(x) {
                 dplyr::distinct(
                   as.data.frame(x[[species]][,c("step", item)]),
@@ -54,16 +54,24 @@ ewing_envelope <- function(msim, species, item) {
   crset <- GET::create_curve_set(list(r = as.matrix(pulled)[,1], 
                                       obs = as.matrix(pulled[,-1])))
   class(crset) <- c("ewing_envelope", class(crset))
+  attr(crset, "species") <- species
   attr(crset, "item") <- item
   crset
 }
 
 #' @export
+#' @importFrom ggplot2 ggtitle labs
+#' @importFrom GET forder
+#' 
 ggplot_ewing_envelope <- function(crset, cols = c("#21908CFF", "#440154FF", "#5DC863FF"), ...) {
-  A <- forder(crset, measure = 'area')
+  A <- GET::forder(crset, measure = 'area')
 
+  item <- attr(crset, "item")
+  species <- attr(crset, "species")
+  
   plot(crset, idx = order(A)[seq_along(cols)], col_idx = cols) + 
-    labs(x = "Step", y = attr(crset, "item"))
+    ggplot2::labs(x = "Step", y = item) +
+    ggplot2::ggtitle(paste(species, item))
 }
 #' GGplot of Ewing Envelope
 #' 
