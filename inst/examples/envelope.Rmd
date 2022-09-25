@@ -83,12 +83,12 @@ p1 <- ggplot_ewing_envelope(env)
 ```
 
 ```{r}
-env <- ewing_envelope(out, "host", "gravid")
+env <- ewing_envelope(out, "host", "host")
 p2 <- ggplot_ewing_envelope(env)
 ```
 
 ```{r}
-env <- ewing_envelope(out, "host", "host")
+env <- ewing_envelope(out, "host", "gravid")
 p3 <- ggplot_ewing_envelope(env)
 ```
 

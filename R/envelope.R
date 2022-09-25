@@ -10,6 +10,8 @@
 #' https://rss.onlinelibrary.wiley.com/doi/10.1111/j.1467-9876.2009.00701.x
 #' https://stat.ethz.ch/R-manual/R-devel/library/boot/html/envelope.html
 #' 
+#' @param nsim number of simulations to run
+#' 
 #' @export
 #' @importFrom purrr map
 #' 
@@ -24,6 +26,14 @@ envelope_sim <- function(nsim)
   })
 }
 
+#' Create Envelope of Ewing Simulations
+#' 
+#' Create envelope object for plotting from multiple runs of Ewing simulation.
+#' 
+#' @param msim multiple simulation object from `envelope_sim`
+#' @param species name of species in `msim` to build envelope
+#' @param item name of item in `species` to build envelope
+#' 
 #' @export
 #' @importFrom tidyr fill pivot_wider
 #' @importFrom dplyr arrange bind_rows distinct
@@ -59,6 +69,12 @@ ewing_envelope <- function(msim, species, item) {
   crset
 }
 
+#' GGplot of Ewing envelope
+#' 
+#' @param crset object of class `ewing_envelope`
+#' @param cols colors for top simulations
+#' @param ... additional parameters
+#' 
 #' @export
 #' @importFrom ggplot2 ggtitle labs
 #' @importFrom GET forder
