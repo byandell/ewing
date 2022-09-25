@@ -9,7 +9,9 @@ init.simulation(
   species = getOrgFeature(community)[1:2],
   hosts = getOrgHosts(community, species),
   count = 200,
-  interact = FALSE
+  interact = FALSE,
+  messages = TRUE,
+  ...
 )
 }
 \arguments{
@@ -22,6 +24,10 @@ init.simulation(
 \item{count}{number of individuals per species (single number or count in order of `species`)}
 
 \item{interact}{ask for species count if `TRUE` and interactive}
+
+\item{messages}{show messages if `TRUE` (default)}
+
+\item{...}{additional arguments for `init.population`}
 }
 \value{
 Object with elements for each species that are created by init.population.

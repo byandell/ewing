@@ -3,6 +3,7 @@
 *.out
 .DS_Store
 rsconnect/
+*files/
 tags
 build
 CMakeFiles

@@ -86,7 +86,8 @@ future.events <- function( community, ...,
 
                           refresh = nstep / 20, cex = 0.5,
                           plotit = TRUE, substrate.plot = TRUE, extinct = TRUE,
-                          timeit = TRUE, debugit = FALSE, ggplots = TRUE)
+                          timeit = TRUE, debugit = FALSE, ggplots = TRUE,
+                          messages = TRUE )
   
 {
   ## Integrity check of dataset, and initialization of tallies.
@@ -94,7 +95,7 @@ future.events <- function( community, ...,
     stop( "Must specify a community." )
 
   if( debugit ) cat( "initialization\n" )
-  community <- initCount( community, species, debugit, ... )
+  community <- initCount( community, species, debugit, messages = messages, ... )
   if( timeit )
     community <- init.timing( community )
 
@@ -109,7 +110,7 @@ future.events <- function( community, ...,
     mintime <- getCount( community, , "mintime" )
     if( debugit ) print( mintime )
     if( min( mintime ) < min( omintime )) {
-      cat( "time reversal!\n" )
+      cat( "time reversal!\n" ) # should not happen
       browser()
     }
     tmp <- mintime == Inf
@@ -190,10 +191,12 @@ future.events <- function( community, ...,
           plot( community, substrate = substrate.plot, cex = cex )
         }
       }
-      cat( "refresh", istep )
-      for( j in get.species( community ))
-        cat( ":", j, sum( getCount( community, j, "countage" ), na.rm = TRUE ))
-      cat( "\n" )
+      if(messages) {
+        cat( "refresh", istep )
+        for( j in get.species( community ))
+          cat( ":", j, sum( getCount( community, j, "countage" ), na.rm = TRUE ))
+        cat( "\n" )
+      }
       community <- set.timing( community, "refresh", 1 )
     }
     ## periodic browser if in debug mode

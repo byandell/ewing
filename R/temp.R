@@ -544,7 +544,7 @@ showTemp <- function( community )
 activeTemp <- function( community,
                        lo.hour = min( getTemp( community, "DegreeDay", "knots" ) ),
                        hi.hour = max( getTemp( community, "DegreeDay", "knots" ) ),
-                       degreeday )
+                       degreeday, messages = TRUE )
 {
   unit <- getTemp( community, "Unit" )
   if( missing( hi.hour )) {
@@ -569,9 +569,11 @@ activeTemp <- function( community,
   community <- setTemp( community, "Hour",
                        break.backSpline( getTemp( community, "DegreeDay" )))
 
-  tmp <- period * unit
-  names( tmp ) <- c("lo.hour","hi.hour")
-  print( tmp )
+  if(messages) {
+    tmp <- period * unit
+    names( tmp ) <- c("lo.hour","hi.hour")
+    print( tmp )
+  }
   community
 }
 ###########################################################################################
@@ -694,7 +696,7 @@ checkTime <- function( community, x, base, units )
 #    print( c( base = base, x = x, knots = range( getTemp( community, "DegreeDay", "knots" ))))
     if( x > max( getTemp( community, "DegreeDay", "knots" )))
       community <- activeTemp( community, max( base, 0 ),
-                              x + getTemp( community, "Unit" ) )
+                              x + getTemp( community, "Unit" ), messages = FALSE )
   }
   community
 }

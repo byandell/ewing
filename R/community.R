@@ -51,20 +51,20 @@ get.base <- function( community, species )
 ##########################################################################################
 ### simulation organism administration
 ##########################################################################################
-initOrgInfo <- function( package )
+initOrgInfo <- function( package, messages = TRUE )
 {
   community <- list( pop = list( ))
   community$org <- list( )
   community$org$package <- package
   ## Get data
-  mydata( "organism.features", package )
+  mydata( "organism.features", package, messages = messages )
   community$org$Feature <- organism.features
-  rm( list = "organism.features", pos = ".GlobalEnv" )
+
   community$pop <- list()
   community
 }
 ##########################################################################################
-setOrgInfo <- function( community, species, hosts, package )
+setOrgInfo <- function( community, species, hosts, package, messages = TRUE )
 {
   Organism <- community$org
 
@@ -82,9 +82,9 @@ setOrgInfo <- function( community, species, hosts, package )
 
   for( i in species ) {
     tmp <- paste( "future", i, sep = "." )
-    mydata( tmp, getOrgInfo( community, "package" ))
+    mydata( tmp, getOrgInfo( community, "package" ), messages = messages)
     future <- my.eval( tmp )
-    rm( list = tmp, pos = ".GlobalEnv" )
+
     level.ageclass <- unique( future$ageclass )
     level.ageclass <- as.character( level.ageclass[ !is.na( level.ageclass ) ] )
     future$ageclass <- ordered( future$ageclass, level.ageclass )
@@ -92,9 +92,8 @@ setOrgInfo <- function( community, species, hosts, package )
     for( j in hosts )
       if( i != j ) {
         tmp <- paste( j, i, sep = "." )
-        mydata( tmp, getOrgInfo( community, "package" ))
+        mydata( tmp, getOrgInfo( community, "package" ), messages = messages)
         Organism$Interact[[j]][[i]] <- my.eval( tmp )
-        rm( list = tmp, pos = ".GlobalEnv" )
       }
     if( is.null( Organism$MeanValue[[i]] ))
       Organism$MeanValue[[i]] <- list( )
@@ -103,9 +102,8 @@ setOrgInfo <- function( community, species, hosts, package )
   }
   for( i in unique( getOrgFeature( community, species, "substrate" ))) {
     substrate <- paste( i, i, sep = "." )
-    mydata( substrate, getOrgInfo( community, "package" ))
+    mydata( substrate, getOrgInfo( community, "package" ), messages = messages)
     Organism$Interact[[i]][[i]] <- my.eval( substrate )
-    rm( list = substrate, pos = ".GlobalEnv" )
   }
   community$org <- Organism
   community
@@ -125,13 +123,16 @@ setOrgMeanValue <- function( community, species, stage, mvalue )
 ###########################################################################################
 ### Simulation count object administration
 ###########################################################################################
-initCount <- function( community, species, debugit = FALSE, file = NULL, append = FALSE, ... )
+initCount <- function( community, species, debugit = FALSE, file = NULL, append = FALSE,
+                       messages = TRUE, ... )
 {
-  cat( "initial" )
-  for( i in species)
-    cat( ":", i, sum( apply( get.species( community, i ), 2,
-                            function(x) !all(x[c("dist","left","right","up")]==1))) - 1 )
-  cat( "\n" )
+  if(messages) {
+    cat( "initial" )
+    for( i in species)
+      cat( ":", i, sum( apply( get.species( community, i ), 2,
+                              function(x) !all(x[c("dist","left","right","up")]==1))) - 1 )
+    cat( "\n" )
+  }
 
   count <- list()
   ## leftist tree counters
@@ -156,7 +157,7 @@ initCount <- function( community, species, debugit = FALSE, file = NULL, append 
       simmin[units]<- tmp
   }
   if( max( simmin ) < Inf ) {
-    community <- activeTemp( community, simmin["hr"], , simmin["DD"] )
+    community <- activeTemp( community, simmin["hr"], , simmin["DD"], messages = messages )
   }
   esums <- c("initial","during","final")
   tmpfn <- function( counter )
@@ -266,22 +267,24 @@ setEvents <- function( community, period )
 ### simulation temperature administration
 ##########################################################################################
 initTemp <- function( community, lo.hour = 0, hi.hour = getTemp( community, "Unit" ),
-                     days = TemperaturePar["Days"] )
+                     days = TemperaturePar["Days"], 
+                     messages = TRUE )
 {
-  cat( "Initializing Temperature Profile ...\n" )
+  if(messages) {
+    cat( "Initializing Temperature Profile ...\n" )
+  }
   Temperature <- list()
   
-  mydata( "TemperaturePar", getOrgInfo( community, "package" ))
+  mydata( "TemperaturePar", getOrgInfo( community, "package" ), messages = messages)
   TemperaturePar <- array( TemperaturePar[,"value"],
                           dimnames = list( row.names( TemperaturePar )))
   Temperature$Unit <- TemperaturePar["Unit"]
   Temperature$Min <- TemperaturePar["Min"]
 
   ## set up daily temperature base
-  mydata( "TemperatureBase", getOrgInfo( community, "package" ))
+  mydata( "TemperatureBase", getOrgInfo( community, "package" ), messages = messages)
   Temperature$Time <- split( TemperatureBase$Time, TemperatureBase$Day )
   Temperature$Base <- split( TemperatureBase$Base, TemperatureBase$Day )
-  remove( TemperatureBase, pos = 1 )
 
   community$temp <- Temperature
     
@@ -296,11 +299,12 @@ initTemp <- function( community, lo.hour = 0, hi.hour = getTemp( community, "Uni
   Temperature$High <- splines::interpSpline( tmp, TemperaturePar["HighBeg"] * ( 1 - tmp0 ) +
                                    TemperaturePar["HighEnd"] * tmp0 +
                                    sin( pi * ( 0.125 + 4 * tmp0 )) * tmp1 )
-  remove( TemperaturePar, pos = 1 )
 
   Temperature$DegreeDay <- NULL
 
-  cat( "Base daily temperature fluctuation:\n" )
+  if(messages) {
+    cat( "Base daily temperature fluctuation:\n" )
+  }
   for( i in names( Temperature$time )) {
     cat( "From day", i, ":\n" )
     tmp <- Temperature$Base[[i]]
@@ -309,9 +313,12 @@ initTemp <- function( community, lo.hour = 0, hi.hour = getTemp( community, "Uni
   }
   community$temp <- Temperature
   
-  showTemp( community )
-  cat( "Initial active temperature:\n" )
-  activeTemp( community, lo.hour, hi.hour, getTemp( community, "Time", 1 )[1] )
+  if(messages) {
+    showTemp( community )
+    cat( "Initial active temperature:\n" )
+  }
+  activeTemp( community, lo.hour, hi.hour, getTemp( community, "Time", 1 )[1],
+              messages = messages)
 }
 ###########################################################################################
 getTemp <- function( community, element, sub )

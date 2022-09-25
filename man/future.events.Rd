@@ -16,7 +16,8 @@ future.events(
   extinct = TRUE,
   timeit = TRUE,
   debugit = FALSE,
-  ggplots = TRUE
+  ggplots = TRUE,
+  messages = TRUE
 )
 }
 \arguments{

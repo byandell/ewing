@@ -15,7 +15,9 @@ init.population(
   position = rtri(n, width),
   colnames = c(leftistnames, paramnames, posnames, eventnames),
   init.stage = istage,
-  init.weight = getOrgFuture(community, species, "init")
+  init.weight = getOrgFuture(community, species, "init"),
+  messages = TRUE,
+  ...
 )
 }
 \arguments{
@@ -44,6 +46,8 @@ randomly)}
 
 \item{init.weight}{initial weights for life stages (default taken for
 organism features)}
+
+\item{...}{not used}
 }
 \value{
 \item{comp1 }{Description of `comp1'} \item{comp2 }{Description of

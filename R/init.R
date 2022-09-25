@@ -36,6 +36,9 @@
 #' @param hosts list of hosts among species
 #' @param count number of individuals per species (single number or count in order of `species`)
 #' @param interact ask for species count if `TRUE` and interactive
+#' @param messages show messages if `TRUE` (default)
+#' @param ... additional arguments for `init.population`
+#' 
 #' @return Object with elements for each species that are created by init.population.
 #' 
 #' @author Brian S. Yandell
@@ -54,16 +57,23 @@ init.simulation <- function( package = "ewing",
                             species = getOrgFeature( community )[1:2],
                             hosts = getOrgHosts( community, species ),
                             count = 200,
-                            interact = FALSE)
+                            interact = FALSE,
+                            messages = TRUE,
+                            ...)
 {
-  community <- initOrgInfo( package )
-  community <- initTemp( community )
+  community <- initOrgInfo( package, messages = messages )
+  community <- initTemp( community, messages = messages )
   
-  cat( "Creating simulation organism set using species:\n",
-    paste( species, collapse = ", " ), "\n\n" )
-  community <- setOrgInfo( community, species, hosts, package )
-  cat( "\n" )
-
+  if(messages) {
+    cat( "Creating simulation organism set using species:\n",
+         paste( species, collapse = ", " ), "\n\n" )
+  }
+  
+  community <- setOrgInfo( community, species, hosts, package, messages = messages )
+  
+  if(messages) {
+    cat( "\n" )
+  }
   species <- unique( species )
   num <- numeric( length( species ))
   names( num ) <- species
@@ -73,9 +83,12 @@ init.simulation <- function( package = "ewing",
   
   for( i in species ) {
     num[i] <- reuse <- count[i]
-    cat( paste( "Initialize ", i, " at size ", reuse, sep = "" ))
+    
+    if(messages | (interact & interactive())) {
+      cat( paste( "Initialize ", i, " at size ", reuse, sep = "" ))
+    }
     if(interact & interactive()) {
-      cat(" :")
+        cat(" :")
       r <- readline( )
       if( r != "" & is.na( pmatch( substring( r, 1, 1 ), c("y","Y") )))
         reuse <- suppressWarnings(as.numeric( r ))
@@ -83,8 +96,10 @@ init.simulation <- function( package = "ewing",
         reuse <- count[i]
     }
     if( reuse ) {
-      cat( "...\n" )
-      community <- init.population( community, i, n = reuse )
+      if(messages) {
+        cat( "...\n" )
+      }
+      community <- init.population( community, i, n = reuse, messages = messages, ... )
       num[i] <- reuse
     }
   }
@@ -118,6 +133,8 @@ init.simulation <- function( package = "ewing",
 #' randomly)
 #' @param init.weight initial weights for life stages (default taken for
 #' organism features)
+#' @param ... not used
+#'
 #' @return \item{comp1 }{Description of `comp1'} \item{comp2 }{Description of
 #' `comp2'} ...
 #' @author Brian S. Yandell
@@ -136,7 +153,9 @@ init.population <- function( community, species, n = 200, width = 100,
                             position = rtri( n, width ),
                             colnames = c(leftistnames,paramnames,posnames,eventnames),
                             init.stage = istage,
-                            init.weight = getOrgFuture( community, species, "init" ))
+                            init.weight = getOrgFuture( community, species, "init" ),
+                            messages = TRUE,
+                            ...)
 {
   leftistnames <- c("dist","left","right","up")
   paramnames <- c("dispersion","location","intensity","truncation","rejection")
@@ -195,7 +214,9 @@ init.population <- function( community, species, n = 200, width = 100,
     cat( "offspring time: user=", tmp[1], "system=", tmp[2], "total=", tmp[3], "\n" )
   }
 
-  cat( "Initializing events for", species, "with", ncol( organism ) - 1, "individuals\n" )
+  if(messages) {
+    cat( "Initializing events for", species, "with", ncol( organism ) - 1, "individuals\n" )
+  }
   community
 }
 ##########################################################################################
@@ -479,7 +500,7 @@ my.eval <- function(species, extension, element, checkdata = FALSE )
   organism
 }
 ###########################################################################################
-mydata <- function( dataname, package, restart = FALSE )
+mydata <- function( dataname, package, restart = FALSE, messages = TRUE )
 {
   edata <- exists( dataname )
   if( restart & edata ) {
@@ -488,8 +509,12 @@ mydata <- function( dataname, package, restart = FALSE )
   }
   if( !edata ) {
     utils::data( list = dataname, package = eval( package ))
-    cat( "Data", dataname, "loaded\n" )
+    if(messages) {
+      cat( "Data", dataname, "loaded\n" )
+    }
   }
   else
-    cat( "Data", dataname, "already loaded\n" )
+    if(messages) {
+      cat( "Data", dataname, "already loaded\n" )
+    }
 } 
