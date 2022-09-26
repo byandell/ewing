@@ -11,19 +11,40 @@
 #' https://stat.ethz.ch/R-manual/R-devel/library/boot/html/envelope.html
 #' 
 #' @param nsim number of simulations to run
+#' @param increment increment for discrete simulation time
 #' 
 #' @export
 #' @importFrom purrr map
 #' 
-envelope_sim <- function(nsim)
+ewing_discrete <- function(nsim, increment = 1)
 {
   sims <- seq_len(nsim)
-  out <- purrr::map(sims, function(x) {
-    mysim <- init.simulation(interact = FALSE, messages = FALSE)
-    readCount(
-      future.events(
-        mysim, nstep = 1000, refresh = 1000, plotit = FALSE, messages = FALSE))
-  })
+  
+  # Make sure increment is 1,2,5 x power of 10
+  incr <- pretty(increment)
+  increment <- incr[which.min(abs(incr - increment))[1]]
+  
+  purrr::map(
+    sims, 
+    function(y) {
+      mysim <- init.simulation(interact = FALSE, messages = FALSE)
+      out <- readCount(
+        future.events(
+          mysim, nstep = 1000, refresh = 1000, plotit = FALSE, messages = FALSE))
+      purrr::map(
+        out,
+        function(x) {
+          purrr::map_df(
+            dplyr::distinct(
+              purrr::map_df(
+                dplyr::mutate(
+                  as.data.frame(x),
+                  time = ifelse(.data$step == 0, 0, increment * ceiling(.data$time / increment))),
+                rev),
+              .data$time, .keep_all = TRUE),
+            rev)
+        })
+      })
 }
 
 #' Create Envelope of Ewing Simulations
@@ -34,6 +55,7 @@ envelope_sim <- function(nsim)
 #' @param species name of species in `msim` to build envelope
 #' @param item name of item in `species` to build envelope
 #' @param ordinate name of ordinate (X axis) to build envelope
+#' @param increment increament for discretizing
 #' 
 #' @export
 #' @importFrom tidyr fill pivot_wider
@@ -42,7 +64,7 @@ envelope_sim <- function(nsim)
 #' @importFrom rlang .data
 #' @importFrom GET create_curve_set
 #' 
-ewing_envelope <- function(msim, species, item, ordinate = "step") {
+ewing_envelope <- function(msim, species, item, ordinate = "time", increment = 0.5) {
   # Pull out `ordinate` and `item` for each run 
   pulled <-  
     tidyr::fill(

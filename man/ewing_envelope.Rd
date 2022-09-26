@@ -4,7 +4,7 @@
 \alias{ewing_envelope}
 \title{Create Envelope of Ewing Simulations}
 \usage{
-ewing_envelope(msim, species, item, ordinate = "step")
+ewing_envelope(msim, species, item, ordinate = "time", increment = 0.5)
 }
 \arguments{
 \item{msim}{multiple simulation object from `envelope_sim`}
@@ -14,6 +14,8 @@ ewing_envelope(msim, species, item, ordinate = "step")
 \item{item}{name of item in `species` to build envelope}
 
 \item{ordinate}{name of ordinate (X axis) to build envelope}
+
+\item{increment}{increament for discretizing}
 }
 \description{
 Create envelope object for plotting from multiple runs of Ewing simulation.

@@ -2,9 +2,9 @@
 
 S3method(autoplot,ewing_envelope)
 S3method(plot,ewing)
-export(envelope_sim)
 export(ewingServer)
 export(ewingUI)
+export(ewing_discrete)
 export(ewing_envelope)
 export(five.plot)
 export(five.show)

@@ -6,61 +6,19 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.width = 9, fig.height = 9)
+knitr::opts_chunk$set(echo = FALSE, messages = FALSE, warnings = FALSE,
+                      fig.width = 9, fig.height = 9)
 ```
 
+Jim 20220925:
+Assuming the “env” control the number of “simulations” how do I set up a scenario. Say I wanted to runs a series of simulations with the  number of hosts set at - say 100 , the number of parasites set at 1000 and  for 5000 iterations and calculate the envelope such a scenario? Does the Assuming I would like to run the “env’ routine, how would I do it?
+
+Is this going to be available on the Population Ethology web site? If I wanted to look past means and standard deviations will envelope do that also? I have a lot to learn. I have started to look at the Isle Royale Biome study, but its going to take a while to figure out how convert that data into something that is useable for “ewing”.
+
+I am looking forward to the “Start Simulation” button.
+
 ```{r}
-library(fda)
-library(GET)
-library(ggplot2)
 library(patchwork)
-```
-
-# Girl heights with GET
-
-See <https://cran.r-project.org/web/packages/GET/vignettes/GET.pdf>.
-
-```{r}
-years <- paste(1:18)
-curves <- growth[['hgtf']][years,]
-cset1 <- create_curve_set(list(r = as.numeric(years), 
-                               obs = curves))
-cset2 <- create_curve_set(list(r = as.numeric(years[-1]),
-                               obs = curves[-1,] - curves[-nrow(curves),]))
-```
-
-Order  functions from the most extreme to the least extreme by the ’area’ measure
-
-```{r}
-A1 <- forder(cset1, measure = 'area'); order(A1)[1:10]
-A2 <- forder(cset2, measure = 'area'); order(A2)[1:10]
-```
-
-Jointly order by combining these two by the ERL measure
-
-```{r}
-csets <- list(Height = cset1, Change = cset2)
-A <- forder(csets, measure = 'area'); order(A)[1:10]
-```
-
-Highlight curves of the three most extreme girls. The plots of the two sets of
-curves were produced using the GET and ggplot2 packages and combined by the patchwork
-package (Pedersen 2020):
-
-```{r}
-cols <- c("#21908CFF", "#440154FF", "#5DC863FF")
-p1 <- plot(cset1, idx = order(A)[1:3], col_idx = cols) + 
-  labs(x = "Age (years)", y = "Height")
-p2 <- plot(cset2, idx = order(A)[1:3], col_idx = cols) +
-  labs(x = "Age (years)", y = "Change")
-p1 + p2 + plot_layout(guides = "collect")
-```
-
-Use functional boxplot (Sun and Genton 2011) to see whether the most extreme girls are outliers with respect to height or its change.
-
-```{r}
-res <- fBoxplot(csets, type = 'area', factor = 1.5)
-plot(res) + labs(x = "Age (years)", y = "Value")
 ```
 
 # Interpolation of Ewing Curves
@@ -70,24 +28,29 @@ plot(res) + labs(x = "Age (years)", y = "Value")
 library(ewing)
 ```
 
+Conduct 100 simulations with default settings and save with discrete time increment of 0.5 units.
+
 ```{r}
 if(file.exists(simfile <- "simfile.rds")) {
   out <- readRDS(simfile)
   nsim <- length(out)
 } else {
   nsim <- 100
-  out <- envelope_sim(nsim)
+  out <- ewing_discrete(nsim, increment = 0.5)
   saveRDS(out, file = simfile)
 } 
 ```
 
+Simulation is done by `step`s, with `time` as a random, dependent variable. 
+First we look at `time` as a function of `step`.
+
 ```{r}
-env <- ewing_envelope(out, "host", "time")
+env <- ewing_envelope(out, "host", "time", "step")
 t1 <- ggplot_ewing_envelope(env)
 ```
 
 ```{r}
-env <- ewing_envelope(out, "parasite", "time")
+env <- ewing_envelope(out, "parasite", "time", "step")
 t2 <- ggplot_ewing_envelope(env)
 ```
 
@@ -95,91 +58,79 @@ t2 <- ggplot_ewing_envelope(env)
 t1 + t2 + plot_layout(nrow = 2)
 ```
 
-Now try to do spline fit on each time step combination 
+However, we saved simulations on discrete `time` steps of 0.5 units,
+so we can look at `step` as a function of `time`.
+Below all plots are with respect to time so that they are comparable across species.
 
 ```{r}
-out2 <- purrr::map(
-  out,
-  function(y) {
-    purrr::map(
-      y,
-      function(x) {
-        purrr::map_df(
-          dplyr::distinct(
-            purrr::map_df(
-              dplyr::mutate(
-                as.data.frame(x),
-                time = ifelse(.data$step == 0, 0, ceiling(.data$time))),
-              rev),
-            .data$time, .keep_all = TRUE),
-          rev)
-      })})
-```
-
-```{r}
-env <- ewing_envelope(out2, "host", "time", "step")
+env <- ewing_envelope(out, "host", "step")
 t1 <- ggplot_ewing_envelope(env)
 ```
 
 ```{r}
-env <- ewing_envelope(out2, "parasite", "time", "step")
+env <- ewing_envelope(out, "parasite", "step")
 t2 <- ggplot_ewing_envelope(env)
 ```
 
 ```{r}
 t1 + t2 + plot_layout(nrow = 2)
 ```
-## Host Counts over `r nsim` Simulations
 
-Experimenting with time vs step
+# Host Counts over `r nsim` Simulations
 
 ```{r}
-env <- ewing_envelope(out2, "host", "crawler", "time")
-p11 <- ggplot_ewing_envelope(env)
+p <- list()
+for(i in c("crawler", "host", "gravid")) {
+  env <- ewing_envelope(out, "host", i)
+  p[[i]] <- ggplot_ewing_envelope(env)
+}
 ```
 
 ```{r}
-p11
-```
-
-```{r}
-env <- ewing_envelope(out, "host", "crawler")
-p1 <- ggplot_ewing_envelope(env)
-```
-
-```{r}
-p1
-```
-
-```{r}
-env <- ewing_envelope(out, "host", "host")
-p2 <- ggplot_ewing_envelope(env)
-```
-
-```{r}
-env <- ewing_envelope(out, "host", "gravid")
-p3 <- ggplot_ewing_envelope(env)
-```
-
-```{r}
-p1 + p2 + p3 + plot_layout(nrow = 3)
+p[[1]] + p[[2]] + p[[3]] + plot_layout(nrow = 3)
 ```
 
 ## Parasite Counts over `r nsim` Simulations
 
 ```{r}
-env <- ewing_envelope(out, "parasite", "young")
-p4 <- ggplot_ewing_envelope(env)
+p <- list()
+for(i in c("young", "adult")) {
+  env <- ewing_envelope(out, "parasite", i)
+  p[[i]] <- ggplot_ewing_envelope(env)
+}
 ```
 
 ```{r}
-env <- ewing_envelope(out, "parasite", "adult")
-p5 <- ggplot_ewing_envelope(env)
+p[[1]] + p[[2]] + plot_layout(nrow = 2)
+```
+
+
+# Confidence Envelopes
+
+```{r}
+p <- list()
+for(i in c("crawler", "host", "gravid")) {
+  env <- ewing_envelope(out, "host", i)
+  res <- GET::fBoxplot(env, type = 'area', factor = 1.5, coverage = 0.5)
+  p[[i]] <- plot(res) + ggplot2::labs(x = "time", y = i)
+}
 ```
 
 ```{r}
-p4 + p5 + plot_layout(nrow = 2)
+p[[1]] + p[[2]] + p[[3]] + plot_layout(nrow = 3)
 ```
 
 
+```{r}
+p <- list()
+for(i in c("young", "adult")) {
+  env <- ewing_envelope(out, "parasite", i)
+  res <- GET::fBoxplot(env, type = 'area', factor = 1.5, coverage = 0.5)
+  p[[i]] <- plot(res) + ggplot2::labs(x = "time", y = i)
+}
+```
+
+```{r}
+p[[1]] + p[[2]] + plot_layout(nrow = 2)
+```
 
