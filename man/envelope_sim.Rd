@@ -6,6 +6,9 @@
 \usage{
 envelope_sim(nsim)
 }
+\arguments{
+\item{nsim}{number of simulations to run}
+}
 \description{
 This currently relies on integer `step` value, but ultimately want to use the `time`,
 which are not the same across simulations. That will require using spline interpolation

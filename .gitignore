@@ -33,6 +33,7 @@ biolib_example.py
 biolib_python*.py
 html
 pkg
+*.rds
 *.gem
 *.tgz
 *.tmp

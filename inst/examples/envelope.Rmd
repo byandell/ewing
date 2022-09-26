@@ -71,15 +71,84 @@ library(ewing)
 ```
 
 ```{r}
-nsim <- 100
-out <- ewing::envelope_sim(nsim)
+if(file.exists(simfile <- "simfile.rds")) {
+  out <- readRDS(simfile)
+  nsim <- length(out)
+} else {
+  nsim <- 100
+  out <- envelope_sim(nsim)
+  saveRDS(out, file = simfile)
+} 
 ```
 
+```{r}
+env <- ewing_envelope(out, "host", "time")
+t1 <- ggplot_ewing_envelope(env)
+```
+
+```{r}
+env <- ewing_envelope(out, "parasite", "time")
+t2 <- ggplot_ewing_envelope(env)
+```
+
+```{r}
+t1 + t2 + plot_layout(nrow = 2)
+```
+
+Now try to do spline fit on each time step combination 
+
+```{r}
+out2 <- purrr::map(
+  out,
+  function(y) {
+    purrr::map(
+      y,
+      function(x) {
+        purrr::map_df(
+          dplyr::distinct(
+            purrr::map_df(
+              dplyr::mutate(
+                as.data.frame(x),
+                time = ifelse(.data$step == 0, 0, ceiling(.data$time))),
+              rev),
+            .data$time, .keep_all = TRUE),
+          rev)
+      })})
+```
+
+```{r}
+env <- ewing_envelope(out2, "host", "time", "step")
+t1 <- ggplot_ewing_envelope(env)
+```
+
+```{r}
+env <- ewing_envelope(out2, "parasite", "time", "step")
+t2 <- ggplot_ewing_envelope(env)
+```
+
+```{r}
+t1 + t2 + plot_layout(nrow = 2)
+```
 ## Host Counts over `r nsim` Simulations
+
+Experimenting with time vs step
+
+```{r}
+env <- ewing_envelope(out2, "host", "crawler", "time")
+p11 <- ggplot_ewing_envelope(env)
+```
+
+```{r}
+p11
+```
 
 ```{r}
 env <- ewing_envelope(out, "host", "crawler")
 p1 <- ggplot_ewing_envelope(env)
+```
+
+```{r}
+p1
 ```
 
 ```{r}

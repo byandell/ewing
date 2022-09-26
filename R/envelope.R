@@ -33,16 +33,17 @@ envelope_sim <- function(nsim)
 #' @param msim multiple simulation object from `envelope_sim`
 #' @param species name of species in `msim` to build envelope
 #' @param item name of item in `species` to build envelope
+#' @param ordinate name of ordinate (X axis) to build envelope
 #' 
 #' @export
 #' @importFrom tidyr fill pivot_wider
-#' @importFrom dplyr arrange bind_rows distinct
+#' @importFrom dplyr arrange bind_rows distinct matches
 #' @importFrom purrr map
 #' @importFrom rlang .data
 #' @importFrom GET create_curve_set
 #' 
-ewing_envelope <- function(msim, species, item) {
-  # Pull out `step` and `element` for each run 
+ewing_envelope <- function(msim, species, item, ordinate = "step") {
+  # Pull out `ordinate` and `item` for each run 
   pulled <-  
     tidyr::fill(
       dplyr::arrange(
@@ -52,20 +53,21 @@ ewing_envelope <- function(msim, species, item) {
               msim,
               function(x) {
                 dplyr::distinct(
-                  as.data.frame(x[[species]][,c("step", item)]),
-                  .data$step,
+                  as.data.frame(x[[species]][,c(ordinate, item)]),
+                  .data[[ordinate]],
                   .keep_all = TRUE)
               }),
             .id = "run"),
           names_from = "run",
           values_from = item),
-        .data$step),
-      -1)
+        .data[[ordinate]]),
+      -dplyr::matches(ordinate))
   crset <- GET::create_curve_set(list(r = as.matrix(pulled)[,1], 
                                       obs = as.matrix(pulled[,-1])))
   class(crset) <- c("ewing_envelope", class(crset))
   attr(crset, "species") <- species
   attr(crset, "item") <- item
+  attr(crset, "ordinate") <- ordinate
   crset
 }
 
@@ -84,9 +86,10 @@ ggplot_ewing_envelope <- function(crset, cols = c("#21908CFF", "#440154FF", "#5D
 
   item <- attr(crset, "item")
   species <- attr(crset, "species")
+  ordinate <- attr(crset, "ordinate")
   
   plot(crset, idx = order(A)[seq_along(cols)], col_idx = cols) + 
-    ggplot2::labs(x = "Step", y = item) +
+    ggplot2::labs(x = ordinate, y = item) +
     ggplot2::ggtitle(paste(species, item))
 }
 #' GGplot of Ewing Envelope
