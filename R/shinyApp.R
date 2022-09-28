@@ -36,39 +36,44 @@ ewingUI <- function() {
                              max = 10000,
                              value = 1000,
                              step = 500),
+          shiny::selectInput("nsim",
+                             "Number of Simulations",
+                             c(1,2,5,10,20,50,100),
+                             1),
           shiny::actionButton("go", "Start Simulation"),
           shiny::HTML("<hr>"),
+          shiny::conditionalPanel(
+            condition = "input.nsim != '1'",
+            shiny::checkboxInput("conf", "Confidence band", FALSE)),
           shiny::checkboxInput("norm",
                                "Normalize Plot",
                                TRUE),
           shiny::checkboxInput("total",
                                "Include Total",
                                TRUE),
-          shiny::fluidRow(
-            shiny::column(6,
-                          shiny::textInput("outfile", "Species Table", "mysim.csv")),
-            shiny::column(3,
-                          shiny::selectInput("species", "", c("host", "parasite"), "host")),
-            shiny::column(3,
-                          shiny::downloadButton("downloadRun", "Table"))),
+          shiny::conditionalPanel(
+            condition = "input.nsim == '1'",
+            shiny::fluidRow(
+              shiny::column(6,
+                            shiny::textInput("outfile", "Species Table", "mysim.csv")),
+              shiny::column(3,
+                            shiny::selectInput("species", "", c("host", "parasite"), "host")),
+              shiny::column(3,
+                            shiny::downloadButton("downloadRun", "Table")))),
           shiny::fluidRow(
             shiny::column(9,
                           shiny::textInput("plotfile", "Plot File", "myplot.pdf")),
             shiny::column(3,
                           shiny::downloadButton("downloadPlot", "Plots"))),
           shiny::uiOutput("uifile"),
-          shiny::HTML("See <a href='https://github.com/byandell/ewing'>ewing package on github</a>")
+          shiny::HTML("See <a href='https://github.com/byandell/ewing'>ewing package on github</a>"),
+          shiny::uiOutput("version")
         )      
       ),
       
       # Main panel for displaying outputs ----
       shiny::mainPanel(
-        
-        shiny::tagList(
-          shiny::plotOutput(outputId = "distPlot", height = "4in"),
-          shiny::plotOutput(outputId = "hostPlot", height = "2in"),
-          shiny::plotOutput(outputId = "parasitePlot", height = "2in")
-        )
+        shiny::uiOutput("plots")
       )
     )
   )
@@ -78,6 +83,7 @@ ewingUI <- function() {
 #' @importFrom shiny isTruthy reactive req
 #'                   renderPlot renderUI
 #'                   downloadHandler
+#'                   incProgress withProgress
 #' @importFrom utils write.csv
 #'                   
 ewingServer <- function(input, output) {
@@ -85,13 +91,29 @@ ewingServer <- function(input, output) {
   simres <- shiny::bindEvent(
     shiny::bindCache(
       shiny::reactive({
-        # Ideally, would like to continue simulation. That would require
-        # - feed simres() back into future.events, which requires some logic
-        # - use option "append = TRUE" to append to outfile
-        siminit <- init.simulation(count = as.numeric(c(input$host, input$parasite))) # initialize simulation
-        future.events(siminit, nstep = input$steps, plotit = FALSE) # simulate future events
+        nsim <- as.integer(input$nsim)
+        if(nsim == 1) {
+          # Ideally, would like to continue simulation. That would require
+          # - feed simres() back into future.events, which requires some logic
+          # - use option "append = TRUE" to append to outfile
+          siminit <- init.simulation(count = as.numeric(c(input$host, input$parasite))) # initialize simulation
+          future.events(siminit, nstep = input$steps, plotit = FALSE) # simulate future events
+        } else {
+          shiny::withProgress(message = paste('Ewing Discrete', nsim,
+                                              'Simulations ...'),
+                              value = 0,
+          {
+            out <- as.list(seq_len(nsim))
+            inc <- 1 / nsim
+            for(i in seq_len(nsim)) {
+              shiny::incProgress(inc)
+              out[[i]] <- ewing_discrete1()
+            }
+            make_ewing_discrete(out)
+          })
+        }
       }),
-      input$host, input$parasite, input$steps, input$go),
+      input$host, input$parasite, input$steps, input$nsim, input$go),
     input$go)
       
   distplot <- shiny::reactive({
@@ -114,6 +136,29 @@ ewingServer <- function(input, output) {
   output$parasitePlot <- shiny::renderPlot({
     parasiteplot()
   })
+  envelopePlot <- shiny::reactive({
+    shiny::req(simres())
+    nsim <- as.integer(shiny::req(input$nsim))
+    conf <- (nsim >= 20) & input$conf 
+    ggplot_ewing_envelopes(
+      simres(),
+      conf)
+  })
+  output$envPlot <- shiny::renderPlot({
+    envelopePlot()
+  })
+  output$plots <- shiny::renderUI({
+    nsim <- as.integer(shiny::req(input$nsim))
+    if(nsim == 1) {
+      shiny::tagList(
+        shiny::plotOutput(outputId = "distPlot", height = "4in"),
+        shiny::plotOutput(outputId = "hostPlot", height = "2in"),
+        shiny::plotOutput(outputId = "parasitePlot", height = "2in")
+      )
+    } else {
+      shiny::plotOutput(outputId = "envPlot")
+    }
+  })
 
   output$uifile <- shiny::renderUI({
     out <- "nada"
@@ -131,7 +176,12 @@ ewingServer <- function(input, output) {
     filename = function() {
       paste(shiny::req(input$species), shiny::req(input$outfile), sep = ".") },
     content = function(file) {
-      utils::write.csv(data(), file, row.names = FALSE)
+      nsim <- as.integer(shiny::req(input$nsim))
+      if(nsim == 1) {
+        utils::write.csv(data(), file, row.names = FALSE)
+      } else {
+        utils::write.csv(NULL, file, row.names = FALSE)
+      }
     }
   )
   
@@ -140,10 +190,18 @@ ewingServer <- function(input, output) {
       file.path(shiny::req(input$plotfile)) },
     content = function(file) {
       grDevices::pdf(file, width = 9)
-      print(distplot())
-      print(hostplot())
-      print(parasiteplot())
+      nsim <- as.integer(shiny::req(input$nsim))
+      if(nsim == 1) {
+        print(distplot())
+        print(hostplot())
+        print(parasiteplot())
+      } else {
+        print(envelopePlot())
+      }
       grDevices::dev.off()
     }
   )
+  output$version <- shiny::renderText({
+    paste("Ewing package version ", utils::packageVersion("ewing"))
+  })
 }

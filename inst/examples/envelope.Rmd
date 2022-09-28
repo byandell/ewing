@@ -55,7 +55,7 @@ t2 <- ggplot_ewing_envelope(env)
 ```
 
 ```{r}
-t1 + t2 + plot_layout(nrow = 2)
+wrap_plots(t1, t2) + plot_layout(nrow = 2)
 ```
 
 However, we saved simulations on discrete `time` steps of 0.5 units,
@@ -73,64 +73,18 @@ t2 <- ggplot_ewing_envelope(env)
 ```
 
 ```{r}
-t1 + t2 + plot_layout(nrow = 2)
+patchwork::wrap_plots(t1, t2) + patchwork::plot_layout(nrow = 2)
 ```
 
 # Host Counts over `r nsim` Simulations
 
 ```{r}
-p <- list()
-for(i in c("crawler", "host", "gravid")) {
-  env <- ewing_envelope(out, "host", i)
-  p[[i]] <- ggplot_ewing_envelope(env)
-}
+ggplot_ewing_envelopes(out)
 ```
-
-```{r}
-p[[1]] + p[[2]] + p[[3]] + plot_layout(nrow = 3)
-```
-
-## Parasite Counts over `r nsim` Simulations
-
-```{r}
-p <- list()
-for(i in c("young", "adult")) {
-  env <- ewing_envelope(out, "parasite", i)
-  p[[i]] <- ggplot_ewing_envelope(env)
-}
-```
-
-```{r}
-p[[1]] + p[[2]] + plot_layout(nrow = 2)
-```
-
 
 # Confidence Envelopes
 
 ```{r}
-p <- list()
-for(i in c("crawler", "host", "gravid")) {
-  env <- ewing_envelope(out, "host", i)
-  res <- GET::fBoxplot(env, type = 'area', factor = 1.5, coverage = 0.5)
-  p[[i]] <- plot(res) + ggplot2::labs(x = "time", y = i)
-}
-```
-
-```{r}
-p[[1]] + p[[2]] + p[[3]] + plot_layout(nrow = 3)
-```
-
-
-```{r}
-p <- list()
-for(i in c("young", "adult")) {
-  env <- ewing_envelope(out, "parasite", i)
-  res <- GET::fBoxplot(env, type = 'area', factor = 1.5, coverage = 0.5)
-  p[[i]] <- plot(res) + ggplot2::labs(x = "time", y = i)
-}
-```
-
-```{r}
-p[[1]] + p[[2]] + plot_layout(nrow = 2)
+ggplot_ewing_envelopes(out, confidence = TRUE)
 ```
 

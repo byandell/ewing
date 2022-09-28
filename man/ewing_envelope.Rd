@@ -4,12 +4,12 @@
 \alias{ewing_envelope}
 \title{Create Envelope of Ewing Simulations}
 \usage{
-ewing_envelope(msim, species, item, ordinate = "time", increment = 0.5)
+ewing_envelope(object, species, item, ordinate = "time", increment = 0.5)
 }
 \arguments{
-\item{msim}{multiple simulation object from `envelope_sim`}
+\item{object}{multiple simulation object from `envelope_sim`}
 
-\item{species}{name of species in `msim` to build envelope}
+\item{species}{name of species in `object` to build envelope}
 
 \item{item}{name of item in `species` to build envelope}
 
