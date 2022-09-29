@@ -76,7 +76,15 @@ t2 <- ggplot_ewing_envelope(env)
 patchwork::wrap_plots(t1, t2) + patchwork::plot_layout(nrow = 2)
 ```
 
-# Host Counts over `r nsim` Simulations
+# Host and Parasite Counts over `r nsim` Simulations
+
+```{r}
+envs <- ewing_envelopes(out)
+```
+
+```{r}
+summary(envs)
+```
 
 ```{r}
 ggplot_ewing_envelopes(out)
@@ -85,6 +93,10 @@ ggplot_ewing_envelopes(out)
 # Confidence Envelopes
 
 ```{r}
-ggplot_ewing_envelopes(out, confidence = TRUE)
+envs <- ewing_envelopes(out)
+```
+
+```{r}
+ggplot_ewing_envelopes(envs, confidence = TRUE)
 ```
 

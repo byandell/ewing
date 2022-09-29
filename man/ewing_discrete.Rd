@@ -4,6 +4,7 @@
 \alias{ewing_discrete1}
 \alias{ewing_discrete}
 \alias{make_ewing_discrete}
+\alias{summary.ewing_discrete}
 \title{Discrete time simulation for Ewing Envelope}
 \usage{
 ewing_discrete1(increment = 0.5, ...)
@@ -11,15 +12,17 @@ ewing_discrete1(increment = 0.5, ...)
 ewing_discrete(nsim, ...)
 
 make_ewing_discrete(object)
+
+\method{summary}{ewing_discrete}(object, ...)
 }
 \arguments{
 \item{increment}{increment for discrete simulation time}
 
-\item{...}{any additional arguments}
+\item{...}{additional parameters}
 
 \item{nsim}{number of simulations to run}
 
-\item{object}{list of objects from `ewing_discrete`}
+\item{object}{object of class `ewing_envelope` or `ewing_envelopes`}
 }
 \description{
 Do one simulation and save only by discrete `time` and `increment`

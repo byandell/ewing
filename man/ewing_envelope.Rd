@@ -2,20 +2,28 @@
 % Please edit documentation in R/envelope.R
 \name{ewing_envelope}
 \alias{ewing_envelope}
+\alias{ewing_envelopes}
+\alias{summary.ewing_envelopes}
 \title{Create Envelope of Ewing Simulations}
 \usage{
 ewing_envelope(object, species, item, ordinate = "time", increment = 0.5)
+
+ewing_envelopes(object)
+
+\method{summary}{ewing_envelopes}(object, species = NULL, ...)
 }
 \arguments{
-\item{object}{multiple simulation object from `envelope_sim`}
+\item{object}{object of class `ewing_envelope` or `ewing_envelopes`}
 
-\item{species}{name of species in `object` to build envelope}
+\item{species}{subset on `species` if not `NULL`}
 
 \item{item}{name of item in `species` to build envelope}
 
 \item{ordinate}{name of ordinate (X axis) to build envelope}
 
 \item{increment}{increament for discretizing}
+
+\item{...}{additional parameters}
 }
 \description{
 Create envelope object for plotting from multiple runs of Ewing simulation.

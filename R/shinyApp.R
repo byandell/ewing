@@ -38,28 +38,26 @@ ewingUI <- function() {
                              step = 500),
           shiny::selectInput("nsim",
                              "Number of Simulations",
-                             c(1,2,5,10,20,50,100),
+                             c(1,2,5,10,20,50,100,200),
                              1),
           shiny::actionButton("go", "Start Simulation"),
           shiny::HTML("<hr>"),
           shiny::conditionalPanel(
             condition = "input.nsim != '1'",
-            shiny::checkboxInput("conf", "Confidence band", FALSE)),
+            shiny::checkboxInput("conf", "Confidence band (sim>20)", FALSE)),
           shiny::checkboxInput("norm",
                                "Normalize Plot",
                                TRUE),
           shiny::checkboxInput("total",
                                "Include Total",
                                TRUE),
-          shiny::conditionalPanel(
-            condition = "input.nsim == '1'",
-            shiny::fluidRow(
-              shiny::column(6,
-                            shiny::textInput("outfile", "Species Table", "mysim.csv")),
-              shiny::column(3,
-                            shiny::selectInput("species", "", c("host", "parasite"), "host")),
-              shiny::column(3,
-                            shiny::downloadButton("downloadRun", "Table")))),
+          shiny::fluidRow(
+            shiny::column(6,
+                          shiny::textInput("outfile", "Species Table", "mysim.csv")),
+            shiny::column(3,
+                          shiny::selectInput("species", "", c("host", "parasite"), "host")),
+            shiny::column(3,
+                          shiny::downloadButton("downloadRun", "Table"))),
           shiny::fluidRow(
             shiny::column(9,
                           shiny::textInput("plotfile", "Plot File", "myplot.pdf")),
@@ -139,7 +137,7 @@ ewingServer <- function(input, output) {
   envelopePlot <- shiny::reactive({
     shiny::req(simres())
     nsim <- as.integer(shiny::req(input$nsim))
-    conf <- (nsim >= 20) & input$conf 
+    conf <- (nsim >= 50) & input$conf 
     ggplot_ewing_envelopes(
       simres(),
       conf)
@@ -170,18 +168,20 @@ ewingServer <- function(input, output) {
   })
   
   data <- reactive({
-    readCount(simres())[[shiny::req(input$species)]]
+    nsim <- as.integer(shiny::req(input$nsim))
+    species <- shiny::req(input$species)
+    if(nsim == 1) {
+      readCount(simres())[[species]]
+    } else {
+      if(nsim >= 50)
+      summary(simres(), species = species)
+    }
   })
   output$downloadRun <- shiny::downloadHandler(
     filename = function() {
       paste(shiny::req(input$species), shiny::req(input$outfile), sep = ".") },
     content = function(file) {
-      nsim <- as.integer(shiny::req(input$nsim))
-      if(nsim == 1) {
-        utils::write.csv(data(), file, row.names = FALSE)
-      } else {
-        utils::write.csv(NULL, file, row.names = FALSE)
-      }
+      utils::write.csv(data(), file, row.names = FALSE)
     }
   )
   

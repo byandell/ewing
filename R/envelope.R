@@ -64,8 +64,10 @@ ewing_discrete <- function(nsim, ...) {
 #' @rdname ewing_discrete
 #' 
 make_ewing_discrete <- function(object) {  
+  nsim <- length(object)
+  class(object) <- c("ewing_discrete", class(object))
+  
   ## Hardwired for now!
-  class(object) <- c("ewing_envelope", class(object))
   attr(object, "species") <- species <- c("host", "parasite")
   attr(object, "items") <- list(
     host = c("crawler", "host", "gravid"),
@@ -121,10 +123,105 @@ ewing_envelope <- function(object, species, item, ordinate = "time", increment =
   attr(object, "ordinate") <- ordinate
   object
 }
-
+#' Ewing Multiple Envelopes
+#' 
+#' @param object object of class `ewing_discrete`
+#' 
+#' @rdname ewing_envelope
+#' @export
+#' @importFrom patchwork plot_layout wrap_plots
+#' @importFrom GET fBoxplot
+#' @importFrom ggplot2 labs
+#' 
+ewing_envelopes <- function(object) {
+  species <- attr(object, "species")
+  items <- attr(object, "items")
+  ordinate <- attr(object, "ordinate")
+  nsim <- attr(object, "nsim")
+  confidence <- (nsim > 2)
+  
+  envs <- as.list(species)
+  names(envs) <- species
+  if(confidence) {
+    confs <- envs
+  } else {
+    confs <- NULL
+  }
+  for(specy in species) {
+    env1 <- as.list(items[[specy]])
+    if(confidence) {
+      conf1 <- env1
+    }
+    for(item in items[[specy]]) {
+      env1[[item]] <- ewing_envelope(object, specy, item, ordinate)
+      if(confidence) {
+        conf1[[item]] <- GET::fBoxplot(env1[[item]], type = 'area')
+      }
+    }
+    envs[[specy]] <- env1
+    if(confidence) {
+      confs[[specy]] <- conf1
+    }
+  }
+  
+  object <- list(env = envs, conf = confs)
+  class(object) <- c("ewing_envelopes", class(object))
+  attr(object, "species") <- species
+  attr(object, "items") <- items
+  attr(object, "ordinate") <- ordinate
+  attr(object, "nsim") <- nsim
+  attr(object, "confidence") <- confidence
+  object
+}
+#' Summary of Ewing Envelope
+#' 
+#' @param object object of class `ewing_envelope` or `ewing_envelopes`
+#' @param ... additional parameters
+#' 
+#' @export
+#' @method summary ewing_discrete
+#' @rdname ewing_discrete
+summary.ewing_discrete <- function(object, ...) {
+  summary(ewing_envelopes(object), ...)
+}
+#' Summary of Ewing Envelopes
+#' 
+#' @param object object of class `ewing_envelope` or `ewing_envelopes`
+#' @param species subset on `species` if not `NULL`
+#' @param ... additional parameters
+#' 
+#' @export
+#' @method summary ewing_envelopes
+#' @rdname ewing_envelope
+summary.ewing_envelopes <- function(object, species = NULL, ...) {
+  # object$conf[[specy]][[item]] is time by 6-num boxplot summary
+  if(is.null(object$conf)) {
+    return(NULL)
+  }
+  out <- dplyr::bind_rows(
+    purrr::map(
+      object$conf,
+      function(x) {
+        # somehow get summary across species and items using as.data.frame
+        x <- x[names(x) != ""]
+        dplyr::bind_rows(
+          purrr::map(
+            x,
+            as.data.frame),
+          .id = "item")
+      }),
+    .id = "species")
+  if(!is.null(species)) {
+    if(species %in% unique(out$species)) {
+      sp <- species
+      out <- dplyr::filter(out, species == sp)
+    }
+  }
+  out
+}
 #' GGplot of Ewing multiple envelopes
 #' 
-#' @param object object of class `ewing_envelope`
+#' @param object object of class `ewing_envelope` or `ewing_envelopes`
 #' @param confidence plot confidence bands if `TRUE`
 #' @param ... additional parameters
 #' 
@@ -135,23 +232,25 @@ ewing_envelope <- function(object, species, item, ordinate = "time", increment =
 #' @importFrom ggplot2 labs
 #' 
 ggplot_ewing_envelopes <- function(object, confidence = FALSE, ...) {
-  items <- attr(object, "items")
+  if(inherits(object, "ewing_discrete")) {
+    object <- ewing_envelopes(object)
+  }
   species <- attr(object, "species")
+  items <- attr(object, "items")
   ordinate <- attr(object, "ordinate")
   nsim <- attr(object, "nsim")
+  confidence <- confidence & attr(object, "confidence")
   
   patch <- list()
   for(specy in species) {
     p <- list()
     for(item in items[[specy]]) {
-      env <- ewing_envelope(object, specy, item, ordinate)
       if(confidence) {
-        res <- GET::fBoxplot(env, type = 'area')
-        p[[item]] <- plot(res) + 
+        p[[item]] <- plot(object$conf[[specy]][[item]]) + 
           ggplot2::labs(x = "time", y = item)
         
       } else {
-        p[[item]] <- ggplot_ewing_envelope(env)
+        p[[item]] <- ggplot_ewing_envelope(object$env[[specy]][[item]])
       }
     }
     ### USE patchwork::wrap_plots here
