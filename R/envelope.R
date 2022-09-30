@@ -271,9 +271,6 @@ ggplot_ewing_envelopes <- function(object, confidence = FALSE, ...) {
 #' @importFrom GET forder
 #' 
 ggplot_ewing_envelope <- function(object, cols = c("#21908CFF", "#440154FF", "#5DC863FF"), ...) {
-  # GET::forder is brittle on class and size of object
-  class(object) <- "curve_set"
-  
   # Kludge. GET::forder needs at least 3 points; cols can be at most length(object).
   lcols <- length(cols)
   nsim <- ncol(object$funcs)

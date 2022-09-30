@@ -41,10 +41,10 @@ ewingUI <- function() {
                              c(1,2,5,10,20,50,100,200),
                              1),
           shiny::actionButton("go", "Start Simulation"),
-          shiny::HTML("<hr>"),
+          shiny::HTML("<hr  style='height:1px;border:none;color:#333;background-color:#333;' />"),
           shiny::conditionalPanel(
             condition = "input.nsim != '1'",
-            shiny::checkboxInput("conf", "Confidence band (sim>20)", FALSE)),
+            shiny::checkboxInput("conf", "Confidence band (sim>=20)", FALSE)),
           shiny::checkboxInput("norm",
                                "Normalize Plot",
                                TRUE),
@@ -137,7 +137,7 @@ ewingServer <- function(input, output) {
   envelopePlot <- shiny::reactive({
     shiny::req(simres())
     nsim <- as.integer(shiny::req(input$nsim))
-    conf <- (nsim >= 50) & input$conf 
+    conf <- (nsim >= 20) & input$conf 
     ggplot_ewing_envelopes(
       simres(),
       conf)
@@ -173,7 +173,7 @@ ewingServer <- function(input, output) {
     if(nsim == 1) {
       readCount(simres())[[species]]
     } else {
-      if(nsim >= 50)
+      if(nsim >= 20)
       summary(simres(), species = species)
     }
   })
