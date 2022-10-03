@@ -18,10 +18,10 @@ ewing_discrete1 <- function(increment = 0.5, ...)
   incr <- pretty(increment)
   increment <- incr[which.min(abs(incr - increment))[1]]
   
-  mysim <- init.simulation(interact = FALSE, messages = FALSE)
+  mysim <- init.simulation(interact = FALSE, messages = FALSE, ...)
   out <- readCount(
     future.events(
-    mysim, nstep = 1000, refresh = 1000, plotit = FALSE, messages = FALSE))
+    mysim, refresh = 1000, plotit = FALSE, messages = FALSE, ...))
   purrr::map(
     out,
     function(x) {

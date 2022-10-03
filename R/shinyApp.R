@@ -115,7 +115,7 @@ ewingServer <- function(input, output) {
             inc <- 1 / nsim
             for(i in seq_len(nsim)) {
               shiny::incProgress(inc)
-              out[[i]] <- ewing_discrete1()
+              out[[i]] <- ewing_discrete1(count = as.numeric(c(input$host, input$parasite)), nstep = input$steps)
             }
             make_ewing_discrete(out)
           })
@@ -125,21 +125,33 @@ ewingServer <- function(input, output) {
     input$go)
       
   distplot <- shiny::reactive({
-    ggplot_ewing(simres(), total = input$total, normalize = input$norm)
+    if(inherits(simres(), "ewing")) {
+      ggplot_ewing(simres(), total = input$total, normalize = input$norm)
+    } else {
+      NULL
+    }
   })
   output$distPlot <- shiny::renderPlot({
     distplot()
   })
   hostplot <- shiny::reactive({
-    ggplot_current(simres(), "host") + 
-      ggplot2::ggtitle(paste("host", "on substrate"))
+    if(inherits(simres(), "ewing")) {
+      ggplot_current(simres(), "host") + 
+        ggplot2::ggtitle(paste("host", "on substrate"))
+    } else {
+      NULL
+    }
   })
   output$hostPlot <- shiny::renderPlot({
     hostplot()
   })
   parasiteplot <- shiny::reactive({
-    ggplot_current(simres(), "parasite") + 
-      ggplot2::ggtitle(paste("parasite", "on substrate"))
+    if(inherits(simres(), "ewing")) {
+      ggplot_current(simres(), "parasite") + 
+        ggplot2::ggtitle(paste("parasite", "on substrate"))
+    } else {
+      NULL
+    }
   })
   output$parasitePlot <- shiny::renderPlot({
     parasiteplot()
