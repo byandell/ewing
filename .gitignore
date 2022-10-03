@@ -1,5 +1,5 @@
 *~
-GET.Rmd
+inst/examples/local/
 .Rhistory
 *.out
 .DS_Store

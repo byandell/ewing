@@ -1,7 +1,7 @@
 #' @export
 #' @importFrom shiny column fluidPage fluidRow mainPanel sidebarLayout sidebarPanel tagList titlePanel 
 #'                   checkboxInput selectInput sliderInput plotOutput textInput uiOutput
-#'                   HTML
+#'                   HTML h2
 #'                   downloadButton
 #'                   actionButton bindCache bindEvent
 #' 
@@ -18,6 +18,7 @@ ewingUI <- function() {
       shiny::sidebarPanel(
         
         shiny::tagList(
+          shiny::h4("Simulation Settings"),
           shiny::sliderInput(inputId = "host",
                              label = "Number of hosts:",
                              min = 0,
@@ -44,25 +45,34 @@ ewingUI <- function() {
           shiny::HTML("<hr  style='height:1px;border:none;color:#333;background-color:#333;' />"),
           shiny::conditionalPanel(
             condition = "input.nsim != '1'",
-            shiny::checkboxInput("conf", "Confidence band (sim>=20)", FALSE)),
-          shiny::checkboxInput("norm",
-                               "Normalize Plot",
-                               TRUE),
-          shiny::checkboxInput("total",
-                               "Include Total",
-                               TRUE),
-          shiny::fluidRow(
-            shiny::column(6,
-                          shiny::textInput("outfile", "Species Table", "mysim.csv")),
-            shiny::column(3,
-                          shiny::selectInput("species", "", c("host", "parasite"), "host")),
-            shiny::column(3,
-                          shiny::downloadButton("downloadRun", "Table"))),
-          shiny::fluidRow(
-            shiny::column(9,
-                          shiny::textInput("plotfile", "Plot File", "myplot.pdf")),
-            shiny::column(3,
-                          shiny::downloadButton("downloadPlot", "Plots"))),
+            shiny::checkboxInput("conf", "Confidence band (sim>=10)", FALSE)),
+          shiny::conditionalPanel(
+            condition = "input.go != '0'",
+            shiny::tagList(
+              shiny::fluidRow(
+                shiny::checkboxInput("norm",
+                                     "Normalize Plot",
+                                     TRUE),
+                shiny::checkboxInput("total",
+                                     "Include Total",
+                                     TRUE),
+                shiny::h4("Save Files"),
+                shiny::column(
+                  6,
+                  shiny::textInput("outfile", "Species Table", "mysim.csv")),
+                shiny::column(
+                  3,
+                  shiny::selectInput("species", "", c("host", "parasite"), "host")),
+                shiny::column(
+                  3,
+                  shiny::downloadButton("downloadRun", "Table"))),
+              shiny::fluidRow(
+                shiny::column(
+                  9,
+                  shiny::textInput("plotfile", "Plot File", "myplot.pdf")),
+                shiny::column(
+                  3,
+                  shiny::downloadButton("downloadPlot", "Plots"))))),
           shiny::uiOutput("uifile"),
           shiny::HTML("See <a href='https://github.com/byandell/ewing'>ewing package on github</a>"),
           shiny::uiOutput("version")
@@ -71,7 +81,7 @@ ewingUI <- function() {
       
       # Main panel for displaying outputs ----
       shiny::mainPanel(
-        shiny::uiOutput("plots")
+        shiny::uiOutput("outs")
       )
     )
   )
@@ -137,16 +147,20 @@ ewingServer <- function(input, output) {
   envelopePlot <- shiny::reactive({
     shiny::req(simres())
     nsim <- as.integer(shiny::req(input$nsim))
-    conf <- (nsim >= 20) & input$conf 
-    ggplot_ewing_envelopes(
-      simres(),
-      conf)
+    conf <- (nsim >= 10) & input$conf 
+    if(inherits(simres(), "ewing_discrete")) {
+      ggplot_ewing_envelopes(
+        simres(),
+        conf)
+    } else {
+      NULL
+    }
   })
   output$envPlot <- shiny::renderPlot({
     envelopePlot()
   })
   output$plots <- shiny::renderUI({
-    nsim <- as.integer(shiny::req(input$nsim))
+    nsim <- as.integer(shiny::req(input$nsim), simres())
     if(nsim == 1) {
       shiny::tagList(
         shiny::plotOutput(outputId = "distPlot", height = "4in"),
@@ -173,7 +187,7 @@ ewingServer <- function(input, output) {
     if(nsim == 1) {
       readCount(simres())[[species]]
     } else {
-      if(nsim >= 20)
+      if(nsim >= 10)
       summary(simres(), species = species)
     }
   })
@@ -201,6 +215,35 @@ ewingServer <- function(input, output) {
       grDevices::dev.off()
     }
   )
+  
+  output$datafiles <- shiny::renderUI({
+    shiny::tagList(
+      shiny::selectInput("dataname", "",
+                         c("organism.features", "future.host", "future.parasite",
+                           "substrate.host", "substrate.parasite", "substrate.substrate"),
+                         "organism.features"),
+      shiny::renderDataTable({
+        mydata(shiny::req(input$dataname), "ewing")
+        out <- get(input$dataname)
+        out
+      }, escape = FALSE,
+      options = list(scrollX = TRUE, pageLength = 10)))
+#    showdata( "future.host")
+#    showdata( "TemperaturePar")
+#    showdata( "TemperatureBase")
+  })
+  
+  output$outs <- shiny::renderUI({
+    shiny::tagList(
+      shiny::radioButtons("button", "", c("Plots", "Input Data"), "Plots", inline = TRUE),
+      shiny::conditionalPanel(
+        condition = "input.button == 'Plots'",
+        shiny::uiOutput("plots")),
+      shiny::conditionalPanel(
+        condition = "input.button == 'Input Data'",
+        shiny::uiOutput("datafiles")))
+  })
+  
   output$version <- shiny::renderText({
     paste("Ewing package version ", utils::packageVersion("ewing"))
   })
