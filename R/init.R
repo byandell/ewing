@@ -104,6 +104,7 @@ init.simulation <- function( package = "ewing",
     }
   }
   class( community ) <- "ewing"
+  attr(community, "count") <- count
   community
 }
 ##########################################################################################

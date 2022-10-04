@@ -93,7 +93,7 @@ future.events <- function( community, ...,
   ## Integrity check of dataset, and initialization of tallies.
   if( missing( community ))
     stop( "Must specify a community." )
-
+  
   if( debugit ) cat( "initialization\n" )
   community <- initCount( community, species, debugit, messages = messages, ... )
   if( timeit )
@@ -223,6 +223,7 @@ future.events <- function( community, ...,
   community <- set.timing( community, "refresh", 1 )
 
   community <- fini.timing( community )
+  attr(community, "nstep") <- nstep
   community
 }
 ###############################################################################

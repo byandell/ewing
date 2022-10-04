@@ -6,11 +6,12 @@
 \alias{autoplot.ewing_envelope}
 \title{GGplot of Ewing multiple envelopes}
 \usage{
-ggplot_ewing_envelopes(object, confidence = FALSE, ...)
+ggplot_ewing_envelopes(object, confidence = FALSE, main = "", ...)
 
 ggplot_ewing_envelope(
   object,
   cols = c("#21908CFF", "#440154FF", "#5DC863FF"),
+  main = "",
   ...
 )
 
@@ -20,6 +21,8 @@ ggplot_ewing_envelope(
 \item{object}{object of class `ewing_envelope`}
 
 \item{confidence}{plot confidence bands if `TRUE`}
+
+\item{main}{title for plot}
 
 \item{...}{additional arguments}
 

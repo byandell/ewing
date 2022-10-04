@@ -19,10 +19,11 @@ ewing_discrete1 <- function(increment = 0.5, ...)
   increment <- incr[which.min(abs(incr - increment))[1]]
   
   mysim <- init.simulation(interact = FALSE, messages = FALSE, ...)
-  out <- readCount(
-    future.events(
-    mysim, refresh = 1000, plotit = FALSE, messages = FALSE, ...))
-  purrr::map(
+  out <- future.events(mysim, refresh = 1000, plotit = FALSE, messages = FALSE, ...)
+  attrs <- attributes(out)
+  
+  out <- readCount(out)
+  out <- purrr::map(
     out,
     function(x) {
       purrr::map_df(
@@ -35,6 +36,9 @@ ewing_discrete1 <- function(increment = 0.5, ...)
           .data$time, .keep_all = TRUE),
         rev)
     })
+  attr(out, "count") <- attrs$count
+  attr(out, "nstep") <- attrs$nstep
+  out
 }
 #' Envelope for Ewing simulations
 #' 
@@ -52,7 +56,12 @@ ewing_discrete <- function(nsim, ...) {
   for(i in sims) {
     object[[i]] <- ewing_discrete1(...)
   }
-  make_ewing_discrete(object)
+  out <- make_ewing_discrete(object)
+  
+  attr(out, "count") <- attr(object[[1]], "count")
+  attr(out, "nstep") <- attr(object[[1]], "nstep")
+  attr(out, "nsim") <- nsim
+  out
 }
 #' Make envelope for Ewing simulations
 #' 
@@ -223,6 +232,7 @@ summary.ewing_envelopes <- function(object, species = NULL, ...) {
 #' 
 #' @param object object of class `ewing_envelope` or `ewing_envelopes`
 #' @param confidence plot confidence bands if `TRUE`
+#' @param main title for plot
 #' @param ... additional parameters
 #' 
 #' @rdname ggplot_ewing_envelope
@@ -231,7 +241,7 @@ summary.ewing_envelopes <- function(object, species = NULL, ...) {
 #' @importFrom GET fBoxplot
 #' @importFrom ggplot2 labs
 #' 
-ggplot_ewing_envelopes <- function(object, confidence = FALSE, ...) {
+ggplot_ewing_envelopes <- function(object, confidence = FALSE, main = "", ...) {
   if(inherits(object, "ewing_discrete")) {
     object <- ewing_envelopes(object)
   }
@@ -246,7 +256,7 @@ ggplot_ewing_envelopes <- function(object, confidence = FALSE, ...) {
     p <- list()
     for(item in items[[specy]]) {
       if(confidence) {
-        p[[item]] <- plot(object$conf[[specy]][[item]]) + 
+        p[[item]] <- plot_plot(object$conf[[specy]][[item]], main = main) + 
           ggplot2::labs(x = "time", y = item)
         
       } else {
@@ -264,13 +274,15 @@ ggplot_ewing_envelopes <- function(object, confidence = FALSE, ...) {
 #' 
 #' @param object object of class `ewing_envelope`
 #' @param cols colors for top simulations
+#' @param main title for plot
 #' @param ... additional parameters
 #' 
 #' @export
 #' @importFrom ggplot2 ggtitle labs
 #' @importFrom GET forder
 #' 
-ggplot_ewing_envelope <- function(object, cols = c("#21908CFF", "#440154FF", "#5DC863FF"), ...) {
+ggplot_ewing_envelope <- function(object, cols = c("#21908CFF", "#440154FF", "#5DC863FF"), 
+                                  main = "", ...) {
   # Kludge. GET::forder needs at least 3 points; cols can be at most length(object).
   lcols <- length(cols)
   nsim <- ncol(object$funcs)
@@ -290,7 +302,7 @@ ggplot_ewing_envelope <- function(object, cols = c("#21908CFF", "#440154FF", "#5
   ordinate <- attr(object, "ordinate")
   
   if(length(object) >= 50) {
-    p <- plot(object, idx = idx, col_idx = cols)
+    p <- plot(object, idx = idx, col_idx = cols, main = main)
   } else {
     p <- plot(object)
   }

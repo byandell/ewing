@@ -59,7 +59,7 @@ ewingUI <- function() {
                 shiny::h4("Save Files"),
                 shiny::column(
                   6,
-                  shiny::textInput("outfile", "Species Table", "mysim.csv")),
+                  shiny::textInput("outfile", "Species Table", "mysim")),
                 shiny::column(
                   3,
                   shiny::selectInput("species", "", c("host", "parasite"), "host")),
@@ -69,7 +69,7 @@ ewingUI <- function() {
               shiny::fluidRow(
                 shiny::column(
                   9,
-                  shiny::textInput("plotfile", "Plot File", "myplot.pdf")),
+                  shiny::textInput("plotfile", "Plot File", "myplot")),
                 shiny::column(
                   3,
                   shiny::downloadButton("downloadPlot", "Plots"))))),
@@ -203,9 +203,14 @@ ewingServer <- function(input, output) {
       summary(simres(), species = species)
     }
   })
+  params <- shiny::reactive({
+    nsim <- shiny::req(input$nsim)
+    paste(shiny::req(input$host), shiny::req(input$parasite),
+          shiny::req(input$steps), nsim, sep = "_")
+  })
   output$downloadRun <- shiny::downloadHandler(
     filename = function() {
-      paste(shiny::req(input$species), shiny::req(input$outfile), sep = ".") },
+      paste0(paste(shiny::req(input$outfile), shiny::req(input$species), params(), sep = "_"), ".csv") },
     content = function(file) {
       utils::write.csv(data(), file, row.names = FALSE)
     }
@@ -213,7 +218,7 @@ ewingServer <- function(input, output) {
   
   output$downloadPlot <- shiny::downloadHandler(
     filename = function() {
-      file.path(shiny::req(input$plotfile)) },
+      paste0(paste(shiny::req(input$plotfile), params(), sep = "_"), ".pdf") },
     content = function(file) {
       grDevices::pdf(file, width = 9)
       nsim <- as.integer(shiny::req(input$nsim))
