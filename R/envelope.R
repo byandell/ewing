@@ -256,8 +256,9 @@ ggplot_ewing_envelopes <- function(object, confidence = FALSE, main = "", ...) {
     p <- list()
     for(item in items[[specy]]) {
       if(confidence) {
-        p[[item]] <- plot_plot(object$conf[[specy]][[item]], main = main) + 
-          ggplot2::labs(x = "time", y = item)
+        p[[item]] <- plot(object$conf[[specy]][[item]], main = main) + 
+          ggplot2::labs(x = "time", y = item) +
+          ggplot2::ggtitle(main)
         
       } else {
         p[[item]] <- ggplot_ewing_envelope(object$env[[specy]][[item]])

@@ -42,20 +42,24 @@ ewingUI <- function() {
                              c(1,2,5,10,20,50,100,200),
                              1),
           shiny::actionButton("go", "Start Simulation"),
-          shiny::HTML("<hr  style='height:1px;border:none;color:#333;background-color:#333;' />"),
-          shiny::conditionalPanel(
-            condition = "input.nsim != '1'",
-            shiny::checkboxInput("conf", "Confidence band (sim>=10)", FALSE)),
+          
           shiny::conditionalPanel(
             condition = "input.go != '0'",
             shiny::tagList(
+              shiny::HTML("<hr  style='height:1px;border:none;color:#333;background-color:#333;' />"),
               shiny::fluidRow(
-                shiny::checkboxInput("norm",
-                                     "Normalize Plot",
-                                     TRUE),
-                shiny::checkboxInput("total",
-                                     "Include Total",
-                                     TRUE),
+                shiny::conditionalPanel(
+                  condition = "input.nsim != '1'",
+                  shiny::checkboxInput("conf", "Confidence band (sim>=10)", FALSE)),
+                shiny::conditionalPanel(
+                  condition = "input.nsim == '1'",
+                  shiny::tagList(
+                    shiny::checkboxInput("norm",
+                                         "Normalize Plot",
+                                         TRUE),
+                    shiny::checkboxInput("total",
+                                         "Include Total",
+                                         TRUE))),
                 shiny::h4("Save Files"),
                 shiny::column(
                   6,
@@ -73,7 +77,8 @@ ewingUI <- function() {
                 shiny::column(
                   3,
                   shiny::downloadButton("downloadPlot", "Plots"))))),
-          shiny::uiOutput("uifile"),
+          
+          shiny::HTML("<hr  style='height:1px;border:none;color:#333;background-color:#333;' />"),
           shiny::HTML("See <a href='https://github.com/byandell/ewing'>ewing package on github</a>"),
           shiny::uiOutput("version")
         )      
@@ -184,15 +189,6 @@ ewingServer <- function(input, output) {
     }
   })
 
-  output$uifile <- shiny::renderUI({
-    out <- "nada"
-    if(shiny::isTruthy(simres())) {
-      out <- paste("Size of counts table:", 
-                   paste(dim(simres()$count$counts), collapse = " "))
-    }
-    out
-  })
-  
   data <- reactive({
     nsim <- as.integer(shiny::req(input$nsim))
     species <- shiny::req(input$species)
