@@ -43,17 +43,19 @@ ewing_discrete1 <- function(increment = 0.5, ...)
 #' Envelope for Ewing simulations
 #' 
 #' @param nsim number of simulations to run
+#' @param verbose show `.` for each simulation if `TRUE`
 #' @param ... any additional arguments
 #' 
 #' @export
 #' 
-ewing_discrete <- function(nsim, ...) {
+ewing_discrete <- function(nsim, verbose = FALSE, ...) {
   sims <- seq_len(nsim)
   
   object <- as.list(sims)
   names(object) <- sims
   
   for(i in sims) {
+    if(verbose) cat(".")
     object[[i]] <- ewing_discrete1(...)
   }
   out <- make_ewing_discrete(object)
@@ -124,13 +126,17 @@ ewing_envelope <- function(object, species, item, ordinate = "time", increment =
         .data[[ordinate]]),
       -dplyr::matches(ordinate))
   
-  object <- GET::create_curve_set(list(r = as.matrix(pulled)[,1], 
+  out <- GET::create_curve_set(list(r = as.matrix(pulled)[,1], 
                                       obs = as.matrix(pulled[,-1])))
-  class(object) <- c("ewing_envelope", class(object))
-  attr(object, "species") <- species
-  attr(object, "item") <- item
-  attr(object, "ordinate") <- ordinate
-  object
+  class(out) <- c("ewing_envelope", class(out))
+  attr(out, "count") <- attr(object, "count")
+  attr(out, "nstep") <- attr(object, "nstep")
+  attr(out, "nsim") <- attr(object, "nsim")
+  
+  attr(out, "species") <- species
+  attr(out, "item") <- item
+  attr(out, "ordinate") <- ordinate
+  out
 }
 #' Ewing Multiple Envelopes
 #' 
@@ -146,6 +152,8 @@ ewing_envelopes <- function(object) {
   species <- attr(object, "species")
   items <- attr(object, "items")
   ordinate <- attr(object, "ordinate")
+  nstep <- attr(object, "nstep")
+  count <- attr(object, "count")
   nsim <- attr(object, "nsim")
   confidence <- (nsim > 2)
   
@@ -178,6 +186,8 @@ ewing_envelopes <- function(object) {
   attr(object, "species") <- species
   attr(object, "items") <- items
   attr(object, "ordinate") <- ordinate
+  attr(object, "nstep") <- nstep
+  attr(object, "count") <- count
   attr(object, "nsim") <- nsim
   attr(object, "confidence") <- confidence
   object
@@ -200,16 +210,40 @@ summary.ewing_discrete <- function(object, ...) {
 #' @param ... additional parameters
 #' 
 #' @export
+#' @importFrom dplyr filter group_by ungroup
+#' @importFrom rlang .data
 #' @method summary ewing_envelopes
 #' @rdname ewing_envelope
 summary.ewing_envelopes <- function(object, species = NULL, ...) {
   # object$conf[[specy]][[item]] is time by 6-num boxplot summary
-  if(is.null(object$conf)) {
+  out <- print(object, species, ...)
+  if(!is.null(out)) {
+    out <- dplyr::ungroup(
+      dplyr::filter(
+        dplyr::group_by(
+          out,
+          .data$species, .data$item),
+        (.data$r == 0) | (.data$r == max(.data$r))))
+  }
+  out
+}
+#' Print of Ewing Envelopes
+#' 
+#' @param x object of class `ewing_envelope` or `ewing_envelopes`
+#' @param species subset on `species` if not `NULL`
+#' @param ... additional parameters
+#' 
+#' @export
+#' @method print ewing_envelopes
+#' @rdname ewing_envelope
+print.ewing_envelopes <- function(x, species = NULL, ...) {
+  # x$conf[[specy]][[item]] is time by 6-num boxplot summary
+  if(is.null(x$conf)) {
     return(NULL)
   }
   out <- dplyr::bind_rows(
     purrr::map(
-      object$conf,
+      x$conf,
       function(x) {
         # somehow get summary across species and items using as.data.frame
         x <- x[names(x) != ""]
@@ -228,6 +262,7 @@ summary.ewing_envelopes <- function(object, species = NULL, ...) {
   }
   out
 }
+
 #' GGplot of Ewing multiple envelopes
 #' 
 #' @param object object of class `ewing_envelope` or `ewing_envelopes`
@@ -237,7 +272,7 @@ summary.ewing_envelopes <- function(object, species = NULL, ...) {
 #' 
 #' @rdname ggplot_ewing_envelope
 #' @export
-#' @importFrom patchwork plot_layout wrap_plots
+#' @importFrom patchwork plot_annotation plot_layout wrap_plots
 #' @importFrom GET fBoxplot
 #' @importFrom ggplot2 labs
 #' 
@@ -248,6 +283,8 @@ ggplot_ewing_envelopes <- function(object, confidence = FALSE, main = "", ...) {
   species <- attr(object, "species")
   items <- attr(object, "items")
   ordinate <- attr(object, "ordinate")
+  nstep <- attr(object, "nstep")
+  count <- attr(object, "count")
   nsim <- attr(object, "nsim")
   confidence <- confidence & attr(object, "confidence")
   
@@ -268,7 +305,12 @@ ggplot_ewing_envelopes <- function(object, confidence = FALSE, main = "", ...) {
     patch[[specy]] <- patchwork::wrap_plots(p) + 
       patchwork::plot_layout(nrow = length(p))
   }
-  patchwork::wrap_plots(patch)
+  # NEED TO get attribute count and nstep in here
+  patchwork::wrap_plots(patch) +
+    patchwork::plot_annotation(
+      title = paste(nsim, "Runs of ",
+                    nstep, "Steps for", 
+                    paste(species, count, sep = "=", collapse = ", ")))
 }
 
 #' GGplot of Ewing envelope

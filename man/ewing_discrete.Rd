@@ -9,7 +9,7 @@
 \usage{
 ewing_discrete1(increment = 0.5, ...)
 
-ewing_discrete(nsim, ...)
+ewing_discrete(nsim, verbose = FALSE, ...)
 
 make_ewing_discrete(object)
 
@@ -21,6 +21,8 @@ make_ewing_discrete(object)
 \item{...}{additional parameters}
 
 \item{nsim}{number of simulations to run}
+
+\item{verbose}{show `.` for each simulation if `TRUE`}
 
 \item{object}{object of class `ewing_envelope` or `ewing_envelopes`}
 }

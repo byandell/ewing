@@ -11,3 +11,4 @@ inst/docs/Sources/MQM/.Rprofile
 README.md
 ^.*\.Rproj$
 ^\.Rproj\.user$
+inst/examples

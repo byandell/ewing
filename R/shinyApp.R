@@ -161,13 +161,17 @@ ewingServer <- function(input, output) {
   output$parasitePlot <- shiny::renderPlot({
     parasiteplot()
   })
-  envelopePlot <- shiny::reactive({
+  envdata <- shiny::reactive({
     shiny::req(simres())
+    ewing_envelopes(simres())
+  })
+  envelopePlot <- shiny::reactive({
+    shiny::req(envdata())
     nsim <- as.integer(shiny::req(input$nsim))
     conf <- (nsim >= 10) & input$conf 
     if(inherits(simres(), "ewing_discrete")) {
       ggplot_ewing_envelopes(
-        simres(),
+        envdata(),
         conf)
     } else {
       NULL
@@ -195,8 +199,8 @@ ewingServer <- function(input, output) {
     if(nsim == 1) {
       readCount(simres())[[species]]
     } else {
-      if(nsim >= 10)
-      summary(simres(), species = species)
+      shiny::req(envdata())
+      print(envdata(), species = species)
     }
   })
   params <- shiny::reactive({
@@ -241,9 +245,6 @@ ewingServer <- function(input, output) {
         out
       }, escape = FALSE,
       options = list(scrollX = TRUE, pageLength = 10)))
-#    showdata( "future.host")
-#    showdata( "TemperaturePar")
-#    showdata( "TemperatureBase")
   })
   
   output$outs <- shiny::renderUI({

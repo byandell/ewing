@@ -4,6 +4,7 @@
 \alias{ewing_envelope}
 \alias{ewing_envelopes}
 \alias{summary.ewing_envelopes}
+\alias{print.ewing_envelopes}
 \title{Create Envelope of Ewing Simulations}
 \usage{
 ewing_envelope(object, species, item, ordinate = "time", increment = 0.5)
@@ -11,6 +12,8 @@ ewing_envelope(object, species, item, ordinate = "time", increment = 0.5)
 ewing_envelopes(object)
 
 \method{summary}{ewing_envelopes}(object, species = NULL, ...)
+
+\method{print}{ewing_envelopes}(x, species = NULL, ...)
 }
 \arguments{
 \item{object}{object of class `ewing_envelope` or `ewing_envelopes`}
@@ -24,6 +27,8 @@ ewing_envelopes(object)
 \item{increment}{increament for discretizing}
 
 \item{...}{additional parameters}
+
+\item{x}{object of class `ewing_envelope` or `ewing_envelopes`}
 }
 \description{
 Create envelope object for plotting from multiple runs of Ewing simulation.
