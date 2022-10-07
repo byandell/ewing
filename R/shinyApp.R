@@ -37,10 +37,10 @@ ewingUI <- function() {
                              max = 10000,
                              value = 1000,
                              step = 500),
-          shiny::selectInput("nsim",
+          shiny::radioButtons("nsim",
                              "Number of Simulations",
                              c(1,10,20,50,100,200),
-                             1),
+                             1, inline = TRUE),
           shiny::actionButton("go", "Start Simulation"),
           
           shiny::conditionalPanel(
