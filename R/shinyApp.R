@@ -39,7 +39,7 @@ ewingUI <- function() {
                              step = 500),
           shiny::selectInput("nsim",
                              "Number of Simulations",
-                             c(1,2,5,10,20,50,100,200),
+                             c(1,10,20,50,100,200),
                              1),
           shiny::actionButton("go", "Start Simulation"),
           
@@ -50,7 +50,7 @@ ewingUI <- function() {
               shiny::fluidRow(
                 shiny::conditionalPanel(
                   condition = "input.nsim != '1'",
-                  shiny::checkboxInput("conf", "Confidence band (sim>=10)", FALSE)),
+                  shiny::checkboxInput("conf", "Confidence band", FALSE)),
                 shiny::conditionalPanel(
                   condition = "input.nsim == '1'",
                   shiny::tagList(
