@@ -58,12 +58,7 @@ ewing_discrete <- function(nsim, verbose = FALSE, ...) {
     if(verbose) cat(".")
     object[[i]] <- ewing_discrete1(...)
   }
-  out <- make_ewing_discrete(object)
-  
-  attr(out, "count") <- attr(object[[1]], "count")
-  attr(out, "nstep") <- attr(object[[1]], "nstep")
-  attr(out, "nsim") <- nsim
-  out
+  make_ewing_discrete(object)
 }
 #' Make envelope for Ewing simulations
 #' 
@@ -84,6 +79,8 @@ make_ewing_discrete <- function(object) {
     host = c("crawler", "host", "gravid"),
     parasite = c("young", "adult"))
   attr(object, "ordinate") <- "time"
+  attr(object, "count") <- attr(object[[1]], "count")
+  attr(object, "nstep") <- attr(object[[1]], "nstep")
   attr(object, "nsim") <- nsim
   object
 }
