@@ -95,7 +95,7 @@ ewingUI <- function() {
 #' @export
 #' @importFrom shiny isTruthy reactive req
 #'                   renderPlot renderUI
-#'                   downloadHandler
+#'                   downloadHandler fileInput
 #'                   incProgress withProgress
 #' @importFrom utils write.csv
 #'                   
