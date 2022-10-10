@@ -204,15 +204,24 @@ summary.ewing_discrete <- function(object, ...) {
 #' 
 #' @param object object of class `ewing_envelope` or `ewing_envelopes`
 #' @param species subset on `species` if not `NULL`
+#' @param verbose print settings if `TRUE`
 #' @param ... additional parameters
 #' 
 #' @export
-#' @importFrom dplyr filter group_by ungroup
+#' @importFrom dplyr across filter group_by mutate ungroup
 #' @importFrom rlang .data
 #' @method summary ewing_envelopes
 #' @rdname ewing_envelope
-summary.ewing_envelopes <- function(object, species = NULL, ...) {
+summary.ewing_envelopes <- function(object, species = NULL, verbose = TRUE, ...) {
   # object$conf[[specy]][[item]] is time by 6-num boxplot summary
+  if(verbose) {
+    nstep <- attr(object, "nstep")
+    count <- attr(object, "count")
+    nsim <- attr(object, "nsim")
+    cat(nsim, "Runs of ",
+          nstep, "Steps for", 
+          paste(names(count), count, sep = "=", collapse = ", "), "\n")
+  }
   out <- print(object, species, ...)
   if(!is.null(out)) {
     out <- dplyr::ungroup(
@@ -257,6 +266,7 @@ print.ewing_envelopes <- function(x, species = NULL, ...) {
       out <- dplyr::filter(out, species == sp)
     }
   }
+  dplyr::mutate(out, dplyr::across(where(is.numeric), function(x) pmax(x,0)))
   out
 }
 
@@ -292,7 +302,8 @@ ggplot_ewing_envelopes <- function(object, confidence = FALSE, main = "", ...) {
       if(confidence) {
         p[[item]] <- plot(object$conf[[specy]][[item]], main = main) + 
           ggplot2::labs(x = "time", y = item) +
-          ggplot2::ggtitle(main)
+          ggplot2::ggtitle(main) +
+          ggplot2::ylim(0, NA)
         
       } else {
         p[[item]] <- ggplot_ewing_envelope(object$env[[specy]][[item]])

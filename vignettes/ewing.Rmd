@@ -31,7 +31,7 @@ just redscale, and parasite is just aphytis). Now you can set up a new
 system by just creating a new library package.
 
 The second big change is that I use R conventions of passing arguments, 
-rather than hiding things as I have done inthe past. Now you do
+rather than hiding things as I have done in the past. Now you do
 
 ```{r}
 mysim <- init.simulation(interact = FALSE)
@@ -84,6 +84,24 @@ migrate means the routine now looks for a routine called "event.migrate".
 Also, event.attack uses the type of parasite (endo,ecto) and the actual 
 event (feed,ovip) to look for routines like event.ecto.feed to process 
 attack details.
+
+## Multiple Simulation Runs
+
+```{r}
+data(simdata)
+```
+
+```{r}
+summary(simdata)
+```
+
+```{r}
+ggplot_ewing_envelopes(simdata)
+```
+
+```{r}
+ggplot_ewing_envelopes(simdata, confidence = TRUE)
+```
 
 ## Other plots
 

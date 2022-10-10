@@ -64,7 +64,8 @@ initOrgInfo <- function( package, messages = TRUE )
   community
 }
 ##########################################################################################
-setOrgInfo <- function( community, species, hosts, package, messages = TRUE )
+setOrgInfo <- function( community, species, hosts, package, messages = TRUE,
+                        datadir = "", ... )
 {
   Organism <- community$org
 
@@ -81,9 +82,8 @@ setOrgInfo <- function( community, species, hosts, package, messages = TRUE )
     Organism$MeanValue <- list( )
 
   for( i in species ) {
-    tmp <- paste( "future", i, sep = "." )
-    mydata( tmp, getOrgInfo( community, "package" ), messages = messages)
-    future <- my.eval( tmp )
+    future <- getOrgData(community, "future", i,
+                         messages, datadir)
 
     level.ageclass <- unique( future$ageclass )
     level.ageclass <- as.character( level.ageclass[ !is.na( level.ageclass ) ] )
@@ -91,9 +91,8 @@ setOrgInfo <- function( community, species, hosts, package, messages = TRUE )
     Organism$Future[[i]] <- future
     for( j in hosts )
       if( i != j ) {
-        tmp <- paste( j, i, sep = "." )
-        mydata( tmp, getOrgInfo( community, "package" ), messages = messages)
-        Organism$Interact[[j]][[i]] <- my.eval( tmp )
+        Organism$Interact[[j]][[i]] <- getOrgData(community, j, i,
+                                                  messages, datadir)
       }
     if( is.null( Organism$MeanValue[[i]] ))
       Organism$MeanValue[[i]] <- list( )
@@ -107,6 +106,33 @@ setOrgInfo <- function( community, species, hosts, package, messages = TRUE )
   }
   community$org <- Organism
   community
+}
+###########################################################################################
+getOrgData <- function(community, left, right,
+                       messages = TRUE, datadir = "")
+{
+  # Get Organism Data from
+  #     package data
+  #     global data supplied by user
+  #     external data file supplied by user
+  tmp <- paste( left, right, sep = "." )
+  if((data_exists <- (datadir != ""))) {
+    extensions <- c(".txt", ".tsv", ".csv", ".xls", ".xlsx")
+    datafile <- file.path(datasir, paste0(tmp, extensions))
+    data_exists <- file.exists(datafile)
+    if(any(data_exists)) {
+      datafile <- datafile[data_exists][1]
+      data_exists <- TRUE
+    }
+  }
+  if(!data_exists) {
+    # Load package data or get user-provided global data.
+    mydata( tmp, getOrgInfo( community, "package" ), messages = messages)
+    my.eval( tmp )
+  } else {
+    # Read data file from user if provided.
+    my.read(datafile)
+  }
 }
 ###########################################################################################
 getOrgInfo <- function( community, element )

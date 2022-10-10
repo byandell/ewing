@@ -11,7 +11,7 @@ ewing_envelope(object, species, item, ordinate = "time", increment = 0.5)
 
 ewing_envelopes(object)
 
-\method{summary}{ewing_envelopes}(object, species = NULL, ...)
+\method{summary}{ewing_envelopes}(object, species = NULL, verbose = TRUE, ...)
 
 \method{print}{ewing_envelopes}(x, species = NULL, ...)
 }
@@ -25,6 +25,8 @@ ewing_envelopes(object)
 \item{ordinate}{name of ordinate (X axis) to build envelope}
 
 \item{increment}{increament for discretizing}
+
+\item{verbose}{print settings if `TRUE`}
 
 \item{...}{additional parameters}
 

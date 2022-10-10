@@ -31,26 +31,22 @@ library(ewing)
 Conduct 100 simulations with default settings and save with discrete time increment of 0.5 units.
 
 ```{r}
-if(file.exists(simfile <- "simfile.rds")) {
-  out <- readRDS(simfile)
-  nsim <- length(out)
-} else {
-  nsim <- 100
-  out <- ewing_discrete(nsim, increment = 0.5)
-  saveRDS(out, file = simfile)
-} 
+data(simdata)
+nsim <- length(simdata)
+#nsim <- 100
+#simdata <- ewing_discrete(nsim, increment = 0.5)
 ```
 
 Simulation is done by `step`s, with `time` as a random, dependent variable. 
 First we look at `time` as a function of `step`.
 
 ```{r}
-env <- ewing_envelope(out, "host", "time", "step")
+env <- ewing_envelope(simdata, "host", "time", "step")
 t1 <- ggplot_ewing_envelope(env)
 ```
 
 ```{r}
-env <- ewing_envelope(out, "parasite", "time", "step")
+env <- ewing_envelope(simdata, "parasite", "time", "step")
 t2 <- ggplot_ewing_envelope(env)
 ```
 
@@ -63,12 +59,12 @@ so we can look at `step` as a function of `time`.
 Below all plots are with respect to time so that they are comparable across species.
 
 ```{r}
-env <- ewing_envelope(out, "host", "step")
+env <- ewing_envelope(, "host", "step")
 t1 <- ggplot_ewing_envelope(env)
 ```
 
 ```{r}
-env <- ewing_envelope(out, "parasite", "step")
+env <- ewing_envelope(, "parasite", "step")
 t2 <- ggplot_ewing_envelope(env)
 ```
 
@@ -79,7 +75,7 @@ patchwork::wrap_plots(t1, t2) + patchwork::plot_layout(nrow = 2)
 # Host and Parasite Counts over `r nsim` Simulations
 
 ```{r}
-envs <- ewing_envelopes(out)
+envs <- ewing_envelopes()
 ```
 
 ```{r}
@@ -87,13 +83,13 @@ summary(envs)
 ```
 
 ```{r}
-ggplot_ewing_envelopes(out)
+ggplot_ewing_envelopes()
 ```
 
 # Confidence Envelopes
 
 ```{r}
-envs <- ewing_envelopes(out)
+envs <- ewing_envelopes()
 ```
 
 ```{r}

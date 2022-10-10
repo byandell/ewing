@@ -109,7 +109,8 @@ ewingServer <- function(input, output) {
           # Ideally, would like to continue simulation. That would require
           # - feed simres() back into future.events, which requires some logic
           # - use option "append = TRUE" to append to outfile
-          siminit <- init.simulation(count = as.numeric(c(input$host, input$parasite))) # initialize simulation
+          siminit <- init.simulation(count = as.numeric(c(input$host, input$parasite)),
+                                     datadir = datadir()) # initialize simulation
           future.events(siminit, nstep = input$steps, plotit = FALSE) # simulate future events
         } else {
           shiny::withProgress(message = paste('Ewing Discrete', nsim,
@@ -126,7 +127,7 @@ ewingServer <- function(input, output) {
           })
         }
       }),
-      input$host, input$parasite, input$steps, input$nsim, input$go),
+      input$host, input$parasite, input$steps, input$nsim, input$go, input$datadir),
     input$go)
       
   distplot <- shiny::reactive({
@@ -247,6 +248,13 @@ ewingServer <- function(input, output) {
       options = list(scrollX = TRUE, pageLength = 10)))
   })
   
+  datadir <- shiny::reactive({
+    if(shiny::isTruthy(input$datadir)) {
+      dirname(input$datadir$name)
+    } else {
+      datadir <- ""
+    }
+  })
   output$outs <- shiny::renderUI({
     shiny::tagList(
       shiny::radioButtons("button", "", c("Plots", "Input Data"), "Plots", inline = TRUE),
@@ -255,7 +263,15 @@ ewingServer <- function(input, output) {
         shiny::uiOutput("plots")),
       shiny::conditionalPanel(
         condition = "input.button == 'Input Data'",
-        shiny::uiOutput("datafiles")))
+        shiny::tagList(
+# ****
+# Would like to locate directory with multiple files, but seems not to work.
+# It may be a security risk with shiny.
+# Does it make sense to upload one at time? Would need to rethink data files.
+#          shiny::fileInput("datadir", "User Data File (pick one):",
+#                           accept = c(".txt", ".tsv", ".csv", ".xls", ".xlsx")),
+# ****
+          shiny::uiOutput("datafiles"))))
   })
   
   output$version <- shiny::renderText({

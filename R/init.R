@@ -52,6 +52,8 @@
 #' @export
 #' @importFrom stats rexp rpois
 #' @importFrom utils data
+#' @importFrom tools file_ext
+#' @importFrom readxl read_xls read_xlsx
 #' 
 init.simulation <- function( package = "ewing", 
                             species = getOrgFeature( community )[1:2],
@@ -69,7 +71,8 @@ init.simulation <- function( package = "ewing",
          paste( species, collapse = ", " ), "\n\n" )
   }
   
-  community <- setOrgInfo( community, species, hosts, package, messages = messages )
+  community <- setOrgInfo( community, species, hosts, package,
+                           messages = messages, ... )
   
   if(messages) {
     cat( "\n" )
@@ -480,6 +483,15 @@ sampleOrgSubstrate <- function( community, species, elements = seq( nrow( inter 
 } 
 ###########################################################################################
 ## System files
+###########################################################################################
+my.read <- function(dataname)
+{
+  switch(tools::file_ext(dataname),
+         ".txt", ".tsv" = read.table(dataname),
+         ".csv" = read.csv(dataname),
+         ".xls" = readxl::read_xls(dataname),
+         ".xlsx" = readxl::read_xlsx(dataname))
+}
 ###########################################################################################
 my.eval <- function(species, extension, element, checkdata = FALSE )
 {
