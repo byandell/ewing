@@ -1,7 +1,10 @@
 #' organism features master table
 #' 
 #' Identifies organisms and their key features for Ewing's Quantitative
-#' Population Ethology simulation.
+#' Population Ethology simulation. 
+#' Each row corresponds to a `species` to be used in the simulation.
+#' Note that `subclass` names must correspond to possible `current` stage
+#' for that `species`.
 #' 
 #' @name organism.features
 #' @format Data frame with one row per organism potentially in the study. By
@@ -17,7 +20,7 @@
 #'  \item{birth}{stage for birth of offspring if host; missing if parasite}
 #'  \item{substrate}{substrate on which organism lives}
 #'  \item{deplete}{energy depletion rate over time of offspring load in units of number of offspring}
-#'  \item{subclass}{class of stages to use for plotting substrate movements in \code{future.events}}
+#'  \item{subclass}{class of stages to use for substrate movements in \code{future.events}}
 #'  \item{parasite}{type of parasite or predator (ecto=ectoparasitoid, endo=endoparasitoid)}
 #'  \item{move}{class of stages when species can move around substrate}
 #' }

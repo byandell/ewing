@@ -51,14 +51,14 @@ get.base <- function( community, species )
 ##########################################################################################
 ### simulation organism administration
 ##########################################################################################
-initOrgInfo <- function( package, messages = TRUE )
+initOrgInfo <- function( package, messages = TRUE, datadir = "", ... )
 {
   community <- list( pop = list( ))
   community$org <- list( )
   community$org$package <- package
   ## Get data
-  mydata( "organism.features", package, messages = messages )
-  community$org$Feature <- organism.features
+  community$org$Feature <- getOrgData(community, "organism", "features",
+                                      messages, datadir)
 
   community$pop <- list()
   community
@@ -77,6 +77,7 @@ setOrgInfo <- function( community, species, hosts, package, messages = TRUE,
   for( j in hosts )
     if( is.null( Organism$Interact[[j]] ))
       Organism$Interact[[j]] <- list( )
+  
   ## Do not reset MeanValue as it may have important spline fits!
   if( is.null( Organism$MeanValue ))
     Organism$MeanValue <- list( )
@@ -84,6 +85,13 @@ setOrgInfo <- function( community, species, hosts, package, messages = TRUE,
   for( i in species ) {
     future <- getOrgData(community, "future", i,
                          messages, datadir)
+    
+    # Check that future agrees with organism.feature information
+    subclass <- Organism$Feature[i,"subclass"]
+    if(!(subclass %in% unique(future$ageclass))) {
+      stop(paste("Future table", paste("future", i, sep = "."),
+                 "does not include", subclass))
+    }
 
     level.ageclass <- unique( future$ageclass )
     level.ageclass <- as.character( level.ageclass[ !is.na( level.ageclass ) ] )
@@ -93,6 +101,16 @@ setOrgInfo <- function( community, species, hosts, package, messages = TRUE,
       if( i != j ) {
         Organism$Interact[[j]][[i]] <- getOrgData(community, j, i,
                                                   messages, datadir)
+        
+        # Check that interaction agrees with host current stage information
+        # This is messy!
+        if(j %in% species) {
+          if(!all(row.names(Organism$Interact[[j]][[i]]) %in%
+                  c(as.character(Organism$Future[[j]]$current), i))) {
+            stop(paste("Interaction table", paste(j, i, sep = "."),
+                       "does not match", j, "current stages"))
+          }
+        }
       }
     if( is.null( Organism$MeanValue[[i]] ))
       Organism$MeanValue[[i]] <- list( )
@@ -100,9 +118,8 @@ setOrgInfo <- function( community, species, hosts, package, messages = TRUE,
       cat( "Keeping Mean Value information for", i, "if any\n" )
   }
   for( i in unique( getOrgFeature( community, species, "substrate" ))) {
-    substrate <- paste( i, i, sep = "." )
-    mydata( substrate, getOrgInfo( community, "package" ), messages = messages)
-    Organism$Interact[[i]][[i]] <- my.eval( substrate )
+    Organism$Interact[[i]][[i]] <- getOrgData(community, i, i,
+                                              messages, datadir)
   }
   community$org <- Organism
   community
@@ -118,11 +135,13 @@ getOrgData <- function(community, left, right,
   tmp <- paste( left, right, sep = "." )
   if((data_exists <- (datadir != ""))) {
     extensions <- c(".txt", ".tsv", ".csv", ".xls", ".xlsx")
-    datafile <- file.path(datasir, paste0(tmp, extensions))
+    datafile <- file.path(datadir, paste0(tmp, extensions))
     data_exists <- file.exists(datafile)
     if(any(data_exists)) {
       datafile <- datafile[data_exists][1]
       data_exists <- TRUE
+    } else {
+      data_exists <- FALSE
     }
   }
   if(!data_exists) {

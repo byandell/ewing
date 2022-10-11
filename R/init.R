@@ -28,12 +28,11 @@
 
 #' Initialize simulation run
 #' 
-#' Initializes simulation using organizm features.
-#' 
+#' Initializes simulation using organism features.
+#' Default data are used unless user provides global data
+#' or uses the hidden argument `datadir` to specify a folder with user data.
 #' 
 #' @param package package where community data features can be found
-#' @param species list of species to simulate
-#' @param hosts list of hosts among species
 #' @param count number of individuals per species (single number or count in order of `species`)
 #' @param interact ask for species count if `TRUE` and interactive
 #' @param messages show messages if `TRUE` (default)
@@ -56,15 +55,16 @@
 #' @importFrom readxl read_xls read_xlsx
 #' 
 init.simulation <- function( package = "ewing", 
-                            species = getOrgFeature( community )[1:2],
-                            hosts = getOrgHosts( community, species ),
                             count = 200,
                             interact = FALSE,
                             messages = TRUE,
                             ...)
 {
-  community <- initOrgInfo( package, messages = messages )
+  community <- initOrgInfo( package, messages = messages, ... )
   community <- initTemp( community, messages = messages )
+  
+  species <- getOrgFeature( community )[1:2]
+  hosts <- getOrgHosts( community, species )
   
   if(messages) {
     cat( "Creating simulation organism set using species:\n",
@@ -484,13 +484,13 @@ sampleOrgSubstrate <- function( community, species, elements = seq( nrow( inter 
 ###########################################################################################
 ## System files
 ###########################################################################################
-my.read <- function(dataname)
+my.read <- function(dataname, stringsAsFactors = TRUE)
 {
   switch(tools::file_ext(dataname),
-         ".txt", ".tsv" = read.table(dataname),
-         ".csv" = read.csv(dataname),
-         ".xls" = readxl::read_xls(dataname),
-         ".xlsx" = readxl::read_xlsx(dataname))
+         "txt" =, "tsv" = read.table(dataname, stringsAsFactors = stringsAsFactors),
+         "csv" = read.csv(dataname, stringsAsFactors = stringsAsFactors),
+         "xls" = readxl::read_xls(dataname),
+         "xlsx" = readxl::read_xlsx(dataname))
 }
 ###########################################################################################
 my.eval <- function(species, extension, element, checkdata = FALSE )

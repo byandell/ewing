@@ -6,8 +6,6 @@
 \usage{
 init.simulation(
   package = "ewing",
-  species = getOrgFeature(community)[1:2],
-  hosts = getOrgHosts(community, species),
   count = 200,
   interact = FALSE,
   messages = TRUE,
@@ -16,10 +14,6 @@ init.simulation(
 }
 \arguments{
 \item{package}{package where community data features can be found}
-
-\item{species}{list of species to simulate}
-
-\item{hosts}{list of hosts among species}
 
 \item{count}{number of individuals per species (single number or count in order of `species`)}
 
@@ -33,7 +27,9 @@ init.simulation(
 Object with elements for each species that are created by init.population.
 }
 \description{
-Initializes simulation using organizm features.
+Initializes simulation using organism features.
+Default data are used unless user provides global data
+or uses the hidden argument `datadir` to specify a folder with user data.
 }
 \examples{
 

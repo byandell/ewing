@@ -22,6 +22,9 @@ ewing_discrete1 <- function(increment = 0.5, ...)
   out <- future.events(mysim, refresh = 1000, plotit = FALSE, messages = FALSE, ...)
   attrs <- attributes(out)
   
+  # Get age classes used later for summaries and plots
+  items <- purrr::map(out$org$Future, function(x) levels(x$ageclass))
+  
   out <- readCount(out)
   out <- purrr::map(
     out,
@@ -38,6 +41,7 @@ ewing_discrete1 <- function(increment = 0.5, ...)
     })
   attr(out, "count") <- attrs$count
   attr(out, "nstep") <- attrs$nstep
+  attr(out, "items") <- items
   out
 }
 #' Envelope for Ewing simulations
@@ -73,14 +77,11 @@ make_ewing_discrete <- function(object) {
   nsim <- length(object)
   class(object) <- c("ewing_discrete", class(object))
   
-  ## Hardwired for now!
-  attr(object, "species") <- species <- c("host", "parasite")
-  attr(object, "items") <- list(
-    host = c("crawler", "host", "gravid"),
-    parasite = c("young", "adult"))
+  attr(object, "species") <- species <- names(object[[1]])
   attr(object, "ordinate") <- "time"
   attr(object, "count") <- attr(object[[1]], "count")
   attr(object, "nstep") <- attr(object[[1]], "nstep")
+  attr(object, "items") <- attr(object[[1]], "items")
   attr(object, "nsim") <- nsim
   object
 }

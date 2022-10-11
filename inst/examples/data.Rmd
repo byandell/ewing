@@ -1,0 +1,47 @@
+---
+title: "data"
+author: "Brian Yandell"
+date: "2022-09-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, messages = FALSE, warnings = FALSE,
+                      fig.width = 9, fig.height = 9)
+```
+
+
+```{r}
+library(ewing)
+```
+
+### Default Data
+
+```{r}
+mysim <- init.simulation(interact = FALSE, message = FALSE)
+```
+
+```{r}
+simres <- future.events(mysim, nstep = 1000, plotit = FALSE, messages = FALSE)
+```
+
+```{r}
+ggplot_ewing(simres)
+```
+
+### Local Copy Simplified data
+
+```{r}
+mysim <- init.simulation(interact = FALSE, message = FALSE, datadir = "local/data")
+```
+
+```{r}
+simres <- future.events(mysim, nstep = 1000, plotit = FALSE, messages = FALSE)
+```
+
+Local copy has fewer stages and changed names.
+
+```{r}
+ggplot_ewing(simres)
+```
+
