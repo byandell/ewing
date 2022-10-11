@@ -164,7 +164,11 @@ ewingServer <- function(input, output) {
   })
   envdata <- shiny::reactive({
     shiny::req(simres())
-    ewing_envelopes(simres())
+    if(inherits(simres(), "ewing_discrete")) {
+      ewing_envelopes(simres())
+    } else {
+      NULL
+    }
   })
   envelopePlot <- shiny::reactive({
     shiny::req(envdata())
