@@ -5,7 +5,7 @@ Author: Brian S. Yandell <yandell@stat.wisc.edu>
 Maintainer: Brian S. Yandell <yandell@stat.wisc.edu>
 Title: Ewing's Quantitative Population Ethology
 Description: QPE event-driven individual-based simulation modeling system.
-Imports: splines, graphics, stats, utils, tools, readxl,
+Imports: splines, graphics, stats, utils, tools, readxl, tidyselect,
     tidyr, dplyr, ggplot2, tibble, rlang, purrr, GET, shiny, patchwork
 License: GPL-3
 URL: http://www.stat.wisc.edu/~yandell/ewing
