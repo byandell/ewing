@@ -1,7 +1,7 @@
 Ewing's Quantitative Population Ethology
 
 Before installing the package, you may want to examine the interactive Shiny app
-<https://data-viz.it.wisc.edu/ewing/>, which provides web access to this package.
+<https://data-viz.it.wisc.edu/ewing2/>, which provides web access to this package.
 
 Change one of the simulation values on the Shiny app, say number or hosts or parasites, or number of simulation steps. Then click on **Start Simulation** button to start a simulation. You can redo a simulation with the same settings, or change the settings. 
 
