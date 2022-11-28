@@ -148,17 +148,120 @@ interactive design plot for high and low temperatures. Uses `graphics::locator()
 temp.design(simres)
 ```
 
-## Another attempt
+# Inner workings of ewing simulation
 
-Some of the data are stored in different ways, and it will take me awhile to 
-sort out what is going on. For now stick to the above script.
+Simulations are driven by flat files that declare the species, their relationships with
+each other and with the model substrate, and the details of scheduling future events for
+individuals.
+There are also files that specify the temperature regime, which is important if species
+respond to degree-day (`DD`) cues rather than temporal cues; this aspect is only briefly
+developed (see some plot ideas above) and will not be discussed further below.
+Here we use the default files in the `data` part of this package.
 
-One begins a simulation by initializing a species. At present, this is done by setting up a space- or tab-delimited file with various fields. Each row represents a stage in the Red Scale's life, although the first two rows are dummies for parasitization for now. The fields are mostly self-explanatory. DD represents mean degree days to that future event. Thus the mean time to "virgin" from "third.3" is 560-465=95 DD. The next two fields concern the Aphytis parasite, comprising the relative risk of being killed by an Aphytis that is feeding or is laying eggs, respectively. There was no explicit information on feeding risk, so these are made up following Luck's papers. The egg-laying risks are directly from the IPM pamphlet. The next two fields have the relative risks for the other two parasites. Then follows the gender (only females modeled here). The next field has the plotting symbol (pch), followed by the plotting color. The last and most important column is the life stage.
+These simulations keep track of the current stage and next scheduled future event for every individual. That is, these simulations are individual-based rather than population-based.
+It is useful (such as for plots and other summaries) to collapse over individuals to get
+population trends, but impossible to reverse this without unrealistic assumptions.
+To that end, summary information at the population level (say by species life stages)
+are accumulated during the simulation, and later simplified for plots and tables.
 
-```
-data(redscale)
-```
+This simulation is set up so that names of species, their stages, and subtrates are
+taken from the flat tables rather than being hardcoded. They are not limited to
+two species, although ultimately interactions are dyadic (two individuals) and monadic
+choices of future trajectories come down to competing risks for individuals.
 
-```
-redscale.run <- init.population(redscale, 200)
-```
+## Initialization
+
+One begins a simulation by initializing all species.
+The `organism.features` table specifies the `units` (`hr` for hour or `DD` for degree-day),
+`offspring` (either a Poisson mean number or the name of the `host`), species to `attack` (or `NA`), stage for `birth` (`gravid` for `host`), whether species relies on a `substrate`,
+denominator to `deplete` individuals relative to time units that have passed,
+which ageclass (`subclass`) of a species moves across the `substrate` (`host` for `host` and `adult`
+for `parasite`; used for counting), what type is the parasite (`ecto` for `parasite` but could be `endo`),
+and which stage of a species can actually `move` along the `substrate`.
+
+Each species has a future event scheduling table (`future.host` and `future.parasite`).
+The `init` column specifies the relative weight of `current` stages for simulating
+the initial population.
+
+## Future events and competing risks
+
+Each row of a future event scheduling table has possible `future` events from a `current`
+stage in the life of an individual of that species.
+The `fid` points to the row in this table corresponding to the `future` stage.
+The code uses numeric `fid` because it ends up in a vector of other numeric values.
+An individual in a species will progress from `current` to `future` stage
+when its event time is at the top of the event queue, unless some interaction leads to
+a change for that individual. 
+The `future` event time is scheduled using the `time` entry. When an individual
+is at the top of the event queue, the `future` event time is scheduled using a spline
+interpolation with mean from the `time` value. If the species uses hours (`hr`),
+the spline is just a straight line, but if it uses `DD` the spline uses information
+from the `temperature` profile for the simulation (again, not discussed here yet).
+
+Note that sometimes there are multiple rows with the same `current` value, which are 
+competing risks. For instance `future.host` has competing risks from the `current` stage
+`second.3` of becoming `female` or `male`, while `future.parasite` has competing risk from
+the current stage `adult` to `feed` or `ovip`osit, with return lines from `feed` and `ovip`
+to `adult`. That is, an adult parasite might feed or oviposit, which have different health
+and population consequences: feeding prolongs life while ovipositing produces new offspring
+and depletes life.
+
+All individuals have a `current` stage and are organized into an event queue,
+which is a triply-linked leftist tree,
+based on the scheduled time for their next `future` event.
+Each species has its own leftist tree, with the tops of those trees
+identifying the individuals with the closest (in time) next `future` event.
+Internal routine `put.species`, in conjuction with
+`leftist.update`, `leftist.remove` or `leftist.birth`, modify the leftist trees
+when there is an individual event update, death (remove) or birth(s), respectfully.
+
+## Plots and summaries
+
+Plots used the plot character (`pch`), `color` (for stage) and `ageclass` (for summary
+grouping). The `event` column is useful for summary tables and plotting, and sometimes
+for other categorization (such as distinguishing `birth` and `death` from other types
+of `future` events).
+
+## Substrates and movement around triangular grid
+
+This simulation system allows for individuals to be dispersed across a set of `substrate`s
+and to move within and between `substrate` elements.
+Currently, each `substrate` is designed on a triangular coordinate system of interconnected
+triangles with diameter of 10 units (hardwired in internal routine `event.move`).
+Connectivity of `substrate` segments is determined by table `substrate.substrate`, while
+movement options for species are determined by species tables (`substrate.host` and
+`substrate.parasite`). `substrate` elements may have sides (`1,2,3,4` for `fruit`, and
+`top`, `bottom` for `leaf`). Relative weights for movement are specified for `init`ial
+position, chance of a `parasite` to `find` a `host`, and choice to `move` among `substrate`
+elements. The last columns of the `substrate` species tables give the relative weight
+of moving from the current `substrate` to one of the other substrates.
+
+The triangular grid and approximations used herein capture most (~95%) of movement
+while simplifying calculations to max and min primarily rather than using quadratic
+calculation needed for a rectangular coordinate system (where the Pythagorean theorem
+rules).
+
+## Redscale thoughts
+
+The fields are mostly self-explanatory. DD represents mean degree days to that future event. Thus the mean time to "virgin" from "third.3" is 560-465=95 DD. The next two fields concern the Aphytis parasite, comprising the relative risk of being killed by an Aphytis that is feeding or is laying eggs, respectively. There was no explicit information on feeding risk, so these are made up following Luck's papers. The egg-laying risks are directly from the IPM pamphlet. The next two fields have the relative risks for the other two parasites. Then follows the gender (only females modeled here). The next field has the plotting symbol (pch), followed by the plotting color. The last and most important column is the life stage.
+
+# Scaling up
+
+The beginning simulations use hundreds of individuals and thousands of simulation steps,
+as well as tens or hundreds of replicate simulations.
+Theoretically, it should be possible to scale simulations up to hundreds of thousands
+of individuals through some attention to loosely coupled systems and GPUs.
+At small population sizes, these simulations may shed new light on shortcomings of
+population-based simulations, but it is in large scale that they have the potential
+to provide useful insights for systems-level study.
+
+It is useful to note that the simulation steps through events rather than time.
+Hence time is a function of events. Only in retrospect can the linear time
+sequence, and population numbers, be measured. Further, the relationship between
+steps and time is nonlinear, so that many steps may cover only a short time span,
+or a few steps may traverse much time. Further, different species may have a
+different relationship of steps to time. That is, the resolution for a species
+is set by the granularity of events and their mean time duration. The span of
+the simulation is determined by the number of allowed steps, and may result in
+different spans for different species, when taking into account the unrealized
+`future` events that remain in the community at the time of simulation stop.

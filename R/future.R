@@ -30,9 +30,36 @@
 #' Steps through future events for community with one or more species. Keeps
 #' track of counts by age classes and substrates.
 #' 
+#' @details 
 #' This is the main routine for Ewing's Quantitative Population Ethology. It
 #' steps through future events for individuals starting with the next minimum
 #' future event time.
+#' 
+#' All individuals have a `current` stage and are organized into an event queue,
+#' which is a triply-linked leftist tree,
+#' based on the scheduled time for their next `future` event.
+#' Each species has its own leftist tree, with the tops of those trees
+#' identifying the individuals with the closest (in time) next `future` event.
+#' Internal routine `put.species`, in conjuction with
+#' `leftist.update`, `leftist.remove` or `leftist.birth`, modify the leftist trees
+#' when there is an individual event update, death (remove) or birth(s), respectfully.
+#' 
+#' An individual in a species will progress from `current` to `future` stage
+#' when its event time is at the top of the event queue. The `fid` points to the row in
+#' this table corresponding to the `future` stage, which would then become the `current` stage.
+#' The code uses numeric `fid` because it ends up in a vector of other numeric values.
+#' 
+#' Note that sometimes there are multiple rows with the same `current` value, which are 
+#' competing risks. For instance `future.host` has competing risks from the `current` stage
+#' `second.3` of becoming `female` or `male`, while `future.parasite` has competing risk from
+#' the current stage `adult` to `feed` or `ovip`osit, with return lines from `feed` and `ovip`
+#' to `adult`. That is, an adult parasite might feed or oviposit, which have different health
+#' and population consequences: feeding prolongs life while ovipositing produces new offspring
+#' and depletes life.
+#' 
+#' The `time` entry is used to schedule the time of the `future` event. That is, when and
+#' individual appears at the top of the event queue. 
+#' 
 #' 
 #' A plot is created periodically unless \code{plotit=FALSE}.
 #' If argument `file` is set to a file name, an external
@@ -236,8 +263,7 @@ get.future <- function (community, species,
   ## NOTE: This is the slow routine. For every event, it has to check if there
   ## is a mean value function and then call rspline.
 
-  ## the structure species.future
-  ## is set up right to handle competing risks!
+  ## the structure future.species is set up to handle competing risks!
   future <- getOrgFuture(community, species, c("current", "fid", "time"))
   individuals <- as.matrix(individuals)
 
