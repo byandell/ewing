@@ -41,6 +41,7 @@ ewingUI <- function() {
                              "Number of Simulations",
                              c(1,10,20,50,100,200),
                              1, inline = TRUE),
+          
           shiny::actionButton("go", "Start Simulation"),
           
           shiny::conditionalPanel(
@@ -98,6 +99,7 @@ ewingUI <- function() {
 #'                   downloadHandler fileInput
 #'                   incProgress withProgress
 #' @importFrom utils write.csv
+#' @importFrom stringr str_remove
 #'                   
 ewingServer <- function(input, output) {
   
@@ -110,7 +112,7 @@ ewingServer <- function(input, output) {
           # - feed simres() back into future.events, which requires some logic
           # - use option "append = TRUE" to append to outfile
           siminit <- init.simulation(count = as.numeric(c(input$host, input$parasite)),
-                                     datadir = datadir()) # initialize simulation
+                                     datafile = datafile()) # initialize simulation
           future.events(siminit, nstep = input$steps, plotit = FALSE) # simulate future events
         } else {
           shiny::withProgress(message = paste('Ewing Discrete', nsim,
@@ -127,7 +129,7 @@ ewingServer <- function(input, output) {
           })
         }
       }),
-      input$host, input$parasite, input$steps, input$nsim, input$go, input$datadir),
+      input$host, input$parasite, input$steps, input$nsim, input$go, input$datafile),
     input$go)
       
   distplot <- shiny::reactive({
@@ -238,25 +240,37 @@ ewingServer <- function(input, output) {
     }
   )
   
-  output$datafiles <- shiny::renderUI({
+  datanames <- shiny::reactive({
+    if(datafile() == "") {
+      c("organism.features", "future.host", "future.parasite",
+        "substrate.host", "substrate.parasite", "substrate.substrate",
+        "temperature.base", "temperature.par")
+    } else {
+      readxl::excel_sheets(datafile())
+    }
+  })
+  output$inputfiles <- shiny::renderUI({
     shiny::tagList(
-      shiny::selectInput("dataname", "",
-                         c("organism.features", "future.host", "future.parasite",
-                           "substrate.host", "substrate.parasite", "substrate.substrate"),
-                         "organism.features"),
+      shiny::selectInput("dataname", "", datanames(), "organism.features"),
       shiny::renderDataTable({
-        mydata(shiny::req(input$dataname), "ewing")
-        out <- get(input$dataname)
+        out <- getOrgData(simres(),
+                   left = stringr::str_remove(shiny::req(input$dataname), "\\..*"),
+                   right = stringr::str_remove(shiny::req(input$dataname), ".*\\."),
+                   messages = FALSE, datafile = datafile())
+        # Kludge to reinstate rownames as a column
+        if(!identical(rownames(out), as.character(seq_len(nrow(out))))) {
+          out <- data.frame(rownames = rownames(out), out)
+        }
         out
       }, escape = FALSE,
       options = list(scrollX = TRUE, pageLength = 10)))
   })
   
-  datadir <- shiny::reactive({
-    if(shiny::isTruthy(input$datadir)) {
-      dirname(input$datadir$name)
+  datafile <- shiny::reactive({
+    if(shiny::isTruthy(input$datafile)) {
+      input$datafile$datapath
     } else {
-      datadir <- ""
+      ""
     }
   })
   output$outs <- shiny::renderUI({
@@ -268,14 +282,10 @@ ewingServer <- function(input, output) {
       shiny::conditionalPanel(
         condition = "input.button == 'Input Data'",
         shiny::tagList(
-# ****
-# Would like to locate directory with multiple files, but seems not to work.
-# It may be a security risk with shiny.
-# Does it make sense to upload one at time? Would need to rethink data files.
-#          shiny::fileInput("datadir", "User Data File (pick one):",
-#                           accept = c(".txt", ".tsv", ".csv", ".xls", ".xlsx")),
-# ****
-          shiny::uiOutput("datafiles"))))
+          shiny::fileInput("datafile", "Optional XLSX Input Data File",
+                           multiple = FALSE,
+                           accept = c(".xls", ".xlsx")),
+          shiny::uiOutput("inputfiles"))))
   })
   
   output$version <- shiny::renderText({

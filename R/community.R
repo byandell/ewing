@@ -51,21 +51,21 @@ get.base <- function( community, species )
 ##########################################################################################
 ### simulation organism administration
 ##########################################################################################
-initOrgInfo <- function( package, messages = TRUE, datadir = "", ... )
+initOrgInfo <- function( package, messages = TRUE, datafile = "", ... )
 {
   community <- list( pop = list( ))
   community$org <- list( )
   community$org$package <- package
   ## Get data
   community$org$Feature <- getOrgData(community, "organism", "features",
-                                      messages, datadir)
+                                      messages, datafile)
 
   community$pop <- list()
   community
 }
 ##########################################################################################
 setOrgInfo <- function( community, species, hosts, package, messages = TRUE,
-                        datadir = "", ... )
+                        datafile = "", ... )
 {
   Organism <- community$org
 
@@ -84,7 +84,7 @@ setOrgInfo <- function( community, species, hosts, package, messages = TRUE,
 
   for( i in species ) {
     future <- getOrgData(community, "future", i,
-                         messages, datadir)
+                         messages, datafile)
     
     # Check that future agrees with organism.feature information
     subclass <- Organism$Feature[i,"subclass"]
@@ -100,7 +100,7 @@ setOrgInfo <- function( community, species, hosts, package, messages = TRUE,
     for( j in hosts )
       if( i != j ) {
         Organism$Interact[[j]][[i]] <- getOrgData(community, j, i,
-                                                  messages, datadir)
+                                                  messages, datafile)
         
         # Check that interaction agrees with host current stage information
         # This is messy!
@@ -119,38 +119,52 @@ setOrgInfo <- function( community, species, hosts, package, messages = TRUE,
   }
   for( i in unique( getOrgFeature( community, species, "substrate" ))) {
     Organism$Interact[[i]][[i]] <- getOrgData(community, i, i,
-                                              messages, datadir)
+                                              messages, datafile)
   }
   community$org <- Organism
   community
 }
 ###########################################################################################
 getOrgData <- function(community, left, right,
-                       messages = TRUE, datadir = "")
+                       messages = TRUE, datafile = "")
 {
   # Get Organism Data from
   #     package data
   #     global data supplied by user
   #     external data file supplied by user
-  tmp <- paste( left, right, sep = "." )
-  if((data_exists <- (datadir != ""))) {
-    extensions <- c(".txt", ".tsv", ".csv", ".xls", ".xlsx")
-    datafile <- file.path(datadir, paste0(tmp, extensions))
-    data_exists <- file.exists(datafile)
-    if(any(data_exists)) {
-      datafile <- datafile[data_exists][1]
+  sheet <- paste( left, right, sep = "." )
+  if((data_exists <- (datafile != ""))) {
+    if(dir.exists(datafile)) {
+      extensions <- c(".txt", ".tsv", ".csv", ".xls", ".xlsx")
+      datafile <- file.path(datafile, paste0(sheet, extensions))
+      data_exists <- file.exists(datafile)
+      if(any(data_exists)) {
+        datafile <- datafile[data_exists][1]
+        data_exists <- TRUE
+      } else {
+        data_exists <- FALSE
+      }
+      sheet <- ""
+    } else { # datafile is a file, which must be xls or xlsx
       data_exists <- TRUE
-    } else {
-      data_exists <- FALSE
     }
   }
   if(!data_exists) {
     # Load package data or get user-provided global data.
-    mydata( tmp, getOrgInfo( community, "package" ), messages = messages)
-    my.eval( tmp )
+    mydata( sheet, getOrgInfo( community, "package" ), messages = messages)
+    my.eval( sheet )
   } else {
     # Read data file from user if provided.
-    my.read(datafile)
+    if(sheet == "")
+      my.read(datafile)
+    else {
+      out <- as.data.frame(readxl::read_excel(datafile, sheet = sheet, .name_repair = "none"))
+      if(names(out)[1] == "") { # first column is actual row names
+        rownames(out) <- out[[1]]
+        out[[1]] <- NULL
+      }
+      out
+    }
   }
 }
 ###########################################################################################
@@ -313,21 +327,23 @@ setEvents <- function( community, period )
 ##########################################################################################
 initTemp <- function( community, lo.hour = 0, hi.hour = getTemp( community, "Unit" ),
                      days = TemperaturePar["Days"], 
-                     messages = TRUE )
+                     messages = TRUE, datafile = "", ... )
 {
   if(messages) {
     cat( "Initializing Temperature Profile ...\n" )
   }
   Temperature <- list()
   
-  mydata( "TemperaturePar", getOrgInfo( community, "package" ), messages = messages)
+  TemperaturePar <- getOrgData(community, "temperature", "par", messages, datafile)
+#  mydata( "TemperaturePar", getOrgInfo( community, "package" ), messages = messages)
   TemperaturePar <- array( TemperaturePar[,"value"],
                           dimnames = list( row.names( TemperaturePar )))
   Temperature$Unit <- TemperaturePar["Unit"]
   Temperature$Min <- TemperaturePar["Min"]
 
   ## set up daily temperature base
-  mydata( "TemperatureBase", getOrgInfo( community, "package" ), messages = messages)
+  TemperatureBase <- getOrgData(community, "temperature", "base", messages, datafile)
+#  mydata( "TemperatureBase", getOrgInfo( community, "package" ), messages = messages)
   Temperature$Time <- split( TemperatureBase$Time, TemperatureBase$Day )
   Temperature$Base <- split( TemperatureBase$Base, TemperatureBase$Day )
 

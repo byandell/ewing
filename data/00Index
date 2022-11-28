@@ -1,5 +1,9 @@
-TemperatureBase         temperature data tables for simulation
-future.host             future events table for species simulation
-host.parasite           host-parasite interaction table for simulation
 organism.features       organism features master table
-substrate.host          substrate data for host-parasite movement
+future.host             future events table for host species simulation
+future.parasite         future events table for parasite species simulation
+host.parasite           host-parasite interaction table for simulation
+substrate.host          substrate data for host movement
+substrate.parasite      substrate data for parasite movement
+substrate.substrate     substrate data for substrate movement
+temperature.base        temperature data tables for simulation
+temperature.par         temperature parameter

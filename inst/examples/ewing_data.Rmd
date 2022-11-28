@@ -1,0 +1,106 @@
+---
+title: "Ewing Data"
+author: "Brian Yandell"
+date: "2022-11-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ewing)
+library(tidyverse)
+```
+
+```{r}
+data("organism.features")
+data("future.host")
+data("future.parasite")
+data("host.parasite")
+data("substrate.host")
+data("substrate.parasite")
+```
+
+Get names of data structures.
+
+```{r}
+dlist <- c("future.host",
+           "future.parasite",
+           "host.parasite",
+           "substrate.host",
+           "substrate.parasite")
+dlist <- as.list(dlist)
+names(dlist) <- c(dlist)
+nlist <- map(dlist, function(x) {
+  names(get(x))
+})
+```
+
+We can combine (rbind) the futures by adding a column for species.
+
+```{r}
+future <- bind_rows(
+  host = future.host,
+  parasite = future.parasite,
+  .id = "species")
+```
+
+We can combine the substrate in a similar way, but first have to change the rownames into a column.
+
+```{r}
+ftemp <- function(x) {
+  out <- data.frame(subname = rownames(x), x)
+  rownames(out) <- NULL
+  out
+}
+substrate <- bind_rows(
+  host = ftemp(substrate.host),
+  parasite = ftemp(substrate.parasite),
+  .id = "species")
+
+```
+
+Then we have 4 types of files:
+
+- future
+- substrate
+- host.parasite
+- organism.features
+
+The organism.features would work better as a long table.
+
+```{r}
+ftemp <- function(x, cc) {
+  out <- sapply(x[cc,], as.character)
+  names(out) <- NULL
+  out
+}
+features <- bind_rows(
+  host = data.frame(feature = colnames(organism.features),
+                    value = ftemp(organism.features, 1)),
+  parasite = data.frame(feature = colnames(organism.features),
+                        value = ftemp(organism.features, 2)),
+  .id = "species") %>%
+  filter(!is.na(value))
+```
+
+The host.parasite could be appended to host with some adjustment.
+
+- future.host has "starved" current state
+- future.host has competing risks for "second.3" to "female" and "male"
+- host.parasite has "parasite" current state
+- host.parasite has rownames which should be "current"
+
+Could do the following:
+
+- add columns to future for "ovip" "feed" "offspring" "male"
+- include NA entries for these for parasite
+- add column to indicate what specied is parasite
+
+## Translation
+
+Need routines to translate between formats, or adjust routines
+to handle this automatically.
+

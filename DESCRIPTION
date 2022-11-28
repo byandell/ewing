@@ -1,6 +1,6 @@
 Package: ewing
-Version: 1.4-12
-Date: 2022/10/10
+Version: 1.5.1
+Date: 2022/11/27
 Author: Brian S. Yandell <yandell@stat.wisc.edu>
 Maintainer: Brian S. Yandell <yandell@stat.wisc.edu>
 Title: Ewing's Quantitative Population Ethology
@@ -9,7 +9,7 @@ Imports: splines, graphics, stats, utils, tools, readxl, tidyselect,
     tidyr, dplyr, ggplot2, tibble, rlang, purrr, GET, shiny, patchwork
 License: GPL-3
 URL: http://www.stat.wisc.edu/~yandell/ewing
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.2
 Encoding: UTF-8
 Suggests: 
     knitr,

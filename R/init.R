@@ -30,7 +30,7 @@
 #' 
 #' Initializes simulation using organism features.
 #' Default data are used unless user provides global data
-#' or uses the hidden argument `datadir` to specify a folder with user data.
+#' or uses the hidden argument `datafile` to specify a folder with user data.
 #' 
 #' @param package package where community data features can be found
 #' @param count number of individuals per species (single number or count in order of `species`)
@@ -61,7 +61,7 @@ init.simulation <- function( package = "ewing",
                             ...)
 {
   community <- initOrgInfo( package, messages = messages, ... )
-  community <- initTemp( community, messages = messages )
+  community <- initTemp( community, messages = messages, ... )
   
   species <- getOrgFeature( community )[1:2]
   hosts <- getOrgHosts( community, species )
@@ -212,6 +212,7 @@ init.population <- function( community, species, n = 200, width = 100,
   ## mean number of offspring
   if( timeit )
     proctime <- proc.time()
+  #***This is where parasite is crashing--no offspring?**
   community <- initOffspring( community, species )
   if( timeit ) {
     tmp <- proc.time() - proctime
@@ -251,6 +252,9 @@ initOffspring <- function( community, species )
   }
   else {
     orgoffspring <- orgoffspring[ orgoffspring > 0 ]
+    
+    if(!length(orgoffspring))
+      return(community)
   
     ## figure out initial offspring load based on host distribution
 
@@ -268,12 +272,15 @@ initOffspring <- function( community, species )
                         nomatch = 0 )
     host <- as.matrix( host[ , !is.na( match( host["stage",], hoststages )) ] )
     if( ncol( host ) == 0 )
-      return( rep( 0, norganism ))
+      return( community )
 
     tmp <- !is.na( match( hoststages, host["stage",] ))
     hoststages <- hoststages[tmp]
     orgoffspring <- orgoffspring[tmp]
 
+    if(!length(orgoffspring))
+      return(community)
+    
     dd <- tapply( host["time",], host["stage",], sum )
     dd[ as.character( hoststages[
       is.na( match( hoststages, names( dd ))) ] ) ] <- 0
@@ -370,6 +377,8 @@ getOrgFuture <- function( community, species, feature, current,
   }
   if( is.null( future ))
     return( NA )
+  if(is.character( future ))
+    future <- as.factor(future)
   future
 }
 ###########################################################################################
@@ -394,6 +403,8 @@ getOrgInteract <- function( community,
   inter <- tmp[,event]
   if( length( event ) == 1 )
     names( inter ) <- row.names( tmp )
+  if(is.character(inter))
+    inter <- factor(inter)
   inter
 }
 ###########################################################################################
@@ -469,9 +480,9 @@ sampleOrgSubstrate <- function( community, species, elements = seq( nrow( inter 
 {
   if( is.na( substrate.name ))
     return( elements )
-  newsub <- as.matrix( cbind( elements, inter[ elements, levels( inter$substrate ) ] ))
+  newsub <- as.matrix( cbind( elements, inter[ elements, levels( factor(inter$substrate) ) ] ))
   apply( newsub, 1, function( x, is ) {
-    ns <- sample( levels( is ), 1, prob = x[-1] / sum( x[-1] ))
+    ns <- sample( levels( factor(is) ), 1, prob = x[-1] / sum( x[-1] ))
     sub <- seq( nrow( inter ))[ ns == is ]
     if( length( sub ) > 1 ) {
       newsub <- getOrgInteract( community, substrate.name, substrate.name )[x[1],sub]

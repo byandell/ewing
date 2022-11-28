@@ -29,7 +29,7 @@ Object with elements for each species that are created by init.population.
 \description{
 Initializes simulation using organism features.
 Default data are used unless user provides global data
-or uses the hidden argument `datadir` to specify a folder with user data.
+or uses the hidden argument `datafile` to specify a folder with user data.
 }
 \examples{
 

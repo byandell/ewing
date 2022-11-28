@@ -23,7 +23,7 @@ ewing_discrete1 <- function(increment = 0.5, ...)
   attrs <- attributes(out)
   
   # Get age classes used later for summaries and plots
-  items <- purrr::map(out$org$Future, function(x) levels(x$ageclass))
+  items <- purrr::map(out$org$Future, function(x) levels(factor(x$ageclass)))
   
   out <- readCount(out)
   out <- purrr::map(
