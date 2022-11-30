@@ -115,7 +115,8 @@ ggplot_current <- function( community,
   future = getOrgFuture( community, species, c("color","pch") )
   
   # Substrate names
-  substrates <- names(getOrgInteract(community, "substrate", "substrate"))
+  substrate <- getOrgFeature( community, species, "substrate")
+  substrates <- names(getOrgInteract(community, substrate, substrate))
   
   # Convert triangular coordinates into Cartesian (xy) coordinates
   position = paste( "pos", letters[1:3], sep = "." )

@@ -42,6 +42,10 @@ ewingUI <- function() {
                              c(1,10,20,50,100,200),
                              1, inline = TRUE),
           
+          shiny::fileInput("datafile", "Optional XLSX Input Data File",
+                           multiple = FALSE,
+                           accept = c(".xls", ".xlsx")),
+          
           shiny::actionButton("go", "Start Simulation"),
           
           shiny::conditionalPanel(
@@ -281,11 +285,7 @@ ewingServer <- function(input, output) {
         shiny::uiOutput("plots")),
       shiny::conditionalPanel(
         condition = "input.button == 'Input Data'",
-        shiny::tagList(
-          shiny::fileInput("datafile", "Optional XLSX Input Data File",
-                           multiple = FALSE,
-                           accept = c(".xls", ".xlsx")),
-          shiny::uiOutput("inputfiles"))))
+        shiny::uiOutput("inputfiles")))
   })
   
   output$version <- shiny::renderText({
