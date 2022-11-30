@@ -172,12 +172,17 @@ choices of future trajectories come down to competing risks for individuals.
 ## Initialization
 
 One begins a simulation by initializing all species.
-The `organism.features` table specifies the `units` (`hr` for hour or `DD` for degree-day),
-`offspring` (either a Poisson mean number or the name of the `host`), species to `attack` (or `NA`), stage for `birth` (`gravid` for `host`), whether species relies on a `substrate`,
-denominator to `deplete` individuals relative to time units that have passed,
-which ageclass (`subclass`) of a species moves across the `substrate` (`host` for `host` and `adult`
-for `parasite`; used for counting), what type is the parasite (`ecto` for `parasite` but could be `endo`),
-and which stage of a species can actually `move` along the `substrate`.
+The `organism.features` table specifies multiple features of the simulated community.
+The `units` specify whether a species' internal close is regulated by the hour (`hr`) or by degree-day (`DD`). The `offspring` is either a Poisson mean number (for a `host` species) or the name of the `host` species (for a `parasite` species). Similarly, `attack` is set to the `host` species for a `parasite` or NA if species is not a `parasite`.
+The `parasite` column specifies the type of parasite (`ecto` or `endo`; NA if not a parasite).
+
+The `deplete` is the inverse of the depletion rate over time for individuals in species relative to time units that have passed. That is, the depleteion rate = (time lapse of event ) / `deplete` (leading of course to death unless the individual `feed`s.
+For species that are not parasites, the `birth` column has the stage when births occur (`gravid` for `host`).
+
+Individuals in a species may move across a `substrate`.
+Which ageclass (`subclass`) of a species moves across the `substrate`? (`host` for `host` and `adult` for `parasite`; used for counting)
+and which stage of a species can actually `move` along the `substrate`?
+
 
 Each species has a future event scheduling table (`future.host` and `future.parasite`).
 The `init` column specifies the relative weight of `current` stages for simulating

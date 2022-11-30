@@ -45,7 +45,7 @@ updateCount <- function( community, species, individual, is.death = FALSE, step 
   element <- elements[ individual["sub.stage"] ]
   subclass <- getOrgFeature( community, species, "subclass" )
   include <- subclass == getOrgAgeClass( community, species, individual[c("stage","future")] )
-  # not sure why this is needed
+  # need 2 values; if only one, replicate it.
   include <- rep_len(include, 2)
   ## leave old substrate
   if( !is.na( element ) & include[1] ) {

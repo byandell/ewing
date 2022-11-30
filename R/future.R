@@ -264,7 +264,8 @@ get.future <- function (community, species,
   ## is a mean value function and then call rspline.
 
   ## the structure future.species is set up to handle competing risks!
-  future <- getOrgFuture(community, species, c("current", "fid", "time"))
+  future <- getOrgFuture(community, species, c("current", "future", "time"))
+  future$fid <- match(future$future, future$current)
   individuals <- as.matrix(individuals)
 
   rownames <- dimnames(individuals)[[1]]
