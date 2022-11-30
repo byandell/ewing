@@ -17,9 +17,9 @@ relevant for this species.
  \item{birth}{stage for birth of offspring if host; missing if parasite}
  \item{substrate}{substrate on which organism lives}
  \item{deplete}{energy depletion rate over time of offspring load in units of number of offspring}
- \item{subclass}{class of stages to use for substrate movements in \code{future.events}}
+ \item{subclass}{ageclass of species to use for substrate movements in \code{future.events}}
  \item{parasite}{type of parasite or predator (ecto=ectoparasitoid, endo=endoparasitoid)}
- \item{move}{class of stages when species can move around substrate}
+ \item{move}{stage when species can move around substrate}
 }
 }
 \source{

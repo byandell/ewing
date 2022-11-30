@@ -27,6 +27,23 @@ Lisa D. Forster and Robert F. Luck, Entomology, UC Riverside.
 Contains life history events for QPE simulation. These are normally
 internalized via \code{init.simulation}.
 }
+\details{
+This sets out how an individual in a species will progress from `current` to `future` stage
+when its event time is at the top of the event leftist tree queue. The `fid` points to the row in
+this table corresponding to the `future` stage, which would then become the `current` stage.
+The code uses numeric `fid` because it ends up in a vector of other numeric values.
+
+Note that sometimes there are multiple rows with the same `current` value, which are 
+competing risks. For instance `future.host` has competing risks from the `current` stage
+`second.3` of becoming `female` or `male`, while `future.parasite` has competing risk from
+the current stage `adult` to `feed` or `ovip`osit, with return lines from `feed` and `ovip`
+to `adult`. That is, an adult parasite might feed or oviposit, which have different health
+and population consequences: feeding prolongs life while ovipositing produces new offspring
+and depletes life.
+
+The `time` entry is used to schedule the time of the `future` event. That is, when and
+individual appears at the top of the event queue.
+}
 \examples{
 
 data(future.host)
