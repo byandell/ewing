@@ -19,18 +19,7 @@ ewingUI <- function() {
         
         shiny::tagList(
           shiny::h4("Simulation Settings"),
-          shiny::sliderInput(inputId = "host",
-                             label = "Number of hosts:",
-                             min = 0,
-                             max = 500,
-                             value = 100,
-                             step = 20),
-          shiny::sliderInput(inputId = "parasite",
-                             label = "Number of parasites:",
-                             min = 0,
-                             max = 500,
-                             value = 100,
-                             step = 20),
+          shiny::uiOutput("sppsize"),
           shiny::sliderInput(inputId = "steps",
                              label = "Simulation steps:",
                              min = 1000,
@@ -146,27 +135,60 @@ ewingServer <- function(input, output) {
   output$distPlot <- shiny::renderPlot({
     distplot()
   })
-  hostplot <- shiny::reactive({
+  # *** This is not right. Need to get each species name here and in ggplot_current
+  # species <- ewing:::getOrgFeature(simres)
+  #   gives list but includes substrates.
+  # can figure out what substrate goes to species with 
+  # ewing:::getOrgFeature(simres, species[i], "substrate")
+  # if it is NA (or "NA"), then that is a substrate.
+  # So cycle through species generating plots.
+  # put as much in ggplot_current as possible.
+  species <- shiny::reactive({
+    get.organisms(datafile())$species
+  })
+  substrates <- shiny::reactive({
+    get.organisms(datafile())$substrates
+  })
+  output$sppsize <- shiny::renderUI({
+    shiny::req(species())
+    lapply(species(), function(x) {
+      shiny::sliderInput(inputId = x,
+                         label = paste0("Number of ", x, "s:"),
+                         min = 0,
+                         max = 500,
+                         value = 100,
+                         step = 20)
+    })
+  })
+  sppplot <- shiny::reactive({
+    shiny::req(species(), simres())
     if(inherits(simres(), "ewing")) {
-      ggplot_current(simres(), "host") + 
-        ggplot2::ggtitle(paste("host", "on substrate"))
+      if(!is.null(simres())) {
+        p <- lapply(species(), function(x) {
+          p <- ggplot_current(simres(), x)
+          if(inherits(p, "ggplot"))
+            p <- p + ggplot2::ggtitle(paste(x, "on", substrates()[1]))
+          p
+        })
+        if(any(unlist(map(p, is.null))))
+          p <- NULL
+        p
+      }
     } else {
-      NULL
+      ggplot2::ggplot()
     }
   })
-  output$hostPlot <- shiny::renderPlot({
-    hostplot()
-  })
-  parasiteplot <- shiny::reactive({
-    if(inherits(simres(), "ewing")) {
-      ggplot_current(simres(), "parasite") + 
-        ggplot2::ggtitle(paste("parasite", "on substrate"))
+  output$sppPlot <- shiny::renderPlot({
+    if(!is.null(sppplot())) {
+      spp <- length(species())
+      p <- sppplot()[[1]]
+      if(spp > 1) for(i in seq(2, spp)) {
+        p <- p + sppplot()[[i]]
+      }
+      p + patchwork::plot_layout(nrow = spp)
     } else {
-      NULL
+      ggplot2::ggplot()
     }
-  })
-  output$parasitePlot <- shiny::renderPlot({
-    parasiteplot()
   })
   envdata <- shiny::reactive({
     shiny::req(simres())
@@ -194,11 +216,10 @@ ewingServer <- function(input, output) {
   output$plots <- shiny::renderUI({
     nsim <- as.integer(shiny::req(input$nsim), simres())
     if(nsim == 1) {
+      shiny::req(species())
       shiny::tagList(
         shiny::plotOutput(outputId = "distPlot", height = "4in"),
-        shiny::plotOutput(outputId = "hostPlot", height = "2in"),
-        shiny::plotOutput(outputId = "parasitePlot", height = "2in")
-      )
+        shiny::plotOutput(outputId = "sppPlot", height = paste0(2 * length(species()), "in")))
     } else {
       shiny::plotOutput(outputId = "envPlot")
     }
@@ -235,8 +256,9 @@ ewingServer <- function(input, output) {
       nsim <- as.integer(shiny::req(input$nsim))
       if(nsim == 1) {
         print(distplot())
-        print(hostplot())
-        print(parasiteplot())
+        for(i in species()) {
+          print(sppplot()[[i]])
+        }
       } else {
         print(envelopePlot())
       }

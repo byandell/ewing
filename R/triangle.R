@@ -112,6 +112,9 @@ ggplot_current <- function( community,
 {
   ## plot current stages for species (except random parasites)
   organism <- get.species( community, species )[,-1]
+  if(is.null(organism)) # species is not in community
+    return(NULL)
+  
   future = getOrgFuture( community, species, c("color","pch") )
   
   # Substrate names
@@ -160,6 +163,8 @@ plot_current <- function( x,
 {
   ## plot current stages for species (except random parasites)
   organism <- get.species( x, species )[,-1]
+  if(is.null(organism))
+    return(NULL)
 
   tmp <- tri2car( organism[position,] )
   xlim <- range( c( 0, 1.1 * tmp$x ))

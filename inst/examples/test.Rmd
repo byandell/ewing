@@ -1,0 +1,64 @@
+---
+title: "test_ewing"
+author: "Brian Yandell"
+date: "2022-11-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Goal here is to understand better how elements of `ewing` package work.
+
+```{r}
+library(ewing)
+```
+
+```{r}
+mysim <- init.simulation(interact = FALSE, datafile = "../../data/smallerb.xlsx")
+```
+
+```{r}
+ewing:::getOffspring(mysim, "host")
+ewing:::getOffspring(mysim, "parasite")
+ewing:::getOrgFeature(mysim, "parasite", "offspring" )
+ewing:::getOrgFeature(mysim, "parasite", "attack" )
+ewing:::getOrgInteract(mysim, "host", "parasite")
+ewing:::getOrgInteract(mysim, "host", "parasite", "offspring")
+```
+
+```{r}
+str(mysim)
+```
+
+```{r}
+simres <- future.events(mysim, nstep = 10, plotit = FALSE)
+```
+
+```{r}
+ggplot_ewing(simres)
+```
+
+```{r}
+ewing:::get.species(simres)
+```
+
+```{r}
+ggplot_current(simres, "victim")
+```
+
+
+```{r}
+ggplot_current(simres, "badguy")
+```
+
+```{r}
+species <- ewing:::get.species(simres)
+p <- lapply(species, function(x) {
+  ggplot_current(simres, x) + 
+    ggplot2::ggtitle(paste(x, "on substrate"))
+})
+p[[1]] + p[[2]] + patchwork::plot_layout(nrow = 2)
+```
+

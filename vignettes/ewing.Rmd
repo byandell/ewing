@@ -1,5 +1,6 @@
 ---
-title: "ewing"
+title: "Ewing Individual-Based Modeling"
+date: "`r format(Sys.time(), '%d %B %Y')`"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{ewing}
@@ -245,6 +246,45 @@ The triangular grid and approximations used herein capture most (~95%) of moveme
 while simplifying calculations to max and min primarily rather than using quadratic
 calculation needed for a rectangular coordinate system (where the Pythagorean theorem
 rules).
+
+## Excel input data file
+ 
+Users can supply and input data file to modify the simulation setup. In consists of the
+following sheets:
+
+- control sheet naming species, substrates, and key simulation parameters
+  + `organism.features`
+- future event sheets
+  + `future.host`, `future.parasite` (one per species; substitute name used in `organism.features`)
+  + `host.parasite` (one per each species interaction)
+- substrate movement sheets (currently only one substrate allowed)
+  + `substrate.host`, `substrate.parasite` (one per species; substitute name used in `organism.features`)
+  + `substrate.substrate` (connectivity of substrate components)
+- temperature sheets
+  + `temperature.base`, `temperature.par`
+  
+There are specific, fragile, constraints for naming of and within these sheets. Here are the "rules":
+
+- organism names (first column or rownames of `organism.features`) must agree with the names for future event and substrate movement sheets
+  + default: `host` must match sheet names `future.host` and `host.parasite`
+  + default: `parasite` matches sheet names `future.parasite` and `host.parasite`
+- parasites are identified by several things
+  + entry `ecto` or `endo` in column `parasite` of `organism.features` (NA for non-parasites)
+  + entry `host` (name of host) in column `offspring` and/or `attack` (NA for non-parasites; name is not currently checked to match name of a possible host)
+- non-parasites (such as hosts) are identified by several things
+  + `birth` column of `organism.features` needs valid `current` stage from non-parasite future event sheet
+  + default: `gravid` matches entry in `current` column of `future.host` sheet
+  + `offspring` column of `organism.features` has number (default: `20` for `host`)
+  + `attack` column of `organism.features` is empty (NA)
+  + empty (NA) in column `parasite` of `organism.features` (`ecto` or `endo` for parasites)
+- `subclass` column of `organism.features` must match valid `ageclass` of each species
+  + default: `host` matches `ageclass` entry in `future.host`
+  + default: `adult` matches `ageclass` entry in `future.parasite`
+  + smaller: `grown` matches `ageclass` entry in `future.host`
+  + smaller: `forager` matches `ageclass` entry in `future.parasite`
+- `move` column of `organism.features` must have valid `current` stage for each species
+  + default: `crawler` matches `current` entry in `future.host`
+  + default: `adult` matches `current` entry in `future.parasite`
 
 ## Redscale thoughts
 

@@ -19,6 +19,24 @@
 ## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ##
 ###########################################################################################
+get.organisms <- function(datafile = "") {
+  org <- list(species = c("host", "parasite"), substrates = "substrate")
+  if(datafile != "") {
+    if(tools::file_ext(datafile) %in% c("xls","xlsx")){
+      sheets <- readxl::excel_sheets(datafile)
+      species <- stringr::str_remove(
+        sheets[stringr::str_detect(sheets, "future\\.")],
+        "future\\.")
+      substrates <- unique(stringr::str_remove(
+        sheets[stringr::str_detect(sheets, paste("\\.", species, sep = "", collapse = "|")) &
+        !stringr::str_detect(sheets, paste(c("future", species), "\\.", sep = "", collapse = "|"))],
+        "\\..*"))
+      org <- list(species = species, substrates = substrates)
+    }
+  }
+  org
+}
+###########################################################################################
 get.species <- function( community, species ) {
   if( missing( species ))
     names( community$pop )
