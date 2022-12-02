@@ -350,7 +350,9 @@ getOrgHosts <- function( community, species,
                         feature = c("offspring","attack","substrate") ###HOST SPECIFIC###
                         )
 {
+  # This seems overly complicated and adds substrate; maybe function name is wrong
   f <- unique( getOrgFeature( community, species, feature ))
+  # f[match(species, f, nomatch = 0)] # this would only get species
   o <- getOrgFeature( community )
   o[ match( f, o, nomatch = 0 ) ]
 }

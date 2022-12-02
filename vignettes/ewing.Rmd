@@ -270,7 +270,8 @@ There are specific, fragile, constraints for naming of and within these sheets. 
   + default: `parasite` matches sheet names `future.parasite` and `host.parasite`
 - parasites are identified by several things
   + entry `ecto` or `endo` in column `parasite` of `organism.features` (NA for non-parasites)
-  + entry `host` (name of host) in column `offspring` and/or `attack` (NA for non-parasites; name is not currently checked to match name of a possible host)
+  + entry `host` (substitute name of host) in column `offspring` and/or `attack` (NA for non-parasites; name is not currently checked to match name of a possible host)
+  + the word `parasite` (substitute name of parasite) must be in the rownames of the `host.parasite` (substitute names of host and parasite) sheet
 - non-parasites (such as hosts) are identified by several things
   + `birth` column of `organism.features` needs valid `current` stage from non-parasite future event sheet
   + default: `gravid` matches entry in `current` column of `future.host` sheet
