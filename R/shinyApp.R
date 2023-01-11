@@ -4,6 +4,7 @@
 #'                   HTML h2
 #'                   downloadButton
 #'                   actionButton bindCache bindEvent
+#' @importFrom ggplot2 autoplot ggplot ggtitle
 #' 
 ewingUI <- function() {
   shiny::fluidPage(
@@ -127,7 +128,7 @@ ewingServer <- function(input, output) {
       
   distplot <- shiny::reactive({
     if(inherits(simres(), "ewing")) {
-      ggplot_ewing(simres(), total = input$total, normalize = input$norm)
+      ggplot2::autoplot(ewing_ageclass(simres(), total = input$total, normalize = input$norm))
     } else {
       NULL
     }
@@ -135,14 +136,14 @@ ewingServer <- function(input, output) {
   output$distPlot <- shiny::renderPlot({
     distplot()
   })
-  # *** This is not right. Need to get each species name here and in ggplot_current
+  # *** This is not right. Need to get each species name here and in `ewing_substrate`
   # species <- ewing:::getOrgFeature(simres)
   #   gives list but includes substrates.
   # can figure out what substrate goes to species with 
   # ewing:::getOrgFeature(simres, species[i], "substrate")
   # if it is NA (or "NA"), then that is a substrate.
   # So cycle through species generating plots.
-  # put as much in ggplot_current as possible.
+  # put as much in `ewing_substrate` as possible.
   species <- shiny::reactive({
     get.organisms(datafile())$species
   })
@@ -165,7 +166,7 @@ ewingServer <- function(input, output) {
     if(inherits(simres(), "ewing")) {
       if(!is.null(simres())) {
         p <- lapply(species(), function(x) {
-          p <- ggplot_current(simres(), x)
+          p <- ggplot2::autoplot(ewing_substrate(simres(), x))
           if(inherits(p, "ggplot"))
             p <- p + ggplot2::ggtitle(paste(x, "on", substrates()[1]))
           p

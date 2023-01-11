@@ -33,7 +33,25 @@ str(mysim)
 ```
 
 ```{r}
-simres <- future.events(mysim, nstep = 10, plotit = FALSE)
+simres <- future.events(mysim, nstep = 10, plotit = TRUE, ageclass = FALSE)
+```
+
+Plot ageclasses.
+
+```{r}
+for(i in seq_along(simres$plot)) print(ggplot2::autoplot(simres$plot[[i]]$ageclass))
+```
+
+Plot victim substrate.
+
+```{r}
+for(i in seq_along(simres$plot)) print(ggplot2::autoplot(simres$plot[[i]]$substrate$victim))
+```
+
+Plot badguy substrate.
+
+```{r}
+for(i in seq_along(simres$plot)) print(ggplot2::autoplot(simres$plot[[i]]$substrate$badguy))
 ```
 
 ```{r}

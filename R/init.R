@@ -106,7 +106,7 @@ init.simulation <- function( package = "ewing",
       num[i] <- reuse
     }
   }
-  class( community ) <- "ewing"
+  class( community ) <- c("ewing", "list")
   attr(community, "count") <- count
   community
 }

@@ -112,8 +112,8 @@ future.events <- function( community, ...,
                           species = get.species( community ),
 
                           refresh = nstep / 20, cex = 0.5,
-                          plotit = TRUE, substrate.plot = TRUE, extinct = TRUE,
-                          timeit = TRUE, debugit = FALSE, ggplots = TRUE,
+                          substrate.plot = TRUE, extinct = TRUE,
+                          timeit = TRUE, debugit = FALSE,
                           messages = TRUE )
   
 {
@@ -129,6 +129,10 @@ future.events <- function( community, ...,
   mintime <- getCount( community, , "mintime" )
   species.now <- species[ mintime == min( mintime ) ][1]
   future <- getOrgFuture( community, species.now )
+  
+  # Set up list for plot information.
+  p <- list()
+  pstep <- 0
 
   ## for nstep steps schedule future events and process immediate events
   for( istep in seq( nstep )) {
@@ -146,7 +150,7 @@ future.events <- function( community, ...,
         for( i in names( mintime )[tmp] )
           cat( "***", i, "is extinct ***\n" )
         if( plotit )
-          plot.ewing( community, substrate = substrate.plot, cex = cex )
+          plot.ewing( community, substrate = substrate.plot, cex = cex, ...)
         break
       }
     }
@@ -207,17 +211,10 @@ future.events <- function( community, ...,
     ## refresh plot
     if( refresh & ! ( istep %% refresh )) {
       community <- set.timing( community, "refresh" )
-      if( plotit ) {
-        if(ggplots) {
-          print(ggplot_ewing( community, substrate = substrate.plot, cex = cex ))
-          for(j in species) {
-            print(ggplot_current(community, j) + 
-                    ggplot2::ggtitle(paste(j, "on substrate at", istep, "steps")))
-          }
-        } else {
-          plot( community, substrate = substrate.plot, cex = cex )
-        }
-      }
+      # Save the ewing_ageclass and ewing_substrate objects.
+      pstep <- pstep + 1
+      p[[pstep]] <- ewing_snapshot(community, istep, ...)
+      
       if(messages) {
         cat( "refresh", istep )
         for( j in get.species( community ))
@@ -243,14 +240,17 @@ future.events <- function( community, ...,
     ## tally events at end of simulation
     community <- setEvents( community, "final" )
   }
-  if( plotit ) {
-    if( !refresh | (nstep%%refresh))
-      plot.ewing( community, substrate = substrate.plot, cex = cex )
-  }
   community <- set.timing( community, "refresh", 1 )
 
   community <- fini.timing( community )
   attr(community, "nstep") <- nstep
+
+  if( !refresh | (nstep%%refresh)) {
+    pstep <- pstep + 1
+    p[[pstep]] <- ewing_snapshot(community, istep, ...)
+  }
+  community$plot <- p
+      
   community
 }
 ###############################################################################

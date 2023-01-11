@@ -95,19 +95,18 @@ cardist <- function( xy )
 tridist <- function( tri )
   apply( tri, 1, max )
 ###########################################################################################
+#' Ewing Substrate by Species
+#' 
 #' @export
 #' @importFrom dplyr filter mutate
 #' @importFrom tibble tibble
-#' @importFrom ggplot2 aes facet_grid geom_text ggplot scale_color_manual xlab ylab
-#' @importFrom rlang .data
-ggplot_current <- function( community,
+ewing_substrate <- function( community,
                           species,
                           headstuff = c( 0, "start", sum( to.plot )),
                           units = getOrgFeature( community, species, "units" ),
                           right = species, adj = c(0,.5,1),
-                          cex = 0.5,
-                          xlab = "horizontal", ylab = "vertical",
                           show_sub = substrates,
+                          step = 0,
                           ...)
 {
   ## plot current stages for species (except random parasites)
@@ -133,19 +132,42 @@ ggplot_current <- function( community,
       pchar = as.character( future$pch[.data$stage] ),
       color = as.character( future$color[.data$stage] )),
     .data$substrate %in% show_sub)
-      
-  # This is klunky but might work
-  col.palate <- unique(dat$color)
-  names(col.palate) <- unique(dat$pchar)
   
-  ggplot2::ggplot(dat) +
+  attr(dat, "species") <- species
+  attr(dat, "step") <- step
+  class(dat) <- c("ewing_substrate", class(dat))
+  dat
+}
+
+#' @importFrom ggplot2 aes facet_grid geom_text ggplot scale_color_manual xlab ylab
+#' @importFrom rlang .data
+#' @rdname ewing_substrate
+#' @export
+ggplot_ewing_substrate <- function(object,
+                                   xlab = "horizontal", ylab = "vertical",
+                                   ...)
+{     
+  # This is klunky but might work
+  col.palate <- unique(object$color)
+  names(col.palate) <- unique(object$pchar)
+  
+  species <- attr(object, "species")
+  step <- attr(object, "step")
+  
+  ggplot2::ggplot(object) +
     ggplot2::aes(.data$x, .data$y, label = .data$pchar, col = .data$pchar) +
     ggplot2::geom_text() +
     ggplot2::facet_grid(. ~ substrate) +
     ggplot2::xlab(xlab) +
     ggplot2::ylab(ylab) +
-    ggplot2::scale_color_manual(name = "Stage", values = col.palate)
+    ggplot2::scale_color_manual(name = "Stage", values = col.palate) + 
+    ggplot2::ggtitle(paste(species, "on substrate at", step, "steps"))
 }
+#' @export
+#' @rdname ewing_substrate
+#' @method autoplot ewing_substrate
+autoplot.ewing_substrate <- function(object, ...)
+  ggplot_ewing_substrate(object, ...)
 ###########################################################################################
 #' @export
 #' @importFrom graphics lines mtext par text

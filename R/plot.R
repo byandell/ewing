@@ -44,7 +44,7 @@ count.join <- function( ... )
 #' 
 #' 
 #' @param x object of class \code{ewing} with population data by species
-#' @param substrate include substrate plot if TRUE
+#' @param substrate,ageclass include `substrate` or `ageclass` plot if TRUE
 #' @param mfcol par parameter reset by default
 #' @param ... other plot parameters
 #' @author Brian S. Yandell, \email{yandell@@stat.wisc.edu}
@@ -62,14 +62,15 @@ count.join <- function( ... )
 #' @importFrom graphics axis lines mtext par
 #' @importFrom stats runif
 #' 
-plot.ewing <- function( x, substrate = TRUE, mfcol = mfcols, ... )
+plot.ewing <- function( x, substrate = TRUE, mfcol = mfcols, ..., ageclass = TRUE )
 {
   count <- readCount( x )
   mfcols <- if( substrate )
     c( length( count ), 2 )
   else
     c( 1, length( count ))
-  ageclass.plot( x, count, mfcol, "age classes", ... )
+  if( ageclass )
+    ageclass.plot( x, count, mfcol, "age classes", ... )
 
   if( substrate )
     substrate.plot( x, count, NULL, "substrates", ... )

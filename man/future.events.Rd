@@ -11,12 +11,10 @@ future.events(
   species = get.species(community),
   refresh = nstep/20,
   cex = 0.5,
-  plotit = TRUE,
   substrate.plot = TRUE,
   extinct = TRUE,
   timeit = TRUE,
   debugit = FALSE,
-  ggplots = TRUE,
   messages = TRUE
 )
 }
@@ -33,8 +31,6 @@ future.events(
 
 \item{cex}{character expansion}
 
-\item{plotit}{new plot at each refresh}
-
 \item{substrate.plot}{show plots of substrate use}
 
 \item{extinct}{stop when first specied becomes extinct}
@@ -42,6 +38,8 @@ future.events(
 \item{timeit}{record timing by event}
 
 \item{debugit}{detailed debug for advanced users}
+
+\item{plotit}{new plot at each refresh}
 
 \item{ggplots}{use ggplot if `TRUE` and `plotit` is `TRUE`}
 }

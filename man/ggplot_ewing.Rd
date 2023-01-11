@@ -2,14 +2,23 @@
 % Please edit documentation in R/ggplot.R
 \name{ggplot_ewing}
 \alias{ggplot_ewing}
-\title{ggplot of Ewing simulation models}
+\alias{autoplot.ewing}
+\alias{ggplot_ewing_ageclass}
+\alias{autoplot.ewing_ageclass}
+\title{ggplot of Ewing simulation model age classes}
 \usage{
-ggplot_ewing(x, ...)
+ggplot_ewing(object, step = 0, ageclass = TRUE, substrate = TRUE, ...)
+
+\method{autoplot}{ewing}(object, ...)
+
+ggplot_ewing_ageclass(object, ...)
+
+\method{autoplot}{ewing_ageclass}(object, ...)
 }
 \arguments{
-\item{x}{object of class \code{ewing} with population data by species}
-
 \item{...}{other plot parameters}
+
+\item{x}{object of class \code{ewing} with population data by species}
 }
 \description{
 GGPlot of various aspects of simulation.

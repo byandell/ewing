@@ -1,4 +1,4 @@
-#' ggplot of Ewing simulation models
+#' ggplot of Ewing simulation model age classes
 #' 
 #' GGPlot of various aspects of simulation.
 #' 
@@ -18,17 +18,66 @@
 #' @export
 #' @importFrom graphics axis lines mtext par
 #' @importFrom stats runif
-#' @importFrom ggplot2 aes facet_wrap geom_path ggplot
+#' @importFrom ggplot2 aes autoplot facet_wrap geom_path ggplot
 #' @importFrom rlang .data
 #' 
-ggplot_ewing <- function( x, ... )
+ggplot_ewing <- function(object, step = 0, ageclass = TRUE, substrate = TRUE, ...)
 {
-  ages <- ravel.count( x, ... )
-  ggplot2::ggplot(ages) +
+  if(!inherits(object, "ewing_snapshot")) {
+    object <- ewing_snapshot(object, step, ...)
+  }
+  step <- object$step
+  
+  p <- list()
+  i <- 0
+  if(ageclass) {
+    i <- i + 1
+    p[[i]] <- ggplot2::autoplot(object$ageclass, ...)
+  }
+  if(substrate) {
+    species <- get.species(object)
+    for(j in species) {
+      i <- i + 1
+      p[[i]] <- ggplot2::autoplot(object$substrate[[j]], ...)
+    }
+  }
+  p
+}
+ewing_snapshot <- function(object, step = 0, ...)
+{
+  out <- list(step = step,
+              ageclass = ewing_ageclass(object, ...))
+
+  species <- get.species(object)
+  subs <- list()
+  for(j in species) {
+    subs[[j]] <- ewing_substrate(object, j, step = step, ...)
+  }
+  out$substrate <- subs
+  
+  class(out) <- c("ewing_snapshot", "ewing", "list")
+  out
+}
+#' @export
+#' @rdname ggplot_ewing
+#' @method autoplot ewing
+autoplot.ewing <- function(object, ...) {
+  ggplot_ewing(object, ...)
+}
+#' @export
+#' @rdname ggplot_ewing
+ggplot_ewing_ageclass <- function(object, ... )
+{
+  ggplot2::ggplot(object) +
     ggplot2::aes(.data$time, .data$Count, col = .data$State) +
     ggplot2::geom_path() +
     ggplot2::facet_wrap(.data$Type ~ .data$Species, scales = "free")
 }
+#' @export
+#' @rdname ggplot_ewing
+#' @method autoplot ewing_ageclass
+autoplot.ewing_ageclass <- function(object, ...)
+  ggplot_ewing_ageclass(object, ...)
 ###########################################################################################
 #' Ravel count from Ewing simulation models
 #' 
@@ -48,14 +97,14 @@ ggplot_ewing <- function( x, ... )
 #' @examples
 #' 
 #' \dontrun{
-#' ravel.count( community )
+#' ewing_ageclass( community )
 #' }
 #' 
 #' @export
 #' @importFrom dplyr bind_rows filter mutate tibble
 #' @importFrom tidyr pivot_longer 
 #' 
-ravel.count <- function(community, substrate = TRUE, total = TRUE, normalize = TRUE, ...) {
+ewing_ageclass <- function(community, substrate = TRUE, total = TRUE, normalize = TRUE, ...) {
   count <- readCount(community)
   species <- names( count )
   ageclass <- list()
@@ -102,5 +151,6 @@ ravel.count <- function(community, substrate = TRUE, total = TRUE, normalize = T
           .data$Species, .data$State, .data$Type),
         Count = .data$Count / max(.data$Count)))
   }
+  class(out) <- c("ewing_ageclass", class(out))
   out
 }

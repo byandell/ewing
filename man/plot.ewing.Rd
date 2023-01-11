@@ -4,12 +4,12 @@
 \alias{plot.ewing}
 \title{plot of Ewing simulation models}
 \usage{
-\method{plot}{ewing}(x, substrate = TRUE, mfcol = mfcols, ...)
+\method{plot}{ewing}(x, substrate = TRUE, mfcol = mfcols, ..., ageclass = TRUE)
 }
 \arguments{
 \item{x}{object of class \code{ewing} with population data by species}
 
-\item{substrate}{include substrate plot if TRUE}
+\item{substrate, ageclass}{include `substrate` or `ageclass` plot if TRUE}
 
 \item{mfcol}{par parameter reset by default}
 

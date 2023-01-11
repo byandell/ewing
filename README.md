@@ -181,6 +181,10 @@ Plan is to make this more adaptable, of course.
 
 ### Code Issues
 
+- future and intermediate plots
+  + eliminate plot.ewing calls in favor of ggplot throughout
+  + currently save ggplot objects, but only need `ewing_ageclass` and `ewing_substrate` objects
+  + really interested in how substrate changes step to step or time to time (over multiple steps); how to assess diff of to ageclass or substrate objects?
 - gencurve in spline.R internal to five.plot but used elsewise
 - dead used in init, event
 - organsim.features in community.R using mydata() nonstandard
