@@ -54,6 +54,67 @@ Plot badguy substrate.
 for(i in seq_along(simres$plot)) print(ggplot2::autoplot(simres$plot[[i]]$substrate$badguy))
 ```
 
+#### Finding differences between steps.
+
+```{r}
+tmp <- purrr::transpose(simres$plot)
+tmp1 <- tmp$substrate[[1]]$victim
+tmp2 <- tmp$substrate[[10]]$victim
+tmp3 <- dplyr::intersect(tmp1,tmp2) # rows that agree
+dplyr::setdiff(tmp1,tmp3)
+dplyr::setdiff(tmp2,tmp3)
+```
+
+Look for:
+
+- dropped index (death)
+- NA for index (changed state)
+- extra NA after last (births)
+
+```{r}
+compdf <- function(tmp1, tmp2) {
+  # NAs are either changed (new state) or removed (died)
+  m <- match(tidyr::unite(tmp1, cols, dplyr::everything())$cols,
+        tidyr::unite(tmp2, cols, dplyr::everything())$cols,
+        nomatch = 0)
+  dplyr::bind_rows(
+    list("1" = cbind(n = seq_len(nrow(tmp1)), tmp1)[m == 0,],
+         "2" = cbind(n = seq_len(nrow(tmp2)), tmp2)[-m,]),
+    .id = "df")
+}
+```
+
+```{r}
+(cout <- compdf(tmp1,tmp2))
+```
+
+```{r}
+p1 <- simres$plot[[1]]$substrate$victim
+p1$color <- "gray"
+p1$color[cout[cout$df == 1, "n"]] <- "red"
+p1$pchar[-cout[cout$df == 1, "n"]] <- "-"
+ggplot2::autoplot(p1)
+```
+
+```{r}
+p2 <- simres$plot[[10]]$substrate$victim
+p2$color <- "gray"
+p2$color[cout[cout$df == 2, "n"]] <- "blue"
+p2$pchar[-cout[cout$df == 2, "n"]] <- "-"
+ggplot2::autoplot(p2)
+```
+
+Can add points to existing plots.
+
+```{r}
+p <- ggplot2::autoplot(p1)
+p + ggplot2::geom_text(data = cout[cout$df == 2, ],
+                       ggplot2::aes(x = x, y = y, label = pchar),
+                       col = "blue")
+```
+
+## More plots
+
 ```{r}
 ggplot_ewing(simres)
 ```

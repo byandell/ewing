@@ -141,15 +141,19 @@ ewing_substrate <- function( community,
 
 #' @importFrom ggplot2 aes facet_grid geom_text ggplot scale_color_manual xlab ylab
 #' @importFrom rlang .data
+#' @importFrom dplyr distinct
 #' @rdname ewing_substrate
 #' @export
 ggplot_ewing_substrate <- function(object,
                                    xlab = "horizontal", ylab = "vertical",
                                    ...)
 {     
-  # This is klunky but might work
-  col.palate <- unique(object$color)
-  names(col.palate) <- unique(object$pchar)
+  # Allows same color for different pchar, but only one color per pchar.
+  tmp <- dplyr::distinct(
+    dplyr::distinct(object, .data$pchar, .data$color),
+    .data$pchar, .keep_all = TRUE)
+  col.palate <- tmp$color
+  names(col.palate) <- tmp$pchar
   
   species <- attr(object, "species")
   step <- attr(object, "step")
