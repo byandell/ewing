@@ -21,23 +21,6 @@
 ###########################################################################################
 ### Plot and Print Routines
 ###########################################################################################
-count.join <- function( ... )
-{
-  x <- list( ... )
-  numnum <- list()
-  for( i in seq( length( x ))) {
-    for( j in names( x[[i]] )) {
-      if( is.null( numnum[[j]] ))
-        numnum[[j]] <- x[[i]][[j]]
-      else
-        numnum[[j]] <- cbind( numnum[[j]], x[[i]][[j]] )
-    }
-  }
-  numnum
-}
-###########################################################################################
-
-
 #' plot of Ewing simulation models
 #' 
 #' Plot of various aspects of simulation.
@@ -54,14 +37,13 @@ count.join <- function( ... )
 #' @keywords utilities
 #' @examples
 #' 
+#' 
 #' \dontrun{
 #' plot.ewing( community )
 #' }
 #' 
-#' @export
-#' @importFrom graphics axis lines mtext par
-#' @importFrom stats runif
 #' 
+#' @export plot.ewing
 plot.ewing <- function( x, substrate = TRUE, mfcol = mfcols, ..., ageclass = TRUE )
 {
   count <- readCount( x )

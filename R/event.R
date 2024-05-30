@@ -171,7 +171,7 @@ host.ecto <- function( community, species, host, dead )
   ## update leftist tree and mintime
   community <- put.species( community, host,
                            leftist.update( get.species( community, host ), dead ))
-  update.mintime( community, host )
+  update_mintime( community, host )
 }
 ###############################################################################
 host.endo <- function( community, species, host, dead, harm )
@@ -196,7 +196,7 @@ host.endo <- function( community, species, host, dead, harm )
     ## update leftist tree and mintime
     community <- put.species( community, host,
                              leftist.update( get.species( community, host ), dead ))
-    community <- update.mintime( community, host )
+    community <- update_mintime( community, host )
   }
   community
 }

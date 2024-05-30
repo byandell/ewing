@@ -2,7 +2,7 @@
 #' 
 #' Sample simulation initiation setup.
 #' 
-#' @name redscle
+#' @name redscale
 #' @aliases redscale
 #' @format \code{redscale} is a data frame with the following columns
 #' \describe{

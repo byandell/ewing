@@ -94,6 +94,7 @@ ewingUI <- function() {
 #'                   incProgress withProgress
 #' @importFrom utils write.csv
 #' @importFrom stringr str_remove
+#' @importFrom purrr map
 #'                   
 ewingServer <- function(input, output) {
   
@@ -171,7 +172,7 @@ ewingServer <- function(input, output) {
             p <- p + ggplot2::ggtitle(paste(x, "on", substrates()[1]))
           p
         })
-        if(any(unlist(map(p, is.null))))
+        if(any(unlist(purrr::map(p, is.null))))
           p <- NULL
         p
       }
