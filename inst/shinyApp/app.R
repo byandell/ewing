@@ -1,9 +1,20 @@
 #devtools::install_github("myllym/GET") # need recent fixes not on CRAN yet
 devtools::install_github("byandell/ewing")
 
-# Define UI for app that draws a histogram ----
-ui <- ewing::ewingUI()
+title <- "Population Ethology"
 
-server <- ewing::ewingServer 
+ui <- shiny::fluidPage(
+  shiny::titlePanel(title),
+  shiny::sidebarLayout(
+    shiny::sidebarPanel(
+      ewing::ewingInput("ewing")
+    ),
+    shiny::mainPanel(
+      ewing::ewingOutput("ewing")
+    )))
+
+server <- function(input, output, server) {
+  ewing::ewingServer("ewing")
+}
 
 shiny::shinyApp(ui = ui, server = server)
