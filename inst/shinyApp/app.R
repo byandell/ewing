@@ -1,5 +1,5 @@
 #devtools::install_github("myllym/GET") # need recent fixes not on CRAN yet
-devtools::install_github("byandell/ewing")
+#devtools::install_github("byandell/ewing")
 
 title <- "Population Ethology"
 
@@ -7,14 +7,14 @@ ui <- shiny::fluidPage(
   shiny::titlePanel(title),
   shiny::sidebarLayout(
     shiny::sidebarPanel(
-      ewing::ewingInput("ewing")
+      ewing::simpleInput("ewing")
     ),
     shiny::mainPanel(
-      ewing::ewingOutput("ewing")
+      ewing::simpleOutput("ewing")
     )))
 
 server <- function(input, output, server) {
-  ewing::ewingServer("ewing")
+  ewing::simpleServer("ewing")
 }
 
 shiny::shinyApp(ui = ui, server = server)
