@@ -1,5 +1,5 @@
 #devtools::install_github("myllym/GET") # need recent fixes not on CRAN yet
-#devtools::install_github("byandell/ewing")
+devtools::install_github("byandell/ewing")
 
 title <- "Population Ethology"
 
