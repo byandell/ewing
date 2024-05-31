@@ -296,6 +296,29 @@ getOrgData <- function(community, left, right,
   }
 }
 ###########################################################################################
+getOrgNames <- function(datafile) {
+  if(datafile == "") {
+    c("organism.features", "future.host", "future.parasite",
+      "substrate.host", "substrate.parasite", "substrate.substrate",
+      "temperature.base", "temperature.par")
+  } else {
+    readxl::excel_sheets(datafile)
+  }
+}
+###########################################################################################
+getOrgDataSimple <- function(community, dataname, datafile){
+  out <- getOrgData(
+    community,
+    left = stringr::str_remove(dataname, "\\..*"),
+    right = stringr::str_remove(dataname, ".*\\."),
+    messages = FALSE, datafile = datafile)
+  # Kludge to reinstate rownames as a column
+  if(!identical(rownames(out), as.character(seq_len(nrow(out))))) {
+    out <- data.frame(rownames = rownames(out), out)
+  }
+  out
+}
+###########################################################################################
 getOrgInfo <- function( community, element )
 {
   community$org[[element]]
