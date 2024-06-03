@@ -7,14 +7,14 @@ ui <- shiny::fluidPage(
   shiny::titlePanel(title),
   shiny::sidebarLayout(
     shiny::sidebarPanel(
-      ewing::ewingInput("ewing")
+      ewing::geyserInput("ewing")
     ),
     shiny::mainPanel(
-      ewing::ewingOutput("ewing")
+      ewing::geyserOutput("ewing")
     )))
 
 server <- function(input, output, server) {
-  ewing::ewingServer("ewing")
+  ewing::geyserServer("ewing")
 }
 
 shiny::shinyApp(ui = ui, server = server)
