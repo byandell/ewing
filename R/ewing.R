@@ -9,6 +9,7 @@
 #'             sidebarPanel sliderInput tagList textInput titlePanel withProgress
 #'             uiOutput
 #' @importFrom ggplot2 autoplot ggplot ggtitle
+#' @importFrom DT renderDataTable
 #' 
 ewingServer <- function(id) {
   shiny::moduleServer(id, function(input, output, session) {
@@ -192,7 +193,7 @@ ewingServer <- function(id) {
     output$inputfiles <- shiny::renderUI({
       shiny::tagList(
         shiny::selectInput(ns("dataname"), "", datanames(), "organism.features"),
-        shiny::renderDataTable({
+        DT::renderDataTable({
           getOrgDataSimple(simres(),shiny::req(input$dataname), datafile())
         }, escape = FALSE,
         options = list(scrollX = TRUE, pageLength = 10)))
