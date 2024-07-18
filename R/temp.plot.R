@@ -1,4 +1,5 @@
 #' @export
+#' @importFrom stats predict
 temp.plot <- function( community, lo.hour = s$knots[1], hi.hour = max( s$knots ),
                        length = 201,
                        col = NULL, derivative = FALSE, ..., printit = FALSE )

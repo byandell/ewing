@@ -23,7 +23,13 @@
 #' 
 #' 
 #' @export ewing_ageclass
-ewing_ageclass <- function(community, substrate = TRUE, total = TRUE, normalize = TRUE, ...) {
+#' @importFrom dplyr any_of bind_rows filter group_by mutate summarize ungroup
+#' @importFrom tidyr pivot_wider
+#' @importFrom tibble tibble
+#' @importFrom ggplot2 aes facet_wrap ggplot
+#' @importFrom rlang .data
+ewing_ageclass <- function(community, substrate = TRUE, total = TRUE,
+                           normalize = TRUE, ...) {
   count <- readCount(community)
   species <- names( count )
   ageclass <- list()

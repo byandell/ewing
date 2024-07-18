@@ -19,7 +19,10 @@
 #' }
 #' 
 #' 
-#' @export future.meanvalue
+#' @export
+#' @importFrom graphics abline axis lines locator mtext par points text title
+#' @importFrom splines backSpline interpSpline
+#' @importFrom stats predict
 ###########################################################################################
 ## init.meanvalue( organism, stage )
 ## spline.meanvalue( x, y )

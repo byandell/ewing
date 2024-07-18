@@ -1,3 +1,6 @@
+#' @importFrom stringr str_detect str_remove
+#' @importFrom readxl excel_sheets
+#' @importFrom tools file_ext
 get.organisms <- function(datafile = "") {
   org <- list(species = c("host", "parasite"), substrates = "substrate")
   if(datafile != "") {

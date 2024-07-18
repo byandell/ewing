@@ -1,4 +1,6 @@
 #' @export
+#' @importFrom graphics axis lines mtext par text
+#' @importFrom stats runif
 sierpinski <- function( stage = 5, reset = TRUE )
 {
   if( reset )

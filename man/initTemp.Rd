@@ -40,7 +40,6 @@ for simulation.
 data(TemperatureBase)
 data(TemperaturePar)
 
-
 }
 \references{
 \url{www.stat.wisc.edu/~yandell/ewing}

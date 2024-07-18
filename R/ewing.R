@@ -4,10 +4,10 @@
 #' @importFrom purrr map
 #' @importFrom shiny actionButton bindCache bindEvent checkboxInput column
 #'             downloadButton downloadHandler fileInput fluidPage fluidRow HTML
-#'             h2 incProgress isTruthy mainPanel moduleServer NS plotOutput
+#'             h4 incProgress isTruthy mainPanel moduleServer NS plotOutput
 #'             reactive renderPlot renderUI req selectInput sidebarLayout
-#'             sidebarPanel sliderInput tagList textInput titlePanel withProgress
-#'             uiOutput
+#'             sidebarPanel sliderInput tagList textInput titlePanel
+#'             withProgress uiOutput
 #' @importFrom ggplot2 autoplot ggplot ggtitle
 #' @importFrom DT renderDataTable
 #' 

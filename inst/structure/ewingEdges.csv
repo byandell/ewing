@@ -1,0 +1,253 @@
+source, target, assign
+init.simulation, initOrgInfo
+init.simulation, initTemp
+init.simulation, getOrgFeature
+init.simulation, getOrgHosts
+init.simulation, setOrgInfo
+init.simulation, init.population
+
+init.population, getOrgFuture
+init.population, getOrgInteract
+init.population, get.future
+init.population, put.species
+
+ewing_discrete, ewing_discrete1
+ewing_discrete, make_ewing_discrete
+ewing_discrete1, init.simulation
+ewing_discrete1, future.events
+ewing_discrete1, readCount
+
+future.events, get.species
+future.events, initCount
+future.events, init.timing
+future.events, getCount
+future.events, getOrgFuture
+future.events, getCount
+future.events, updateCount
+future.events, put.individual
+future.events, event.parsed
+future.events, event.future
+future.events, set.timing
+future.events, ewing_snapshot
+future.events, getOrgAlive
+future.events, setEvents
+future.events, fini.timing
+
+ewing_substrate, getOrgFeature
+ewing_substrate, get.species
+ewing_substrate, getOrgFuture
+ewing_substrate, getOrgInteract
+ewing_substrate, tri2car
+
+getOrgFeature, getOrgInfo
+getOrgHosts, getOrgFuture
+getOrgFuture, getOrgInfo
+get.interact, get.species.element
+get.interact, getOrgInteract
+getOrgInteract, getOrgFeature
+getOrgInteract, getOrgInfo
+getOrgMeanValue, getOrgInfo
+get.alive, getOrgAlive
+get.alive, get.species.element
+getOrgAlive, get.species
+getOrgAgeClass, getOrgFuture
+getOrgSubstrate, getOrgFeature
+getOrgSubstrate, getOrgInteract
+sampleOrgSubstrate, getOrgFeature
+sampleOrgSubstrate, getOrgInteract
+initOrgInfo, getOrgData
+setOrgInfo, getOrgData
+setOrgInfo, getOrgFeature
+
+putCount, get.species
+putCount, getCount
+putCount, get.species.element
+putCount, setCount
+
+initCount, get.species
+initCount, get.base
+initCount, getOrgFeature
+initCount, get.individual
+initCount, activeTemp
+initCount, getOrgFeature
+initCount, getTime
+initCount, getOrgFuture
+initCount, getOrgInteract
+initCount, getOrgAlive
+initCount, getOrgAgeClass
+initCount, putCount
+
+updateCount, updateEvents
+updateCount, setCount
+updateCount, getCount
+updateCount, getOrgAgeClass
+updateCount, getOrgFeature
+updateCount, getOrgInteract
+updateCount, setCount
+updateCount, writeCount
+
+updateCounts, updateEvents
+updateCounts, getCount
+updateCounts, getOrgFeature
+updateCounts, getOrgAgeClass
+updateCounts, get.individual
+updateCounts, getOrgSubstrate
+updateCounts, setCount
+updateCounts, writeCount
+
+put.base, getCount
+put.base, get.base
+put.base, leftist.free
+put.base, getTime
+put.base, get.species.element
+put.base, setCount
+
+setEvents, get.species
+setEvents, getOrgFuture
+setEvents, getOrgAlive
+
+ewing_ageclass, readCount
+ewing_ageclass, getOrgFuture
+ewing_ageclass, getOrgInteract
+
+event.future, get.future
+event.future, event.move
+event.future, checkTime
+event.future, getCount
+event.future, getOrgFeature
+event.future, put.individual
+event.future, get.species.element
+event.future, put.species
+event.future, leftist.update
+event.future, update_mintime
+
+event.birth, get.offspring
+event.birth, parent.birth
+event.birth, get.birth
+event.birth, set.birth
+
+parent.birth, get.individual
+parent.birth, set.future
+parent.birth, put.individual
+
+get.birth, get.individual
+get.birth, event.move
+get.birth, getCount
+get.birth, getOrgFeature
+get.birth, get.future
+
+get.deplete, get.individual
+get.deplete, getOrgFeature
+get.deplete, put.individual
+
+set.future, getOrgFuture
+
+get.future, get.individual
+get.future, get.base
+get.future, getOrgFuture
+get.future, getOrgMeanValue
+
+event.death, get.base
+event.death, put.species
+event.death, leftist.remove
+event.death, put.base
+
+update_mintime, get.base
+update_mintime, getTime
+update_mintime, get.species.element
+update_mintime, setCount
+
+set.birth, checkTime
+set.birth, getCount
+set.birth, getOrgFeature
+set.birth, leftist.birth
+set.birth, put.species
+set.birth, put.base
+set.birth, updateCounts
+
+event.attack, get.deplete
+event.attack, get.individual
+event.attack, getOrgFeature
+event.attack, get.attack
+event.attack, event.find
+event.attack, event.parsed
+event.attack, event.parsed
+event.attack, get.individual
+event.attack, event.move
+event.attack, set.future
+event.attack, put.individual
+
+get.attack, getOrgFeature
+get.attack, getOrgFuture
+
+host.ecto, get.individual
+host.ecto, transTime
+host.ecto, set.future
+host.ecto, put.individual
+host.ecto, put.species
+host.ecto, leftist.update
+host.ecto, update_mintime
+
+host.endo, get.individual
+host.endo, get.individual
+host.endo, transTime
+host.endo, set.future
+host.endo, put.individual
+host.endo, put.species
+host.endo, leftist.update
+host.endo, update_mintime
+
+event.feed, get.interact
+event.feed, get.individual
+event.feed, put.individual
+
+event.ovip, get.offspring
+event.ovip, get.interact
+event.ovip, parent.birth
+event.ovip, get.birth
+event.ovip, get.interact
+event.ovip, set.offspring
+event.ovip, set.male
+event.ovip, set.birth
+
+set.male, set.future
+set.male, get.individual
+
+getOffspring, getOrgFeature
+getOffspring, getOrgInteract
+
+initOffspring, getOrgFeature
+initOffspring, getOffspring
+initOffspring, getOrgAlive
+initOffspring, get.species
+initOffspring, getOrgFuture
+initOffspring, put.species
+
+get.offspring, get.individual
+
+set.offspring, get.species.element
+set.offspring, getOrgFuture
+set.offspring, getOrgInteract
+
+future.meanvalue, getOrgFuture
+future.meanvalue, getOrgMeanValue
+future.meanvalue, spline.meanvalue
+future.meanvalue, setOrgMeanValue
+spline.meanvalue, spline.rate
+
+initTemp, getTemp
+initTemp, getOrgData
+initTemp, getOrgInfo
+initTemp, showTemp
+initTemp, activeTemp
+
+event.move, is.move
+event.move, sampleOrgSubstrate
+event.move, rtri
+
+is.move, getOrgFeature
+is.move, getOrgFuture
+
+event.find, get.individual
+event.find, get.alive
+event.find, get.interact

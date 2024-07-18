@@ -20,7 +20,8 @@
 #' }
 #' 
 #' 
-#' @export ggplot_ewing
+#' @export
+#' @importFrom ggplot2 autoplot
 ggplot_ewing <- function(object, step = 0, ageclass = TRUE, substrate = TRUE, ...)
 {
   if(!inherits(object, "ewing_snapshot")) {

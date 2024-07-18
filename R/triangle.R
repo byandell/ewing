@@ -27,6 +27,7 @@
 ###########################################################################################
 ### Tridiagonal Coordinate System
 ###########################################################################################
+#' @importFrom stats runif
 rtri <- function( n, width, tri = matrix(0,3,n), roundoff = TRUE )
 {
   tri <- as.matrix( tri )

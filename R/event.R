@@ -27,6 +27,7 @@
 ## 2. search strategy for predator/parasite/parasitoid
 ## 3. generic calls to do.x
 ###############################################################################
+#' @importFrom stats runif
 event.birth <- function( community, species )
 {
   ## now only one offspring at a time,

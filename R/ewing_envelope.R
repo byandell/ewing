@@ -14,6 +14,14 @@
 #' @param ... additional parameters
 #' @param x object of class `ewing_envelope` or `ewing_envelopes`
 #' @export ewing_envelope
+#' @importFrom dplyr arrange bind_rows distinct filter group_by matches mutate
+#'             ungroup
+#' @importFrom tidyr fill pivot_wider
+#' @importFrom purrr map
+#' @importFrom ggplot2 ggtitle labs ylim
+#' @importFrom rlang .data
+#' @importFrom GET create_curve_set fBoxplot forder
+#' @importFrom patchwork plot_annotation plot_layout wrap_plots
 ewing_envelope <- function(object, species, item, ordinate = "time", increment = 0.5) {
   # Pull out `ordinate` and `item` for each run 
   pulled <-  
@@ -53,10 +61,6 @@ ewing_envelope <- function(object, species, item, ordinate = "time", increment =
 #' 
 #' @rdname ewing_envelope
 #' @export
-#' @importFrom patchwork plot_layout wrap_plots
-#' @importFrom GET fBoxplot
-#' @importFrom ggplot2 labs
-#' 
 ewing_envelopes <- function(object) {
   species <- attr(object, "species")
   items <- attr(object, "items")
@@ -216,7 +220,6 @@ ggplot_ewing_envelopes <- function(object, confidence = FALSE, main = "", ...) {
         p[[item]] <- ggplot_ewing_envelope(object$env[[specy]][[item]])
       }
     }
-    ### USE patchwork::wrap_plots here
     patch[[specy]] <- patchwork::wrap_plots(p) + 
       patchwork::plot_layout(nrow = length(p))
   }
@@ -236,9 +239,6 @@ ggplot_ewing_envelopes <- function(object, confidence = FALSE, main = "", ...) {
 #' @param ... additional parameters
 #' 
 #' @export
-#' @importFrom ggplot2 ggtitle labs
-#' @importFrom GET forder
-#' 
 ggplot_ewing_envelope <- function(object, cols = c("#21908CFF", "#440154FF", "#5DC863FF"), 
                                   main = "", ...) {
   # Kludge. GET::forder needs at least 3 points; cols can be at most length(object).
@@ -276,7 +276,6 @@ ggplot_ewing_envelope <- function(object, cols = c("#21908CFF", "#440154FF", "#5
 #' 
 #' @export
 #' @rdname ggplot_ewing_envelope
-#' @importFrom ggplot2 autoplot
 #' @method autoplot ewing_envelope
 autoplot.ewing_envelope <- function(object, ...) {
   ggplot_ewing_envelope(object, ...)

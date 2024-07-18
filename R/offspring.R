@@ -14,28 +14,9 @@
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ## GNU General Public License for more details.
 ##
-## The text of the GNU General Public License, version 2, is available
-## as http://www.gnu.org/copyleft or by writing to the Free Software
-## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-##
-###########################################################################################
-##
-## init.simulation( community )
-##
-## also includes routines to get objects from Organism files
-###########################################################################################
-
-
-
-
-##########################################################################################
-
-
-
-
-##########################################################################################
 ## Offspring Information
 ##########################################################################################
+#' @importFrom stats rpois
 getOffspring <- function( community, species,
                          offspring = getOrgFeature( community, species, "offspring" ))
 {

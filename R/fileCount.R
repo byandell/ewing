@@ -1,4 +1,6 @@
-###########################################################################################
+#' @importFrom dplyr bind_rows
+#' @importFrom utils read.table
+#' @importFrom tibble tibble
 putCount <- function( community, append = FALSE )
 {
   species <- get.species( community )

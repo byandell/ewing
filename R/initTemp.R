@@ -29,7 +29,7 @@
 #' data(TemperatureBase)
 #' data(TemperaturePar)
 #' 
-#' 
+#' @importFrom splines interpSpline
 initTemp <- function( community, lo.hour = 0, hi.hour = getTemp( community, "Unit" ),
                       days = TemperaturePar["Days"], 
                       messages = TRUE, datafile = "", ... )

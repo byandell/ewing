@@ -5,7 +5,8 @@
 #' @param ... any additional arguments
 #' 
 #' @export
-#' 
+#' @importFrom dplyr distinct mutate
+#' @importFrom purrr map map_df
 ewing_discrete <- function(nsim, verbose = FALSE, ...) {
   sims <- seq_len(nsim)
   

@@ -1,4 +1,5 @@
 #' @export
+#' @importFrom graphics text
 text_current <- function( x, species,
                           col = as.character( future$color[stage] ),
                           pch = as.character( future$pch[stage] ), cex = 0.5,

@@ -1,6 +1,8 @@
 ###########################################################################################
 ### Organism Features
 ###########################################################################################
+#' @importFrom stringr str_remove
+#' @importFrom readxl excel_sheets read_excel
 getOrgFeature <- function( community, species, feature = names( OrgFeature ))
 {
   OrgFeature <- getOrgInfo( community, "Feature" )

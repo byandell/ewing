@@ -5,6 +5,11 @@
 #' 
 #' @aliases ewing_substrate ggplot_ewing_substrate autoplot.ewing_substrate
 #' @export ewing_substrate
+#' @importFrom dplyr distinct filter mutate
+#' @importFrom tibble tibble
+#' @importFrom ggplot2 aes facet_grid geom_text ggplot ggtitle
+#'             scale_color_manual xlab ylab
+#' @importFrom rlang .data
 ewing_substrate <- function( community,
                              species,
                              headstuff = c( 0, "start", sum( to.plot )),

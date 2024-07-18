@@ -34,7 +34,8 @@
 #' \dontrun{init.population( redscale )}
 #' 
 #' 
-#' @export init.population
+#' @export
+#' @importFrom stats rexp
 init.population <- function( community, species, n = 200, width = 100,
                              units = getOrgFeature( community, species, "units" ),
                              timeit = FALSE,

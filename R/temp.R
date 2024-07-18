@@ -26,6 +26,8 @@
 ## temp.design( )
 ## temp.plot( )
 ###########################################################################################
+#' @importFrom stats predict
+#' @importFrom splines backSpline
 rescale.temp <- function( low, high, newry = ry, newrx = rx,
   ry = range( c( stats::predict( low, low$knots )$y, stats::predict( high, high$knots )$y )))
 {

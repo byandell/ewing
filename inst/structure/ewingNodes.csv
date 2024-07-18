@@ -1,0 +1,4 @@
+node, type, origin, detail
+init.simulation, init,,
+init.population, init,,
+future.events, sim,,

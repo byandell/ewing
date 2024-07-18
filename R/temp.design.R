@@ -30,6 +30,7 @@
 #' 
 #' 
 #' @export temp.design
+#' @importFrom stats predict
 temp.design <- function( community, nspline = 8, n = 1, horizontal = TRUE,
                          col = c(low="blue",high="red") )
 {

@@ -1,6 +1,9 @@
 ###########################################################################################
 ## System files
 ###########################################################################################
+#' @importFrom readxl read_xls read_xlsx
+#' @importFrom utils data
+#' @importFrom tools file_ext
 my.read <- function(dataname, stringsAsFactors = TRUE)
 {
   switch(tools::file_ext(dataname),
