@@ -10,7 +10,7 @@
 #'             withProgress uiOutput
 #' @importFrom ggplot2 autoplot ggplot ggtitle
 #' @importFrom DT renderDataTable
-#' 
+#' @importFrom cowplot plot_grid
 ewingServer <- function(id) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -108,7 +108,7 @@ ewingServer <- function(id) {
         if(spp > 1) for(i in seq(2, spp)) {
           p <- p + sppplot()[[i]]
         }
-        p + patchwork::plot_layout(nrow = spp)
+        cowplot::plot_grid(plotlist = p, nrow = spp)
       } else {
         ggplot2::ggplot()
       }

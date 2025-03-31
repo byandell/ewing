@@ -5,11 +5,14 @@
 \alias{autoplot.ewing}
 \alias{ggplot_ewing_ageclass}
 \alias{autoplot.ewing_ageclass}
+\alias{plot.ewing}
 \title{ggplot of Ewing simulation model age classes}
 \usage{
-ggplot_ewing(object, step = 0, ageclass = TRUE, substrate = TRUE, ...)
+ggplot_ewing(object, step = 0, ageclass = TRUE, substrate = !ageclass, ...)
 
 \method{autoplot}{ewing}(object, ...)
+
+\method{plot}{ewing}(x, ...)
 }
 \arguments{
 \item{...}{other plot parameters}

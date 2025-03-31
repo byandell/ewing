@@ -18,10 +18,10 @@
 #'             ungroup
 #' @importFrom tidyr fill pivot_wider
 #' @importFrom purrr map
-#' @importFrom ggplot2 ggtitle labs ylim
+#' @importFrom ggplot2 ggtitle labs margin theme ylim
 #' @importFrom rlang .data
 #' @importFrom GET create_curve_set fBoxplot forder
-#' @importFrom patchwork plot_annotation plot_layout wrap_plots
+#' @importFrom cowplot draw_label ggdraw plot_grid
 ewing_envelope <- function(object, species, item, ordinate = "time", increment = 0.5) {
   # Pull out `ordinate` and `item` for each run 
   pulled <-  
@@ -174,9 +174,6 @@ print.ewing_envelopes <- function(x, species = NULL, ...) {
   dplyr::mutate(out, dplyr::across(where(is.numeric), function(x) pmax(x,0)))
   out
 }
-
-
-
 #' GGplot of Ewing multiple envelopes
 #' 
 #' GGplot of Ewing multiple envelopes
@@ -220,15 +217,24 @@ ggplot_ewing_envelopes <- function(object, confidence = FALSE, main = "", ...) {
         p[[item]] <- ggplot_ewing_envelope(object$env[[specy]][[item]])
       }
     }
-    patch[[specy]] <- patchwork::wrap_plots(p) + 
-      patchwork::plot_layout(nrow = length(p))
+    patch[[specy]] <- cowplot::plot_grid(plotlist = p, nrow = length(p))
   }
+  
   # NEED TO get attribute count and nstep in here
-  patchwork::wrap_plots(patch) +
-    patchwork::plot_annotation(
-      title = paste(nsim, "Runs of ",
-                    nstep, "Steps for", 
-                    paste(species, count, sep = "=", collapse = ", ")))
+  patch <- cowplot::plot_grid(plotlist = patch, ncol = length(patch)) 
+  # Add a title. <https://wilkelab.org/cowplot/articles/plot_grid.html>
+  title <- cowplot::ggdraw() + 
+    cowplot::draw_label(
+      paste(nsim, "Runs of ", nstep, "Steps for", 
+            paste(species, count, sep = "=", collapse = ", ")),
+      x = 0, hjust = 0
+    ) +
+    ggplot2::theme(
+      # add margin on the left of the drawing canvas,
+      # so title is aligned with left edge of first plot
+      plot.margin = ggplot2::margin(0, 0, 0, 7)
+    )
+  cowplot::plot_grid(title, patch, ncol = 1, rel_heights = c(0.1, 1))
 }
 
 #' GGplot of Ewing envelope

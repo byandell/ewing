@@ -22,7 +22,8 @@
 #' 
 #' @export
 #' @importFrom ggplot2 autoplot
-ggplot_ewing <- function(object, step = 0, ageclass = TRUE, substrate = TRUE, ...)
+ggplot_ewing <- function(object, step = 0, ageclass = TRUE,
+                         substrate = !ageclass, ...)
 {
   if(!inherits(object, "ewing_snapshot")) {
     object <- ewing_snapshot(object, step, ...)
@@ -36,12 +37,13 @@ ggplot_ewing <- function(object, step = 0, ageclass = TRUE, substrate = TRUE, ..
     p[[i]] <- ggplot2::autoplot(object$ageclass, ...)
   }
   if(substrate) {
-    species <- get.species(object)
+    species <- names(object$substrate)
     for(j in species) {
       i <- i + 1
       p[[i]] <- ggplot2::autoplot(object$substrate[[j]], ...)
     }
   }
+  if(length(p) == 1) p <- p[[1]]
   p
 }
 #' @export
@@ -49,4 +51,10 @@ ggplot_ewing <- function(object, step = 0, ageclass = TRUE, substrate = TRUE, ..
 #' @method autoplot ewing
 autoplot.ewing <- function(object, ...) {
   ggplot_ewing(object, ...)
+}
+#' @export
+#' @rdname ggplot_ewing
+#' @method plot ewing
+plot.ewing <- function(x, ...) {
+  ggplot_ewing(x, ...)
 }
