@@ -1,3 +1,5 @@
+#' Ewing App
+#' 
 #' @export
 #' @importFrom utils write.csv
 #' @importFrom stringr str_remove
@@ -11,6 +13,25 @@
 #' @importFrom ggplot2 autoplot ggplot ggtitle
 #' @importFrom DT renderDataTable
 #' @importFrom cowplot plot_grid
+ewingApp <- function(title = "Population Ethology") {
+  ui <- shiny::fluidPage(
+    shiny::titlePanel(title),
+    shiny::sidebarLayout(
+      shiny::sidebarPanel(
+        ewingInput("ewing")
+      ),
+      shiny::mainPanel(
+        ewingOutput("ewing")
+      )))
+  
+  server <- function(input, output, server) {
+    ewingServer("ewing")
+  }
+  
+  shiny::shinyApp(ui = ui, server = server)
+}
+#' @export
+#' @rdname ewingApp
 ewingServer <- function(id) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -228,7 +249,7 @@ ewingServer <- function(id) {
 }
 #' Ewing Input
 #' @export
-#' @rdname ewingServer
+#' @rdname ewingApp
 ewingInput <- function(id) {
   ns <- shiny::NS(id)
   shiny::tagList(
@@ -269,7 +290,7 @@ ewingInput <- function(id) {
 }
 #' Ewing Output
 #' @export
-#' @rdname ewingServer
+#' @rdname ewingApp
 ewingOutput <- function(id) {
   ns <- shiny::NS(id)
   shiny::tagList(
@@ -277,24 +298,4 @@ ewingOutput <- function(id) {
                         "Plots", inline = TRUE),
     shiny::uiOutput(ns("outs"))
   )
-}
-#' Ewing App
-#' @export
-#' @rdname ewingServer
-ewingApp <- function(title = "Population Ethology") {
-  ui <- shiny::fluidPage(
-    shiny::titlePanel(title),
-    shiny::sidebarLayout(
-      shiny::sidebarPanel(
-        ewingInput("ewing")
-      ),
-      shiny::mainPanel(
-        ewingOutput("ewing")
-    )))
-  
-  server <- function(input, output, server) {
-    ewingServer("ewing")
-  }
-  
-  shiny::shinyApp(ui = ui, server = server)
 }
