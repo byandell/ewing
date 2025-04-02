@@ -114,7 +114,18 @@ ggplot_current(simres, "host")
 ggplot_current(simres, "parasite")
 ```
 
-Interactive plots showing splines. Use `graphics::locator()`.
+#### Plot to relate day to degree-day based on temperature regime.
+
+```{r}
+temp.plot(simres)
+```
+
+#### Interactive 
+
+These plots show splines use `graphics::locator()` to adjust nodes.
+
+The routines `five.plot()` and `five.show()` are two different versions
+of an interactive study of the 5-parameter relationship of time and mean value.
 
 ```{r eval=FALSE}
 five.plot()
@@ -122,12 +133,6 @@ five.plot()
 
 ```{r eval=FALSE}
 five.show()
-```
-
-Plot to relate day to degree-day based on temperature regime.
-
-```{r}
-temp.plot(simres)
 ```
 
 interactive design plot for high and low temperatures. Uses `graphics::locator()`.
