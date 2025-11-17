@@ -298,7 +298,7 @@ getOrgData <- function(community, left, right,
   }
 }
 ###########################################################################################
-getOrgNames <- function(datafile) {
+getOrgNames <- function(datafile = "") {
   if(datafile == "") {
     c("organism.features", "future.host", "future.parasite",
       "substrate.host", "substrate.parasite", "substrate.substrate",
@@ -308,7 +308,7 @@ getOrgNames <- function(datafile) {
   }
 }
 ###########################################################################################
-getOrgDataSimple <- function(community, dataname, datafile){
+getOrgDataSimple <- function(community, dataname, datafile = ""){
   out <- getOrgData(
     community,
     left = stringr::str_remove(dataname, "\\..*"),

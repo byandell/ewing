@@ -37,7 +37,7 @@ library(ewing) # attach package
 mysim <- init.simulation() # initialize simulation
 simres <- future.events(mysim, plotit = FALSE) # simulate future events
 plot(simres) # plot populations by stage or substrate over time
-plot_current(simres, "host") # plot current (last) individuals over space
+ggplot_current(simres, "host") # plot current (last) individuals over space
 ```
 
 To change the number of initial individuals, do something like:
