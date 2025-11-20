@@ -31,7 +31,10 @@
 ewing_ageclass <- function(community, substrate = TRUE, total = TRUE,
                            normalize = TRUE, ...) {
   count <- readCount(community)
-  species <- names( count )
+  if(!length(count)) return(NULL)
+  species <- names(count)
+  if(is.null(species)) return(NULL)
+  
   ageclass <- list()
   for( i in species ) {
     ageclass[[i]] <- levels( getOrgFuture( community, i, "ageclass" ))

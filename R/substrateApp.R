@@ -1,8 +1,6 @@
-#' Ewing App
+#' Substrate Plot App
 #' 
 #' @export
-#' @importFrom utils write.csv
-#' @importFrom stringr str_remove
 #' @importFrom purrr map
 #' @importFrom shiny actionButton bindCache bindEvent checkboxInput column
 #'             downloadButton downloadHandler fileInput fluidPage fluidRow HTML
@@ -11,46 +9,30 @@
 #'             sidebarPanel sliderInput tagList textInput titlePanel
 #'             withProgress uiOutput
 #' @importFrom ggplot2 autoplot ggplot ggtitle
-#' @importFrom DT renderDataTable
 #' @importFrom cowplot plot_grid
-ewingFutureApp <- function(title = "Population Ethology") {
+substrateApp <- function() {
   ui <- bslib::page_sidebar(
-    title = title,
+    title = "Test Substrate",
     sidebar = bslib::sidebar(
-      ewingInitInput("ewing_init"),
-      ewingFutureInput("ewing_future")),
-    ewingFutureOutput("ewing_future")
+      initParInput("init_par")),
+    substrateOutput("substrate")
   )
   server <- function(input, output, server) {
-    siminit <- ewingInitServer("ewing_init")
-    ewingFutureServer("ewing_future", siminit)
+    init_par <- initParServer("init_par")
+    siminit <- initServer("init", init_par)
+    substrateServer("substrate", siminit)
   }
   
   shiny::shinyApp(ui = ui, server = server)
 }
 #' @export
-#' @rdname ewingFutureApp
-ewingFutureServer <- function(id, siminit) {
+#' @rdname substrateApp
+substrateServer <- function(id, simres) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
     
-    simres <- shiny::reactive({
-      future.events(shiny::req(siminit()), nstep = shiny::req(input$steps),
-                    plotit = FALSE) # simulate future events
-    })
-    distplot <- shiny::reactive({
-      if(inherits(simres(), "ewing")) {
-        ggplot2::autoplot(ewing_ageclass(simres(), total = input$total,
-                                         normalize = input$norm))
-      } else {
-        NULL
-      }
-    })
-    output$distPlot <- shiny::renderPlot({
-      distplot()
-    })
     species <- shiny::reactive({
-      names(shiny::req(siminit())$pop)
+      names(shiny::req(simres())$pop)
     })
     substrates <- shiny::reactive({
       get.organisms()$substrates
@@ -82,36 +64,19 @@ ewingFutureServer <- function(id, siminit) {
         }
         cowplot::plot_grid(plotlist = p, nrow = spp)
       } else {
-        ggplot2::ggplot()
+        plot_null()
       }
     })
-    output$plots <- shiny::renderUI({
+    output$substrate_plot <- shiny::renderUI({
       shiny::req(species())
-      shiny::tagList(
-        shiny::plotOutput(ns("distPlot"), height = "4in"),
-        shiny::plotOutput(ns("sppPlot"), height = paste0(2 * length(species()), "in")))
+      shiny::plotOutput(ns("sppPlot"),
+                        height = paste0(2 * length(species()), "in"))
     })
   })
 }
-#' Ewing Input
 #' @export
-#' @rdname ewingFutureApp
-ewingFutureInput <- function(id) {
+#' @rdname substrateApp
+substrateOutput <- function(id) {
   ns <- shiny::NS(id)
-  shiny::tagList(
-    shiny::sliderInput(ns("steps"),
-                     label = "Simulation steps:",
-                     min = 1000,
-                     max = 10000,
-                     value = 1000,
-                     step = 500),
-    shiny::checkboxInput(ns("norm"), "Normalize Plot", TRUE),
-    shiny::checkboxInput(ns("total"), "Include Total", TRUE))
-}
-#' Ewing Output
-#' @export
-#' @rdname ewingFutureApp
-ewingFutureOutput <- function(id) {
-  ns <- shiny::NS(id)
-  shiny::uiOutput(ns("plots"))
+  shiny::uiOutput(ns("substrate_plot"))
 }

@@ -7,9 +7,15 @@
 \alias{summary.ewing_discrete}
 \title{Discrete time simulation for Ewing Envelope}
 \usage{
-ewing_discrete1(increment = 0.5, ...)
+ewing_discrete1(
+  siminit = init.simulation(interact = FALSE, messages = FALSE, ...),
+  increment = 0.5,
+  ...
+)
 }
 \arguments{
+\item{siminit}{initialize simulation}
+
 \item{increment}{increment for discrete simulation time}
 
 \item{...}{additional parameters}

@@ -19,52 +19,70 @@
 #' 
 #' 
 #' @export summary.ewing
-summary.ewing <- function( object, ... )
-{
-  cat( "Data initialization package:", object$org$package, "\n" )
-  species <- names( object$org$Future )
-  cat( "Community species:", paste( species, collapse = ", " ), "\n" )
-  cat( "Community hosts:", paste( names( object$org$Interact ), collapse = ", " ), "\n" )
-  cat( "Mean Value curves by species:" )
+#' @method summary ewing
+summary.ewing <- function(object, ...) {
+  out <- list()
+  out$package <- object$org$package
+  out$species <- names(object$org$Future)
+  out$interact <- names(object$org$Interact)
+  out$meanvalue <- list()
+  for(i in out$species) {
+    out$meanvalue <- names(object$org$MeanValue[[i]])
+  }
+  if(length(object$pop)) {
+    out$stage <- list()
+    for(i in out$species)
+      out$stage[[i]] <- 
+        table(object$org$Future[[i]]$current[getOrgAlive(object, i, "stage")])
+  }
+  if(!is.null(object$count)) {
+    out$events <- object$count$events
+    
+    for( i in seq( length(out$events)))
+      out$events[[i]] <- apply(out$events[[i]], 2, function(x) {
+        tmp <- sum(x, na.rm = TRUE)
+        if(tmp > 0)
+          c(round(100 * x / tmp, 1), total = tmp)
+        else
+          c(x, total = 0)
+      })
+  }
+  out$cpu <- signif(object$cpu, 4)
+  class(out) <- c("summary.ewing", class(out))
+  out
+}
+#' @export print.summary.ewing
+#' @method print summary.ewing
+print.summary.ewing <- function(x, ...) {
+  cat("Data initialization package:", x$package, "\n")
+  cat("Community species:", paste(x$species, collapse = ", " ), "\n")
+  cat("Community hosts:", paste(x$interact, collapse = ", "), "\n")
+  cat("Mean Value curves by species:")
   mv <- FALSE
-  for( i in species ) {
-    meanvalue <- names( object$org$MeanValue[[i]] )
-    mv <- mv | !is.null( meanvalue )
-    if( !is.null( meanvalue )) {
-      cat( "\n  ", species, ":", paste( meanvalue, collapse = ", " ), "\n" )
+  for(i in x$species) {
+    meanvalue <- x$meanvalue[[i]]
+    mv <- mv | !is.null(meanvalue)
+    if( !is.null(meanvalue)) {
+      cat("\n  ", i, ":", paste( meanvalue, collapse = ", " ), "\n")
     }
   }
-  if( !mv )
-    cat( " none\n" )
+  if(!mv)
+    cat(" none\n")
   
-  if( length( object$pop )) {
-    species <- get.species( object )
-    stage <- list()
-    for( i in species )
-      stage[[i]] <- table( object$org$Future[[i]]$current[
-        getOrgAlive( object, i, "stage" ) ] )
-    cat( "\nSimulation community has following counts:\n",
-         paste( species, lapply( stage, sum ), sep = "=", collapse = ", " ), "\n" )
-    print( stage )
+  if(!is.null(x$stage)) {
+    cat("\nSimulation community has following counts:\n",
+        paste(x$species, lapply(x$stage, sum), sep = "=", collapse = ", "),
+        "\n")
+    print(x$stage)
   }
-  if( !is.null( object$temp )) {
+  if( !is.null( x$temp )) {
+    # ** later
   }
-  if( !is.null( object$count )) {
-    events <- object$count$events
-    
-    for( i in seq( length( events )))
-      events[[i]] <- apply( events[[i]], 2,
-                            function( x ) {
-                              tmp <- sum( x, na.rm = TRUE )
-                              if( tmp > 0 )
-                                c( round( 100 * x / tmp, 1 ), total = tmp )
-                              else
-                                c( x, total = 0 )
-                            })
-    print( events )
+  if(!is.null(x$events)) {
+    print(x$events)
   }
-  if( !is.null( object$cpu )) {
+  if(!is.null(x$cpu)) {
     cat( "CPU timing by event in simulation\n" )
-    print( object$cpu )
+    print(x$cpu)
   }
 }

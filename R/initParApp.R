@@ -14,32 +14,22 @@
 #' @importFrom bslib page_sidebar sidebar
 #' @importFrom DT renderDataTable
 #' @importFrom cowplot plot_grid
-ewingInitApp <- function(title = "Population Ethology") {
+initParApp <- function(title = "Population Ethology") {
   ui <- bslib::page_sidebar(
     title = title,
     sidebar = bslib::sidebar(
-      ewingInitInput("ewing")),
-    shiny::uiOutput("siminit"),
-    ewingInitOutput("ewing")
+      initParInput("init_par")),
+    initParUI("init_par"),
+    initParOutput("init_par")
   )
   server <- function(input, output, server) {
-    siminit <- ewingInitServer("ewing")
-    output$siminit <- shiny::renderUI({
-      simstuff <- shiny::req(siminit())
-      nlist <- names(simstuff)
-      out <- paste(nlist, collapse = ", ")
-      for(i in nlist) {
-        out <- paste(out, "<br>",
-                     paste(names(simstuff[[i]]), collapse = ", "))
-      }
-      shiny::HTML(out)
-    })
+    init_par <- initParServer("init_par")
   }
   shiny::shinyApp(ui = ui, server = server)
 }
 #' @export
-#' @rdname ewingInitApp
-ewingInitServer <- function(id) {
+#' @rdname initParApp
+initParServer <- function(id) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
     
@@ -57,10 +47,6 @@ ewingInitServer <- function(id) {
                            step = 20)
       })
     })
-    siminit <- shiny::reactive({
-      init.simulation(count = as.numeric(c(shiny::req(input$host),
-                                           shiny::req(input$parasite))))
-    })
 
     datanames <- shiny::reactive({
       getOrgNames()
@@ -73,22 +59,42 @@ ewingInitServer <- function(id) {
         }, escape = FALSE,
         options = list(scrollX = TRUE, pageLength = 10)))
     })
-
+    
+    # Show parameters
+    output$show_par <- shiny::renderUI({
+      nlist <- names(input)
+      # Remove any internal inputs, which have numbers.
+      glist <- grep("[0-9]", names(input))
+      if(length(glist))
+        nlist <- nlist[-glist]
+      # Construct output string.
+      out <- paste0("inputs: ", paste(nlist, collapse = ", "))
+      for(i in nlist) {
+        out <- paste(out, "<br>",
+                     paste(i, input[[i]], sep = " = "))
+      }
+      shiny::HTML(out)
+    })
+    
     # Return.
-    siminit
+    input
   })
 }
-#' Ewing Input
 #' @export
-#' @rdname ewingInitApp
-ewingInitInput <- function(id) {
+#' @rdname initParApp
+initParInput <- function(id) {
   ns <- shiny::NS(id)
   shiny::uiOutput(ns("sppsize"))
 }
-#' Ewing Output
 #' @export
-#' @rdname ewingInitApp
-ewingInitOutput <- function(id) {
+#' @rdname initParApp
+initParUI <- function(id) {
+  ns <- shiny::NS(id)
+  shiny::uiOutput(ns("show_par"))
+}
+#' @export
+#' @rdname initParApp
+initParOutput <- function(id) {
   ns <- shiny::NS(id)
   shiny::uiOutput(ns("inputfiles"))
 }

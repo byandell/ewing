@@ -28,20 +28,24 @@ ewing_discrete <- function(nsim, verbose = FALSE, ...) {
 #' 
 #' @aliases ewing_discrete1 ewing_discrete make_ewing_discrete
 #' summary.ewing_discrete
+#' 
+#' @param siminit initialize simulation
 #' @param increment increment for discrete simulation time
 #' @param ... additional parameters
 #' @param nsim number of simulations to run
 #' @param verbose show `.` for each simulation if `TRUE`
 #' @param object object of class `ewing_envelope` or `ewing_envelopes`
 #' @export ewing_discrete1
-ewing_discrete1 <- function(increment = 0.5, ...)
+ewing_discrete1 <- function(siminit = init.simulation(interact = FALSE,
+                                                    messages = FALSE, ...),
+                            increment = 0.5, ...)
 {
   # Make sure increment is 1,2,5 x power of 10
   incr <- pretty(increment)
   increment <- incr[which.min(abs(incr - increment))[1]]
   
-  mysim <- init.simulation(interact = FALSE, messages = FALSE, ...)
-  out <- future.events(mysim, refresh = 1000, plotit = FALSE, messages = FALSE, ...)
+  out <- future.events(siminit, refresh = 1000,
+                       plotit = FALSE, messages = FALSE, ...)
   attrs <- attributes(out)
   
   # Get age classes used later for summaries and plots
@@ -56,7 +60,8 @@ ewing_discrete1 <- function(increment = 0.5, ...)
           purrr::map_df(
             dplyr::mutate(
               as.data.frame(x),
-              time = ifelse(.data$step == 0, 0, increment * ceiling(.data$time / increment))),
+              time = ifelse(.data$step == 0, 0,
+                            increment * ceiling(.data$time / increment))),
             rev),
           .data$time, .keep_all = TRUE),
         rev)
