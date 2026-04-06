@@ -105,6 +105,10 @@ future.events <- function( community, ...,
   # Set up list for plot information.
   p <- list()
   pstep <- 0
+  if (!is.null(community$plot)) {
+    p <- community$plot
+    pstep <- length(p)
+  }
   
   ## for nstep steps schedule future events and process immediate events
   for( istep in seq( nstep )) {

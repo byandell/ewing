@@ -1,5 +1,14 @@
 # Bland Ewing's Systems Ethology
 
+This package was initiated on 28 March 2014 based on Bland Ewing's work dating
+back to the early 1970s.
+The goal is to make his simulation code available as an
+R package and to provide a Shiny interface to the code.
+In 2026, I am using AI
+([Google Gemini 3 Pro](https://gemini.google.com/)) via
+[Antigravity](https://antigravity.google/)
+ to improve the code and interface.
+
 Before installing the package, you may want to examine the interactive Shiny app
 <https://connect.doit.wisc.edu/SystemsEthology>,
 which executes this package.

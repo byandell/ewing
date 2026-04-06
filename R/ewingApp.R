@@ -36,42 +36,50 @@ ewingServer <- function(id) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
     
-    simres <- shiny::bindEvent(
-      shiny::bindCache(
-        shiny::reactive({
-          nsim <- as.integer(input$nsim)
-          if(nsim == 1) {
-            # Ideally, would like to continue simulation. That would require
-            # - feed simres() back into future.events, which requires some logic
-            # - use option "append = TRUE" to append to outfile
-            siminit <- init.simulation(count = as.numeric(c(input$host, input$parasite)),
-                                       datafile = datafile()) # initialize simulation
-            future.events(siminit, nstep = input$steps, plotit = FALSE) # simulate future events
-          } else {
-            shiny::withProgress(message = paste('Ewing Discrete', nsim,
-                                                'Simulations ...'),
-                                value = 0,
-                                {
-                                  out <- as.list(seq_len(nsim))
-                                  inc <- 1 / nsim
-                                  for(i in seq_len(nsim)) {
-                                    shiny::incProgress(inc)
-                                    out[[i]] <- ewing_discrete1(
-                                      count = as.numeric(c(input$host, input$parasite)),
-                                      nstep = input$steps)
-                                  }
-                                  make_ewing_discrete(out)
-                                })
-          }
-        }),
-        input$host, input$parasite, input$steps, input$nsim,
-        input$datafile),
-      input$go)
+    active_sim <- shiny::reactiveVal(NULL)
+
+    shiny::observeEvent(input$go_init, {
+      nsim <- as.integer(input$nsim)
+      if(nsim == 1) {
+        siminit <- init.simulation(count = as.numeric(c(input$host, input$parasite)),
+                                   datafile = datafile())
+        active_sim(siminit)
+      } else {
+        shiny::withProgress(message = paste('Ewing Discrete', nsim, 'Simulations ...'),
+                            value = 0,
+                            {
+                              out <- as.list(seq_len(nsim))
+                              inc <- 1 / nsim
+                              for(i in seq_len(nsim)) {
+                                shiny::incProgress(inc)
+                                out[[i]] <- ewing_discrete1(
+                                  count = as.numeric(c(input$host, input$parasite)),
+                                  nstep = input$steps)
+                              }
+                              active_sim(make_ewing_discrete(out))
+                            })
+      }
+    })
+
+    shiny::observeEvent(input$go_step, {
+      nsim <- as.integer(input$nsim)
+      if(nsim == 1) {
+        shiny::req(active_sim())
+        new_state <- future.events(active_sim(), nstep = input$step_size, plotit = FALSE)
+        active_sim(new_state)
+      }
+    })
+
+    simres <- shiny::reactive({ active_sim() })
     
     distplot <- shiny::reactive({
       if(inherits(simres(), "ewing")) {
-        ggplot2::autoplot(ewing_ageclass(simres(), total = input$total,
-                                         normalize = input$norm))
+        age_data <- ewing_ageclass(simres(), total = input$total, normalize = input$norm)
+        if(!is.null(age_data)) {
+          ggplot2::autoplot(age_data)
+        } else {
+          ggplot2::ggplot() + ggplot2::ggtitle("Step 0: Age class data not yet available. Please Step Forward.")
+        }
       } else {
         NULL
       }
@@ -109,7 +117,9 @@ ewingServer <- function(id) {
       if(inherits(simres(), "ewing")) {
         if(!is.null(simres())) {
           p <- purrr::map(species(), function(x) {
-            p <- ggplot2::autoplot(ewing_substrate(simres(), x))
+            sub_data <- ewing_substrate(simres(), x)
+            if(is.null(sub_data)) return(ggplot2::ggplot() + ggplot2::ggtitle(paste("Step 0:", x, "substrate data not yet available. Please Step Forward.")))
+            p <- ggplot2::autoplot(sub_data)
             if(inherits(p, "ggplot"))
               p <- p + ggplot2::ggtitle(paste(x, "on", substrates()[1]))
             p
@@ -270,8 +280,16 @@ ewingInput <- function(id) {
     shiny::fileInput(ns("datafile"), "Optional XLSX Input Data File",
                      multiple = FALSE,
                      accept = c(".xls", ".xlsx")),
+    shiny::sliderInput(ns("step_size"),
+                       label = "Steps per click (for nsim=1):",
+                       min = 10,
+                       max = 500,
+                       value = 50,
+                       step = 10),
     
-    shiny::actionButton(ns("go"), "Start Simulation"),
+    shiny::fluidRow(
+      shiny::column(12, shiny::actionButton(ns("go_init"), "Init / Run"))
+    ),
     
     shiny::HTML("<hr style='height:1px;border:none;color:#333;background-color:#333;' />"),
     shiny::uiOutput(ns("plottype")),
@@ -295,8 +313,11 @@ ewingInput <- function(id) {
 ewingOutput <- function(id) {
   ns <- shiny::NS(id)
   shiny::tagList(
-    shiny::radioButtons(ns("button"), "", c("Plots", "Input Data"),
-                        "Plots", inline = TRUE),
+    shiny::fluidRow(
+      shiny::column(4, shiny::radioButtons(ns("button"), "", c("Plots", "Input Data"), "Plots", inline = TRUE)),
+      shiny::column(4, shiny::actionButton(ns("go_init"), "Init / Run")),
+      shiny::column(4, shiny::actionButton(ns("go_step"), "Step Forward (nsim=1)"))
+    ),
     shiny::uiOutput(ns("outs"))
   )
 }
