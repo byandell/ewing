@@ -1,3 +1,8 @@
+# Following needed to prepare for Posit Connect
+#renv::install("byandell/ewing")
+#renv::snapshot()
+#renv::record("byandell/ewing)
+
 library(DT)
 library(cowplot)
 library(ewing)

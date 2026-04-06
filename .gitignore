@@ -50,3 +50,4 @@ pkg
 .Rproj.user
 *.Rproj
 old/
+*.lock
