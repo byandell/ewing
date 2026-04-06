@@ -1,4 +1,4 @@
-# Predator-PreyDatasets
+# Predator-Prey Datasets
 
 **Prompt:** find a well-documented predator prey dataset, ideally with age and location information for individuals
 
