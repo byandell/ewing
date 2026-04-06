@@ -7,7 +7,7 @@
 \alias{ewingOutput}
 \title{Ewing App}
 \usage{
-ewingApp(title = "Population Ethology")
+ewingApp(title = "Systems Ethology")
 
 ewingServer(id)
 

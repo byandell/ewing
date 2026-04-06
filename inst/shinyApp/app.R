@@ -2,7 +2,7 @@ library(DT)
 library(cowplot)
 library(ewing)
 
-title <- "Population Ethology"
+title <- "Systems Ethology"
 
 ui <- shiny::fluidPage(
   shiny::titlePanel(title),
