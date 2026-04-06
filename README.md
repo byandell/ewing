@@ -14,19 +14,19 @@ See also
 
 Change one of the simulation values on the Shiny app,
 say number or hosts or parasites, or number of simulation steps.
-Then click on **Start Simulation** button to start a simulation. You can redo a simulation with the same settings, or change the settings. 
+Then click on **Start Simulation** button to start a simulation. You can redo a simulation with the same settings, or change the settings.
 
 To install, first do
 
-```
+```r
 install.packages("devtools")
 ```
 
 If on Windows, you will then need to install Rtools from <http://cran.r-project.org/bin/windows/Rtools>.
-This is an executable that will install some applications in c:\Rtools. 
+This is an executable that will install some applications in c:\Rtools.
 You will also need pdflatex, which means you need a TeX distribution such as MikTeX or TeX Live.
 
-```
+```r
 library(devtools)
 
 install_github("byandell/ewing")
@@ -34,13 +34,13 @@ install_github("byandell/ewing")
 
 If you have `pandoc`, you can install with vignette:
 
-```
+```r
 install_github("byandell/ewing", build_vignettes = TRUE)
 ```
 
 See [vignettes/ewing.Rmd](https://github.com/byandell/ewing/blob/master/vignettes/ewing.Rmd) for example use of code. A simple example is below:
 
-```
+```r
 library(ewing) # attach package
 mysim <- init.simulation() # initialize simulation
 simres <- future.events(mysim, plotit = FALSE) # simulate future events
@@ -50,19 +50,19 @@ ggplot_current(simres, "host") # plot current (last) individuals over space
 
 To change the number of initial individuals, do something like:
 
-```
+```r
 mysim <- init.simulation(count = c(200, 100))
 ```
 
 will simulate 200 hosts and 100 parasites. You can also change the name of simulation file results from "sim.out" to something like "sim_200_100.out" to reflect the conditions of the simulation. Note that this file is written into the directory where you are using R.
 
-```
+```r
 simres <- future.events(mysim, "mysim_200_100.out", plotit = FALSE)
 ```
 
 Here are some commands to use `tidyverse` for newer plots:
 
-```
+```r
 library(tidyverse)
 ggplot_ewing(simres)
 ggplot_current(simres, "host")
@@ -74,14 +74,14 @@ Reference: B Ewing, BS Yandell, JF Barbieri, and RF Luck (2002) "Event-driven co
 
 # Data organization
 
-### Community object
+## Community object
 
 The object `community` has several elements that contain the current state of a simulation. This object is updated at every simulation step, which then changes the future event structure. Past events are removed and cannot be recovered, except in the sense that each individual has their current state and anticipated future state recorded.
 
 - `pop` matrices for each `species` of information (rows) by individual (columns)
-  + use `get.species/put.species` and `get.individual/put.individual`
+  - use `get.species/put.species` and `get.individual/put.individual`
 - `org` structure with information about organisms, including interactions
-  + use `getOrgInfo`, `getOrgInteract` and other routines
+  - use `getOrgInfo`, `getOrgInteract` and other routines
 - `temp` structure about degree-day and temperature patterns
 - `count` structure of summary counts
 - `cpu` CPU time used for various activities
@@ -92,7 +92,7 @@ For some reason, I set up `community$pop` entries for each species as matrices b
 - `left`, `right`, `up` leftist tree links
 - `dispersion`
 - `location`
-- `intensity` 
+- `intensity`
 - `truncation`
 - `rejection`
 - `pos.a`, `pos.b`, `pos.c` position on substrate in triangular coordinates
@@ -110,7 +110,7 @@ At each time step where there is a change in the population structure, totals ar
 
 It might be possible to store the updates as the simulation goes along in such a way that one could construct intermediate snapshots of the community. One interesting question is how to capture the spatial migration of individuals over the substrates (see `ggplot_current`).
 
-#### Global datafiles
+## Global datafiles
 
 These datafiles are in the package directory [ewing/data](https://github.com/byandell/ewing/tree/master/data) and are hard-wired into the code through calls in [community.R](https://github.com/byandell/ewing/blob/master/R/community.R) file to internal function `mydata`.
 If the objects already exist, say by user supplying them, then the provided versions will be used.
@@ -120,7 +120,7 @@ The file [redscale.txt](https://github.com/byandell/ewing/blob/master/data/redsc
 
 [organism.features](https://github.com/byandell/ewing/blob/master/data/organism.features.txt)
 
-- columns: 	  units	offspring attack   birth  substrate	deplete subclass parasite	move
+- columns:    units offspring attack   birth  substrate deplete subclass parasite move
 - rows: host parasite substrate
 
 [future.host](https://github.com/byandell/ewing/blob/master/data/future.host.txt)
@@ -128,9 +128,9 @@ The file [redscale.txt](https://github.com/byandell/ewing/blob/master/data/redsc
 - columns:  current future fid time pch color ageclass event init
 - rows: 1-17
 - current values:
-  + crawler first.instar first.molt second.1-3 female male second.molt third.1-3 virgin gravid death starved
+  - crawler first.instar first.molt second.1-3 female male second.molt third.1-3 virgin gravid death starved
 - future values:
-  + first.instar first.molt second.1-3 female male second.molt  death third.1-3 virgin       gravid gravid death death
+  - first.instar first.molt second.1-3 female male second.molt  death third.1-3 virgin       gravid gravid death death
 
 [substrate.host](https://github.com/byandell/ewing/blob/master/data/substrate.host.txt)
 
@@ -142,9 +142,9 @@ The file [redscale.txt](https://github.com/byandell/ewing/blob/master/data/redsc
 - columns:     current   future fid time pch    color ageclass   event init
 - rows: 1-11
 - current values:
-  + egg      larvae   prepupae pupae    adult    adult    feed     ovip     death    male     starved 
+  - egg      larvae   prepupae pupae    adult    adult    feed     ovip     death    male     starved
 - future values:
-  + larvae   prepupae pupae    adult    feed     ovip     adult    adult    death    death death
+  - larvae   prepupae pupae    adult    feed     ovip     adult    adult    death    death death
 
 [substrate.PARASITE](https://github.com/byandell/ewing/blob/master/data/substrate.parasite.txt)
 
@@ -163,13 +163,13 @@ The file [redscale.txt](https://github.com/byandell/ewing/blob/master/data/redsc
 
 [TemperatureBase](https://github.com/byandell/ewing/blob/master/data/TemperatureBase.txt)
 
-- columns: Day	Time	Base
+- columns: Day Time Base
 - rows: 12 rows
 - Day: 0, 30
 - Time: 0, 8, 12, 15, 18, 20
 - Base: various values between 0 and 100
 
-# Plot routines
+## Plot routines
 
 The primary summary plot is `plot.ewing`, or `ggplot_ewing`, in `plot.R`.
 This gives a summary over the whole simulation.
@@ -190,9 +190,9 @@ Plan is to make this more adaptable, of course.
 ### Code Issues
 
 - future and intermediate plots
-  + eliminate plot.ewing calls in favor of ggplot throughout
-  + currently save ggplot objects, but only need `ewing_ageclass` and `ewing_substrate` objects
-  + really interested in how substrate changes step to step or time to time (over multiple steps); how to assess diff of to ageclass or substrate objects?
+  - eliminate plot.ewing calls in favor of ggplot throughout
+  - currently save ggplot objects, but only need `ewing_ageclass` and `ewing_substrate` objects
+  - really interested in how substrate changes step to step or time to time (over multiple steps); how to assess diff of to ageclass or substrate objects?
 - gencurve in spline.R internal to five.plot but used elsewise
 - dead used in init, event
 - organsim.features in community.R using mydata() nonstandard
@@ -211,19 +211,19 @@ init.simulation # starts simulation with default info
 - package = "ewing"
 - community = community.R/initOrgInfo(package)
 - community = community.R/initTemp(community)
-- species = init.R/getOrgFeature( community )[1:2]
+- species = init.R/getOrgFeature[community](1:2)
 - hosts = init.R/getOrgHosts( community, species )
 - community = community.R/setOrgInfo( community, species, hosts, package )
 - loop on species i
-  + count = 200 # default
-  + community = init.R/init.population( community, species[i], n = count )
+  - count = 200 # default
+  - community = init.R/init.population( community, species[i], n = count )
 
 ##### init.population
 
 Initialize Organism Population
- 
+
 Create data structure with n organisms distributed across life stages.
-Includes leftist tree structure. 
+Includes leftist tree structure.
 Does various initializations based in information in `future.xxx`,
 where `xxx` is replaced by the name of the dataset. Normally,
 `init.population` is called by `init.simulation`.
@@ -309,10 +309,10 @@ initCount() # simulation count object administration
 
 - community.R/get.species( community, species[i] )
 - init.R/getOrgFeature( community, species[i], "units" )
-- community.R/get.individual( community, species[i] )["time"]
+- community.R/get.individual[community, species[i]]("time")
 - community = temp.R/activeTemp( community, simmin["hr"], , simmin["DD"] )
 - init.R/getOrgFeature( community, species, "subclass" )
-- community.R/get.individual( community, species[i] )["time"]
+- community.R/get.individual[community, species[i]]("time")
 - count$mintime[i] = temp.R/getTime( community, species[i], species.time )
 - init.R/getOrgFuture( community, species[i] )
 - init.R/getOrgFuture( community, species[i], "ageclass" )
@@ -328,7 +328,7 @@ initTemp( community, lo.hour, hi.hour ) # creates Temperature object
 - global data file TemperaturePar
 - global data file TemperatureBase
 - temp.R/showTemp( community )
-- temp.R/activeTemp( community, lo.hour, hi.hour, community.R/getTemp( community, "Time", 1 )[1] )
+- temp.R/activeTemp( community, lo.hour, hi.hour, community.R/getTemp[community, "Time", 1](1) )
 
 getTemp( community, element, sub )
 
@@ -362,14 +362,15 @@ set.timing( community, string, flag )
   
 #### temp.R
 
-activeTemp( community, lo.hour, hi.hour )	# updates Temperature object
+activeTemp( community, lo.hour, hi.hour ) # updates Temperature object
 
 - community.R/getTemp()
 - community.R/getDegreeDay( community, lo.hour[1] )
 - community = community.R/setTemp( community, "DegreeDay", tmpspline )
-  + tmpspline = community.R/temp.spline( community, temp.repeat( community, period ), start = degreeday )
--  community = community.R/setTemp( community, "Hour", brksplne )
-  + brkspline = temp.R/break.backSpline( community.R/getTemp( community, "DegreeDay" ))
+  - tmpspline = community.R/temp.spline( community, temp.repeat( community, period ), start = degreeday )
+- community = community.R/setTemp( community, "Hour", brksplne )
+
+- brkspline = temp.R/break.backSpline( community.R/getTemp( community, "DegreeDay" ))
 
 showTemp( community )
 
@@ -402,7 +403,7 @@ getTime( community, species, x )
 ##### future.events
 
 Realize future events in quantitative population ethology simulation
- 
+
 This is the main routine for Ewing's Quantitative Population Ethology. It
 steps through future events for individuals starting with the next minimum
 future event time.
@@ -415,11 +416,11 @@ or `future.parasite` data structure. The `event.attack` uses
 further information from `organism.features` about the type of parasite
 (`endo` or `ecto`) in conjunction with the current event
 (`feed` or `ovip`) to determine the nature of attack.
- 
+
 A plot is created periodically unless `plotit=FALSE`.  An external
 `file` is written with simulation counts for re-plotting.
 
-future.events( community ) 
+future.events( community )
 
 - species = community.R/get.species( community )
 - community = community.R/initCount( community, species, file, append )
@@ -444,7 +445,7 @@ future.events( community )
 
 Process immediate, pending and future events in quantitative population
 ethology simulation.
- 
+
 Process an event for next individual in a species. Events may be monadic
 (one individual) or dyadic (involving two individuals).
 These are the main event processors for Ewing's Quantitative Population
@@ -466,7 +467,7 @@ and relative position in the simulation space. Ectoparasites kill their
 hosts, hence realizing a pending death event (to be processed immediately by
 `event.death` in the next step). Endoparasites merely incapacitate
 their hosts.
- 
+
 At present, the search strategies of parasites and health consequences of
 hosts are crude. However, search is over substrates and depends on the stage
 of hosts. A crude sex determination strategy is in place, with smaller
@@ -486,19 +487,19 @@ event.future(community, species) # process immediate, pending and future events
 - individual = future.R/get.future( community, species ) # schedule future event based on current stage
 - individual = move.R/event.move( community, species, individual ) # move if appropriate
 - community = temp.R/checkTime( community, individual["time"], count, feature) # update time translation if needed
-  + count = community.R/getCount( community, species, "mintime")
-  + feature = init.R/getOrgFeature( community, species, "units" )
+  - count = community.R/getCount( community, species, "mintime")
+  - feature = init.R/getOrgFeature( community, species, "units" )
 - community = community.R/put.individual( community, species, individual ) # put updated individual back in community
 - community.R/get.species.element( community, species, "time", individual[c("left","right")] ))
 - community = community.R/put.species( community, species, leftup )
-  + leftup = leftist.R/leftist.update( community.R/get.species( community, species ))
+  - leftup = leftist.R/leftist.update( community.R/get.species( community, species ))
 - community = future.R/update.mintime( community, species )
 
 event.death(community, species, id)
 
 - id = community.R/get.base( community, species )
 - community = community.R/put.species( community, species, leftrm) # remove dead individual from leftist tree
-  + leftrm = leftist.remove( community.R/get.species( community, species ), id )
+  - leftrm = leftist.remove( community.R/get.species( community, species ), id )
 - community = put.base( community, species, id ) # free up individual for reuse
 
 ##### Other future.R routines
@@ -513,11 +514,11 @@ get.future # Get birth and future event
 set.birth( community, species, neworg )
 
 - community = temp.R/checkTime( community, neworg["time",], count, feature )
-  + count = community.R/getCount( community, species, "mintime" )
-  + feature init.R/getOrgFeature( community, species, "units" )
+  - count = community.R/getCount( community, species, "mintime" )
+  - feature init.R/getOrgFeature( community, species, "units" )
 - oldbase = community.R/getCount( community, species, "base" )
 - leftbirth = leftist.birth( community.R/get.species( community, species ), neworg, fcount)
-  + fcount = community.R/getCount( community, species, "free" )
+  - fcount = community.R/getCount( community, species, "free" )
 - community = community.R/put.species( community, species, leftbirth$tree )
 - community = put.base( community, species, free = leftbirth$free )
 - community = sim.R/updateCounts( community, species, newbirths )
@@ -526,8 +527,8 @@ update.mintime( object, species, ... )
 
 - base = community.R/get.base( object, species )
 - mintime = max( count, time)
-  + count = community.R/getCount( object, species, "mintime" )
-  + time = temp.R/getTime( object, species, get.species.element( object, species, "time", base ))
+  - count = community.R/getCount( object, species, "mintime" )
+  - time = temp.R/getTime( object, species, get.species.element( object, species, "time", base ))
 - community.R/setCount( object, species, list( base = base, mintime = mintime ))
 
 #### event.R

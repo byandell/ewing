@@ -20,11 +20,11 @@
 ##
 ### migrate count$count* to writeCount and then retrieve with readCount
 ###########################################################################################
-updateCount <- function( community, species, individual, is.death = FALSE, step )
-{
-  community <- updateEvents( community, species, individual["future"] )
-  if( !missing( step ))
-    community <- setCount( community,, list( step = step ))
+updateCount <- function(community, species, individual, is.death = FALSE, step) {
+  community <- updateEvents(community, species, individual["future"])
+  if (!missing(step)) {
+    community <- setCount(community, elements = list(step = step))
+  }
 
   ## move individual through age classes or drop if it dies
   countage <- getCount( community, species, "countage" )
@@ -48,11 +48,11 @@ updateCount <- function( community, species, individual, is.death = FALSE, step 
   # need 2 values; if only one, replicate it.
   include <- rep_len(include, 2)
   ## leave old substrate
-  if( !is.na( element ) & include[1] ) {
+  if (!is.na(element) && include[1]) {
     element <- as.character( element )
     countsub[element] <- max(countsub[element] - 1, 0)
   }
-  if( !is.death & include[2] ) {
+  if (!is.death && include[2]) {
     ## move to new substrate
     newsub <- individual["sub.future"]
     if( !is.na( newsub )) {

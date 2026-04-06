@@ -22,9 +22,7 @@ getOrgFeature <- function( community, species, feature = names( OrgFeature ))
   }
   f <- c( unlist( f ))
   ## try to interpret f as numeric
-  opwarn <- options( warn = -1 )
   numf <- suppressWarnings(as.numeric( f ))
-  options( opwarn )
   if( all( !is.na( numf )))
     f <- numf
   f
@@ -103,21 +101,22 @@ getOrgMeanValue <- function( community, species )
 ###########################################################################################
 copyOrgInfo <- function( fromname, toname )
 {
+  out <- list()
   for( i in c("sim")) {
     from <- paste( fromname, i, sep = "." )
     if( exists( from )) {
       toto <- paste( toname, i, sep = "." )
-      assign( toto, get( from ), ".GlobalEnv" )
-      cat( "copied", from, "to", toto, "\n" )
+      out[[toto]] <- get( from )
+      cat( "copied", from, "to", toto, "into list\n" )
     }
   }
-  invisible()
+  return(out)
 }
 ###########################################################################################
 get.alive <- function( community, species, substrate )
 {
   alive <- getOrgAlive( community, species )
-  alive <- seq( length( alive ))[alive]
+  alive <- seq_along( alive )[alive]
   alive[ substrate == get.species.element( community, species, "sub.stage", alive ) ]
 }
 ###########################################################################################
@@ -137,7 +136,7 @@ getOrgAlive <- function( community, species, element )
   tmp
 }
 ###########################################################################################
-getOrgAgeClass <- function( community, species, stage = seq( nrow( future )),
+getOrgAgeClass <- function( community, species, stage = seq_len( nrow( future )),
                             future = getOrgFuture( community, species ))
 {
   ageclass <- future$ageclass[stage]
@@ -148,7 +147,7 @@ getOrgAgeClass <- function( community, species, stage = seq( nrow( future )),
     NA
 }
 ###########################################################################################
-getOrgSubstrate <- function( community, species, elements = seq( nrow( inter )),
+getOrgSubstrate <- function( community, species, elements = seq_len( nrow( inter )),
                              substrate = getOrgFeature( community, species, "substrate" ),
                              inter = getOrgInteract( community, substrate, species ))
 {
@@ -160,7 +159,7 @@ getOrgSubstrate <- function( community, species, elements = seq( nrow( inter )),
     NA
 }
 ###########################################################################################
-sampleOrgSubstrate <- function( community, species, elements = seq( nrow( inter )),
+sampleOrgSubstrate <- function( community, species, elements = seq_len( nrow( inter )),
                                 substrate.name = getOrgFeature( community, species, "substrate" ),
                                 inter = getOrgInteract( community, substrate.name, species ))
 {
@@ -169,7 +168,7 @@ sampleOrgSubstrate <- function( community, species, elements = seq( nrow( inter 
   newsub <- as.matrix( cbind( elements, inter[ elements, levels( factor(inter$substrate) ) ] ))
   apply( newsub, 1, function( x, is ) {
     ns <- sample( levels( factor(is) ), 1, prob = x[-1] / sum( x[-1] ))
-    sub <- seq( nrow( inter ))[ ns == is ]
+    sub <- seq_len( nrow( inter ))[ ns == is ]
     if( length( sub ) > 1 ) {
       newsub <- getOrgInteract( community, substrate.name, substrate.name )[x[1],sub]
       sample( sub, 1, prob = newsub / sum( newsub ))

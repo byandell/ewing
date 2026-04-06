@@ -1,3 +1,4 @@
+#' @export
 #' @method c ewing
 c.ewing <- function(...) {
   communities <- list(...)

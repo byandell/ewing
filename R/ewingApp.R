@@ -64,7 +64,7 @@ ewingServer <- function(id) {
                                 })
           }
         }),
-        input$host, input$parasite, input$steps, input$nsim, input$go,
+        input$host, input$parasite, input$steps, input$nsim,
         input$datafile),
       input$go)
     
@@ -95,7 +95,7 @@ ewingServer <- function(id) {
     })
     output$sppsize <- shiny::renderUI({
       shiny::req(species())
-      lapply(species(), function(x) {
+      purrr::map(species(), function(x) {
         shiny::sliderInput(ns(x),
                            label = paste0("Number of ", x, "s:"),
                            min = 0,
@@ -108,7 +108,7 @@ ewingServer <- function(id) {
       shiny::req(species(), simres())
       if(inherits(simres(), "ewing")) {
         if(!is.null(simres())) {
-          p <- lapply(species(), function(x) {
+          p <- purrr::map(species(), function(x) {
             p <- ggplot2::autoplot(ewing_substrate(simres(), x))
             if(inherits(p, "ggplot"))
               p <- p + ggplot2::ggtitle(paste(x, "on", substrates()[1]))
@@ -195,6 +195,7 @@ ewingServer <- function(id) {
         paste0(paste(shiny::req(input$plotfile), params(), sep = "_"), ".pdf") },
       content = function(file) {
         grDevices::pdf(file, width = 9)
+        on.exit(grDevices::dev.off(), add = TRUE)
         nsim <- as.integer(shiny::req(input$nsim))
         if(nsim == 1) {
           print(distplot())
@@ -204,7 +205,6 @@ ewingServer <- function(id) {
         } else {
           print(envelopePlot())
         }
-        grDevices::dev.off()
       }
     )
     
@@ -214,11 +214,12 @@ ewingServer <- function(id) {
     output$inputfiles <- shiny::renderUI({
       shiny::tagList(
         shiny::selectInput(ns("dataname"), "", datanames(), "organism.features"),
-        DT::renderDataTable({
-          getOrgDataSimple(simres(),shiny::req(input$dataname), datafile())
-        }, escape = FALSE,
-        options = list(scrollX = TRUE, pageLength = 10)))
+        DT::dataTableOutput(ns("org_table")))
     })
+    
+    output$org_table <- DT::renderDataTable({
+      getOrgDataSimple(simres(), shiny::req(input$dataname), datafile())
+    }, escape = FALSE, options = list(scrollX = TRUE, pageLength = 10))
     
     datafile <- shiny::reactive({
       if(shiny::isTruthy(input$datafile)) {
