@@ -3,7 +3,7 @@
 **Prompt:** find a well-documented predator prey dataset, ideally with age and location information for individuals
 
 There are a few world-renowned ecological datasets that have
-well-documented predator-prey with
+well-documented predator-prey systems with
 **individual-level age and high-resolution spatial location data**.
 The best datasets come from long-term tracking projects that utilize
 GPS/VHF radio collars and capture-mark-recapture techniques.
