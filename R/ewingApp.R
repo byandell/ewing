@@ -13,7 +13,7 @@
 #' @importFrom ggplot2 autoplot ggplot ggtitle
 #' @importFrom DT renderDataTable
 #' @importFrom cowplot plot_grid
-ewingApp <- function(title = "Population Ethology") {
+ewingApp <- function(title = "Systems Ethology") {
   ui <- shiny::fluidPage(
     shiny::titlePanel(title),
     shiny::sidebarLayout(

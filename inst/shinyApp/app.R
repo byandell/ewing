@@ -1,6 +1,6 @@
-devtools::install_cran("GET")
-devtools::install_cran("DT")
-devtools::install_github("byandell/ewing")
+library(DT)
+library(cowplot)
+library(ewing)
 
 title <- "Population Ethology"
 

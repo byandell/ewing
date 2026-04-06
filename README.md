@@ -1,12 +1,20 @@
-Ewing's Quantitative Population Ethology
+# Bland Ewing's Systems Ethology
 
 Before installing the package, you may want to examine the interactive Shiny app
-<https://data-viz.it.wisc.edu/ewing/>, which provides web access to this package.
+<https://connect.doit.wisc.edu/SystemsEthology>,
+which executes this package.
+See also
 
-Change one of the simulation values on the Shiny app, say number or hosts or parasites, or number of simulation steps. Then click on **Start Simulation** button to start a simulation. You can redo a simulation with the same settings, or change the settings. 
-
+- [BlandEwing](https://byandell.github.io/BlandEwing): draft life story
+- [SystemsEthology](https://byandell.github.io/SystemsEthology): draft book
+- [Systems Ethology--The Life and Work of Bland Ewing](https://byandell.github.io/pages/ewing/)
+- [Predator-Prey Datasets](datasets.md)
 
 # Install and Run Package
+
+Change one of the simulation values on the Shiny app,
+say number or hosts or parasites, or number of simulation steps.
+Then click on **Start Simulation** button to start a simulation. You can redo a simulation with the same settings, or change the settings. 
 
 To install, first do
 
