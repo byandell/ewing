@@ -8,7 +8,7 @@ See also
 - [BlandEwing](https://byandell.github.io/BlandEwing): draft life story
 - [SystemsEthology](https://byandell.github.io/SystemsEthology): draft book
 - [Systems Ethology--The Life and Work of Bland Ewing](https://byandell.github.io/pages/ewing/)
-- [Predator-Prey Datasets](datasets.md)
+- [Predator-Prey Datasets](inst/doc/datasets.md)
 
 # Install and Run Package
 
