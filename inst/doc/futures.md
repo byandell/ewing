@@ -127,8 +127,18 @@ The `interactive step-by-step` refactor is completely deployed and verified. The
   - **History Persistence**: Updated `future.events.R` to ensure stepping forward appends to the simulation history instead of resetting it.
 - **Verification**: Verified codebase integrity using `devtools::load_all('.')`.
 
+## Status Report (April 7, 2026)
+
+### ✅ Completed (April 7)
+
+- **Initial Plot Loading (`nsim == 1`)**: Modified `go_init` to instantly advance by `step_size` after simulation initialization to prevent rendering empty "Step 0" graphs.
+- **Improved Plot Rendering (`ewing_ageclass.R`)**:
+  - Migrated from `geom_path()` to `geom_step()` combined with `geom_point()`. This represents discrete population changes more accurately and prevents errors when groups have a single observation.
+  - Enforced `group = State` internally to ensure ggplot handles layers reliably.
+- **Extinction Handling**: `ewingApp.R` now intercepts empty substrate data (e.g. population reaches 0) and smoothly renders an `"extinct"` panel instead of choking the ggplot pipeline.
+- **Substrate Legend Logic**: Resolved the floating TODO in `ewingApp.R`. The app now automatically segments species populations from their environmental arrays using `get.species()`, allowing `ewing_substrate` charts to natively append their correct structural titles without arbitrary manual overrides.
+
 ### 📋 Remaining Tasks
 
-- **Substrate Legend Logic**: Address the "TODO" in `ewingApp.R` (Line 90) regarding species names and substrates.
 - **Manual UI Testing**: Conduct a session to run the app and manually confirm the "Step Forward" behavior, especially plot scaling and updates.
 - **Plot Styling**: Fine-tune the `cowplot::plot_grid` layout when multiple species are present to ensure they fit the sidebar/main panel constraints nicely.

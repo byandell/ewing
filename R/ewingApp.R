@@ -43,7 +43,9 @@ ewingServer <- function(id) {
       if(nsim == 1) {
         siminit <- init.simulation(count = as.numeric(c(input$host, input$parasite)),
                                    datafile = datafile())
-        active_sim(siminit)
+        # automatically advance by step_size to avoid step 0 blank plots
+        new_state <- future.events(siminit, nstep = input$step_size, plotit = FALSE)
+        active_sim(new_state)
       } else {
         shiny::withProgress(message = paste('Ewing Discrete', nsim, 'Simulations ...'),
                             value = 0,
@@ -87,19 +89,20 @@ ewingServer <- function(id) {
     output$distPlot <- shiny::renderPlot({
       distplot()
     })
-    # *** This is not right. Need to get each species name here and in `ewing_substrate`
-    # species <- ewing:::getOrgFeature(simres)
-    #   gives list but includes substrates.
-    # can figure out what substrate goes to species with 
-    # ewing:::getOrgFeature(simres, species[i], "substrate")
-    # if it is NA (or "NA"), then that is a substrate.
-    # So cycle through species generating plots.
-    # put as much in `ewing_substrate` as possible.
     species <- shiny::reactive({
-      get.organisms(datafile())$species
+      if(inherits(simres(), "ewing")) {
+        get.species(simres())
+      } else {
+        get.organisms(datafile())$species
+      }
     })
     substrates <- shiny::reactive({
-      get.organisms(datafile())$substrates
+      if(inherits(simres(), "ewing")) {
+        orgs <- getOrgFeature(simres())
+        setdiff(orgs, get.species(simres()))
+      } else {
+        get.organisms(datafile())$substrates
+      }
     })
     output$sppsize <- shiny::renderUI({
       shiny::req(species())
@@ -119,9 +122,8 @@ ewingServer <- function(id) {
           p <- purrr::map(species(), function(x) {
             sub_data <- ewing_substrate(simres(), x)
             if(is.null(sub_data)) return(ggplot2::ggplot() + ggplot2::ggtitle(paste("Step 0:", x, "substrate data not yet available. Please Step Forward.")))
+            if(nrow(sub_data) == 0) return(ggplot2::ggplot() + ggplot2::ggtitle(paste(x, "is extinct or not present on substrate.")))
             p <- ggplot2::autoplot(sub_data)
-            if(inherits(p, "ggplot"))
-              p <- p + ggplot2::ggtitle(paste(x, "on", substrates()[1]))
             p
           })
           if(any(unlist(purrr::map(p, is.null))))

@@ -87,8 +87,9 @@ ewing_ageclass <- function(community, substrate = TRUE, total = TRUE,
 ggplot_ewing_ageclass <- function(object, ... )
 {
   ggplot2::ggplot(object) +
-    ggplot2::aes(.data$time, .data$Count, col = .data$State) +
-    ggplot2::geom_path() +
+    ggplot2::aes(.data$time, .data$Count, col = .data$State, group = .data$State) +
+    ggplot2::geom_step() +
+    ggplot2::geom_point() +
     ggplot2::facet_wrap(.data$Type ~ .data$Species, scales = "free")
 }
 #' @export
