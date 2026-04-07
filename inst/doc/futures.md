@@ -141,7 +141,8 @@ The `interactive step-by-step` refactor is completely deployed and verified. The
   - `ewing_substrate.R`: Appended plotting aesthetic overrides (`override.aes`) directly to `geom_text` guides to natively render precise mapping characters natively instead of defaulting generic placeholder `"a"` labels.
   - `ewing_ageclass.R`: Built structured mapping indexing and explicitly typed raw variables into an ordered `factor`. Output graphs now render `State` progression chronologically instead of alphabetically natively! Adjusted conditional scaling block to explicitly position the `"total"` classification squarely between active species groups, and disabled substrates manually within `ewingApp.R` bindings.
 
+- **Plot Rendering Architecture**: Resolved a deep-seated rendering layer bug breaking shiny app reactivity locally and on posit servers (`Can't add sppplot()[[i]] to a <ggplot> object.`). Removed incompatible `ggplot2` addition (`+`) routines for combined application outputs across all primary files (`ewingApp.R`, `multApp.R`, `substrateApp.R`, and `origEwingApp.R`). Cleanly shifted visualization grids to properly utilize `cowplot::plot_grid(plotlist = sppplot())` list handling functions natively for scaled visual structures.
+
 ### 📋 Remaining Tasks
 
 - **Manual UI Testing**: Conduct a session to run the app and manually confirm the "Step Forward" behavior, especially plot scaling and updates.
-- **Plot Styling**: Fine-tune the `cowplot::plot_grid` layout when multiple species are present to ensure they fit the sidebar/main panel constraints nicely.
