@@ -39,7 +39,7 @@ ewing_substrate <- function( community,
       tibble::tibble(xy), 
       stage = organism["stage",],
       substrate = substrates[organism["sub.stage",]],
-      pchar = as.character( future$pch[.data$stage] ),
+      pchar = factor(as.character( future$pch[.data$stage] ), levels = unique(as.character(future$pch))),
       color = as.character( future$color[.data$stage] )),
     .data$substrate %in% show_sub)
   
@@ -59,11 +59,13 @@ ggplot_ewing_substrate <- function(object,
                                    ...)
 {     
   # Allows same color for different pchar, but only one color per pchar.
-  tmp <- dplyr::distinct(
-    dplyr::distinct(object, .data$pchar, .data$color),
-    .data$pchar, .keep_all = TRUE)
+  tmp <- dplyr::arrange(
+    dplyr::distinct(
+      dplyr::distinct(object, .data$pchar, .data$color),
+      .data$pchar, .keep_all = TRUE),
+    .data$pchar)
   col.palate <- tmp$color
-  names(col.palate) <- tmp$pchar
+  names(col.palate) <- as.character(tmp$pchar)
   
   species <- attr(object, "species")
   step <- attr(object, "step")
@@ -75,6 +77,7 @@ ggplot_ewing_substrate <- function(object,
     ggplot2::xlab(xlab) +
     ggplot2::ylab(ylab) +
     ggplot2::scale_color_manual(name = "Stage", values = col.palate) + 
+    ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(label = names(col.palate)))) +
     ggplot2::ggtitle(paste(species, "on substrate at", step, "steps"))
 }
 #' @export

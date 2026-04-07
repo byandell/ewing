@@ -79,6 +79,13 @@ ewing_ageclass <- function(community, substrate = TRUE, total = TRUE,
           .data$Species, .data$State, .data$Type),
         Count = .data$Count / max(.data$Count)))
   }
+  subs <- if (substrate) unlist(substrates) else NULL
+  if (length(species) > 1) {
+    ordered_levels <- unique(c(ageclass[[species[1]]], "total", unlist(ageclass[species[-1]]), subs))
+  } else {
+    ordered_levels <- unique(c(unlist(ageclass), "total", subs))
+  }
+  out$State <- factor(out$State, levels = ordered_levels)
   class(out) <- c("ewing_ageclass", class(out))
   out
 }

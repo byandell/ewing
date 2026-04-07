@@ -76,7 +76,7 @@ ewingServer <- function(id) {
     
     distplot <- shiny::reactive({
       if(inherits(simres(), "ewing")) {
-        age_data <- ewing_ageclass(simres(), total = input$total, normalize = input$norm)
+        age_data <- ewing_ageclass(simres(), total = input$total, normalize = input$norm, substrate = FALSE)
         if(!is.null(age_data)) {
           ggplot2::autoplot(age_data)
         } else {
@@ -289,9 +289,7 @@ ewingInput <- function(id) {
                        value = 50,
                        step = 10),
     
-    shiny::fluidRow(
-      shiny::column(12, shiny::actionButton(ns("go_init"), "Init / Run"))
-    ),
+
     
     shiny::HTML("<hr style='height:1px;border:none;color:#333;background-color:#333;' />"),
     shiny::uiOutput(ns("plottype")),

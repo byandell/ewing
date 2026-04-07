@@ -137,6 +137,9 @@ The `interactive step-by-step` refactor is completely deployed and verified. The
   - Enforced `group = State` internally to ensure ggplot handles layers reliably.
 - **Extinction Handling**: `ewingApp.R` now intercepts empty substrate data (e.g. population reaches 0) and smoothly renders an `"extinct"` panel instead of choking the ggplot pipeline.
 - **Substrate Legend Logic**: Resolved the floating TODO in `ewingApp.R`. The app now automatically segments species populations from their environmental arrays using `get.species()`, allowing `ewing_substrate` charts to natively append their correct structural titles without arbitrary manual overrides.
+- **Legend Output Formatting**:
+  - `ewing_substrate.R`: Appended plotting aesthetic overrides (`override.aes`) directly to `geom_text` guides to natively render precise mapping characters natively instead of defaulting generic placeholder `"a"` labels.
+  - `ewing_ageclass.R`: Built structured mapping indexing and explicitly typed raw variables into an ordered `factor`. Output graphs now render `State` progression chronologically instead of alphabetically natively! Adjusted conditional scaling block to explicitly position the `"total"` classification squarely between active species groups, and disabled substrates manually within `ewingApp.R` bindings.
 
 ### 📋 Remaining Tasks
 
