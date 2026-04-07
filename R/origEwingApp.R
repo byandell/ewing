@@ -125,11 +125,7 @@ origEwingServer <- function(id) {
     output$sppPlot <- shiny::renderPlot({
       if(!is.null(sppplot())) {
         spp <- length(species())
-        p <- sppplot()[[1]]
-        if(spp > 1) for(i in seq(2, spp)) {
-          p <- p + sppplot()[[i]]
-        }
-        cowplot::plot_grid(plotlist = p, nrow = spp)
+        cowplot::plot_grid(plotlist = sppplot(), nrow = spp)
       } else {
         ggplot2::ggplot()
       }
