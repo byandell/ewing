@@ -112,3 +112,23 @@ The `interactive step-by-step` refactor is completely deployed and verified. The
 ### Verification
 
 - Ran backend compilation evaluation executing `devtools::load_all('.')` to confirm all variable remappings within the Shiny closures and core package environments parsed normally without active-binding pointer errors.
+
+## Status Report (April 6, 2026)
+
+### ✅ Completed
+
+- **Reactive State Management**: Switched from a static simulation block to a `reactiveVal` (`active_sim`). This allows the simulation to persist and be updated incrementally.
+- **Interactive UI**:
+  - Added **"Init / Run"** to initialize the environment.
+  - Added **"Step Forward"** to progress the simulation by a user-defined step size (default 50).
+  - Unified these buttons in the main output panel for better accessibility.
+- **Error Handling & Guardrails**:
+  - **Empty Plots**: Fixed runtime crashes when viewing plots before the first step by adding placeholder messages ("Step 0: ... data not yet available").
+  - **History Persistence**: Updated `future.events.R` to ensure stepping forward appends to the simulation history instead of resetting it.
+- **Verification**: Verified codebase integrity using `devtools::load_all('.')`.
+
+### 📋 Remaining Tasks
+
+- **Substrate Legend Logic**: Address the "TODO" in `ewingApp.R` (Line 90) regarding species names and substrates.
+- **Manual UI Testing**: Conduct a session to run the app and manually confirm the "Step Forward" behavior, especially plot scaling and updates.
+- **Plot Styling**: Fine-tune the `cowplot::plot_grid` layout when multiple species are present to ensure they fit the sidebar/main panel constraints nicely.
