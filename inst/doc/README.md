@@ -1,4 +1,4 @@
-# Ewing Documentation Index
+# Ewing Documentation
 
 This directory contains crucial architectural notes, tutorials, and development logs for the `ewing` project.
 

@@ -18,6 +18,7 @@ See also
 - [SystemsEthology](https://byandell.github.io/SystemsEthology): draft book
 - [Systems Ethology--The Life and Work of Bland Ewing](https://byandell.github.io/pages/ewing/)
 - [Predator-Prey Datasets](inst/doc/datasets.md)
+- [Ewing Package Documentation](inst/doc/README.md)
 
 # Install and Run Package
 
@@ -80,7 +81,3 @@ ggplot_current(simres, "host")
 For more information, visit <http://www.stat.wisc.edu/~yandell/ewing>
 
 Reference: B Ewing, BS Yandell, JF Barbieri, and RF Luck (2002) "Event-driven competing risks," _Ecological Modelling 158_: 35--50. <http://doi.org/10.1016/S0304-3800(02)00218-1>
-
-# Data Organization
-
-For detailed information regarding simulation data structures, function flows, state objects, and interaction parameters, please refer to the dedicated [dataorg.md](inst/doc/dataorg.md) documentation file.
