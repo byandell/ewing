@@ -1,6 +1,8 @@
 # Bland Ewing's Systems Ethology
 
-This package was initiated on 28 March 2014 based on Bland Ewing's work dating
+This package was initiated in early 2000 and later transferred to GitHub
+in 2014.
+It is based on Bland Ewing's work dating
 back to the early 1970s.
 The goal is to make his simulation code available as an
 R package and to provide a Shiny interface to the code.
