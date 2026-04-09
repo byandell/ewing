@@ -5,15 +5,31 @@
 library(ggplot2)
 library(sf)
 
-# Note: In a production environment with interactive downloads, we might pull:
-# library(nhdplusTools)
-# huc12_layer <- get_huc12(id = "070700050206") 
-# Instead, we construct a mock spatial representation mapping to the Prairie du Sac Dam-Wisconsin River subwatershed
+library(nhdplusTools)
 
 # 1. Geographic Anchor Coordinate Data
-# Prairie du Sac Dam-Wisconsin River Centroid Approximation:
-huc_lon <- -89.731
-huc_lat <- 43.275
+huc12_id <- "041800000101" # Isle Royale
+
+# Function to determine huc_lon and huc_lat from HUC12
+get_huc_centroid <- function(huc_id) {
+  # Get HUC12 sf object (queries USGS WBD)
+  huc_layer <- get_huc(id = huc_id, type = "huc12")
+  
+  # Calculate geographic centroid
+  centroid <- suppressWarnings(st_centroid(st_geometry(huc_layer)))
+  coords <- st_coordinates(centroid)
+  
+  list(
+    lon = as.numeric(coords[1, "X"]),
+    lat = as.numeric(coords[1, "Y"]),
+    layer = huc_layer
+  )
+}
+
+huc_info <- get_huc_centroid(huc12_id)
+huc_lon <- huc_info$lon
+huc_lat <- huc_info$lat
+huc12_layer <- huc_info$layer
 
 # 2. Extract Triangular Abstract Data (reusing our plant script)
 if (file.exists("inst/scripts/plant_triangle.R")) {
@@ -48,16 +64,14 @@ geo_labels$lat <- ((geo_labels$y - centroid_y) * geo_scale) + huc_lat
 
 # 4. Generate Prototype Map
 p_geo <- ggplot() +
-  # Represents underlying HUC12 shape (mock boundary box via annotation, realistically replaced with geom_sf)
-  annotate("rect", xmin=huc_lon - 0.2, xmax=huc_lon + 0.2, 
-           ymin=huc_lat - 0.2, ymax=huc_lat + 0.2, fill="lightblue", alpha=0.3) +
+  # Represents underlying HUC12 outline
+  geom_sf(data = huc12_layer, fill="lightblue", alpha=0.3, color="blue", linewidth=0.5) +
   geom_polygon(data=geo_poly, aes(x=lon, y=lat, group=substrate), fill=NA, color="black", linewidth=0.7) +
   geom_point(data=geo_points, aes(x=lon, y=lat, color=substrate), size=1.5) +
   geom_text(data=geo_labels, aes(x=lon, y=lat, label=label), color="darkred", fontface="bold", size=4) +
   theme_minimal() +
-  coord_quickmap() +
-  ggtitle(paste("Ewing Network Geographic Projection (HUC 12: 070700050206)", 
-                "\nCentered at:", huc_lon, huc_lat)) +
+  ggtitle(paste("Ewing Network Geographic Projection (HUC 12:", huc12_id, ")", 
+                "\nCentered at:", round(huc_lon, 3), round(huc_lat, 3))) +
   labs(x="Longitude", y="Latitude")
 
 out_geo <- "huc12_overlay.png"
