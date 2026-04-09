@@ -4,12 +4,14 @@
 \alias{get_watershed}
 \title{Get Watershed Geometry and Centroid}
 \usage{
-get_watershed(huc_id, feature_name = NULL)
+get_watershed(huc_id, feature_name = NULL, huc_layer = NULL)
 }
 \arguments{
 \item{huc_id}{A character string representing the HUC12 identifier.}
 
 \item{feature_name}{An optional character string specifying a geographic feature to restrict the watershed (via `osmdata`).}
+
+\item{huc_layer}{An optional pre-fetched SF object boundary to intercept identical querying sequences dynamically.}
 }
 \value{
 A list containing the `huc_id`, the `lon` and `lat` of the centroid, and the `sf` `layer`.

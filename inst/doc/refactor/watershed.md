@@ -60,7 +60,7 @@ To project the tridiagonal substrate network atop HUC12 polygon data (like Isle 
 
 ### 3. Implementation of the Geographic Pipeline
 
-The script `inst/scripts/watershed_overlay.R` implements this advanced pipeline for the target Isle Royale HUC12. It successfully pairs `nhdplusTools::get_huc()` with `osmdata` named feature filtering (`getbb("Isle Royale")`) to isolate the exact island landmass via spatial intersection (`st_intersection`). 
+The script `inst/scripts/watershed_overlay.R` implements this advanced pipeline for the target Isle Royale HUC12. It successfully pairs `nhdplusTools::get_huc()` with `osmdata` named feature filtering (`getbb("Isle Royale")`) to isolate the exact island landmass via spatial intersection (`st_intersection`).
 
 Crucially, it replaces the theoretical plant linkage grid with a true spatial implementation: generating a parameterized `0.01` degree hexagonal grid across the island layout using `sf::st_make_grid()`. Only segments physically touching the island are retained, completing a scalable architectural foundation for mapping localized continuous movement across arbitrary geographical topologies!
 
@@ -72,4 +72,34 @@ Reflecting the broader repository migration towards reusable, programmatic compo
 - `add_watershed_hex_overlay(huc_info, hex_diameter = 0.01)`: A dedicated data constructor. It mathematically generates the `st_make_grid` configurations overlaying bounding restrictions securely against dynamic hex parameters. Emits an S3 target of `class = "watershed_hex_overlay"`.
 - `autoplot.watershed_hex_overlay(object)`: Translates abstract topology data automatically via `ggplot2`. Rendering geographically mapped interactions is now as intuitive as simply running `autoplot(hex_obj)`.
 
-The `watershed_overlay.R` execution logic now acts merely as a pristine top-level invocation script relying directly upon the underlying `ewing` functional codebase!
+### 5. Shiny Application Interface (`watershedApp.R`)
+
+We migrated the static mapping logic originally housed in `inst/scripts/watershed_overlay.R` into a dedicated modular Shiny application at `R/watershedApp.R`.
+
+Following the `ewing` package's UI conventions (`ewingApp.R`), this modular application decoupled into four canonical chunks:
+
+1. `watershedApp()`: The macro-wrapper establishing the UI shell and bridging the server invocation.
+2. `watershedInput(id)`: A generic UI controller block holding basic `textInput` parameters for `huc12_id` and the `feature_name`. Crucially, an `actionButton` was bound to explicitly submit queries, preventing rapid API polling against NHD and OpenStreetMap on standard keystrokes.
+3. `watershedOutput(id)`: The UI view wrapper strictly defining the resulting `plotOutput` plane.
+4. `watershedServer(id)`: Generates reactive bounds that intercept the click events, calling the generalized `ewing::get_watershed` API integrations, establishing the geometry via `ewing::add_watershed_hex_overlay`, and visualizing via generic `autoplot`.
+
+#### Geographic Dictionary Expansion
+
+We developed a UI dictionary component handling internal lookups for standard HUC12 IDs and listing out dynamically corresponding sub-feature geometries bounds constraints. This utilizes a static CSV lookup table (`inst/extdata/watershed/huc_features.csv`) matching target HUC bounds to known physical string inputs natively.
+Challenge is finding names to populate this, noting that common names
+may be ambiguous and need to be resolved to specific geographic location
+(county, state).
+
+**Dynamic GIS Discovery (Option B):**
+To facilitate populating this static dictionary algorithmically, we implemented a standalone backend utility `discover_watershed_features(huc_id)` natively inside `R/watershed.R`. By pulling the USGS HUC12 bounding box map and piping it directly into `osmdata`, it dynamically executes a raw Overpass XML QL union query across targets like `natural`, `waterway`, and `leisure`.
+This should bypass strict API rate limits, but it seems to generate timeout failures.
+
+**Geometry Repair & Caching Optimizations:**
+Two critical reliability structures were implemented to guarantee mapping backend stability:
+
+1. **Topological Fixes**: Because public OpenStreetMap vectors are notoriously ill-formatted (possessing self-intersecting loops that naturally crash intersection logic), the spatial pipeline now securely disables Google's strict spherical geometry engine (`sf::sf_use_s2(FALSE)`) and patches incoming structural bounds natively via `sf::st_make_valid()` prior to topological rendering.
+2. **Reactive API Caching**: The Shiny UI was decoupled to drastically reduce network payloads to the USGS grid. By formally adapting `get_watershed()` to intercept pre-fetched shapes, we extracted `nhdplusTools::get_huc()` into a dedicated generic `base_huc` reactive. Now, modifying the overlay feature name simply pulls the identical map topographical foundation from internal memory rather than executing sequential 5-second internet fetches!
+
+#### Future Scope Requirements
+
+- Transition `hex_diameter` to an interactive UI slider allowing users to zoom and recalibrate spatial grid precision step limits actively.
