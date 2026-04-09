@@ -150,6 +150,7 @@ watershedInput <- function(id) {
   ns <- shiny::NS(id)
   shiny::tagList(
     shiny::h4("Geographic Settings"),
+    shiny::p(shiny::HTML('Visit <a href="https://resilience.climate.gov/datasets/esri::watershed-boundary-dataset-huc-12s/explore?location=48.022258%2C-88.833410%2C9" target="_blank">HUC12 Map</a> to find ID and optional feature name.')),
     shiny::textInput(ns("huc12_id"), "HUC12 ID:", value = "041800000101"),
     shiny::uiOutput(ns("feature_selector")),
     shiny::sliderInput(ns("hex_diameter"), "Hexagon Extent Diameter (Degrees):", 
