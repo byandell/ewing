@@ -107,7 +107,7 @@ Historically, deep structural and architectural documentation for the `ewing` pr
 
 Through integrated AI assistance methodologies tracked via our `walkthrough` and `prompts` structures:
 
-- The literature was heavily partitioned. High-level installation and accessibility notes remain natively within the core system `README.md`, while strict architectural notes were securely abstracted into this `inst/doc/` repository.
+- The literature was heavily partitioned. High-level installation and accessibility notes remain natively within the core system `README.md`, while strict architectural notes were securely abstracted into this `inst/doc/refactor/` directory.
 - Former raw development logic was synthesized into comprehensive explanations outlining system dependencies (e.g. clearly identifying `State Management`, `Global Parameters`, and `Functional Pipelines`).
 - Legacy debug logic (long-resolved codebase "To-Dos" and graphical constraints from older implementations) was thoroughly scrubbed to prevent downstream developmental confusion.
 

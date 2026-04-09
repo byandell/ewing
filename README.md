@@ -20,7 +20,7 @@ See also
 - [SystemsEthology](https://byandell.github.io/SystemsEthology): draft book
 - [Systems Ethology--The Life and Work of Bland Ewing](https://byandell.github.io/pages/ewing/)
 - [Predator-Prey Datasets](inst/doc/datasets.md)
-- [Ewing Package Documentation](inst/doc)
+- [Ewing Package Documentation](inst/doc/refactor)
 
 # Install and Run Package
 

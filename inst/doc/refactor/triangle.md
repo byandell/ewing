@@ -4,7 +4,7 @@ This document outlines the triangular coordinate system used in the `ewing` simu
 
 ## Prompts
 
-Start a new document inst/doc/triangle.md.
+Start a new document inst/doc/refactor/triangle.md.
 This will be used to document the triangular coordinate system described in `vignettes/ewing.Rmd` subsection "Substrates and movement around triangular grid".
 Refer also to `data/substrate.*.txt` files.
 Add to this discussion of `R/triangle.R` routines and their use
@@ -56,19 +56,29 @@ The coordinate engine interacts closely with initialization and organism event h
 * **`R/init.population.R`**: During baseline generation via `init.population()`, an initial positional dispersion on the substrate space is computed utilizing `rtri(n, width = 100)`. Thus, individuals manifest randomly displaced throughout the substrate plane up to a radius of 100 units prior to assignment to nodes `pos.a`, `pos.b`, and `pos.c`.
 * **`R/move.R`**: Individuals progressing to an `event.move` scheduled activity can hop across the substrate grid. Assuming they do not transfer directly entirely between disjoint components (`sub.future`), their physical step size traversing within their local substrate updates via `rtri(n, width = 10)`. This encapsulates standard micro-movements of scale 10 simulation units.
 
-## Plant Triangle Reconstruction
+## Substrate Triangle Reconstruction
 
 ### Prompts
 
-Develop an R script under `inst/scripts/plant_triangle.R` to programmatically reconstruct the tridiagonal grid image from `Documents/plant_triangle.jpg`. The image depicts a network composed of 8 connected triangles: `lftop`, `lfbot`, `tw1`, `tw2`, `fr1`, `fr2`, `fr3`, and `fr4`.
+Develop an R script under `inst/scripts/substrate_triangle.R` to programmatically reconstruct the tridiagonal grid image from `Documents/plant_triangle.jpg`. The image depicts a network composed of 8 connected triangles: `lftop`, `lfbot`, `tw1`, `tw2`, `fr1`, `fr2`, `fr3`, and `fr4`.
 
 Instead of using random noise generation via `rtri()`, we will generate a regular geometric lattice using native triangular coordinates $(a, b, c)$, and apply topology offsets to map the interconnected substrate shapes.
 
 ### Walkthrough
 
 - **Fixed `car2tri.default` (`R/triangle.R`)**: Discovered and patched a silent matrix dimension bug. `rbind(x, y)` was improperly generating a `2xN` matrix instead of the expected `Nx2` matrix. This caused parsing errors and translation failures in the tridiagonal coordinate conversions. The function now appropriately runs `cbind`, feeding correctly oriented memory to `car2tri()`.
-- **Created `plant_triangle.R`**: Added the new tridiagonal topological visualization tool `inst/scripts/plant_triangle.R`. This tool generates a localized mesh array $(a, b, c)$ modeling interlocking geometries for standard upward and downward component orientations, correctly restricted to precisely 10 dots per edge using mathematical delta `- step` adjustments.
+- **Created `substrate_triangle.R`**: Added the new tridiagonal topological visualization tool `inst/scripts/substrate_triangle.R`. This tool generates a localized mesh array $(a, b, c)$ modeling interlocking geometries for standard upward and downward component orientations, correctly restricted to precisely 10 dots per edge using mathematical delta `- step` adjustments.
 - **Topology Mappings**: Formulated a refined tridiagonal topology matrix spanning the visual plane. This explicitly builds the hexagonal layout dictated by the adjacency limits, positioning `fr2` as the downward central triangle seamlessly abutting (`fr1`, `fr3`, `fr4`), and sequentially attaching the `twig` and `leaf` modules to form proper continuous branches without empty grid gaps.
 - **Visual Overlays & Alignment**: In addition to resolving a 1-dot alignment slip (calibrating the adjacency anchors exactly to the offset bound distances `W = 9`), the structure generates explicit bounding polygons spanning the substrate borders with black outer lines. Finally, it dynamically calculates side boundary midpoints and interpolates them 25% inward towards the substrate centroid to properly overlay the `1, 2, 3` numeric axis boundary identifiers right inside their respective sides.
 
-By passing the aggregate topology to the package's internal `tri2car()` geometry transformer (using matrix-safe subsets), the code accurately interprets the spatial bounds and maps the final network to standardized Euclidean spatial data $(x,y)$ enabling robust interaction mapping and diagnostics via `ggplot2`.
+By passing the aggregate topology to the package's internal `tri2car()` geometry transformer, the code accurately maps the layout to standardized Euclidean spatial data $(x,y)$ enabling robust visualization.
+
+### Object-Oriented Refactoring
+
+To maximize reusability across the simulation suite, the core construction loops from the prototype script have been completely abstracted into the package's source directory under `R/substrate_triangle.R`. This explicitly decouples the network structure into formal functional operations:
+
+- `substrate_topology(width, step)`: Isolates mathematical configuration offsets and coordinate boundary limits globally. We explicitly transitioned away from "plant" nomenclature to the "substrate" standard to support generalized interaction meshes.
+- `create_substrate(topology, width, step)`: Iterates across the defined configuration to compute analytical geometry components (extracting Euclidean mesh dots, defining polygon bounds via topological vertices, and interpolating numerical boundary indicators automatically). Returns an S3 object of format `class = "substrate"`.
+- `autoplot.substrate(object)`: Implements a scalable visual overlay handler utilizing `ggplot2`. Users can instantiate the tridiagonal substrate network internally and map it instantly utilizing native commands like `autoplot(my_substrate)`!
+
+The `inst/scripts/substrate_triangle.R` script now exclusively invokes these native package functions (via `library(ewing)`) to render the reconstruction!
