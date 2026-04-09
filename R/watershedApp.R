@@ -122,7 +122,12 @@ watershedServer <- function(id) {
     hex_obj <- shiny::reactive({
       huc <- huc_info()
       shiny::req(huc)
-      add_watershed_hex_overlay(huc, hex_diameter = 0.01)
+      
+      # Inject the live slider bounds dynamically
+      val <- input$hex_diameter
+      if (is.null(val)) val <- 0.01
+      
+      add_watershed_hex_overlay(huc, hex_diameter = val)
     })
     
     # Render the S3 hex topology
@@ -147,6 +152,8 @@ watershedInput <- function(id) {
     shiny::h4("Geographic Settings"),
     shiny::textInput(ns("huc12_id"), "HUC12 ID:", value = "041800000101"),
     shiny::uiOutput(ns("feature_selector")),
+    shiny::sliderInput(ns("hex_diameter"), "Hexagon Extent Diameter (Degrees):", 
+                       min = 0.001, max = 0.05, value = 0.01, step = 0.001),
     shiny::actionButton(ns("update"), "Generate Topology"),
     shiny::br(),
     shiny::uiOutput(ns("status"))

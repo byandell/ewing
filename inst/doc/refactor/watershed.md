@@ -99,7 +99,3 @@ Two critical reliability structures were implemented to guarantee mapping backen
 
 1. **Topological Fixes**: Because public OpenStreetMap vectors are notoriously ill-formatted (possessing self-intersecting loops that naturally crash intersection logic), the spatial pipeline now securely disables Google's strict spherical geometry engine (`sf::sf_use_s2(FALSE)`) and patches incoming structural bounds natively via `sf::st_make_valid()` prior to topological rendering.
 2. **Reactive API Caching**: The Shiny UI was decoupled to drastically reduce network payloads to the USGS grid. By formally adapting `get_watershed()` to intercept pre-fetched shapes, we extracted `nhdplusTools::get_huc()` into a dedicated generic `base_huc` reactive. Now, modifying the overlay feature name simply pulls the identical map topographical foundation from internal memory rather than executing sequential 5-second internet fetches!
-
-#### Future Scope Requirements
-
-- Transition `hex_diameter` to an interactive UI slider allowing users to zoom and recalibrate spatial grid precision step limits actively.
