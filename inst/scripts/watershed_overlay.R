@@ -3,7 +3,7 @@
 # Prototyping geographic transformation of Tridiagonal ewing substrates onto HUC12 overlays.
 
 # 0. Source code removed from ewing package
-source("wathershed.R")
+source("watershed.R")
 source("watershedApp.R")
 
 # 1. Geographic Anchor Coordinate Data

@@ -10,6 +10,11 @@
 - **Format**: Tracked feedback and architectural outlines.
 - **Tone**: Professional, constructive, and encouraging.
 
+### Projection Reframing
+
+Modify the CRAFT prompt above to begin by finding a geographic feature, such as Isle Royale, of interest to user from an efficient geographic map.
+After this is identified, find the HUC12 sub-watershed(s) that contains this feature to define the projection.
+
 ### HUC References
 
 - [Watershed Boundary Dataset (HUC 12s)](https://resilience.climate.gov/datasets/esri::watershed-boundary-dataset-huc-12s/about)
