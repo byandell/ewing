@@ -112,7 +112,7 @@ simUI <- function(id) {
     shiny::fluidRow(
       shiny::column(6, shiny::actionButton(ns("go_init"), "Init / Run")),
       shiny::conditionalPanel(
-        condition = sprintf("input['%s'] == '1'", ns("nsim")),
+        condition = sprintf("input['%s'] > 0 && input['%s'] == '1'", ns("go_init"), ns("nsim")),
         shiny::column(6, shiny::actionButton(ns("go_step"), "Step Forward"))
       )
     )
