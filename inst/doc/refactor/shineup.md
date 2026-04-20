@@ -1,5 +1,18 @@
 # Shine Up App
 
+- [Prompt](#prompt)
+- [Response](#response)
+    - [1. The Caching vs. Action Button Conundrum](#1-the-caching-vs-action-button-conundrum)
+    - [2. Properly Managing `DT::renderDataTable` Inside Generics](#2-properly-managing-dtrenderdatatable-inside-generics)
+    - [3. Safely Managing Download Closures](#3-safely-managing-download-closures)
+    - [Additional Tidyverse Modernizing](#additional-tidyverse-modernizing)
+- [Walkthrough](#walkthrough)
+    - [`R/ewingApp.R`](#rewingappr)
+    - [Verification](#verification)
+- [Modularization Refactor](#modularization-refactor)
+    - [Prompt](#prompt-1)
+    - [Walkthrough](#walkthrough-1)
+
 ## Prompt
 
 - Context: I have an R package called "ewing" that simulates predator-prey dynamics
