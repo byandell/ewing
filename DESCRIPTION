@@ -16,6 +16,7 @@ Includes:
     purrr, readxl, tibble, tidyr, tools, utils
 Suggests: 
     knitr,
+    nhdplusTools,
     rmarkdown
 VignetteBuilder: knitr
 Depends: 
