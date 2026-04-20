@@ -4,7 +4,7 @@
 
 # 0. Source code removed from ewing package
 source("wathershed.R")
-source("R/watershedApp.R")
+source("watershedApp.R")
 
 # 1. Geographic Anchor Coordinate Data
 huc12_id <- "041800000101" # Isle Royale
