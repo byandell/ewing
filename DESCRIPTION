@@ -1,5 +1,5 @@
 Package: ewing
-Version: 1.9.3
+Version: 1.9.4
 Date: 2026/04/20
 Author: Brian S. Yandell <yandell@stat.wisc.edu>
 Maintainer: Brian S. Yandell <yandell@stat.wisc.edu>
@@ -13,10 +13,10 @@ RoxygenNote: 7.3.3
 Encoding: UTF-8
 Includes:
     cowplot, dplyr, DT, GET, ggplot2, graphics, shiny, splines, stats, stringr,
+    nhdplusTools,
     purrr, readxl, tibble, tidyr, tools, utils
 Suggests: 
     knitr,
-    nhdplusTools,
     rmarkdown
 VignetteBuilder: knitr
 Depends: 
