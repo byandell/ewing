@@ -1,5 +1,11 @@
 #' Ewing Initialization App
 #' 
+#' A module rendering environment initialization frameworks independently out of standard runtime constraints.
+#' Evaluates base configurations via `init.simulation()`.
+#' 
+#' @param title Application title
+#' @param id module ID string
+#' @param init_par list of natively structured initialization counts (e.g. `$host`, `$parasite`)
 #' @export
 #' @importFrom utils write.csv
 #' @importFrom stringr str_remove

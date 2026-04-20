@@ -10,7 +10,11 @@
 \usage{
 initParApp(title = "Population Ethology")
 
-initParServer(id)
+initParServer(
+  id,
+  simres = shiny::reactiveVal(NULL),
+  datafile = shiny::reactiveVal("")
+)
 
 initParInput(id)
 
@@ -18,6 +22,16 @@ initParUI(id)
 
 initParOutput(id)
 }
+\arguments{
+\item{title}{Application title}
+
+\item{id}{module ID string}
+
+\item{simres}{reactive simulation state used to structure dynamic data grid evaluations}
+
+\item{datafile}{reactive filepath pointing to optional target parameter overwrites}
+}
 \description{
-Ewing Initialization App
+Shiny module capturing baseline evaluation traits and populating parameter inputs dynamically
+based heavily on external matrix definitions.
 }

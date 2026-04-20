@@ -15,6 +15,14 @@ distPlotInput(id)
 
 distPlotOutput(id)
 }
+\arguments{
+\item{title}{Application title}
+
+\item{id}{module ID string}
+
+\item{simres}{reactive simulation state holding the active `ewing` data object}
+}
 \description{
-Distribution Plot App
+Shiny UI components and module server logic for visualizing population age-class 
+distribution distributions and demographic structures.
 }

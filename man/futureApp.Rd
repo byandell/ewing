@@ -5,7 +5,7 @@
 \alias{futureServer}
 \alias{futureInput}
 \alias{futureOutput}
-\title{Ewing App}
+\title{Ewing Future Events App}
 \usage{
 futureApp(title = "Population Ethology")
 
@@ -15,10 +15,14 @@ futureInput(id)
 
 futureOutput(id)
 }
+\arguments{
+\item{title}{Application title}
+
+\item{id}{module ID string}
+
+\item{siminit}{reactive state of an initialized `community` topological root}
+}
 \description{
-Ewing App
-
-Ewing Input
-
-Ewing Output
+Module tracking direct continuous horizon mappings specifically built on processing
+deterministic `future.events()` sequences rather than discrete simulation iterations.
 }

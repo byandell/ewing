@@ -5,7 +5,7 @@
 \alias{multServer}
 \alias{multInput}
 \alias{multOutput}
-\title{Ewing App}
+\title{Multiple Simulation Envelope App}
 \usage{
 multApp(title = "Population Ethology")
 
@@ -15,10 +15,12 @@ multInput(id)
 
 multOutput(id)
 }
+\arguments{
+\item{title}{Application title}
+
+\item{id}{module ID string}
+}
 \description{
-Ewing App
-
-Ewing Input
-
-Ewing Output
+A specialized UI pipeline scaling the core population ethology topologies directly into 
+extensive sequence horizons producing bounds and dynamic envelope metrics.
 }

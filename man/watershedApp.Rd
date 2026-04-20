@@ -15,10 +15,12 @@ watershedInput(id)
 
 watershedOutput(id)
 }
+\arguments{
+\item{title}{Application title}
+
+\item{id}{module ID string}
+}
 \description{
-Watershed App
-
-Watershed Input
-
-Watershed Output
+Real-time USGS topological projection interfaces capable of drawing geometric features statically
+onto active coordinate matrices dynamically.
 }

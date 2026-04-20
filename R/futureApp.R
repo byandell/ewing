@@ -1,5 +1,11 @@
-#' Ewing App
+#' Ewing Future Events App
 #' 
+#' Module tracking direct continuous horizon mappings specifically built on processing
+#' deterministic `future.events()` sequences rather than discrete simulation iterations.
+#' 
+#' @param title Application title
+#' @param id module ID string
+#' @param siminit reactive state of an initialized `community` topological root
 #' @export
 #' @importFrom utils write.csv
 #' @importFrom stringr str_remove

@@ -1,5 +1,11 @@
 #' Distribution Plot App
 #' 
+#' Shiny UI components and module server logic for visualizing population age-class 
+#' distribution distributions and demographic structures.
+#' 
+#' @param title Application title
+#' @param id module ID string
+#' @param simres reactive simulation state holding the active `ewing` data object
 #' @export
 #' @importFrom utils write.csv
 #' @importFrom stringr str_remove

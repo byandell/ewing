@@ -1,5 +1,10 @@
-#' Ewing App
+#' Multiple Simulation Envelope App
 #' 
+#' A specialized UI pipeline scaling the core population ethology topologies directly into 
+#' extensive sequence horizons producing bounds and dynamic envelope metrics.
+#' 
+#' @param title Application title
+#' @param id module ID string
 #' @export
 #' @importFrom utils write.csv
 #' @importFrom stringr str_remove

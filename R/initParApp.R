@@ -1,5 +1,12 @@
 #' Ewing Initialization App
 #' 
+#' Shiny module capturing baseline evaluation traits and populating parameter inputs dynamically
+#' based heavily on external matrix definitions.
+#' 
+#' @param title Application title
+#' @param id module ID string
+#' @param simres reactive simulation state used to structure dynamic data grid evaluations
+#' @param datafile reactive filepath pointing to optional target parameter overwrites
 #' @export
 #' @importFrom utils write.csv
 #' @importFrom stringr str_remove
@@ -29,7 +36,7 @@ initParApp <- function(title = "Population Ethology") {
 }
 #' @export
 #' @rdname initParApp
-initParServer <- function(id) {
+initParServer <- function(id, simres = shiny::reactiveVal(NULL), datafile = shiny::reactiveVal("")) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
     
@@ -54,11 +61,12 @@ initParServer <- function(id) {
     output$inputfiles <- shiny::renderUI({
       shiny::tagList(
         shiny::selectInput(ns("dataname"), "", datanames(), "organism.features"),
-        DT::renderDataTable({
-          getOrgDataSimple(simres(),shiny::req(input$dataname))
-        }, escape = FALSE,
-        options = list(scrollX = TRUE, pageLength = 10)))
+        DT::dataTableOutput(ns("org_table")))
     })
+    
+    output$org_table <- DT::renderDataTable({
+      getOrgDataSimple(simres(), shiny::req(input$dataname), datafile())
+    }, escape = FALSE, options = list(scrollX = TRUE, pageLength = 10))
     
     # Show parameters
     output$show_par <- shiny::renderUI({

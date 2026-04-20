@@ -1,5 +1,11 @@
 #' Substrate Plot App
 #' 
+#' A focused graphical module aggregating structural species progression separated distinctly across
+#' physical environment thresholds mapped by evaluating top-level topological definitions.
+#' 
+#' @param title Application title
+#' @param id module ID string
+#' @param simres reactive object resolving chronological population metrics
 #' @export
 #' @importFrom purrr map
 #' @importFrom shiny actionButton bindCache bindEvent checkboxInput column
@@ -68,6 +74,9 @@ substrateServer <- function(id, simres) {
       shiny::plotOutput(ns("sppPlot"),
                         height = paste0(2 * length(species()), "in"))
     })
+    
+    # Return for download integration
+    sppplot
   })
 }
 #' @export

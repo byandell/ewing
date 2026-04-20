@@ -1,5 +1,10 @@
 #' Watershed App
 #' 
+#' Real-time USGS topological projection interfaces capable of drawing geometric features statically
+#' onto active coordinate matrices dynamically. 
+#' 
+#' @param title Application title
+#' @param id module ID string
 #' @export
 #' @importFrom shiny fluidPage titlePanel sidebarLayout sidebarPanel mainPanel moduleServer NS reactive renderPlot req tagList textInput uiOutput plotOutput actionButton h4 bindEvent shinyApp
 #' @importFrom ggplot2 autoplot

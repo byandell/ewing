@@ -15,10 +15,12 @@ ewingInput(id)
 
 ewingOutput(id)
 }
+\arguments{
+\item{title}{Application title}
+
+\item{id}{module ID string}
+}
 \description{
-Ewing App
-
-Ewing Input
-
-Ewing Output
+Core `Systems Ethology` Shiny platform acting as the central interactive wrapper modularizing
+age distributions, probability envelopes, and runtime data interactions.
 }
