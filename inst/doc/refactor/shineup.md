@@ -2,16 +2,16 @@
 
 - [Prompt](#prompt)
 - [Response](#response)
-    - [1. The Caching vs. Action Button Conundrum](#1-the-caching-vs-action-button-conundrum)
-    - [2. Properly Managing `DT::renderDataTable` Inside Generics](#2-properly-managing-dtrenderdatatable-inside-generics)
-    - [3. Safely Managing Download Closures](#3-safely-managing-download-closures)
-    - [Additional Tidyverse Modernizing](#additional-tidyverse-modernizing)
+  - [1. The Caching vs. Action Button Conundrum](#1-the-caching-vs-action-button-conundrum)
+  - [2. Properly Managing `DT::renderDataTable` Inside Generics](#2-properly-managing-dtrenderdatatable-inside-generics)
+  - [3. Safely Managing Download Closures](#3-safely-managing-download-closures)
+  - [Additional Tidyverse Modernizing](#additional-tidyverse-modernizing)
 - [Walkthrough](#walkthrough)
-    - [`R/ewingApp.R`](#rewingappr)
-    - [Verification](#verification)
+  - [`R/ewingApp.R`](#rewingappr)
+  - [Verification](#verification)
 - [Modularization Refactor](#modularization-refactor)
-    - [Prompt](#prompt-1)
-    - [Walkthrough](#walkthrough-1)
+  - [Prompt](#prompt-1)
+  - [Walkthrough](#walkthrough-1)
 
 ## Prompt
 
@@ -121,7 +121,8 @@ The UI and server configurations in `ewingApp.R` have been fully upgraded and de
 
 ### `R/ewingApp.R`
 
-* **Resolved Cache Busting**: Stripped `input$go` indexing out of the `shiny::bindCache(...)` tuple. By separating the execution constraint wrapper `shiny::bindEvent(...)` from the specific inputs dictating the cache signature, the application backend can now accurately cache execution outputs for faster re-renders.
+- **Resolved Cache Busting**: Stripped `input$go` indexing out of the `shiny::bindCache(...)` tuple. By separating the execution constraint wrapper `shiny::bindEvent(...)` from the specific inputs dictating the cache signature, the application backend can now accurately cache execution outputs for faster re-renders.
+
 - **Decoupled DT Servers from UI hooks**: Separated the single `renderUI` list component into correctly matched components. Pushed `DT::dataTableOutput(ns("org_table"))` explicitly into the visual renderer, and mapped the actual dataset constructor function back into explicit logic blocks evaluated locally at the server's scope (`output$org_table <- DT::renderDataTable`).
 - **Safe Handling over File Buffers**: Explicit closures utilizing `on.exit(grDevices::dev.off(), add=TRUE)` have been appended dynamically following every execution of `grDevices::pdf(...)` inside the primary `downloadHandler()`. This natively prevents system file locks in scenarios where a plot graphic structurally crashes before correctly hitting `dev.off()`.
 - **Tidyverse Architecture:** Converted all basic `lapply(species(), function(x) {...})` iterators into strict `purrr::map()` constructs natively matching the rest of the package's design intent.
