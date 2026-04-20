@@ -13,7 +13,6 @@ RoxygenNote: 7.3.3
 Encoding: UTF-8
 Includes:
     cowplot, dplyr, DT, GET, ggplot2, graphics, shiny, splines, stats, stringr,
-    nhdplusTools,
     purrr, readxl, tibble, tidyr, tools, utils
 Suggests: 
     knitr,
