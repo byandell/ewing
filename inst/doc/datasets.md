@@ -24,6 +24,7 @@ Here are the best, most well-documented open datasets:
 - [3. The Serengeti Lion Project (and Snapshot Serengeti)](#3-the-serengeti-lion-project-and-snapshot-serengeti)
 - [4. The Kluane Boreal Forest Project (Snowshoe Hare & Canada Lynx)](#4-the-kluane-boreal-forest-project-snowshoe-hare--canada-lynx)
 - [5. Movebank (The Universal Resource)](#5-movebank-the-universal-resource)
+- [6. Other Resources](#6-other-resources)
 
 ## 1. The Yellowstone Wolf Project & Elk Data
 
@@ -101,3 +102,11 @@ Search Movebank for "Predator" or specific pairings
 - **Age Information:**
 Most Movebank studies include metadata for each "Individual"
 that includes their approximate age (juvenile vs. adult) and sex.
+
+## 6. Other Resources
+
+- [Wildlife MoveTools](https://wildlifemovetools.org)
+- [Conservation Corridor: ECODATA and MoveApps](https://conservationcorridor.org/digests/2023/05/ecodata-and-moveapps-new-tools-for-animating-wildlife-movements-across-corridors/)
+- [Global Biodiversity Information Facility (GBIF)](https://www.gbif.org/)
+- [Ocean Biodiversity Information System (OBIS)](https://obis.org/)
+- [USGS Western Migrations Database](https://apps.usgs.gov/western-migrations/)
