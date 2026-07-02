@@ -31,7 +31,7 @@ Then click on **Start Simulation** button to start a simulation. You can redo a 
 To install, first do
 
 ```r
-install.packages("devtools")
+install.packages("pak")
 ```
 
 If on Windows, you will then need to install Rtools from <http://cran.r-project.org/bin/windows/Rtools>.
@@ -39,15 +39,7 @@ This is an executable that will install some applications in c:\Rtools.
 You will also need pdflatex, which means you need a TeX distribution such as MikTeX or TeX Live.
 
 ```r
-library(devtools)
-
-install_github("byandell/ewing")
-```
-
-If you have `pandoc`, you can install with vignette:
-
-```r
-install_github("byandell/ewing", build_vignettes = TRUE)
+pak::pak("byandell/ewing", dependencies = TRUE, upgrade = TRUE)
 ```
 
 See [vignettes/ewing.Rmd](https://github.com/byandell/ewing/blob/master/vignettes/ewing.Rmd) for example use of code. A simple example is below:

@@ -1,7 +1,6 @@
 #' @export
 #' @importFrom graphics lines mtext par text
-#' @importFrom ggplot2 aes facet_wrap geom_text ggplot ggtitle
-#'             scale_color_manual theme xlab ylab
+#' @importFrom ggplot2 aes facet_wrap geom_text ggplot ggtitle scale_color_manual theme xlab ylab
 ggplot_current <- function( x,
                           species,
                           col = as.character( future$color[stage] ),

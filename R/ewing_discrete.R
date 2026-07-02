@@ -26,8 +26,7 @@ ewing_discrete <- function(nsim, verbose = FALSE, ...) {
 #' Wrapper to set up class and attributes of `ewing_envelope` object.
 #' 
 #' 
-#' @aliases ewing_discrete1 ewing_discrete make_ewing_discrete
-#' summary.ewing_discrete
+#' @aliases ewing_discrete1 ewing_discrete make_ewing_discrete summary.ewing_discrete
 #' 
 #' @param siminit initialize simulation
 #' @param increment increment for discrete simulation time

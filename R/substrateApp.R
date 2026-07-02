@@ -8,12 +8,7 @@
 #' @param simres reactive object resolving chronological population metrics
 #' @export
 #' @importFrom purrr map
-#' @importFrom shiny actionButton bindCache bindEvent checkboxInput column
-#'             downloadButton downloadHandler fileInput fluidPage fluidRow HTML
-#'             h4 incProgress isTruthy mainPanel moduleServer NS plotOutput
-#'             reactive renderPlot renderUI req selectInput sidebarLayout
-#'             sidebarPanel sliderInput tagList textInput titlePanel
-#'             withProgress uiOutput
+#' @importFrom shiny actionButton bindCache bindEvent checkboxInput column downloadButton downloadHandler fileInput fluidPage fluidRow HTML h4 incProgress isTruthy mainPanel moduleServer NS plotOutput reactive renderPlot renderUI req selectInput sidebarLayout sidebarPanel sliderInput tagList textInput titlePanel withProgress uiOutput
 #' @importFrom ggplot2 autoplot ggplot ggtitle
 #' @importFrom cowplot plot_grid
 substrateApp <- function() {

@@ -11,11 +11,11 @@
 #' @importFrom stringr str_remove
 #' @importFrom purrr map
 #' @importFrom shiny actionButton bindCache bindEvent checkboxInput column
-#'             downloadButton downloadHandler fileInput fluidPage fluidRow HTML
-#'             h4 incProgress isTruthy mainPanel moduleServer NS plotOutput
-#'             reactive renderPlot renderUI req selectInput sidebarLayout
-#'             sidebarPanel sliderInput tagList textInput titlePanel
-#'             withProgress uiOutput
+#' @importFrom shiny downloadButton downloadHandler fileInput fluidPage fluidRow
+#' @importFrom shiny HTML h4 incProgress isTruthy mainPanel moduleServer NS
+#' @importFrom shiny plotOutput reactive renderPlot renderUI req selectInput
+#' @importFrom shiny sidebarLayout sidebarPanel sliderInput tagList textInput
+#' @importFrom shiny titlePanel withProgress uiOutput
 #' @importFrom ggplot2 autoplot ggplot ggtitle
 #' @importFrom DT renderDataTable
 #' @importFrom cowplot plot_grid

@@ -2,12 +2,7 @@
 #' @importFrom utils write.csv
 #' @importFrom stringr str_remove
 #' @importFrom purrr map
-#' @importFrom shiny actionButton bindCache bindEvent checkboxInput column
-#'             downloadButton downloadHandler fileInput fluidPage fluidRow HTML
-#'             h2 h4 HTML incProgress isTruthy mainPanel moduleServer NS
-#'             plotOutput radioButtons reactive renderPlot renderUI req
-#'             selectInput shinyApp sidebarLayout sidebarPanel sliderInput
-#'             tagList textInput titlePanel withProgress uiOutput
+#' @importFrom shiny actionButton bindCache bindEvent checkboxInput column downloadButton downloadHandler fileInput fluidPage fluidRow HTML h2 h4 HTML incProgress isTruthy mainPanel moduleServer NS plotOutput radioButtons reactive renderPlot renderUI req selectInput shinyApp sidebarLayout sidebarPanel sliderInput tagList textInput titlePanel withProgress uiOutput
 #' @importFrom ggplot2 autoplot ggplot ggtitle
 #' 
 simpleServer <- function(id) {

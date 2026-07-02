@@ -3,8 +3,7 @@
 #' GGPlot of various aspects of simulation.
 #' 
 #' 
-#' @aliases ggplot_ewing autoplot.ewing ggplot_ewing_ageclass
-#' autoplot.ewing_ageclass
+#' @aliases ggplot_ewing autoplot.ewing ggplot_ewing_ageclass autoplot.ewing_ageclass
 #' @param ... other plot parameters
 #' @param x object of class \code{ewing} with population data by species
 #' @author Brian S. Yandell, \email{yandell@@stat.wisc.edu}

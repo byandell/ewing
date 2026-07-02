@@ -22,8 +22,7 @@
 ## Support routines for future.meanvalue
 ###########################################################################################
 #' @importFrom stats coef predict qbinom
-#' @importFrom graphics abline axis legend lines locator mtext par points text
-#'             title
+#' @importFrom graphics abline axis legend lines locator mtext par points text title
 #' @importFrom splines interpSpline splineKnots
 spline.rate <- function( meanvalue, x )
 {

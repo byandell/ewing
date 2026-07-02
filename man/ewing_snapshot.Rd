@@ -7,11 +7,11 @@
 ewing_snapshot(object, step = 0, ...)
 }
 \arguments{
-\item{object}{}
+\item{object}{object of class `ewing`}
 
-\item{step}{}
+\item{step}{step number for snapshot}
 
-\item{...}{}
+\item{...}{additional arguments}
 }
 \value{
 object of class ewing_snapshot

@@ -7,8 +7,7 @@
 #' @export ewing_substrate
 #' @importFrom dplyr distinct filter mutate
 #' @importFrom tibble tibble
-#' @importFrom ggplot2 aes facet_grid geom_text ggplot ggtitle
-#'             scale_color_manual xlab ylab
+#' @importFrom ggplot2 aes facet_grid geom_text ggplot ggtitle scale_color_manual xlab ylab
 #' @importFrom rlang .data
 ewing_substrate <- function( community,
                              species,

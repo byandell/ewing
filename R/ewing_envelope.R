@@ -3,8 +3,7 @@
 #' Create envelope object for plotting from multiple runs of Ewing simulation.
 #' 
 #' 
-#' @aliases ewing_envelope ewing_envelopes summary.ewing_envelopes
-#' print.ewing_envelopes
+#' @aliases ewing_envelope ewing_envelopes summary.ewing_envelopes print.ewing_envelopes
 #' @param object object of class `ewing_envelope` or `ewing_envelopes`
 #' @param species subset on `species` if not `NULL`
 #' @param item name of item in `species` to build envelope
@@ -14,8 +13,7 @@
 #' @param ... additional parameters
 #' @param x object of class `ewing_envelope` or `ewing_envelopes`
 #' @export ewing_envelope
-#' @importFrom dplyr arrange bind_rows distinct filter group_by matches mutate
-#'             ungroup
+#' @importFrom dplyr arrange bind_rows distinct filter group_by matches mutate ungroup
 #' @importFrom tidyr fill pivot_wider
 #' @importFrom purrr map
 #' @importFrom ggplot2 ggtitle labs margin theme ylim
@@ -183,8 +181,7 @@ print.ewing_envelopes <- function(x, species = NULL, ...) {
 #' GGplot of Ewing Envelope
 #' 
 #' 
-#' @aliases ggplot_ewing_envelopes ggplot_ewing_envelope
-#' autoplot.ewing_envelope
+#' @aliases ggplot_ewing_envelopes ggplot_ewing_envelope autoplot.ewing_envelope
 #' @param object object of class `ewing_envelope`
 #' @param confidence plot confidence bands if `TRUE`
 #' @param main title for plot

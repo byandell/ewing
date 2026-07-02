@@ -1,8 +1,8 @@
 #' Title
 #'
-#' @param object 
-#' @param step 
-#' @param ... 
+#' @param object object of class `ewing`
+#' @param step step number for snapshot
+#' @param ... additional arguments
 #'
 #' @return object of class ewing_snapshot
 #' @export
