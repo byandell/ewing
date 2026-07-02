@@ -1,18 +1,19 @@
 Package: ewing
-Version: 1.9.7
+Version: 1.9.8
 Date: 2026/07/02
 Author: Brian S. Yandell <yandell@stat.wisc.edu>
 Maintainer: Brian S. Yandell <yandell@stat.wisc.edu>
 Title: Bland Ewing's Systems Ethology
 Description: QPE event-driven individual-based simulation modeling system.
 Imports: splines, graphics, stats, utils, tools, readxl, tidyselect,
-    tidyr, dplyr, ggplot2, tibble, rlang, purrr, GET, shiny, patchwork, stringr
+    tidyr, dplyr, ggplot2, tibble, rlang, purrr, GET, sf, shiny, patchwork,
+    stringr
 License: GPL-3
 URL: http://www.stat.wisc.edu/~yandell/ewing
 Encoding: UTF-8
 Includes:
-    cowplot, dplyr, DT, GET, ggplot2, graphics, shiny, splines, stats, stringr,
-    purrr, readxl, tibble, tidyr, tools, utils
+    cowplot, dplyr, DT, GET, ggplot2, graphics, leaflet, shiny, splines, stats,
+    stringr, purrr, readxl, tibble, tidyr, tools, utils
 Suggests: 
     knitr,
     rmarkdown
