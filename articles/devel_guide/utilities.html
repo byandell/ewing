@@ -183,6 +183,31 @@ directly on the starting community. - Inspects continuous event
 horizons. - Renders age classes and substrate coordinates to verify
 state transition calculations.</p>
 </div>
+<div class="section level3">
+<h3 id="c--spline-parameter-explorer-fiveplotapp">C. Spline Parameter Explorer (<code>fivePlotApp</code>)<a class="anchor" aria-label="anchor" href="#c--spline-parameter-explorer-fiveplotapp"></a>
+</h3>
+<p>Defined in <a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/R/fivePlotApp.R">R/fivePlotApp.R</a>,
+this app allows interactive, web-safe adjustment of time-temperature
+spline nodes: - Uses a point-click listener on the baseline plot rather
+than R console’s blocking <code><a href="https://rdrr.io/r/graphics/locator.html" class="external-link">graphics::locator()</a></code>. - Calculates
+closest nodes to click positions, modifying them subject to monotonicity
+boundaries. - Triggers dynamic, real-time recalculation of parameter
+sensitivity curves via <a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/R/five.R#L151">five.plot()</a>.
+- Synchronizes values bi-directionally between graphical plot clicks and
+text input controls.</p>
+</div>
+<div class="section level3">
+<h3 id="d--spline-goal-explorer-fiveshowapp">D. Spline Goal Explorer (<code>fiveShowApp</code>)<a class="anchor" aria-label="anchor" href="#d--spline-goal-explorer-fiveshowapp"></a>
+</h3>
+<p>Defined in <a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/R/fiveShowApp.R">R/fiveShowApp.R</a>,
+this companion explorer app targets binary-search goal calculations: -
+Shares the click-to-move interactive baseline spline editor UI. -
+Implements a goal-target numeric/slider input to choose target relative
+mean times. - Runs and displays <a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/R/five.R#L97">five.show()</a>
+plots showing target adjustments for all five parameters. - Captures
+console output of binary search details using
+<code><a href="https://rdrr.io/r/utils/capture.output.html" class="external-link">utils::capture.output()</a></code> and renders it on a card.</p>
+</div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

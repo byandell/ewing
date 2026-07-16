@@ -105,3 +105,32 @@ queue behavior: - Runs
 directly on the starting community. - Inspects continuous event
 horizons. - Renders age classes and substrate coordinates to verify
 state transition calculations.
+
+### C. Spline Parameter Explorer (`fivePlotApp`)
+
+Defined in
+[R/fivePlotApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/fivePlotApp.R),
+this app allows interactive, web-safe adjustment of time-temperature
+spline nodes: - Uses a point-click listener on the baseline plot rather
+than R console’s blocking
+[`graphics::locator()`](https://rdrr.io/r/graphics/locator.html). -
+Calculates closest nodes to click positions, modifying them subject to
+monotonicity boundaries. - Triggers dynamic, real-time recalculation of
+parameter sensitivity curves via
+[five.plot()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/five.R#L151). -
+Synchronizes values bi-directionally between graphical plot clicks and
+text input controls.
+
+### D. Spline Goal Explorer (`fiveShowApp`)
+
+Defined in
+[R/fiveShowApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/fiveShowApp.R),
+this companion explorer app targets binary-search goal calculations: -
+Shares the click-to-move interactive baseline spline editor UI. -
+Implements a goal-target numeric/slider input to choose target relative
+mean times. - Runs and displays
+[five.show()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/five.R#L97)
+plots showing target adjustments for all five parameters. - Captures
+console output of binary search details using
+[`utils::capture.output()`](https://rdrr.io/r/utils/capture.output.html)
+and renders it on a card.

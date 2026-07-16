@@ -157,6 +157,12 @@ Reference: B Ewing, BS Yandell, JF Barbieri, and RF Luck (2002)
   [`ggplot_ewing_substrate()`](https://byandell.github.io/ewing/reference/ewing_substrate.md)
   [`autoplot(`*`<ewing_substrate>`*`)`](https://byandell.github.io/ewing/reference/ewing_substrate.md)
   : Ewing Substrate by Species
+- [`fivePlotApp()`](https://byandell.github.io/ewing/reference/fivePlotApp.md)
+  : Interactive 5-Parameter Curve Explorer App
+- [`fiveShowApp()`](https://byandell.github.io/ewing/reference/fiveShowApp.md)
+  : Interactive Spline Goal Explorer App
+- [`fivetimeApp()`](https://byandell.github.io/ewing/reference/fivetimeApp.md)
+  : Interactive Spline and Five-Parameter Explorer App
 - [`future.events()`](https://byandell.github.io/ewing/reference/future.events.md)
   : realize future events in quantitative population ethology simulation
 - [`future.host`](https://byandell.github.io/ewing/reference/future.host.md)
