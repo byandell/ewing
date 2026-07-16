@@ -64,6 +64,8 @@ To allow users to try these interactive apps without needing a local R console o
   quarto render vignettes/demos
   ```
   which compiles the files to `docs/demos/`. It is integrated into the package navbar (pointing to `demos/index.html`) in [_pkgdown.yml](file:///Users/brianyandell/Documents/Research/ewing/ewing/_pkgdown.yml).
+* **Automated CI/CD Deployment:** The GitHub Actions workflow [.github/workflows/pkgdown.yaml](file:///Users/brianyandell/Documents/Research/ewing/ewing/.github/workflows/pkgdown.yaml) is configured to automatically set up Quarto and render the Shinylive gallery on every push, deploying the output directly alongside the main documentation site to the `gh-pages` branch.
+
 
 
 
