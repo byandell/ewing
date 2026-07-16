@@ -1,0 +1,123 @@
+# Developer Guide Overview
+
+This document is the main Developer Guide for the
+[ewing](https://github.com/byandell/ewing) package. It serves as a
+comprehensive developer onboarding resource detailing the package
+architecture, internal state structures, Shiny module systems, and
+mathematical coordinate mappings.
+
+This developer guide is structured similarly to the [qtl2shiny Developer
+Guide](https://byandell-sysgen.github.io/qtl2shiny/articles/devel_guide/).
+See
+[guide.md](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/doc/guide.md)
+for the process and design prompts used to build this documentation.
+
+## Table of Contents
+
+- [1. Data Structures and Folder
+  Organization](#id_1-data-structures-and-folder-organization)
+  - [The State Object (`community`)](#the-state-object-community)
+  - [Input Configurations (Excel & Text
+    files)](#input-configurations-excel--text-files)
+- [2. Detailed Sub-Guides](#id_2-detailed-sub-guides)
+  - [Architecture and Module
+    Communication](https://byandell.github.io/ewing/articles/devel_guide/architecture.md)
+  - [Simulation Panels (Parameters &
+    Runs)](https://byandell.github.io/ewing/articles/devel_guide/simulation.md)
+  - [Visualization Panels (Distributions, Spatial Grids, &
+    Envelopes)](https://byandell.github.io/ewing/articles/devel_guide/visualization.md)
+  - [Utility & Companion
+    Applications](https://byandell.github.io/ewing/articles/devel_guide/utilities.md)
+- [3. Complete File & Module Index](#id_3-complete-file--module-index)
+
+------------------------------------------------------------------------
+
+## 1. Data Structures and Folder Organization
+
+The package source files reside inside `R/` (modular source functions
+and Shiny sub-modules) and `inst/` (external metadata, configurations,
+and scripts).
+
+### The State Object (`community`)
+
+At the center of any simulation run is a S3 class object of type
+`community`, created by
+[init.simulation()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/init.simulation.R).
+The community structure comprises: - `pop`: A matrix for each species
+storing individual attributes. Rows are feature attributes, and columns
+map to individuals O(n). - `org`: Organism feature thresholds and
+rates. - `temp`: Environmental temperature and degree-day spline
+thresholds. - `count`: Historical counts and logs.
+
+For detailed information on state matrices, see
+[dataorg.md](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/doc/refactor/dataorg.md).
+
+### Input Configurations (Excel & Text files)
+
+The default parameters and connectivity tables are stored under the
+`data/` folder: -
+[default.xlsx](file:///Users/brianyandell/Documents/Research/ewing/ewing/data/default.xlsx):
+The complete baseline spreadsheet containing all configuration
+parameters (features, risks, transitions, substrates, and temperature
+splines). -
+[simdata.rda](file:///Users/brianyandell/Documents/Research/ewing/ewing/data/simdata.rda):
+Pre-computed discrete simulation runs used for envelope testing. - Flat
+`.txt` files: Single-sheet tabular versions of all parameters used for
+automated unit tests
+(e.g. [organism.features.txt](file:///Users/brianyandell/Documents/Research/ewing/ewing/data/organism.features.txt),
+[future.host.txt](file:///Users/brianyandell/Documents/Research/ewing/ewing/data/future.host.txt)).
+
+------------------------------------------------------------------------
+
+## 2. Detailed Sub-Guides
+
+Click the links below to explore specific technical areas of the
+codebase:
+
+1.  **[Module Architecture &
+    Flow](https://byandell.github.io/ewing/articles/devel_guide/architecture.md)**
+    Understand the high-level layout, modular communication using
+    reactive interfaces, and the central download router framework.
+2.  **[Simulation & Parameters
+    Setup](https://byandell.github.io/ewing/articles/devel_guide/simulation.md)**
+    Examine how parameter worksheets are parsed
+    ([initParApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/initParApp.R))
+    and how simulations are stepped forward
+    ([simApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/simApp.R)).
+3.  **[Dynamic
+    Visualizations](https://byandell.github.io/ewing/articles/devel_guide/visualization.md)**
+    Trace age class plotting
+    ([distPlotApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/distPlotApp.R)),
+    spatial triangular grids
+    ([substrateApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/substrateApp.R)),
+    and confidence envelope bounds
+    ([envPlotApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/envPlotApp.R)).
+4.  **[Utility & Companion
+    Modules](https://byandell.github.io/ewing/articles/devel_guide/utilities.md)**
+    Explore file exports
+    ([downloadApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/downloadApp.R)),
+    Leaflet GIS explorers
+    ([leafletApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/leafletApp.R)),
+    and developer test applications (`futureApp`, `initApp`).
+
+------------------------------------------------------------------------
+
+## 3. Complete File & Module Index
+
+Below is an index of all Shiny app files inside the `R/` directory,
+mapped to their design roles:
+
+| Source File | Module Server / Entry Point | UI Hooks | Primary Classification | Description |
+|----|----|----|----|----|
+| [ewingApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ewingApp.R) | [ewingServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ewingApp.R#L31) | [`ewingInput()`](https://byandell.github.io/ewing/reference/ewingApp.md), [`ewingOutput()`](https://byandell.github.io/ewing/reference/ewingApp.md) | Primary Shiny Entry Point | Orchestrates overall dashboard panels and handles reactive dynamic tabs switching between `nsim = 1` and `nsim > 1` modes. |
+| [initParApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/initParApp.R) | [initParServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/initParApp.R#L29) | [`initParInput()`](https://byandell.github.io/ewing/reference/initParApp.md), [`initParOutput()`](https://byandell.github.io/ewing/reference/initParApp.md) | Configuration/Data Selector | Reads default metadata, manages XLSX uploads, and renders HTML summaries of species attributes. |
+| [simApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/simApp.R) | [simServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/simApp.R#L31) | [`simInput()`](https://byandell.github.io/ewing/reference/simApp.md), [`simUI()`](https://byandell.github.io/ewing/reference/simApp.md) | Simulation Orchestrator | Renders control sliders for simulation bounds, tracks the `nsim` toggle, and runs step-wise stochastic iterations. |
+| [distPlotApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/distPlotApp.R) | [distPlotServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/distPlotApp.R#L30) | [`distPlotInput()`](https://byandell.github.io/ewing/reference/distPlotApp.md), [`distPlotOutput()`](https://byandell.github.io/ewing/reference/distPlotApp.md) | Graphical Visualizer | Computes and plots age class distribution overlays over runtime steps. |
+| [substrateApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/substrateApp.R) | [substrateServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/substrateApp.R#L31) | `substrateInput()`, [`substrateOutput()`](https://byandell.github.io/ewing/reference/substrateApp.md) | Graphical Visualizer | Renders spatial individual mapping on triangular substrates via coordinate translations. |
+| [envPlotApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/envPlotApp.R) | [envPlotServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/envPlotApp.R#L30) | [`envPlotInput()`](https://byandell.github.io/ewing/reference/envPlotApp.md), [`envPlotOutput()`](https://byandell.github.io/ewing/reference/envPlotApp.md) | Graphical Visualizer | Plots confidence envelopes of host-parasite numbers for multi-simulation bounds. |
+| [downloadApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/downloadApp.R) | [downloadServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/downloadApp.R#L26) | [`downloadInput()`](https://byandell.github.io/ewing/reference/downloadApp.md), `downloadOutput()` | Data Export Utility | Binds to current plot and table outputs, writing cleanly formatted CSV tables and PDF documents with exit lock protections. |
+| [futureApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/futureApp.R) | [futureServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/futureApp.R#L44) | [`futureInput()`](https://byandell.github.io/ewing/reference/futureApp.md), [`futureOutput()`](https://byandell.github.io/ewing/reference/futureApp.md) | Mini App / Debug Tool | Independent interface evaluating single continuous `future.events` runs directly without iterations. |
+| [initApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/initApp.R) | [initServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/initApp.R#L35) | `initInput()`, [`initOutput()`](https://byandell.github.io/ewing/reference/initApp.md) | Mini App / Debug Tool | Visualizes starting substrate coordinate layouts and species statistics immediately upon initialization. |
+| [leafletApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/leafletApp.R) | [leafletServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/leafletApp.R#L34) | [`leafletInput()`](https://byandell.github.io/ewing/reference/leafletApp.md), [`leafletOutput()`](https://byandell.github.io/ewing/reference/leafletApp.md) | GIS Companion App | Provides interactive map click tracking, connecting dynamically with USGS boundary layers. |
+| [origEwingApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/origEwingApp.R) | [origEwingServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/origEwingApp.R#L30) | [`origEwingInput()`](https://byandell.github.io/ewing/reference/origEwingApp.md), [`origEwingOutput()`](https://byandell.github.io/ewing/reference/origEwingApp.md) | Legacy Code (Deprecated) | The original monolithic dashboard version preserved for historic regression validation. |
+| [multApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/multApp.R) | [multServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/multApp.R#L35) | [`multInput()`](https://byandell.github.io/ewing/reference/multApp.md), [`multOutput()`](https://byandell.github.io/ewing/reference/multApp.md) | Legacy Code (Deprecated) | Original multi-run app wrapper before modularization. |
