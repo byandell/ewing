@@ -57,7 +57,7 @@ These design records served as the functional specifications and prototypes used
    - Updated `.gitignore`: Added `docs` to ignore the local compiled website output directory.
    - Created `.github/workflows/pkgdown.yaml`: Set up the official `pkgdown` GitHub Action workflow to build the website and deploy it to the `gh-pages` branch on every push.
    - Ran `Rscript -e "pkgdown::build_site()"` locally and successfully built the site, checking references and page links.
-   - Resolved package dependency compilation bugs by appending missing packages (`DT`, `cowplot`, and `leaflet`) to the `Imports:` field in [DESCRIPTION](file:///Users/brianyandell/Documents/Research/ewing/ewing/DESCRIPTION). This ensures that standard installers (such as `pak` inside the GitHub Actions runner) download these dependencies before R CMD build builds the lazy-loaded databases.
+   - Resolved package dependency compilation bugs by appending missing packages (`DT`, `cowplot`, `leaflet`, `leaflet.extras`, `nhdplusTools`, and `bslib`) to the `Imports:` field in [DESCRIPTION](file:///Users/brianyandell/Documents/Research/ewing/ewing/DESCRIPTION). This ensures that standard installers (such as `pak` inside the GitHub Actions runner) download these dependencies before R CMD build builds the lazy-loaded databases.
 
 ---
 

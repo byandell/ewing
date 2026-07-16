@@ -7,7 +7,7 @@ Title: Bland Ewing's Systems Ethology
 Description: QPE event-driven individual-based simulation modeling system.
 Imports: splines, graphics, stats, utils, tools, readxl, tidyselect,
     tidyr, dplyr, ggplot2, tibble, rlang, purrr, GET, sf, shiny, patchwork,
-    stringr, DT, cowplot, leaflet
+    stringr, DT, cowplot, leaflet, leaflet.extras, nhdplusTools, bslib
 License: GPL-3
 URL: http://www.stat.wisc.edu/~yandell/ewing
 Encoding: UTF-8
