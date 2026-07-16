@@ -1,0 +1,39 @@
+url: https://byandell.github.io/ewing/
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left:  [intro, reference, articles, news]
+    right: [search, github]
+  components:
+    articles:
+      text: Guides
+      menu:
+        - text: "User Guides"
+        - text: "Tutorial Vignette"
+          href: articles/ewing.html
+        - text: "-------"
+        - text: "Developer Guides"
+        - text: "Developer Guide Overview"
+          href: articles/devel_guide/index.html
+        - text: "Module Architecture"
+          href: articles/devel_guide/architecture.html
+        - text: "Simulation & Parameters"
+          href: articles/devel_guide/simulation.html
+        - text: "Visualizations"
+          href: articles/devel_guide/visualization.html
+        - text: "Utilities & Companion Apps"
+          href: articles/devel_guide/utilities.html
+
+articles:
+  - title: "User Documentation"
+    contents:
+      - ewing
+  - title: "Developer Documentation"
+    contents:
+      - "devel_guide/index"
+      - "devel_guide/architecture"
+      - "devel_guide/simulation"
+      - "devel_guide/visualization"
+      - "devel_guide/utilities"

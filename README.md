@@ -21,6 +21,7 @@ See also
 - [Systems Ethology--The Life and Work of Bland Ewing](https://byandell.github.io/pages/ewing/)
 - [Predator-Prey Datasets](inst/doc/datasets.md)
 - [Ewing Package Documentation](inst/doc/refactor)
+- [Developer Guide](https://byandell.github.io/ewing/articles/devel_guide/index.html)
 
 # Install and Run Package
 
