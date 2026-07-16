@@ -1,0 +1,26 @@
+project:
+  type: website
+  output-dir: ../../docs/demos
+
+website:
+  title: "ewing Demos"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: fivePlotApp.qmd
+        text: fivePlotApp
+      - href: fiveShowApp.qmd
+        text: fiveShowApp
+    right:
+      - icon: github
+        href: https://github.com/byandell/ewing
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 2
+
+filters:
+  - shinylive

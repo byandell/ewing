@@ -13,6 +13,8 @@ navbar:
         - text: "User Guides"
         - text: "Tutorial Vignette"
           href: articles/ewing.html
+        - text: "Demos Gallery"
+          href: demos/index.html
         - text: "-------"
         - text: "Developer Guides"
         - text: "Developer Guide Overview"

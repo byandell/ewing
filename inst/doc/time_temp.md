@@ -54,4 +54,16 @@ Both apps feature:
 * **Bidirectional Synchronization:** Interactive node moves instantly update the manual text fields in the sidebar, and vice versa.
 * **Plot Range Scaling:** Axis ranges are computed dynamically based on the transformed curves to prevent out-of-bounds rendering issues.
 
+### 4. Interactive Demos Gallery (WebAssembly & Shinylive)
+
+To allow users to try these interactive apps without needing a local R console or a backend hosting server, a serverless **Demos Gallery** is available:
+* **WebAssembly execution (Shinylive):** The apps run entirely client-side in the web browser using WebAssembly. There is no active backend server.
+* **Quarto Project Structure:** Built using a Quarto website with the `shinylive` extension under [vignettes/demos/](file:///Users/brianyandell/Documents/Research/ewing/ewing/vignettes/demos/). The source pages ([fivePlotApp.qmd](file:///Users/brianyandell/Documents/Research/ewing/ewing/vignettes/demos/fivePlotApp.qmd) and [fiveShowApp.qmd](file:///Users/brianyandell/Documents/Research/ewing/ewing/vignettes/demos/fiveShowApp.qmd)) package the R application logic inline.
+* **Rendering & Output:** Rendered using:
+  ```bash
+  quarto render vignettes/demos
+  ```
+  which compiles the files to `docs/demos/`. It is integrated into the package navbar (pointing to `demos/index.html`) in [_pkgdown.yml](file:///Users/brianyandell/Documents/Research/ewing/ewing/_pkgdown.yml).
+
+
 

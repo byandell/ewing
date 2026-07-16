@@ -1,0 +1,303 @@
+---
+title: "fivePlotApp (Shinylive)"
+description: "A serverless WebAssembly-powered explorer to study single parameter sensitivity of spline curves using five.plot()."
+author: "Brian S. Yandell"
+toc: false
+---
+
+[← Back to Demos Gallery](index.qmd)
+
+The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). You can click directly on the baseline spline plot on the left to move individual nodes.
+
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 650
+#| components: [viewer]
+
+library(shiny)
+library(bslib)
+library(splines)
+library(stats)
+library(graphics)
+
+# --- ewing Helper Functions ---
+
+spline.extrapolate <- function( meanvalue, invmvalue, x )
+{
+  coeff <- stats::coef( invmvalue )
+  nr <- nrow( coeff ) - 1
+  xknot <- splines::splineKnots( invmvalue )[nr+(0:1)]
+  yknot <- splines::splineKnots( meanvalue )[nr+1]
+  tmpr <- ( xknot[2] - xknot[1] )
+  slope <- coeff[nr,2] + tmpr * ( 2 * coeff[nr,3] + tmpr * 3 * coeff[nr,4] )
+  yknot + slope * ( x - xknot[2] )
+}
+
+five.make <- function( fit = gencurve$fit,
+                       dispersion=10, location=100, intensity=1,
+                       truncation = 0, rejection = 1,
+                       fivenum = list( dispersion, location, intensity, truncation, rejection ),
+                       u = seq( 0.01, 0.99, by = 0.01 ))
+{
+  G <- function(x,eps=.01)
+  {
+    x <- pmax( eps, pmin( 1-eps, x ))
+    -log(1-x)
+  }
+  n <- prod( unlist( lapply( fivenum, length )))
+  organism <- matrix( u, length( u ), n + 1 )
+  orgnames <- "prob"
+  j <- 1
+  for( it in truncation ) for( ii in intensity ) {
+    tmpp <- stats::predict(fit$invmvalue, x = ( G(it)+G(u))/ii)
+    nay <- is.na( tmpp$y )
+    if( any ( nay ))
+      tmpp$y[nay] <- spline.extrapolate( fit$meanvalue, fit$invmvalue,
+                                         tmpp$x[nay] )
+    for( ir in rejection ) {
+      yr <- tmpp$y
+      yr[ u >= ir ] <- NA
+      for( id in dispersion ) for( il in location ) {
+        orgnames <- c( orgnames, paste( round( c(
+          dispersion, location, intensity,
+          truncation, rejection ), 2 ), collapse = ":" ))
+        j <- j + 1
+        organism[,j] <- id * yr + il
+      }
+    }
+  }
+  dimnames( organism ) <- list( NULL, orgnames )
+  organism
+}
+
+five.switch <- function( fit, pick, vals )
+{
+  switch( pick,
+          dispersion = 
+            five.make( fit, dispersion = vals ),
+          location = 
+            five.make( fit, location = vals ),
+          intensity = 
+            five.make( fit, intensity = 1 / vals ),
+          truncation = 
+            five.make( fit, truncation = vals ),
+          rejection = 
+            five.make( fit, rejection = vals ))
+}
+
+five.plot <- function(gencurve = spline.meanvalue(), fit = gencurve$fit,
+                      pick, vals, ylim = ylims)
+{
+  tmpx <- seq(0.01,.99,by=.01)
+  G <- function(x,eps=.01)
+  {
+    x <- pmax( eps, pmin( 1-eps, x ))
+    -log(1-x)
+  }
+  tmp <- five.switch( fit, pick, vals )
+  ylims <- range( tmp[,-1], na.rm = TRUE )
+  plot( 0:1, ylim, type = "n",
+        xlab = "probability", ylab = "time" )
+  graphics::title( main = pick )
+  graphics::lines( tmp[,1], tmp[,2], lty = 3 )
+  for( i in 3:ncol( tmp ))
+    graphics::lines( tmp[,1], tmp[,i], lty = 1 )
+}
+
+# --- Shiny Application UI ---
+
+app_theme <- bslib::bs_theme(
+  version = 5,
+  bg = "#ffffff",
+  fg = "#212529",
+  primary = "#1a73e8",
+  secondary = "#7209b7",
+  success = "#2ec4b6",
+  base_font = bslib::font_google("Outfit")
+)
+
+ui <- bslib::page_sidebar(
+  title = "Spline 5-Parameter Plot Explorer",
+  theme = app_theme,
+  
+  sidebar = bslib::sidebar(
+    width = 320,
+    shiny::h4("1. Baseline Spline", style = "color: #1a73e8; font-weight: bold; margin-bottom: 10px;"),
+    shiny::p("Click on the left plot to adjust baseline nodes. You can also edit coordinates manually.",
+             style = "font-size: 0.85em; color: #495057; margin-bottom: 10px;"),
+    shiny::textInput("x_coords", "X Coordinates:", 
+                     value = "0.000, 0.153, 0.334, 0.555, 0.838, 1.236, 1.906, 5.000"),
+    shiny::textInput("y_coords", "Y Coordinates:", 
+                     value = "0.000, 0.200, 0.400, 0.700, 1.100, 1.600, 2.400, 5.000"),
+    
+    shiny::hr(style = "margin: 10px 0; border-top: 1px solid rgba(0, 0, 0, 0.1);"),
+    
+    shiny::h4("2. Parameter Sensitivity", style = "color: #2ec4b6; font-weight: bold; margin-bottom: 10px;"),
+    shiny::selectizeInput("pick", "Select Parameter (five.plot):", 
+                          choices = c("dispersion", "location", "intensity", "truncation", "rejection"),
+                          selected = "dispersion"),
+    shiny::uiOutput("param_value_ui")
+  ),
+  
+  # Custom CSS style
+  shiny::tags$head(
+    shiny::tags$style(shiny::HTML("
+      body { background-color: #f8f9fa; }
+      .card {
+        background: #ffffff !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.04);
+        margin-bottom: 15px;
+      }
+      .card-header { font-weight: bold; background: rgba(0, 0, 0, 0.01) !important; }
+    "))
+  ),
+  
+  # Main Layout
+  shiny::fluidRow(
+    shiny::column(
+      width = 6,
+      bslib::card(
+        bslib::card_header("Interactive Baseline Spline (Click plot to move nodes)"),
+        bslib::card_body(
+          shiny::plotOutput("plot_baseline", height = "450px", click = "baseline_click")
+        )
+      )
+    ),
+    shiny::column(
+      width = 6,
+      bslib::card(
+        bslib::card_header("Sensitivity Analysis: five.plot()"),
+        bslib::card_body(
+          shiny::plotOutput("plot_sensitivity", height = "450px")
+        )
+      )
+    )
+  ),
+  shiny::fluidRow(
+    shiny::column(
+      width = 12,
+      bslib::card(
+        bslib::card_header("Instructions"),
+        bslib::card_body(
+          shiny::HTML("<p style='font-size: 0.9em;'>Click anywhere on the <em>Interactive Baseline Spline</em> plot to modify the nodes. The coordinates will update in the sidebar. The <em>Sensitivity Analysis</em> plot shows the family of curves generated by changing the selected parameter over the specified range.</p>")
+        )
+      )
+    )
+  )
+)
+
+# --- Shiny Application Server ---
+
+server <- function(input, output, session) {
+  
+  output$param_value_ui <- shiny::renderUI({
+    shiny::req(input$pick)
+    
+    rng <- switch(input$pick,
+                  dispersion = list(min = 1, max = 150, val = c(5, 50)),
+                  location = list(min = 0, max = 1000, val = c(50, 500)),
+                  intensity = list(min = 0.1, max = 10, val = c(0.5, 5)),
+                  truncation = list(min = 0.0, max = 0.9, val = c(0.1, 0.6)),
+                  rejection = list(min = 0.1, max = 1.0, val = c(0.4, 0.95))
+    )
+    
+    shiny::tagList(
+      shiny::sliderInput("param_range", "Value Range:", 
+                         min = rng$min, max = rng$max, value = rng$val, step = if(input$pick %in% c("truncation", "rejection")) 0.05 else 1),
+      shiny::sliderInput("line_count", "Curves to draw:", 
+                         min = 2, max = 10, value = 5, step = 1)
+    )
+  })
+  
+  fit_reactive <- shiny::reactive({
+    shiny::req(input$x_coords, input$y_coords)
+    
+    x_vals <- as.numeric(trimws(strsplit(input$x_coords, ",")[[1]]))
+    y_vals <- as.numeric(trimws(strsplit(input$y_coords, ",")[[1]]))
+    
+    shiny::validate(
+      shiny::need(length(x_vals) == length(y_vals), "Error: X and Y coordinate lists must be of equal length."),
+      shiny::need(length(x_vals) >= 3, "Error: Please specify at least 3 points."),
+      shiny::need(!any(is.na(x_vals)) && !any(is.na(y_vals)), "Error: Coordinates must be numeric."),
+      shiny::need(all(diff(x_vals) > 0), "Error: X coordinates must be strictly increasing."),
+      shiny::need(all(diff(y_vals) > 0), "Error: Y coordinates must be strictly increasing.")
+    )
+    
+    tryCatch({
+      meanvalue <- splines::interpSpline(x_vals, y_vals)
+      invmvalue <- splines::backSpline(meanvalue)
+      list(meanvalue = meanvalue, invmvalue = invmvalue, xy = data.frame(x = x_vals, y = y_vals))
+    }, error = function(e) {
+      shiny::validate(paste("Error building spline:", e$message))
+    })
+  })
+  
+  shiny::observeEvent(input$baseline_click, {
+    cx <- input$baseline_click$x
+    cy <- input$baseline_click$y
+    
+    x_current <- as.numeric(trimws(strsplit(input$x_coords, ",")[[1]]))
+    y_current <- as.numeric(trimws(strsplit(input$y_coords, ",")[[1]]))
+    
+    if (length(x_current) < 3 || any(is.na(x_current)) || any(is.na(y_current))) return()
+    
+    n <- length(x_current)
+    
+    x_range <- max(x_current) - min(x_current)
+    y_range <- max(y_current) - min(y_current)
+    if (x_range == 0) x_range <- 1
+    if (y_range == 0) y_range <- 1
+    
+    dists <- ((x_current - cx) / x_range)^2 + ((y_current - cy) / y_range)^2
+    closest_idx <- which.min(dists)
+    
+    min_x <- if (closest_idx == 1) x_current[1] else x_current[closest_idx - 1] + 0.005
+    max_x <- if (closest_idx == n) x_current[n] else x_current[closest_idx + 1] - 0.005
+    new_x <- max(min_x, min(max_x, cx))
+    
+    min_y <- if (closest_idx == 1) y_current[1] else y_current[closest_idx - 1] + 0.005
+    max_y <- if (closest_idx == n) y_current[n] else y_current[closest_idx + 1] - 0.005
+    new_y <- max(min_y, min(max_y, cy))
+    
+    x_current[closest_idx] <- new_x
+    y_current[closest_idx] <- new_y
+    
+    shiny::updateTextInput(session, "x_coords", value = paste(round(x_current, 3), collapse = ", "))
+    shiny::updateTextInput(session, "y_coords", value = paste(round(y_current, 3), collapse = ", "))
+  })
+  
+  output$plot_baseline <- shiny::renderPlot({
+    fit_obj <- fit_reactive()
+    shiny::req(fit_obj)
+    
+    pred_x <- seq(min(fit_obj$xy$x), max(fit_obj$xy$x), length.out = 150)
+    pred_y <- stats::predict(fit_obj$meanvalue, pred_x)$y
+    
+    graphics::par(bg = "white", col.axis = "#495057", col.lab = "#212529", col.main = "#1a73e8", fg = "#cccccc")
+    graphics::plot(pred_x, pred_y, type = "l", col = "#1a73e8", lwd = 3,
+                   xlab = "Time (X)", ylab = "Probability scale (Y)", 
+                   main = "Interactive Baseline Mean-Value Spline",
+                   panel.first = graphics::grid(col = "#e9ecef", lty = 1))
+    
+    graphics::points(fit_obj$xy$x, fit_obj$xy$y, col = "#7209b7", pch = 19, cex = 1.8)
+    graphics::points(fit_obj$xy$x, fit_obj$xy$y, col = "#7209b7", pch = 1, cex = 2.8, lwd = 1.5)
+  })
+  
+  output$plot_sensitivity <- shiny::renderPlot({
+    fit_obj <- fit_reactive()
+    shiny::req(fit_obj, input$param_range, input$line_count)
+    
+    vals <- seq(input$param_range[1], input$param_range[2], length.out = input$line_count)
+    graphics::par(bg = "white", col.axis = "#495057", col.lab = "#212529", col.main = "#2ec4b6", fg = "#cccccc")
+    five.plot(fit = fit_obj, pick = input$pick, vals = vals)
+  })
+}
+
+shiny::shinyApp(ui = ui, server = server)
+```
+
+## Source Code
+
+View the source code for the app on [GitHub](https://github.com/byandell/ewing/blob/main/R/fivePlotApp.R).

@@ -1,0 +1,13 @@
+---
+title: "ewing Demos Gallery"
+subtitle: "Interactive spline parameter and goal calculators running in your browser"
+toc: false
+listing:
+  contents:
+    - fivePlotApp.qmd
+    - fiveShowApp.qmd
+  type: grid
+  categories: false
+---
+
+This gallery showcases interactive spline tools from the **ewing** R package, running completely client-side in your browser using serverless WebAssembly.
