@@ -157,9 +157,8 @@ five.plot <- function(gencurve = spline.meanvalue(), fit = gencurve$fit,
     x <- pmax( eps, pmin( 1-eps, x ))
     -log(1-x)
   }
-  tmp <- stats::predict( fit$invmvalue, x = G(tmpx))
-  ylims <- range( tmp$y, na.rm = TRUE )
   tmp <- five.switch( fit, pick, vals )
+  ylims <- range( tmp[,-1], na.rm = TRUE )
   plot( 0:1, ylim, type = "n",
         xlab = "probability", ylab = "time" )
   graphics::title( main = pick )
