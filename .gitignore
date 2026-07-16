@@ -52,4 +52,7 @@ pkg
 old/
 *.lock
 docs
+demos/_extensions/
+demos/.quarto/
+
 

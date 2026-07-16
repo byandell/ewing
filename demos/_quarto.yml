@@ -1,6 +1,6 @@
 project:
   type: website
-  output-dir: ../../docs/demos
+  output-dir: ../docs/demos
 
 website:
   title: "ewing Demos"

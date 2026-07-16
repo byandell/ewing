@@ -58,13 +58,14 @@ Both apps feature:
 
 To allow users to try these interactive apps without needing a local R console or a backend hosting server, a serverless **Demos Gallery** is available:
 * **WebAssembly execution (Shinylive):** The apps run entirely client-side in the web browser using WebAssembly. There is no active backend server.
-* **Quarto Project Structure:** Built using a Quarto website with the `shinylive` extension under [vignettes/demos/](file:///Users/brianyandell/Documents/Research/ewing/ewing/vignettes/demos/). The source pages ([fivePlotApp.qmd](file:///Users/brianyandell/Documents/Research/ewing/ewing/vignettes/demos/fivePlotApp.qmd) and [fiveShowApp.qmd](file:///Users/brianyandell/Documents/Research/ewing/ewing/vignettes/demos/fiveShowApp.qmd)) package the R application logic inline.
+* **Quarto Project Structure:** Built using a Quarto website with the `shinylive` extension under [demos/](file:///Users/brianyandell/Documents/Research/ewing/ewing/demos/). The source pages ([fivePlotApp.qmd](file:///Users/brianyandell/Documents/Research/ewing/ewing/demos/fivePlotApp.qmd) and [fiveShowApp.qmd](file:///Users/brianyandell/Documents/Research/ewing/ewing/demos/fiveShowApp.qmd)) package the R application logic inline.
 * **Rendering & Output:** Rendered using:
   ```bash
-  quarto render vignettes/demos
+  quarto render demos
   ```
   which compiles the files to `docs/demos/`. It is integrated into the package navbar (pointing to `demos/index.html`) in [_pkgdown.yml](file:///Users/brianyandell/Documents/Research/ewing/ewing/_pkgdown.yml).
-* **Automated CI/CD Deployment:** The GitHub Actions workflow [.github/workflows/pkgdown.yaml](file:///Users/brianyandell/Documents/Research/ewing/ewing/.github/workflows/pkgdown.yaml) is configured to automatically set up Quarto and render the Shinylive gallery on every push, deploying the output directly alongside the main documentation site to the `gh-pages` branch.
+* **Automated CI/CD Deployment:** The GitHub Actions workflow [.github/workflows/pkgdown.yaml](file:///Users/brianyandell/Documents/Research/ewing/ewing/.github/workflows/pkgdown.yaml) is configured to automatically set up Quarto, dynamically install the `shinylive` extension (`quarto add quarto-ext/shinylive --no-prompt`), and render the gallery on push. This deploys the output directly alongside the main documentation site to the `gh-pages` branch without requiring any Shinylive assets or extensions to be tracked in the Git repository source tree.
+
 
 
 
