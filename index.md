@@ -12,17 +12,25 @@ Before installing the package, you may want to examine the interactive
 Shiny app <https://connect.doit.wisc.edu/SystemsEthology>, which
 executes this package. See also
 
-- [BlandEwing](https://byandell.github.io/BlandEwing): draft life story
-- [SystemsEthology](https://byandell.github.io/SystemsEthology): draft
-  book
-- [Systems Ethology–The Life and Work of Bland
-  Ewing](https://byandell.github.io/pages/ewing/)
-- [Predator-Prey
-  Datasets](https://byandell.github.io/ewing/inst/doc/datasets.md)
-- [Ewing Package
-  Documentation](https://byandell.github.io/ewing/inst/doc/refactor)
-- [Developer
-  Guide](https://byandell.github.io/ewing/articles/devel_guide/index.html)
+- Writings
+  - [BlandEwing](https://byandell.github.io/BlandEwing): draft life
+    story
+  - [SystemsEthology](https://byandell.github.io/SystemsEthology): draft
+    book
+  - [Systems Ethology–The Life and Work of Bland
+    Ewing](https://byandell.github.io/pages/ewing/)
+- Tools and Data
+  - [Predator-Prey
+    Datasets](https://byandell.github.io/ewing/inst/doc/datasets.md)
+  - [Ewing Package
+    Documentation](https://byandell.github.io/ewing/inst/doc/refactor)
+  - [Articles](https://byandell.github.io/ewing/articles/)
+    - [Developer
+      Guide](https://byandell.github.io/ewing/articles/devel_guide/index.md)
+    - [Tutorial
+      Vignette](https://byandell.github.io/ewing/articles/ewing.md)
+  - [Systems Ethology
+    App](https://connect.doit.wisc.edu/SystemsEthology)
 
 # Install and Run Package
 
