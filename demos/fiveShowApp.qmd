@@ -2,6 +2,7 @@
 title: "fiveShowApp (Shinylive)"
 description: "A serverless WebAssembly-powered explorer to search for 5-parameter adjustments using five.show()."
 author: "Brian S. Yandell"
+engine: knitr
 toc: false
 format:
   html:

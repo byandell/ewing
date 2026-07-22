@@ -1,6 +1,7 @@
 ---
 title: "ewing Demos Gallery"
 subtitle: "Interactive spline parameter and goal calculators running in your browser"
+engine: knitr
 toc: false
 listing:
   contents:

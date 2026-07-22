@@ -149,6 +149,7 @@ filters:
 title: "fivePlotApp (Shinylive)"
 description: "A serverless WebAssembly-powered explorer to study single parameter sensitivity of spline curves using five.plot()."
 author: "Brian S. Yandell"
+engine: knitr
 toc: false
 format:
   html:
