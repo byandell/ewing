@@ -21,8 +21,7 @@ fivetimeApp <- function(title = "Spline Time Parameter Explorer") {
     fg = "#212529",
     primary = "#1a73e8",
     secondary = "#7209b7",
-    success = "#2ec4b6",
-    base_font = bslib::font_google("Outfit")
+    success = "#2ec4b6"
   )
   
   ui <- bslib::page_sidebar(
@@ -58,10 +57,12 @@ fivetimeApp <- function(title = "Spline Time Parameter Explorer") {
     
     # Custom CSS style block for premium light aesthetics
     shiny::tags$head(
+      shiny::tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap"),
       shiny::tags$style(shiny::HTML("
         body {
           background-color: #f8f9fa;
           color: #212529;
+          font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
         .card {
           background: #ffffff !important;

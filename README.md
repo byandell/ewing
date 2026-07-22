@@ -26,6 +26,7 @@ See also
   - [Articles](articles/)
     - [Developer Guide](articles/devel_guide/index.html)
     - [Tutorial Vignette](articles/ewing.html)
+  - [Demos](demos/)
   - [Systems Ethology App](https://connect.doit.wisc.edu/SystemsEthology)
 
 # Install and Run Package

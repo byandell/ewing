@@ -32,6 +32,7 @@ When pushed to the repository's `main` branch, GitHub Actions builds and publish
    - Setting `embed-resources: false` instructs Quarto to produce standard web assets (`.html`, `.js`, `.css`) during compilation.
    - All generated build files (`docs/`, `demos/_extensions/`, `demos/.quarto/`) are listed in `.gitignore` and **are never tracked or committed** to the source repository (`main` branch).
    - Building and packaging of Shinylive assets is performed entirely **server-side on GitHub Actions** during the deployment workflow.
+4. **WebAssembly libcurl Constraint**: `bslib::font_google()` attempts to download font files using R's native `libcurl`/`curl` capabilities. Inside the browser WebAssembly (`webR`) environment, R system-level network libraries are unavailable. Replacing `font_google()` with standard CSS `<link>` imports in `shiny::tags$head` loads Google Fonts directly via the browser natively without throwing WebAssembly launch errors.
 
 ---
 
