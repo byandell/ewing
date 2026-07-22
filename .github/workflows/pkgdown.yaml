@@ -43,8 +43,9 @@ jobs:
 
       - name: Render Quarto Demos
         run: |
+          cd demos
           quarto add quarto-ext/shinylive --no-prompt
-          quarto render demos
+          quarto render
         shell: bash
 
       - name: Deploy to GitHub pages 🚀

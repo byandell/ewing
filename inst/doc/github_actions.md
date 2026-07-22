@@ -88,11 +88,12 @@ jobs:
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
 
-      # Step 3: Install Shinylive extension dynamically on server runner
+      # Step 3: Install Shinylive extension dynamically on server runner inside demos/
       - name: Render Quarto Demos
         run: |
+          cd demos
           quarto add quarto-ext/shinylive --no-prompt
-          quarto render demos
+          quarto render
         shell: bash
 
       # Step 4: Publish docs/ folder to gh-pages branch
