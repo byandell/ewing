@@ -1,0 +1,37 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "ewing Demos Gallery",
+    "section": "",
+    "text": "This gallery showcases interactive spline tools from the ewing R package, running completely client-side in your browser using serverless WebAssembly.\n\n\n\n\n\n\n\n\n\n\n\n\nfivePlotApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to study single parameter sensitivity of spline curves using five.plot().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\nfiveShowApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to search for 5-parameter adjustments using five.show().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "fiveShowApp.html",
+    "href": "fiveShowApp.html",
+    "title": "fiveShowApp (Shinylive)",
+    "section": "",
+    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can click directly on the baseline spline plot on the left to move individual nodes, and adjust the target relative mean slider on the right to trigger the binary search."
+  },
+  {
+    "objectID": "fiveShowApp.html#source-code",
+    "href": "fiveShowApp.html#source-code",
+    "title": "fiveShowApp (Shinylive)",
+    "section": "Source Code",
+    "text": "Source Code\nView the source code for the app on GitHub."
+  },
+  {
+    "objectID": "fivePlotApp.html",
+    "href": "fivePlotApp.html",
+    "title": "fivePlotApp (Shinylive)",
+    "section": "",
+    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can click directly on the baseline spline plot on the left to move individual nodes."
+  },
+  {
+    "objectID": "fivePlotApp.html#source-code",
+    "href": "fivePlotApp.html#source-code",
+    "title": "fivePlotApp (Shinylive)",
+    "section": "Source Code",
+    "text": "Source Code\nView the source code for the app on GitHub."
+  }
+]
