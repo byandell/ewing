@@ -140,7 +140,7 @@ format:
     self-contained: false
 
 filters:
-  - shinylive
+  - quarto-ext/shinylive
 ```
 
 ### B. Application Document Frontmatter ([demos/fivePlotApp.qmd](file:///Users/brianyandell/Documents/Research/ewing/ewing/demos/fivePlotApp.qmd))

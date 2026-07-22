@@ -27,4 +27,4 @@ format:
     self-contained: false
 
 filters:
-  - shinylive
+  - quarto-ext/shinylive
