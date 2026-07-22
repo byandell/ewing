@@ -76,7 +76,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, local::.
+          extra-packages: any::pkgdown, any::shinylive, any::knitr, any::rmarkdown, local::.
           needs: website
 
       # Step 1: Build pkgdown site and vignettes into docs/
@@ -114,6 +114,8 @@ jobs:
 project:
   type: website
   output-dir: ../docs/demos
+
+engine: knitr
 
 website:
   title: "ewing Demos"

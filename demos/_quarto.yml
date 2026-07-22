@@ -2,6 +2,8 @@ project:
   type: website
   output-dir: ../docs/demos
 
+engine: knitr
+
 website:
   title: "ewing Demos"
   navbar:
