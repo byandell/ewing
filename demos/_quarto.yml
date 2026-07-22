@@ -21,6 +21,8 @@ format:
     theme: cosmo
     toc: true
     toc-depth: 2
+    embed-resources: false
+    self-contained: false
 
 filters:
   - shinylive
