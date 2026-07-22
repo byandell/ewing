@@ -29,6 +29,7 @@ executes this package. See also
       Guide](https://byandell.github.io/ewing/articles/devel_guide/index.md)
     - [Tutorial
       Vignette](https://byandell.github.io/ewing/articles/ewing.md)
+  - [Demos](https://byandell.github.io/ewing/demos/)
   - [Systems Ethology
     App](https://connect.doit.wisc.edu/SystemsEthology)
 
