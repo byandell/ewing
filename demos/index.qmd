@@ -7,6 +7,7 @@ listing:
   contents:
     - fivePlotApp.qmd
     - fiveShowApp.qmd
+    - tempApp.qmd
   type: grid
   categories: false
 ---

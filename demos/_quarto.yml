@@ -14,6 +14,8 @@ website:
         text: fivePlotApp
       - href: fiveShowApp.qmd
         text: fiveShowApp
+      - href: tempApp.qmd
+        text: tempApp
     right:
       - icon: github
         href: https://github.com/byandell/ewing

@@ -38,15 +38,20 @@ fivePlotApp()
 
 # Launch Shiny-based interactive goal search explorer
 fiveShowApp()
+
+# Launch Shiny-based interactive daily temperature design explorer
+mysim <- init.simulation()
+tempApp(mysim)
 ```
 
-### 3. Shiny-Based Spline Adjustments (`fivePlotApp` & `fiveShowApp`)
+### 3. Shiny-Based Spline Adjustments (`fivePlotApp`, `fiveShowApp`, & `tempApp`)
 
 While the base R functions `spline.meanvalue()` and `temp.design()` use `graphics::locator()` to capture cursor coordinates interactively in terminal sessions, this approach blocks the server process in web contexts. 
 
-To bridge this gap, two dedicated Shiny applications have been added:
+To bridge this gap, dedicated Shiny applications have been added:
 * **[fivePlotApp()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/fivePlotApp.R)**: Explore single parameter sensitivity curves from `five.plot()`.
 * **[fiveShowApp()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/fiveShowApp.R)**: Explore multi-parameter binary searches and target relative mean goals from `five.show()`.
+* **[tempApp()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/tempApp.R)**: Explore and interactively edit daily high/low temperature splines and degree-day dynamics from `temp.design()`.
 
 Both apps feature:
 * **Interactive Node Editing:** Users can click directly on the baseline spline plot to reposition coordinate points. The app automatically identifies the closest node and moves it.

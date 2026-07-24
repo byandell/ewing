@@ -1,0 +1,497 @@
+---
+title: "tempApp (Shinylive)"
+description: "A serverless WebAssembly-powered explorer to interactively adjust daily high and low temperature splines and observe degree-day accumulation dynamics using temp.design() and temp.plot()."
+author: "Brian S. Yandell"
+engine: knitr
+toc: false
+image: "images/tempdesign.png"
+format:
+  html:
+    embed-resources: false
+---
+
+[← Back to Demos Gallery](index.qmd)
+
+The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). You can click directly on the temperature spline plot on the left to move individual high or low temperature knot coordinates.
+
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 750
+#| components: [viewer]
+
+library(shiny)
+library(bslib)
+library(splines)
+library(stats)
+library(graphics)
+
+# --- Standalone Temperature Core Functions ---
+
+getTemp <- function(community, element, sub) {
+    tempelem <- community$temp[[element]]
+    if (!missing(sub)) tempelem <- tempelem[[sub]]
+    tempelem
+}
+
+setTemp <- function(community, element, value) {
+    community$temp[[element]] <- value
+    community
+}
+
+temp.spline <- function(community, hour, temp, start = 0,
+                        mintemp = getTemp(community, "Min"),
+                        cumulative = TRUE, mult = getTemp(community, "Unit")) {
+    if (is.data.frame(hour) && missing(temp)) {
+        temp <- hour$temp
+        hour <- hour$hour
+    }
+    low <- temp <= mintemp
+    toolow <- low & c(FALSE, low[-length(low)]) & c(low[-1], FALSE)
+    hour <- hour[!toolow]
+    temp <- temp[!toolow]
+    lh <- length(hour)
+    low <- temp <= mintemp
+    toolow <- low & c(FALSE, !low[-length(low)]) & c(!low[-1], FALSE)
+    if (any(toolow)) {
+        hour <- c(hour, hour[toolow])
+        temp <- c(temp, temp[toolow])
+        temp <- temp[order(hour)]
+        hour <- sort(hour)
+    }
+    low <- temp <= mintemp & c(temp[-1] > mintemp, FALSE)
+    low1 <- c(FALSE, low[-lh])
+    if (any(low)) {
+        hour[low] <- hour[low] + (hour[low1] - hour[low]) * (mintemp - temp[low]) / (temp[low1] - temp[low])
+    }
+    low <- temp <= mintemp & c(FALSE, temp[-lh] > mintemp)
+    low1 <- c(low[-1], FALSE)
+    if (any(low)) {
+        hour[low] <- hour[low] + (hour[low1] - hour[low]) * (mintemp - temp[low]) / (temp[low1] - temp[low])
+    }
+    temp[temp < mintemp] <- mintemp
+    temp <- temp[!duplicated(hour)]
+    hour <- unique(hour)
+    lh <- length(hour) - 1
+    h0 <- 1:lh
+    aa <- (temp[1 + h0] - temp[h0]) / (hour[1 + h0] - hour[h0])
+    aa <- c(aa, aa[lh])
+    bb <- temp - mintemp
+    s <- list(knots = hour, coefficients = cbind(bb, aa, 0, 0))
+    dimnames(s$coefficients) <- list(paste(floor(hour / mult), round(hour %% mult), sep = "."), c("const", "linear", "quad", "cubic"))
+    attr(s, "formula") <- temp ~ hour
+    class(s) <- c("npolySpline", "polySpline", "spline")
+    if (!cumulative) {
+        return(s)
+    }
+    aa <- s$coefficients[, 3] <- s$coefficients[, 2] / 2 / mult / mult
+    lh <- length(aa) - 1
+    h0 <- 1:lh
+    h1 <- 1 + h0
+    hour <- s$knots
+    bb <- s$coefficients[, 2] <- s$coefficients[, 1] / mult
+    cc <- (hour[h1] - hour[h0]) * (bb[h0] + aa[h0] * (hour[h1] - hour[h0]))
+    s$coefficients[, 1] <- start + c(0, cumsum(cc))
+    s
+}
+
+temp.repeat <- function(community, period = range(days)) {
+    lodays <- range(getTemp(community, "Low")$knots)
+    hidays <- range(getTemp(community, "High")$knots)
+    days <- c(max(lodays[1], hidays[1]), min(lodays[2], hidays[2]))
+    lodays <- period[1] >= days[1] & period[1] <= days[2]
+    if (lodays) days[1] <- period[1]
+    hidays <- period[2] <= days[2] & period[2] >= days[1]
+    if (hidays) days[2] <- period[2]
+    if (!(lodays & hidays)) stop("Simulation period outside temperature days")
+    period <- days
+    days <- seq(days[1], days[2])
+    low <- stats::predict(getTemp(community, "Low"), days)$y
+    high <- stats::predict(getTemp(community, "High"), days)$y
+    periods <- c(as.numeric(names(getTemp(community, "Time"))), Inf)
+    temps <- hours <- numeric()
+    period[2] <- period[2] + 1
+    for (i in seq(length(periods) - 1)) {
+        day <- max(period[1], periods[i])
+        this.period <- days >= day & days < min(period[2], periods[i + 1])
+        n <- sum(this.period)
+        if (n) {
+            if (!is.null(getTemp(community, "Time", i))) {
+                time <- getTemp(community, "Time", i)
+                base <- getTemp(community, "Base", i)
+            }
+            h <- length(time)
+            lotemp <- rep(low[this.period], rep(h, n))
+            hitemp <- rep(high[this.period], rep(h, n))
+            temp <- (base - min(base)) / diff(range(base))
+            temps <- c(temps, rep(temp, n) * (hitemp - lotemp) + lotemp)
+            hours <- c(hours, rep(time, n) + rep(getTemp(community, "Unit") * seq(day, day + n - 1), rep(h, n)))
+        }
+    }
+    day <- days == period[2]
+    if (any(day)) {
+        temps <- c(temps, low[day] + temp[1] * (high[day] - getTemp(community, "Low")[day]))
+        hours <- c(hours, getTemp(community, "Unit") * period[2])
+    }
+    data.frame(hour = hours, temp = temps)
+}
+
+break.backSpline <- function(tmp) {
+    tmpc <- diff(tmp$coefficients[, 1]) == 0
+    tmpk <- cumsum(diff(tmp$knots) * tmpc)
+    tmpk <- c(tmpk, tmpk[length(tmpk)])
+    tmp$knots <- tmp$knots - tmpk
+    tmpc <- c(!tmpc, TRUE)
+    tmp$knots <- tmp$knots[tmpc]
+    tmp$coefficients <- tmp$coefficients[tmpc, ]
+    nb <- dim(tmp$coefficients)
+    tmpn <- tmp$coefficients[, 2] == 0
+    if (any(tmpn)) {
+        tmpn <- seq(tmpn)[tmpn]
+        tmp$coefficients[tmpn, 2:nb[2]] <- (tmp$coefficients[pmin(nb[1], tmpn + 1), 2:nb[2]] + tmp$coefficients[pmax(1, tmpn - 1), 2:nb[2]]) / 2
+    }
+    tmpb <- splines::backSpline(tmp)
+    if (any(tmpc)) tmpb$coefficients[, 1] <- tmpb$coefficients[, 1] + tmpk[tmpc]
+    tmpb
+}
+
+activeTemp <- function(community, lo.hour = min(getTemp(community, "DegreeDay", "knots")),
+                       hi.hour = max(getTemp(community, "DegreeDay", "knots")), degreeday, messages = FALSE) {
+    unit <- getTemp(community, "Unit")
+    if (missing(hi.hour)) {
+        hi.hour <- if (length(lo.hour) > 1) lo.hour[2] else lo.hour + unit
+    }
+    period <- c(floor(lo.hour[1] / unit), ceiling(hi.hour / unit))
+    if (missing(degreeday)) {
+        degreeday <- if (is.null(getTemp(community, "DegreeDay"))) 0 else stats::predict(getTemp(community, "DegreeDay"), lo.hour[1])$y
+    }
+    if (is.na(degreeday)) degreeday <- 0
+    community <- setTemp(community, "DegreeDay", temp.spline(community, temp.repeat(community, period), start = degreeday))
+    community <- setTemp(community, "Hour", break.backSpline(getTemp(community, "DegreeDay")))
+    community
+}
+
+temp.plot <- function(community, lo.hour = s$knots[1], hi.hour = max(s$knots), length = 201, col = NULL, derivative = FALSE, ..., printit = FALSE) {
+    s <- getTemp(community, "DegreeDay")
+    x <- seq(lo.hour, hi.hour, length = length)
+    x <- unique(sort(c(x, s$knots[s$knots >= lo.hour & s$knots <= hi.hour])))
+    ylab <- "degree-days"
+    if (derivative) {
+        ylab <- "degrees above min"
+        s$coefficients <- s$coefficients[, -1]
+        for (i in seq(2, ncol(s$coefficients))) s$coefficients[, i] <- s$coefficients[, i] * i
+    }
+    y <- stats::predict(s, x)$y
+    graphics::plot(x / getTemp(community, "Unit"), y, type = "l", xlab = "day", ylab = ylab, ...)
+}
+
+# Construct default simulation community object
+init_temp_community <- function() {
+    Unit <- 24
+    Min <- 50
+    Days <- 200
+    tmp <- seq(0, Days, length = 8)
+    tmp0 <- seq(0, 1, length = 8)
+    tmp1 <- 0.25 * (90 - 70)
+    Low <- splines::interpSpline(tmp, 70 * (1 - tmp0) + 75 * tmp0 + sin(pi * 4 * tmp0) * tmp1)
+    High <- splines::interpSpline(tmp, 85 * (1 - tmp0) + 90 * tmp0 + sin(pi * (0.125 + 4 * tmp0)) * tmp1)
+    Time <- list("0" = c(0, 6, 12, 18, 24))
+    Base <- list("0" = c(0, 0.5, 1, 0.5, 0))
+    comm <- list(temp = list(Unit = Unit, Min = Min, Time = Time, Base = Base, Low = Low, High = High, DegreeDay = NULL, Hour = NULL))
+    class(comm) <- "ewing"
+    activeTemp(comm, lo.hour = 0, hi.hour = 24, messages = FALSE)
+}
+
+community_default <- init_temp_community()
+
+get_spline_coords <- function(comm, element = "High") {
+    sp <- getTemp(comm, element)
+    knots <- sp$knots
+    yvals <- stats::predict(sp, knots)$y
+    list(x = knots, y = yvals, spline = sp)
+}
+
+init_high <- get_spline_coords(community_default, "High")
+init_low <- get_spline_coords(community_default, "Low")
+init_min <- 50
+
+# --- Shiny Application UI ---
+
+app_theme <- bslib::bs_theme(
+    version = 5,
+    bg = "#ffffff",
+    fg = "#212529",
+    primary = "#1a73e8",
+    secondary = "#7209b7",
+    success = "#2ec4b6"
+)
+
+ui <- bslib::page_sidebar(
+    title = "Daily Temperature Design Explorer",
+    theme = app_theme,
+    sidebar = bslib::sidebar(
+        width = 300,
+        shiny::div(
+            style = "font-size: 0.85rem; padding: 5px 0;",
+            shiny::div(
+                style = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;",
+                shiny::span("Active Curve:", style = "font-weight: bold; color: #1a73e8;"),
+                shiny::radioButtons(
+                    "active_curve", NULL,
+                    choices = c("High" = "High", "Low" = "Low"),
+                    selected = "High",
+                    inline = TRUE
+                )
+            ),
+            shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+            shiny::div(
+                style = "margin-bottom: 6px;",
+                shiny::span("Day Knots (X):", style = "font-weight: 600; color: #7209b7; display: block; margin-bottom: 2px;"),
+                shiny::textInput("x_coords", NULL, value = paste(round(init_high$x, 1), collapse = ", "))
+            ),
+            shiny::div(
+                style = "margin-bottom: 6px;",
+                shiny::span("Temperatures °F (Y):", style = "font-weight: 600; color: #7209b7; display: block; margin-bottom: 2px;"),
+                shiny::textInput("y_coords", NULL, value = paste(round(init_high$y, 1), collapse = ", "))
+            ),
+            shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+            shiny::div(
+                style = "display: flex; gap: 8px; align-items: flex-end; margin-top: 6px;",
+                shiny::div(
+                    style = "flex: 1;",
+                    shiny::span("Min Temp:", style = "font-weight: 600; color: #2ec4b6; display: block; margin-bottom: 2px;"),
+                    shiny::numericInput("min_temp", NULL, value = init_min, min = 0, max = 120, step = 1)
+                ),
+                shiny::actionButton("reset_btn", "Reset", class = "btn-outline-secondary btn-sm", style = "height: 38px; margin-bottom: 0px;")
+            )
+        )
+    ),
+    shiny::tags$head(
+        shiny::tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap"),
+        shiny::tags$style(shiny::HTML("
+      body { background-color: #f8f9fa; font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+      .card {
+        background: #ffffff !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.04);
+        margin-bottom: 15px;
+      }
+      .card-header { font-weight: bold; background: rgba(0, 0, 0, 0.01) !important; }
+    "))
+    ),
+    shiny::fluidRow(
+        shiny::column(
+            width = 6,
+            bslib::card(
+                bslib::card_header("Daily High & Low Temperature Splines (Click plot to move nodes)"),
+                bslib::card_body(
+                    shiny::plotOutput("plot_temp", height = "450px", click = "temp_click")
+                )
+            )
+        ),
+        shiny::column(
+            width = 6,
+            bslib::card(
+                bslib::card_header("Degree-Day Dynamics: temp.plot()"),
+                bslib::card_body(
+                    shiny::plotOutput("plot_degreeday", height = "450px")
+                )
+            )
+        )
+    ),
+    shiny::fluidRow(
+        shiny::column(
+            width = 12,
+            bslib::card(
+                bslib::card_header("Instructions"),
+                bslib::card_body(
+                    shiny::HTML("<p style='font-size: 0.9em;'>Select either <em>High Temperature</em> or <em>Low Temperature</em> in the sidebar and click anywhere on the left plot to reposition knot coordinates. Degree-day dynamics are recalculated dynamically via <code>activeTemp()</code>.</p>")
+                )
+            )
+        )
+    )
+)
+
+# --- Shiny Application Server ---
+
+server <- function(input, output, session) {
+    state <- shiny::reactiveValues(
+        high_x = init_high$x,
+        high_y = init_high$y,
+        low_x = init_low$x,
+        low_y = init_low$y,
+        current_active = "High"
+    )
+
+    sync_text_inputs <- function() {
+        if (state$current_active == "High") {
+            shiny::updateTextInput(session, "x_coords", value = paste(round(state$high_x, 1), collapse = ", "))
+            shiny::updateTextInput(session, "y_coords", value = paste(round(state$high_y, 1), collapse = ", "))
+        } else {
+            shiny::updateTextInput(session, "x_coords", value = paste(round(state$low_x, 1), collapse = ", "))
+            shiny::updateTextInput(session, "y_coords", value = paste(round(state$low_y, 1), collapse = ", "))
+        }
+    }
+
+    shiny::observeEvent(input$active_curve,
+        {
+            state$current_active <- input$active_curve
+            sync_text_inputs()
+        },
+        ignoreInit = TRUE
+    )
+
+    shiny::observeEvent(input$reset_btn, {
+        state$high_x <- init_high$x
+        state$high_y <- init_high$y
+        state$low_x <- init_low$x
+        state$low_y <- init_low$y
+        shiny::updateNumericInput(session, "min_temp", value = init_min)
+        sync_text_inputs()
+    })
+
+    shiny::observeEvent(input$temp_click, {
+        cx <- input$temp_click$x
+        cy <- input$temp_click$y
+
+        x_curr <- if (state$current_active == "High") state$high_x else state$low_x
+        y_curr <- if (state$current_active == "High") state$high_y else state$low_y
+
+        n <- length(x_curr)
+        if (n < 3) {
+            return()
+        }
+
+        xr <- max(x_curr) - min(x_curr)
+        yr <- max(y_curr) - min(y_curr)
+        if (xr == 0) xr <- 1
+        if (yr == 0) yr <- 1
+
+        dists <- ((x_curr - cx) / xr)^2 + ((y_curr - cy) / yr)^2
+        idx <- which.min(dists)
+
+        min_x <- if (idx == 1) x_curr[1] else x_curr[idx - 1] + 0.01
+        max_x <- if (idx == n) x_curr[n] else x_curr[idx + 1] - 0.01
+        new_x <- max(min_x, min(max_x, cx))
+
+        x_curr[idx] <- new_x
+        y_curr[idx] <- cy
+
+        if (state$current_active == "High") {
+            state$high_x <- x_curr
+            state$high_y <- y_curr
+        } else {
+            state$low_x <- x_curr
+            state$low_y <- y_curr
+        }
+
+        sync_text_inputs()
+    })
+
+    shiny::observeEvent(list(input$x_coords, input$y_coords), {
+        shiny::req(input$x_coords, input$y_coords)
+
+        x_vals <- tryCatch(as.numeric(trimws(strsplit(input$x_coords, ",")[[1]])), error = function(e) NA)
+        y_vals <- tryCatch(as.numeric(trimws(strsplit(input$y_coords, ",")[[1]])), error = function(e) NA)
+
+        if (length(x_vals) >= 3 && length(x_vals) == length(y_vals) &&
+            !any(is.na(x_vals)) && !any(is.na(y_vals)) && all(diff(x_vals) > 0)) {
+            if (state$current_active == "High") {
+                state$high_x <- x_vals
+                state$high_y <- y_vals
+            } else {
+                state$low_x <- x_vals
+                state$low_y <- y_vals
+            }
+        }
+    })
+
+    sim_reactive <- shiny::reactive({
+        shiny::req(input$min_temp)
+
+        shiny::validate(
+            shiny::need(length(state$high_x) == length(state$high_y), "High temp X & Y must have equal length."),
+            shiny::need(length(state$low_x) == length(state$low_y), "Low temp X & Y must have equal length."),
+            shiny::need(length(state$high_x) >= 3, "High temp spline requires at least 3 nodes."),
+            shiny::need(length(state$low_x) >= 3, "Low temp spline requires at least 3 nodes."),
+            shiny::need(all(diff(state$high_x) > 0), "High temp Day knots must be strictly increasing."),
+            shiny::need(all(diff(state$low_x) > 0), "Low temp Day knots must be strictly increasing.")
+        )
+
+        tryCatch(
+            {
+                sp_high <- splines::interpSpline(state$high_x, state$high_y)
+                sp_low <- splines::interpSpline(state$low_x, state$low_y)
+
+                comm <- community_default
+                comm <- setTemp(comm, "High", sp_high)
+                comm <- setTemp(comm, "Low", sp_low)
+                comm <- setTemp(comm, "Min", input$min_temp)
+
+                comm <- activeTemp(comm, messages = FALSE)
+
+                list(community = comm, high_spline = sp_high, low_spline = sp_low)
+            },
+            error = function(e) {
+                shiny::validate(paste("Error constructing temperature splines:", e$message))
+            }
+        )
+    })
+
+    output$plot_temp <- shiny::renderPlot({
+        res <- sim_reactive()
+        shiny::req(res)
+
+        high_sp <- res$high_spline
+        low_sp <- res$low_spline
+
+        x_range <- range(c(state$high_x, state$low_x))
+        pred_x <- seq(x_range[1], x_range[2], length.out = 200)
+
+        pred_high <- stats::predict(high_sp, pred_x)$y
+        pred_low <- stats::predict(low_sp, pred_x)$y
+
+        y_range <- range(c(pred_high, pred_low, state$high_y, state$low_y))
+
+        graphics::par(bg = "white", col.axis = "#495057", col.lab = "#212529", col.main = "#1a73e8", fg = "#cccccc")
+        graphics::plot(pred_x, pred_high,
+            type = "l", col = "#dc3545", lwd = 3,
+            xlim = x_range, ylim = y_range,
+            xlab = "Day", ylab = "Temperature (°F)",
+            main = "Daily High & Low Temperature Splines",
+            panel.first = graphics::grid(col = "#e9ecef", lty = 1)
+        )
+
+        graphics::lines(pred_x, pred_low, col = "#0d6efd", lwd = 3)
+
+        graphics::points(state$high_x, state$high_y, col = "#dc3545", pch = 19, cex = 1.6)
+        graphics::points(state$low_x, state$low_y, col = "#0d6efd", pch = 19, cex = 1.6)
+
+        if (state$current_active == "High") {
+            graphics::points(state$high_x, state$high_y, col = "#7209b7", pch = 1, cex = 2.6, lwd = 2)
+        } else {
+            graphics::points(state$low_x, state$low_y, col = "#7209b7", pch = 1, cex = 2.6, lwd = 2)
+        }
+
+        graphics::legend("topright",
+            legend = c("High Temp", "Low Temp", "Active Knots"),
+            col = c("#dc3545", "#0d6efd", "#7209b7"),
+            lty = c(1, 1, NA), pch = c(19, 19, 1), lwd = c(2, 2, 2), bty = "n"
+        )
+    })
+
+    output$plot_degreeday <- shiny::renderPlot({
+        res <- sim_reactive()
+        shiny::req(res)
+
+        graphics::par(bg = "white", col.axis = "#495057", col.lab = "#212529", col.main = "#2ec4b6", fg = "#cccccc")
+        temp.plot(res$community, main = "Degree-Day Dynamics over Time")
+    })
+}
+
+shiny::shinyApp(ui = ui, server = server)
+```
+
+## Source Code
+
+View the source code for the app on [GitHub](https://github.com/byandell/ewing/blob/main/R/tempApp.R).
