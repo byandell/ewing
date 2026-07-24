@@ -11,6 +11,9 @@ In 2026, I am using AI
 [Antigravity](https://antigravity.google/)
  to improve the code and interface.
 
+- [Published Package](https://byandell.github.io/ewing)
+- [Development Repository](https://github.com/byandell/ewing)
+
 Before installing the package, you may want to examine the interactive Shiny app
 <https://connect.doit.wisc.edu/SystemsEthology>,
 which executes this package.
