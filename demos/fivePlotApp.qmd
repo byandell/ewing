@@ -4,6 +4,7 @@ description: "A serverless WebAssembly-powered explorer to study single paramete
 author: "Brian S. Yandell"
 engine: knitr
 toc: false
+image: "images/fiveplot.png"
 format:
   html:
     embed-resources: false
