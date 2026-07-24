@@ -1,0 +1,363 @@
+---
+title: "triangleApp (Shinylive)"
+description: "A serverless WebAssembly-powered explorer to interactively construct, visualize, and inspect tridiagonal substrate spatial networks using substrate_topology() and create_substrate()."
+author: "Brian S. Yandell"
+engine: knitr
+toc: false
+image: "images/triangle.png"
+format:
+  html:
+    embed-resources: false
+---
+
+[← Back to Demos Gallery](index.qmd)
+
+The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). You can interactively adjust substrate width, step density, toggle plant modules, and inspect spatial grid statistics.
+
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 750
+#| components: [viewer]
+
+library(shiny)
+library(bslib)
+library(ggplot2)
+library(stats)
+
+# --- Standalone Substrate Core Functions ---
+
+tricoord <- function(a, b = NULL, c = NULL) {
+  if (is.data.frame(a) && all(c("a", "b", "c") %in% names(a))) {
+    res <- a
+  } else if (is.matrix(a) && ncol(a) == 3) {
+    res <- as.data.frame(a)
+    names(res) <- c("a", "b", "c")
+  } else if (!is.null(b) && !is.null(c)) {
+    res <- data.frame(a = a, b = b, c = c)
+  } else if (is.numeric(a) && length(a) == 3) {
+    res <- data.frame(a = a[1], b = a[2], c = a[3])
+  } else {
+    stop("Invalid tricoord input format")
+  }
+  class(res) <- c("tricoord", "data.frame")
+  res
+}
+
+`+.tricoord` <- function(e1, e2) {
+  if (is.numeric(e2) && length(e2) == 3) {
+    tricoord(e1$a + e2[1], e1$b + e2[2], e1$c + e2[3])
+  } else if (inherits(e2, "tricoord")) {
+    tricoord(e1$a + e2$a, e1$b + e2$b, e1$c + e2$c)
+  } else {
+    stop("Invalid right hand operand for tricoord addition")
+  }
+}
+
+tri2car <- function(tri, xmult = 2 / (2 + sqrt(3)), ymult = 6 / (3 + 2 * sqrt(3))) {
+  if (inherits(tri, "tricoord")) {
+    x <- (tri$a - tri$b) * xmult
+    y <- - (tri$a + tri$b) * ymult
+  } else {
+    if (!is.matrix(tri)) tri <- as.matrix(tri)
+    x <- (tri[1, ] - tri[2, ]) * xmult
+    y <- - (tri[1, ] + tri[2, ]) * ymult
+  }
+  data.frame(x = x, y = y)
+}
+
+get_substrate_grid <- function(width, step = 1, orientation = "up") {
+  pts <- expand.grid(a = seq(0, width - step, by = step), b = seq(0, width - step, by = step))
+  if (orientation == "up") {
+    pts <- subset(pts, a + b <= width - step)
+    pts$c <- -(pts$a + pts$b)
+  } else {
+    pts <- subset(pts, a + b <= width - step)
+    pts$a <- -pts$a
+    pts$b <- -pts$b
+    pts$c <- -(pts$a + pts$b)
+  }
+  pts
+}
+
+substrate_topology <- function(width = 10, step = 1) {
+  W <- width - step
+  list(
+    fr2   = list(offset = c(0, 0, 0), dir = "down"),
+    fr1   = list(offset = c(-W, -W, 2 * W), dir = "up"),
+    fr3   = list(offset = c(-W, 0, W), dir = "up"),
+    fr4   = list(offset = c(0, -W, W), dir = "up"),
+    tw1   = list(offset = c(-W, 0, W), dir = "down"),
+    tw2   = list(offset = c(-2 * W, 0, 2 * W), dir = "up"),
+    lftop = list(offset = c(-2 * W, W, W), dir = "down"),
+    lfbot = list(offset = c(-3 * W, W, 2 * W), dir = "up")
+  )
+}
+
+create_substrate <- function(topology, width = 10, step = 1) {
+  W <- width - step
+  all_points <- data.frame()
+  labels_df <- data.frame()
+  poly_df <- data.frame()
+  
+  for (sub in names(topology)) {
+    cfg <- topology[[sub]]
+    grid <- get_substrate_grid(width, step, cfg$dir)
+    grid_tri <- tricoord(grid$a, grid$b, grid$c) + cfg$offset
+    car_pts <- tri2car(grid_tri)
+    car_pts$substrate <- sub
+    all_points <- rbind(all_points, car_pts)
+    
+    o_a <- cfg$offset[1]; o_b <- cfg$offset[2]; o_c <- cfg$offset[3]
+    if (cfg$dir == "up") {
+      v_top <- c(o_a, o_b, o_c); v_br <- c(o_a + W, o_b, o_c - W); v_bl <- c(o_a, o_b + W, o_c - W)
+      m1 <- (v_top + v_bl) / 2; m2 <- (v_top + v_br) / 2; m3 <- (v_bl + v_br) / 2
+      centroid <- (v_top + v_br + v_bl) / 3
+      p_mat <- cbind(v_top, v_br, v_bl)
+    } else {
+      v_bot <- c(o_a, o_b, o_c); v_tr <- c(o_a, o_b - W, o_c + W); v_tl <- c(o_a - W, o_b, o_c + W)
+      m1 <- (v_bot + v_tr) / 2; m2 <- (v_bot + v_tl) / 2; m3 <- (v_tl + v_tr) / 2
+      centroid <- (v_bot + v_tr + v_tl) / 3
+      p_mat <- cbind(v_bot, v_tr, v_tl)
+    }
+    
+    w_in <- 0.25
+    l1 <- m1 * (1 - w_in) + centroid * w_in
+    l2 <- m2 * (1 - w_in) + centroid * w_in
+    l3 <- m3 * (1 - w_in) + centroid * w_in
+    car_l <- tri2car(cbind(l1, l2, l3))
+    car_l$label <- c("1", "2", "3")
+    car_l$substrate <- sub
+    labels_df <- rbind(labels_df, car_l)
+    
+    car_p <- tri2car(p_mat)
+    car_p$substrate <- sub
+    poly_df <- rbind(poly_df, car_p)
+  }
+  
+  centers <- stats::aggregate(cbind(x, y) ~ substrate, data = all_points, mean)
+  list(points = all_points, labels = labels_df, poly = poly_df, centers = centers, topology = topology)
+}
+
+all_modules <- c("fr1", "fr2", "fr3", "fr4", "tw1", "tw2", "lftop", "lfbot")
+
+# --- Shiny Application UI ---
+
+app_theme <- bslib::bs_theme(
+  version = 5,
+  bg = "#ffffff",
+  fg = "#212529",
+  primary = "#1a73e8",
+  secondary = "#7209b7",
+  success = "#2ec4b6"
+)
+
+ui <- bslib::page_sidebar(
+  title = "Tridiagonal Substrate Network Explorer",
+  theme = app_theme,
+  sidebar = bslib::sidebar(
+    width = 300,
+    shiny::div(
+      style = "font-size: 0.85rem; padding: 5px 0;",
+      shiny::div(
+        style = "display: flex; gap: 8px; align-items: flex-end; margin-bottom: 6px;",
+        shiny::div(
+          style = "flex: 1;",
+          shiny::span("Width (Radius):", style = "font-weight: 600; color: #1a73e8; display: block; margin-bottom: 2px;"),
+          shiny::numericInput("width_in", NULL, value = 10, min = 2, max = 30, step = 1)
+        ),
+        shiny::div(
+          style = "flex: 1;",
+          shiny::span("Step Density:", style = "font-weight: 600; color: #1a73e8; display: block; margin-bottom: 2px;"),
+          shiny::numericInput("step_in", NULL, value = 1, min = 0.5, max = 5, step = 0.5)
+        )
+      ),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::div(
+        style = "margin-bottom: 6px;",
+        shiny::span("Substrate Modules:", style = "font-weight: 600; color: #7209b7; display: block; margin-bottom: 2px;"),
+        shiny::selectizeInput("modules_in", NULL,
+                              choices = all_modules,
+                              selected = all_modules,
+                              multiple = TRUE,
+                              options = list(plugins = list("remove_button")))
+      ),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::div(
+        style = "margin-bottom: 6px;",
+        shiny::span("Display Layers:", style = "font-weight: 600; color: #2ec4b6; display: block; margin-bottom: 2px;"),
+        shiny::checkboxGroupInput("layers_in", NULL,
+                                  choices = c("Boundaries" = "poly", "Dots" = "points", "Labels" = "centers", "Numbers" = "labels"),
+                                  selected = c("poly", "points", "centers", "labels"),
+                                  inline = TRUE)
+      ),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::actionButton("reset_btn", "Reset Defaults", class = "btn-outline-secondary btn-sm w-100 mt-1")
+    )
+  ),
+  shiny::tags$head(
+    shiny::tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap"),
+    shiny::tags$style(shiny::HTML("
+      body { background-color: #f8f9fa; font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+      .card {
+        background: #ffffff !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.04);
+        margin-bottom: 15px;
+      }
+      .card-header { font-weight: bold; background: rgba(0, 0, 0, 0.01) !important; }
+      .stat-badge {
+        background: #f1f3f5;
+        padding: 8px 12px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+      }
+    "))
+  ),
+  shiny::fluidRow(
+    shiny::column(
+      width = 8,
+      bslib::card(
+        bslib::card_header("Tridiagonal Substrate Spatial Network Mapping"),
+        bslib::card_body(
+          shiny::plotOutput("plot_substrate", height = "520px")
+        )
+      )
+    ),
+    shiny::column(
+      width = 4,
+      bslib::card(
+        bslib::card_header("Substrate Grid Statistics & Topology"),
+        bslib::card_body(
+          shiny::uiOutput("summary_stats")
+        )
+      )
+    )
+  ),
+  shiny::fluidRow(
+    shiny::column(
+      width = 12,
+      bslib::card(
+        bslib::card_header("Instructions"),
+        bslib::card_body(
+          shiny::HTML("<p style='font-size: 0.9em;'>Adjust <em>Width (Radius)</em> and <em>Step Density</em> to scale the tridiagonal coordinate system. Use the module selector to filter specific plant components or toggle layer visibility.</p>")
+        )
+      )
+    )
+  )
+)
+
+# --- Shiny Application Server ---
+
+server <- function(input, output, session) {
+  shiny::observeEvent(input$reset_btn, {
+    shiny::updateNumericInput(session, "width_in", value = 10)
+    shiny::updateNumericInput(session, "step_in", value = 1)
+    shiny::updateSelectizeInput(session, "modules_in", selected = all_modules)
+    shiny::updateCheckboxGroupInput(session, "layers_in", selected = c("poly", "points", "centers", "labels"))
+  })
+  
+  substrate_data <- shiny::reactive({
+    shiny::req(input$width_in, input$step_in)
+    
+    shiny::validate(
+      shiny::need(input$width_in >= 2, "Width must be at least 2."),
+      shiny::need(input$step_in > 0, "Step must be greater than 0."),
+      shiny::need(input$width_in > input$step_in, "Width must be greater than Step density.")
+    )
+    
+    tryCatch({
+      topo <- substrate_topology(width = input$width_in, step = input$step_in)
+      create_substrate(topo, width = input$width_in, step = input$step_in)
+    }, error = function(e) {
+      shiny::validate(paste("Error constructing substrate topology:", e$message))
+    })
+  })
+  
+  output$plot_substrate <- shiny::renderPlot({
+    sub_obj <- substrate_data()
+    shiny::req(sub_obj)
+    
+    mods <- input$modules_in
+    layers <- input$layers_in
+    
+    if (!is.null(mods) && length(mods) > 0) {
+      sub_obj$points  <- sub_obj$points[sub_obj$points$substrate %in% mods, ]
+      sub_obj$poly    <- sub_obj$poly[sub_obj$poly$substrate %in% mods, ]
+      sub_obj$labels  <- sub_obj$labels[sub_obj$labels$substrate %in% mods, ]
+      sub_obj$centers <- sub_obj$centers[sub_obj$centers$substrate %in% mods, ]
+    } else {
+      sub_obj$points  <- sub_obj$points[0, ]
+      sub_obj$poly    <- sub_obj$poly[0, ]
+      sub_obj$labels  <- sub_obj$labels[0, ]
+      sub_obj$centers <- sub_obj$centers[0, ]
+    }
+    
+    p <- ggplot2::ggplot()
+    if ("poly" %in% layers && nrow(sub_obj$poly) > 0) {
+      p <- p + ggplot2::geom_polygon(data = sub_obj$poly, ggplot2::aes(x = x, y = y, group = substrate), 
+                                    fill = NA, color = "black", linewidth = 0.7)
+    }
+    if ("points" %in% layers && nrow(sub_obj$points) > 0) {
+      p <- p + ggplot2::geom_point(data = sub_obj$points, ggplot2::aes(x = x, y = y, color = substrate), size = 1.6)
+    }
+    if ("centers" %in% layers && nrow(sub_obj$centers) > 0) {
+      p <- p + ggplot2::geom_text(data = sub_obj$centers, ggplot2::aes(x = x, y = y, label = substrate), 
+                                  color = "black", fontface = "bold", size = 4.5)
+    }
+    if ("labels" %in% layers && nrow(sub_obj$labels) > 0) {
+      p <- p + ggplot2::geom_text(data = sub_obj$labels, ggplot2::aes(x = x, y = y, label = label), 
+                                  color = "darkred", fontface = "bold", size = 3.5)
+    }
+    
+    p + ggplot2::theme_void() + 
+      ggplot2::coord_fixed() + 
+      ggplot2::ggtitle(paste0("Substrate Network Topology (Width = ", input$width_in, ", Step = ", input$step_in, ")"))
+  })
+  
+  output$summary_stats <- shiny::renderUI({
+    sub_obj <- substrate_data()
+    shiny::req(sub_obj)
+    
+    mods <- input$modules_in
+    pts <- if (!is.null(mods)) sub_obj$points[sub_obj$points$substrate %in% mods, ] else sub_obj$points[0, ]
+    
+    total_pts <- nrow(pts)
+    active_mods_count <- if (!is.null(mods)) length(mods) else 0
+    
+    counts <- if (total_pts > 0) table(pts$substrate) else numeric()
+    counts_html <- if (length(counts) > 0) {
+      paste0("<li><strong>", names(counts), ":</strong> ", counts, " points</li>", collapse = "")
+    } else {
+      "<li><em>No active modules selected</em></li>"
+    }
+    
+    x_bounds <- if (total_pts > 0) paste0(round(range(pts$x), 2), collapse = " to ") else "N/A"
+    y_bounds <- if (total_pts > 0) paste0(round(range(pts$y), 2), collapse = " to ") else "N/A"
+    
+    shiny::HTML(paste0("
+      <div class='stat-badge'>
+        <strong style='color: #1a73e8;'>Active Modules:</strong> ", active_mods_count, " / ", length(all_modules), "
+      </div>
+      <div class='stat-badge'>
+        <strong style='color: #7209b7;'>Total Coordinate Dots:</strong> ", total_pts, "
+      </div>
+      <div class='stat-badge'>
+        <strong style='color: #2ec4b6;'>X Span:</strong> ", x_bounds, "<br/>
+        <strong style='color: #2ec4b6;'>Y Span:</strong> ", y_bounds, "
+      </div>
+      <hr style='margin: 10px 0; border-top: 1px solid rgba(0,0,0,0.1);'/>
+      <h5 style='font-size: 0.95em; font-weight: bold;'>Points per Substrate:</h5>
+      <ul style='padding-left: 18px; font-size: 0.85em; line-height: 1.5em;'>
+        ", counts_html, "
+      </ul>
+    "))
+  })
+}
+
+shiny::shinyApp(ui = ui, server = server)
+```
+
+## Source Code
+
+View the source code for the app on [GitHub](https://github.com/byandell/ewing/blob/main/R/triangleApp.R).

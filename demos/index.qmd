@@ -8,6 +8,7 @@ listing:
     - fivePlotApp.qmd
     - fiveShowApp.qmd
     - tempApp.qmd
+    - triangleApp.qmd
   type: grid
   categories: false
 ---

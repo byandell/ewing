@@ -82,3 +82,43 @@ To maximize reusability across the simulation suite, the core construction loops
 - `autoplot.substrate(object)`: Implements a scalable visual overlay handler utilizing `ggplot2`. Users can instantiate the tridiagonal substrate network internally and map it instantly utilizing native commands like `autoplot(my_substrate)`!
 
 The `inst/scripts/substrate_triangle.R` script now exclusively invokes these native package functions (via `library(ewing)`) to render the reconstruction!
+
+---
+
+## Interactive Substrate Network Explorer (`triangleApp`)
+
+### Prompts
+
+```text
+Use `inst/scripts/substrate_triangle.R` to create `R/triangleApp.R`. Create a `demos/triangleApp.qmd` for deployment. First create an Implementation Plan for approval.
+Document in `inst/doc/refactor/triangle.md`.
+```
+
+### Architectural Rationale & Features
+
+1. **Interactive Substrate Grid Scaling (`width` & `step`):**
+   - `triangleApp(width = 10, step = 1)` provides numeric inputs allowing users to dynamically scale substrate component radius (`width`) and grid dot density spacing (`step`).
+   - Modifying `width` or `step` instantly recalculates the tridiagonal topology lattice (`substrate_topology`) and spatial geometry (`create_substrate`).
+
+2. **Modular Filtering & Layer Toggles:**
+   - **Substrate Module Selector:** Users can select or remove individual plant components (`fr1..fr4` fruits, `tw1..tw2` twigs, `lftop..lfbot` leaves) using a multi-select tag list (`selectizeInput`).
+   - **Display Layer Checkboxes:** Users can toggle individual graphical layers:
+     - `Boundaries` (`geom_polygon` outlining substrate patch perimeters).
+     - `Dots` (`geom_point` showing grid coordinate points).
+     - `Labels` (`geom_text` displaying component center labels).
+     - `Numbers` (`geom_text` displaying side edge numbers 1, 2, 3).
+
+3. **Substrate Statistics & Metrics Panel:**
+   - A dedicated card displays real-time summary metrics:
+     - Active module count vs. total available modules.
+     - Total spatial coordinate dots across selected modules.
+     - Extents spanning spatial $X$ and $Y$ dimensions.
+     - Point density breakdown list per substrate patch.
+
+4. **Ultra-Compact Sidebar Design:**
+   - Follows the tight side panel layout established in `tempApp.R` (side-by-side flex inputs, inline checkboxes, ~180px height), ensuring the sidebar aligns with the plot height and eliminates empty space.
+
+5. **Serverless Shinylive WebAssembly Deployment (`demos/triangleApp.qmd`):**
+   - Includes standalone implementations of core substrate routines (`tricoord`, `tri2car`, `get_substrate_grid`, `substrate_topology`, `create_substrate`).
+   - Indexed in `demos/index.qmd` (listing grid) and `demos/_quarto.yml` (navbar navigation).
+

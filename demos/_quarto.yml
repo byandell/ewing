@@ -16,6 +16,8 @@ website:
         text: fiveShowApp
       - href: tempApp.qmd
         text: tempApp
+      - href: triangleApp.qmd
+        text: triangleApp
     right:
       - icon: github
         href: https://github.com/byandell/ewing
