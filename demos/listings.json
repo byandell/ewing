@@ -3,7 +3,8 @@
     "listing": "/index.html",
     "items": [
       "/fivePlotApp.html",
-      "/fiveShowApp.html"
+      "/fiveShowApp.html",
+      "/tempApp.html"
     ]
   }
 ]

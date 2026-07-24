@@ -150,3 +150,5 @@
   : summary of Ewing simulation models
 - [`temp.design()`](https://byandell.github.io/ewing/reference/temp.design.md)
   : graphical adjustment of daily high and low temperature
+- [`tempApp()`](https://byandell.github.io/ewing/reference/tempApp.md) :
+  Interactive Daily Temperature Design Explorer App
