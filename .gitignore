@@ -55,4 +55,6 @@ docs
 demos/_extensions/
 demos/.quarto/
 
+.quarto/
+
 

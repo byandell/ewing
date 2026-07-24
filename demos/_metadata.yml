@@ -1,1 +1,5 @@
 engine: knitr
+toc: false
+page-layout: full
+filters:
+  - shinylive
