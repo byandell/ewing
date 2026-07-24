@@ -32,6 +32,6 @@
     "href": "index.html",
     "title": "ewing Demos Gallery",
     "section": "",
-    "text": "This gallery showcases interactive spline tools from the ewing R package, running completely client-side in your browser using serverless WebAssembly.\n\n\n\n\n\n\n\n\n\n\n\n\nfivePlotApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to study single parameter sensitivity of spline curves using five.plot().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\nfiveShowApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to search for 5-parameter adjustments using five.show().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\nNo matching items"
+    "text": "This gallery showcases interactive spline tools from the ewing R package, running completely client-side in your browser using serverless WebAssembly.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nfivePlotApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to study single parameter sensitivity of spline curves using five.plot().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nfiveShowApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to search for 5-parameter adjustments using five.show().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\nNo matching items"
   }
 ]
