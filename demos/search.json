@@ -18,7 +18,21 @@
     "href": "index.html",
     "title": "ewing Demos Gallery",
     "section": "",
-    "text": "This gallery showcases interactive spline tools from the ewing R package, running completely client-side in your browser using serverless WebAssembly.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nfivePlotApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to study single parameter sensitivity of spline curves using five.plot().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nfiveShowApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to search for 5-parameter adjustments using five.show().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\ntempApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to interactively adjust daily high and low temperature splines and observe degree-day accumulation dynamics using temp.design() and…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\nNo matching items"
+    "text": "This gallery showcases interactive spline tools from the ewing R package, running completely client-side in your browser using serverless WebAssembly.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nfivePlotApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to study single parameter sensitivity of spline curves using five.plot().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nfiveShowApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to search for 5-parameter adjustments using five.show().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\ntempApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to interactively adjust daily high and low temperature splines and observe degree-day accumulation dynamics using temp.design() and…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\ntriangleApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to interactively construct, visualize, and inspect tridiagonal substrate spatial networks using substrate_topology() and…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "triangleApp.html",
+    "href": "triangleApp.html",
+    "title": "triangleApp (Shinylive)",
+    "section": "",
+    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can interactively adjust substrate width, step density, toggle plant modules, and inspect spatial grid statistics."
+  },
+  {
+    "objectID": "triangleApp.html#source-code",
+    "href": "triangleApp.html#source-code",
+    "title": "triangleApp (Shinylive)",
+    "section": "Source Code",
+    "text": "Source Code\nView the source code for the app on GitHub."
   },
   {
     "objectID": "fivePlotApp.html",

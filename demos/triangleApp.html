@@ -7,9 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Brian S. Yandell">
-<meta name="description" content="A serverless WebAssembly-powered explorer to interactively adjust daily high and low temperature splines and observe degree-day accumulation dynamics using temp.design() and temp.plot().">
+<meta name="description" content="A serverless WebAssembly-powered explorer to interactively construct, visualize, and inspect tridiagonal substrate spatial networks using substrate_topology() and create_substrate().">
 
-<title>tempApp (Shinylive) – ewing Demos</title>
+<title>triangleApp (Shinylive) – ewing Demos</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -114,11 +114,11 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">fiveShowApp</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="./tempApp.html" aria-current="page"> 
+    <a class="nav-link" href="./tempApp.html"> 
 <span class="menu-text">tempApp</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./triangleApp.html"> 
+    <a class="nav-link active" href="./triangleApp.html" aria-current="page"> 
 <span class="menu-text">triangleApp</span></a>
   </li>  
 </ul>
@@ -145,12 +145,12 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">tempApp (Shinylive)</h1>
+<h1 class="title">triangleApp (Shinylive)</h1>
 </div>
 
 <div>
   <div class="description">
-    A serverless WebAssembly-powered explorer to interactively adjust daily high and low temperature splines and observe degree-day accumulation dynamics using temp.design() and temp.plot().
+    A serverless WebAssembly-powered explorer to interactively construct, visualize, and inspect tridiagonal substrate spatial networks using substrate_topology() and create_substrate().
   </div>
 </div>
 
@@ -174,7 +174,7 @@ ul.task-list li input[type="checkbox"] {
 
 
 <p><a href="./index.html">← Back to Demos Gallery</a></p>
-<p>The live application below is running completely client-side in your browser using serverless <strong>Shinylive</strong> (WebAssembly). You can click directly on the temperature spline plot on the left to move individual high or low temperature knot coordinates.</p>
+<p>The live application below is running completely client-side in your browser using serverless <strong>Shinylive</strong> (WebAssembly). You can interactively adjust substrate width, step density, toggle plant modules, and inspect spatial grid statistics.</p>
 <pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
 #|   shinylive does not work in self-contained HTML documents.
 #|   Please set `embed-resources: false` in your metadata.
@@ -184,253 +184,182 @@ ul.task-list li input[type="checkbox"] {
 
 library(shiny)
 library(bslib)
-library(splines)
+library(ggplot2)
 library(stats)
-library(graphics)
 
-# --- Standalone Temperature Core Functions ---
+# --- Standalone Substrate Core Functions ---
 
-getTemp &lt;- function(community, element, sub) {
-    tempelem &lt;- community$temp[[element]]
-    if (!missing(sub)) tempelem &lt;- tempelem[[sub]]
-    tempelem
+tricoord &lt;- function(a, b = NULL, c = NULL) {
+  if (is.data.frame(a) &amp;&amp; all(c("a", "b", "c") %in% names(a))) {
+    res &lt;- a
+  } else if (is.matrix(a) &amp;&amp; ncol(a) == 3) {
+    res &lt;- as.data.frame(a)
+    names(res) &lt;- c("a", "b", "c")
+  } else if (!is.null(b) &amp;&amp; !is.null(c)) {
+    res &lt;- data.frame(a = a, b = b, c = c)
+  } else if (is.numeric(a) &amp;&amp; length(a) == 3) {
+    res &lt;- data.frame(a = a[1], b = a[2], c = a[3])
+  } else {
+    stop("Invalid tricoord input format")
+  }
+  class(res) &lt;- c("tricoord", "data.frame")
+  res
 }
 
-setTemp &lt;- function(community, element, value) {
-    community$temp[[element]] &lt;- value
-    community
+`+.tricoord` &lt;- function(e1, e2) {
+  if (is.numeric(e2) &amp;&amp; length(e2) == 3) {
+    tricoord(e1$a + e2[1], e1$b + e2[2], e1$c + e2[3])
+  } else if (inherits(e2, "tricoord")) {
+    tricoord(e1$a + e2$a, e1$b + e2$b, e1$c + e2$c)
+  } else {
+    stop("Invalid right hand operand for tricoord addition")
+  }
 }
 
-temp.spline &lt;- function(community, hour, temp, start = 0,
-                        mintemp = getTemp(community, "Min"),
-                        cumulative = TRUE, mult = getTemp(community, "Unit")) {
-    if (is.data.frame(hour) &amp;&amp; missing(temp)) {
-        temp &lt;- hour$temp
-        hour &lt;- hour$hour
-    }
-    low &lt;- temp &lt;= mintemp
-    toolow &lt;- low &amp; c(FALSE, low[-length(low)]) &amp; c(low[-1], FALSE)
-    hour &lt;- hour[!toolow]
-    temp &lt;- temp[!toolow]
-    lh &lt;- length(hour)
-    low &lt;- temp &lt;= mintemp
-    toolow &lt;- low &amp; c(FALSE, !low[-length(low)]) &amp; c(!low[-1], FALSE)
-    if (any(toolow)) {
-        hour &lt;- c(hour, hour[toolow])
-        temp &lt;- c(temp, temp[toolow])
-        temp &lt;- temp[order(hour)]
-        hour &lt;- sort(hour)
-    }
-    low &lt;- temp &lt;= mintemp &amp; c(temp[-1] &gt; mintemp, FALSE)
-    low1 &lt;- c(FALSE, low[-lh])
-    if (any(low)) {
-        hour[low] &lt;- hour[low] + (hour[low1] - hour[low]) * (mintemp - temp[low]) / (temp[low1] - temp[low])
-    }
-    low &lt;- temp &lt;= mintemp &amp; c(FALSE, temp[-lh] &gt; mintemp)
-    low1 &lt;- c(low[-1], FALSE)
-    if (any(low)) {
-        hour[low] &lt;- hour[low] + (hour[low1] - hour[low]) * (mintemp - temp[low]) / (temp[low1] - temp[low])
-    }
-    temp[temp &lt; mintemp] &lt;- mintemp
-    temp &lt;- temp[!duplicated(hour)]
-    hour &lt;- unique(hour)
-    lh &lt;- length(hour) - 1
-    h0 &lt;- 1:lh
-    aa &lt;- (temp[1 + h0] - temp[h0]) / (hour[1 + h0] - hour[h0])
-    aa &lt;- c(aa, aa[lh])
-    bb &lt;- temp - mintemp
-    s &lt;- list(knots = hour, coefficients = cbind(bb, aa, 0, 0))
-    dimnames(s$coefficients) &lt;- list(paste(floor(hour / mult), round(hour %% mult), sep = "."), c("const", "linear", "quad", "cubic"))
-    attr(s, "formula") &lt;- temp ~ hour
-    class(s) &lt;- c("npolySpline", "polySpline", "spline")
-    if (!cumulative) {
-        return(s)
-    }
-    aa &lt;- s$coefficients[, 3] &lt;- s$coefficients[, 2] / 2 / mult / mult
-    lh &lt;- length(aa) - 1
-    h0 &lt;- 1:lh
-    h1 &lt;- 1 + h0
-    hour &lt;- s$knots
-    bb &lt;- s$coefficients[, 2] &lt;- s$coefficients[, 1] / mult
-    cc &lt;- (hour[h1] - hour[h0]) * (bb[h0] + aa[h0] * (hour[h1] - hour[h0]))
-    s$coefficients[, 1] &lt;- start + c(0, cumsum(cc))
-    s
+tri2car &lt;- function(tri, xmult = 2 / (2 + sqrt(3)), ymult = 6 / (3 + 2 * sqrt(3))) {
+  if (inherits(tri, "tricoord")) {
+    x &lt;- (tri$a - tri$b) * xmult
+    y &lt;- - (tri$a + tri$b) * ymult
+  } else {
+    if (!is.matrix(tri)) tri &lt;- as.matrix(tri)
+    x &lt;- (tri[1, ] - tri[2, ]) * xmult
+    y &lt;- - (tri[1, ] + tri[2, ]) * ymult
+  }
+  data.frame(x = x, y = y)
 }
 
-temp.repeat &lt;- function(community, period = range(days)) {
-    lodays &lt;- range(getTemp(community, "Low")$knots)
-    hidays &lt;- range(getTemp(community, "High")$knots)
-    days &lt;- c(max(lodays[1], hidays[1]), min(lodays[2], hidays[2]))
-    lodays &lt;- period[1] &gt;= days[1] &amp; period[1] &lt;= days[2]
-    if (lodays) days[1] &lt;- period[1]
-    hidays &lt;- period[2] &lt;= days[2] &amp; period[2] &gt;= days[1]
-    if (hidays) days[2] &lt;- period[2]
-    if (!(lodays &amp; hidays)) stop("Simulation period outside temperature days")
-    period &lt;- days
-    days &lt;- seq(days[1], days[2])
-    low &lt;- stats::predict(getTemp(community, "Low"), days)$y
-    high &lt;- stats::predict(getTemp(community, "High"), days)$y
-    periods &lt;- c(as.numeric(names(getTemp(community, "Time"))), Inf)
-    temps &lt;- hours &lt;- numeric()
-    period[2] &lt;- period[2] + 1
-    for (i in seq(length(periods) - 1)) {
-        day &lt;- max(period[1], periods[i])
-        this.period &lt;- days &gt;= day &amp; days &lt; min(period[2], periods[i + 1])
-        n &lt;- sum(this.period)
-        if (n) {
-            if (!is.null(getTemp(community, "Time", i))) {
-                time &lt;- getTemp(community, "Time", i)
-                base &lt;- getTemp(community, "Base", i)
-            }
-            h &lt;- length(time)
-            lotemp &lt;- rep(low[this.period], rep(h, n))
-            hitemp &lt;- rep(high[this.period], rep(h, n))
-            temp &lt;- (base - min(base)) / diff(range(base))
-            temps &lt;- c(temps, rep(temp, n) * (hitemp - lotemp) + lotemp)
-            hours &lt;- c(hours, rep(time, n) + rep(getTemp(community, "Unit") * seq(day, day + n - 1), rep(h, n)))
-        }
-    }
-    day &lt;- days == period[2]
-    if (any(day)) {
-        temps &lt;- c(temps, low[day] + temp[1] * (high[day] - getTemp(community, "Low")[day]))
-        hours &lt;- c(hours, getTemp(community, "Unit") * period[2])
-    }
-    data.frame(hour = hours, temp = temps)
+get_substrate_grid &lt;- function(width, step = 1, orientation = "up") {
+  pts &lt;- expand.grid(a = seq(0, width - step, by = step), b = seq(0, width - step, by = step))
+  if (orientation == "up") {
+    pts &lt;- subset(pts, a + b &lt;= width - step)
+    pts$c &lt;- -(pts$a + pts$b)
+  } else {
+    pts &lt;- subset(pts, a + b &lt;= width - step)
+    pts$a &lt;- -pts$a
+    pts$b &lt;- -pts$b
+    pts$c &lt;- -(pts$a + pts$b)
+  }
+  pts
 }
 
-break.backSpline &lt;- function(tmp) {
-    tmpc &lt;- diff(tmp$coefficients[, 1]) == 0
-    tmpk &lt;- cumsum(diff(tmp$knots) * tmpc)
-    tmpk &lt;- c(tmpk, tmpk[length(tmpk)])
-    tmp$knots &lt;- tmp$knots - tmpk
-    tmpc &lt;- c(!tmpc, TRUE)
-    tmp$knots &lt;- tmp$knots[tmpc]
-    tmp$coefficients &lt;- tmp$coefficients[tmpc, ]
-    nb &lt;- dim(tmp$coefficients)
-    tmpn &lt;- tmp$coefficients[, 2] == 0
-    if (any(tmpn)) {
-        tmpn &lt;- seq(tmpn)[tmpn]
-        tmp$coefficients[tmpn, 2:nb[2]] &lt;- (tmp$coefficients[pmin(nb[1], tmpn + 1), 2:nb[2]] + tmp$coefficients[pmax(1, tmpn - 1), 2:nb[2]]) / 2
+substrate_topology &lt;- function(width = 10, step = 1) {
+  W &lt;- width - step
+  list(
+    fr2   = list(offset = c(0, 0, 0), dir = "down"),
+    fr1   = list(offset = c(-W, -W, 2 * W), dir = "up"),
+    fr3   = list(offset = c(-W, 0, W), dir = "up"),
+    fr4   = list(offset = c(0, -W, W), dir = "up"),
+    tw1   = list(offset = c(-W, 0, W), dir = "down"),
+    tw2   = list(offset = c(-2 * W, 0, 2 * W), dir = "up"),
+    lftop = list(offset = c(-2 * W, W, W), dir = "down"),
+    lfbot = list(offset = c(-3 * W, W, 2 * W), dir = "up")
+  )
+}
+
+create_substrate &lt;- function(topology, width = 10, step = 1) {
+  W &lt;- width - step
+  all_points &lt;- data.frame()
+  labels_df &lt;- data.frame()
+  poly_df &lt;- data.frame()
+  
+  for (sub in names(topology)) {
+    cfg &lt;- topology[[sub]]
+    grid &lt;- get_substrate_grid(width, step, cfg$dir)
+    grid_tri &lt;- tricoord(grid$a, grid$b, grid$c) + cfg$offset
+    car_pts &lt;- tri2car(grid_tri)
+    car_pts$substrate &lt;- sub
+    all_points &lt;- rbind(all_points, car_pts)
+    
+    o_a &lt;- cfg$offset[1]; o_b &lt;- cfg$offset[2]; o_c &lt;- cfg$offset[3]
+    if (cfg$dir == "up") {
+      v_top &lt;- c(o_a, o_b, o_c); v_br &lt;- c(o_a + W, o_b, o_c - W); v_bl &lt;- c(o_a, o_b + W, o_c - W)
+      m1 &lt;- (v_top + v_bl) / 2; m2 &lt;- (v_top + v_br) / 2; m3 &lt;- (v_bl + v_br) / 2
+      centroid &lt;- (v_top + v_br + v_bl) / 3
+      p_mat &lt;- cbind(v_top, v_br, v_bl)
+    } else {
+      v_bot &lt;- c(o_a, o_b, o_c); v_tr &lt;- c(o_a, o_b - W, o_c + W); v_tl &lt;- c(o_a - W, o_b, o_c + W)
+      m1 &lt;- (v_bot + v_tr) / 2; m2 &lt;- (v_bot + v_tl) / 2; m3 &lt;- (v_tl + v_tr) / 2
+      centroid &lt;- (v_bot + v_tr + v_tl) / 3
+      p_mat &lt;- cbind(v_bot, v_tr, v_tl)
     }
-    tmpb &lt;- splines::backSpline(tmp)
-    if (any(tmpc)) tmpb$coefficients[, 1] &lt;- tmpb$coefficients[, 1] + tmpk[tmpc]
-    tmpb
+    
+    w_in &lt;- 0.25
+    l1 &lt;- m1 * (1 - w_in) + centroid * w_in
+    l2 &lt;- m2 * (1 - w_in) + centroid * w_in
+    l3 &lt;- m3 * (1 - w_in) + centroid * w_in
+    car_l &lt;- tri2car(cbind(l1, l2, l3))
+    car_l$label &lt;- c("1", "2", "3")
+    car_l$substrate &lt;- sub
+    labels_df &lt;- rbind(labels_df, car_l)
+    
+    car_p &lt;- tri2car(p_mat)
+    car_p$substrate &lt;- sub
+    poly_df &lt;- rbind(poly_df, car_p)
+  }
+  
+  centers &lt;- stats::aggregate(cbind(x, y) ~ substrate, data = all_points, mean)
+  list(points = all_points, labels = labels_df, poly = poly_df, centers = centers, topology = topology)
 }
 
-activeTemp &lt;- function(community, lo.hour = min(getTemp(community, "DegreeDay", "knots")),
-                       hi.hour = max(getTemp(community, "DegreeDay", "knots")), degreeday, messages = FALSE) {
-    unit &lt;- getTemp(community, "Unit")
-    if (missing(hi.hour)) {
-        hi.hour &lt;- if (length(lo.hour) &gt; 1) lo.hour[2] else lo.hour + unit
-    }
-    period &lt;- c(floor(lo.hour[1] / unit), ceiling(hi.hour / unit))
-    if (missing(degreeday)) {
-        degreeday &lt;- if (is.null(getTemp(community, "DegreeDay"))) 0 else stats::predict(getTemp(community, "DegreeDay"), lo.hour[1])$y
-    }
-    if (is.na(degreeday)) degreeday &lt;- 0
-    community &lt;- setTemp(community, "DegreeDay", temp.spline(community, temp.repeat(community, period), start = degreeday))
-    community &lt;- setTemp(community, "Hour", break.backSpline(getTemp(community, "DegreeDay")))
-    community
-}
-
-temp.plot &lt;- function(community, lo.hour = s$knots[1], hi.hour = max(s$knots), length = 201, col = NULL, derivative = FALSE, ..., printit = FALSE) {
-    s &lt;- getTemp(community, "DegreeDay")
-    x &lt;- seq(lo.hour, hi.hour, length = length)
-    x &lt;- unique(sort(c(x, s$knots[s$knots &gt;= lo.hour &amp; s$knots &lt;= hi.hour])))
-    ylab &lt;- "degree-days"
-    if (derivative) {
-        ylab &lt;- "degrees above min"
-        s$coefficients &lt;- s$coefficients[, -1]
-        for (i in seq(2, ncol(s$coefficients))) s$coefficients[, i] &lt;- s$coefficients[, i] * i
-    }
-    y &lt;- stats::predict(s, x)$y
-    graphics::plot(x / getTemp(community, "Unit"), y, type = "l", xlab = "day", ylab = ylab, ...)
-}
-
-# Construct default simulation community object
-init_temp_community &lt;- function() {
-    Unit &lt;- 24
-    Min &lt;- 50
-    Days &lt;- 200
-    tmp &lt;- seq(0, Days, length = 8)
-    tmp0 &lt;- seq(0, 1, length = 8)
-    tmp1 &lt;- 0.25 * (90 - 70)
-    Low &lt;- splines::interpSpline(tmp, 70 * (1 - tmp0) + 75 * tmp0 + sin(pi * 4 * tmp0) * tmp1)
-    High &lt;- splines::interpSpline(tmp, 85 * (1 - tmp0) + 90 * tmp0 + sin(pi * (0.125 + 4 * tmp0)) * tmp1)
-    Time &lt;- list("0" = c(0, 6, 12, 18, 24))
-    Base &lt;- list("0" = c(0, 0.5, 1, 0.5, 0))
-    comm &lt;- list(temp = list(Unit = Unit, Min = Min, Time = Time, Base = Base, Low = Low, High = High, DegreeDay = NULL, Hour = NULL))
-    class(comm) &lt;- "ewing"
-    activeTemp(comm, lo.hour = 0, hi.hour = 24, messages = FALSE)
-}
-
-community_default &lt;- init_temp_community()
-
-get_spline_coords &lt;- function(comm, element = "High") {
-    sp &lt;- getTemp(comm, element)
-    knots &lt;- sp$knots
-    yvals &lt;- stats::predict(sp, knots)$y
-    list(x = knots, y = yvals, spline = sp)
-}
-
-init_high &lt;- get_spline_coords(community_default, "High")
-init_low &lt;- get_spline_coords(community_default, "Low")
-init_min &lt;- 50
+all_modules &lt;- c("fr1", "fr2", "fr3", "fr4", "tw1", "tw2", "lftop", "lfbot")
 
 # --- Shiny Application UI ---
 
 app_theme &lt;- bslib::bs_theme(
-    version = 5,
-    bg = "#ffffff",
-    fg = "#212529",
-    primary = "#1a73e8",
-    secondary = "#7209b7",
-    success = "#2ec4b6"
+  version = 5,
+  bg = "#ffffff",
+  fg = "#212529",
+  primary = "#1a73e8",
+  secondary = "#7209b7",
+  success = "#2ec4b6"
 )
 
 ui &lt;- bslib::page_sidebar(
-    title = "Daily Temperature Design Explorer",
-    theme = app_theme,
-    sidebar = bslib::sidebar(
-        width = 300,
+  title = "Tridiagonal Substrate Network Explorer",
+  theme = app_theme,
+  sidebar = bslib::sidebar(
+    width = 300,
+    shiny::div(
+      style = "font-size: 0.85rem; padding: 5px 0;",
+      shiny::div(
+        style = "display: flex; gap: 8px; align-items: flex-end; margin-bottom: 6px;",
         shiny::div(
-            style = "font-size: 0.85rem; padding: 5px 0;",
-            shiny::div(
-                style = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;",
-                shiny::span("Active Curve:", style = "font-weight: bold; color: #1a73e8;"),
-                shiny::radioButtons(
-                    "active_curve", NULL,
-                    choices = c("High" = "High", "Low" = "Low"),
-                    selected = "High",
-                    inline = TRUE
-                )
-            ),
-            shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
-            shiny::div(
-                style = "margin-bottom: 6px;",
-                shiny::span("Day Knots (X):", style = "font-weight: 600; color: #7209b7; display: block; margin-bottom: 2px;"),
-                shiny::textInput("x_coords", NULL, value = paste(round(init_high$x, 1), collapse = ", "))
-            ),
-            shiny::div(
-                style = "margin-bottom: 6px;",
-                shiny::span("Temperatures °F (Y):", style = "font-weight: 600; color: #7209b7; display: block; margin-bottom: 2px;"),
-                shiny::textInput("y_coords", NULL, value = paste(round(init_high$y, 1), collapse = ", "))
-            ),
-            shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
-            shiny::div(
-                style = "display: flex; gap: 8px; align-items: flex-end; margin-top: 6px;",
-                shiny::div(
-                    style = "flex: 1;",
-                    shiny::span("Min Temp:", style = "font-weight: 600; color: #2ec4b6; display: block; margin-bottom: 2px;"),
-                    shiny::numericInput("min_temp", NULL, value = init_min, min = 0, max = 120, step = 1)
-                ),
-                shiny::actionButton("reset_btn", "Reset", class = "btn-outline-secondary btn-sm", style = "height: 38px; margin-bottom: 0px;")
-            )
+          style = "flex: 1;",
+          shiny::span("Width (Radius):", style = "font-weight: 600; color: #1a73e8; display: block; margin-bottom: 2px;"),
+          shiny::numericInput("width_in", NULL, value = 10, min = 2, max = 30, step = 1)
+        ),
+        shiny::div(
+          style = "flex: 1;",
+          shiny::span("Step Density:", style = "font-weight: 600; color: #1a73e8; display: block; margin-bottom: 2px;"),
+          shiny::numericInput("step_in", NULL, value = 1, min = 0.5, max = 5, step = 0.5)
         )
-    ),
-    shiny::tags$head(
-        shiny::tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&amp;display=swap"),
-        shiny::tags$style(shiny::HTML("
+      ),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::div(
+        style = "margin-bottom: 6px;",
+        shiny::span("Substrate Modules:", style = "font-weight: 600; color: #7209b7; display: block; margin-bottom: 2px;"),
+        shiny::selectizeInput("modules_in", NULL,
+                              choices = all_modules,
+                              selected = all_modules,
+                              multiple = TRUE,
+                              options = list(plugins = list("remove_button")))
+      ),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::div(
+        style = "margin-bottom: 6px;",
+        shiny::span("Display Layers:", style = "font-weight: 600; color: #2ec4b6; display: block; margin-bottom: 2px;"),
+        shiny::checkboxGroupInput("layers_in", NULL,
+                                  choices = c("Boundaries" = "poly", "Dots" = "points", "Labels" = "centers", "Numbers" = "labels"),
+                                  selected = c("poly", "points", "centers", "labels"),
+                                  inline = TRUE)
+      ),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::actionButton("reset_btn", "Reset Defaults", class = "btn-outline-secondary btn-sm w-100 mt-1")
+    )
+  ),
+  shiny::tags$head(
+    shiny::tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&amp;display=swap"),
+    shiny::tags$style(shiny::HTML("
       body { background-color: #f8f9fa; font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
       .card {
         background: #ffffff !important;
@@ -440,222 +369,159 @@ ui &lt;- bslib::page_sidebar(
         margin-bottom: 15px;
       }
       .card-header { font-weight: bold; background: rgba(0, 0, 0, 0.01) !important; }
+      .stat-badge {
+        background: #f1f3f5;
+        padding: 8px 12px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+      }
     "))
-    ),
-    shiny::fluidRow(
-        shiny::column(
-            width = 6,
-            bslib::card(
-                bslib::card_header("Daily High &amp; Low Temperature Splines (Click plot to move nodes)"),
-                bslib::card_body(
-                    shiny::plotOutput("plot_temp", height = "450px", click = "temp_click")
-                )
-            )
-        ),
-        shiny::column(
-            width = 6,
-            bslib::card(
-                bslib::card_header("Degree-Day Dynamics: temp.plot()"),
-                bslib::card_body(
-                    shiny::plotOutput("plot_degreeday", height = "450px")
-                )
-            )
+  ),
+  shiny::fluidRow(
+    shiny::column(
+      width = 8,
+      bslib::card(
+        bslib::card_header("Tridiagonal Substrate Spatial Network Mapping"),
+        bslib::card_body(
+          shiny::plotOutput("plot_substrate", height = "520px")
         )
+      )
     ),
-    shiny::fluidRow(
-        shiny::column(
-            width = 12,
-            bslib::card(
-                bslib::card_header("Instructions"),
-                bslib::card_body(
-                    shiny::HTML("&lt;p style='font-size: 0.9em;'&gt;Select either &lt;em&gt;High Temperature&lt;/em&gt; or &lt;em&gt;Low Temperature&lt;/em&gt; in the sidebar and click anywhere on the left plot to reposition knot coordinates. Degree-day dynamics are recalculated dynamically via &lt;code&gt;activeTemp()&lt;/code&gt;.&lt;/p&gt;")
-                )
-            )
+    shiny::column(
+      width = 4,
+      bslib::card(
+        bslib::card_header("Substrate Grid Statistics &amp; Topology"),
+        bslib::card_body(
+          shiny::uiOutput("summary_stats")
         )
+      )
     )
+  ),
+  shiny::fluidRow(
+    shiny::column(
+      width = 12,
+      bslib::card(
+        bslib::card_header("Instructions"),
+        bslib::card_body(
+          shiny::HTML("&lt;p style='font-size: 0.9em;'&gt;Adjust &lt;em&gt;Width (Radius)&lt;/em&gt; and &lt;em&gt;Step Density&lt;/em&gt; to scale the tridiagonal coordinate system. Use the module selector to filter specific plant components or toggle layer visibility.&lt;/p&gt;")
+        )
+      )
+    )
+  )
 )
 
 # --- Shiny Application Server ---
 
 server &lt;- function(input, output, session) {
-    state &lt;- shiny::reactiveValues(
-        high_x = init_high$x,
-        high_y = init_high$y,
-        low_x = init_low$x,
-        low_y = init_low$y,
-        current_active = "High"
+  shiny::observeEvent(input$reset_btn, {
+    shiny::updateNumericInput(session, "width_in", value = 10)
+    shiny::updateNumericInput(session, "step_in", value = 1)
+    shiny::updateSelectizeInput(session, "modules_in", selected = all_modules)
+    shiny::updateCheckboxGroupInput(session, "layers_in", selected = c("poly", "points", "centers", "labels"))
+  })
+  
+  substrate_data &lt;- shiny::reactive({
+    shiny::req(input$width_in, input$step_in)
+    
+    shiny::validate(
+      shiny::need(input$width_in &gt;= 2, "Width must be at least 2."),
+      shiny::need(input$step_in &gt; 0, "Step must be greater than 0."),
+      shiny::need(input$width_in &gt; input$step_in, "Width must be greater than Step density.")
     )
-
-    sync_text_inputs &lt;- function() {
-        if (state$current_active == "High") {
-            shiny::updateTextInput(session, "x_coords", value = paste(round(state$high_x, 1), collapse = ", "))
-            shiny::updateTextInput(session, "y_coords", value = paste(round(state$high_y, 1), collapse = ", "))
-        } else {
-            shiny::updateTextInput(session, "x_coords", value = paste(round(state$low_x, 1), collapse = ", "))
-            shiny::updateTextInput(session, "y_coords", value = paste(round(state$low_y, 1), collapse = ", "))
-        }
+    
+    tryCatch({
+      topo &lt;- substrate_topology(width = input$width_in, step = input$step_in)
+      create_substrate(topo, width = input$width_in, step = input$step_in)
+    }, error = function(e) {
+      shiny::validate(paste("Error constructing substrate topology:", e$message))
+    })
+  })
+  
+  output$plot_substrate &lt;- shiny::renderPlot({
+    sub_obj &lt;- substrate_data()
+    shiny::req(sub_obj)
+    
+    mods &lt;- input$modules_in
+    layers &lt;- input$layers_in
+    
+    if (!is.null(mods) &amp;&amp; length(mods) &gt; 0) {
+      sub_obj$points  &lt;- sub_obj$points[sub_obj$points$substrate %in% mods, ]
+      sub_obj$poly    &lt;- sub_obj$poly[sub_obj$poly$substrate %in% mods, ]
+      sub_obj$labels  &lt;- sub_obj$labels[sub_obj$labels$substrate %in% mods, ]
+      sub_obj$centers &lt;- sub_obj$centers[sub_obj$centers$substrate %in% mods, ]
+    } else {
+      sub_obj$points  &lt;- sub_obj$points[0, ]
+      sub_obj$poly    &lt;- sub_obj$poly[0, ]
+      sub_obj$labels  &lt;- sub_obj$labels[0, ]
+      sub_obj$centers &lt;- sub_obj$centers[0, ]
     }
-
-    shiny::observeEvent(input$active_curve,
-        {
-            state$current_active &lt;- input$active_curve
-            sync_text_inputs()
-        },
-        ignoreInit = TRUE
-    )
-
-    shiny::observeEvent(input$reset_btn, {
-        state$high_x &lt;- init_high$x
-        state$high_y &lt;- init_high$y
-        state$low_x &lt;- init_low$x
-        state$low_y &lt;- init_low$y
-        shiny::updateNumericInput(session, "min_temp", value = init_min)
-        sync_text_inputs()
-    })
-
-    shiny::observeEvent(input$temp_click, {
-        cx &lt;- input$temp_click$x
-        cy &lt;- input$temp_click$y
-
-        x_curr &lt;- if (state$current_active == "High") state$high_x else state$low_x
-        y_curr &lt;- if (state$current_active == "High") state$high_y else state$low_y
-
-        n &lt;- length(x_curr)
-        if (n &lt; 3) {
-            return()
-        }
-
-        xr &lt;- max(x_curr) - min(x_curr)
-        yr &lt;- max(y_curr) - min(y_curr)
-        if (xr == 0) xr &lt;- 1
-        if (yr == 0) yr &lt;- 1
-
-        dists &lt;- ((x_curr - cx) / xr)^2 + ((y_curr - cy) / yr)^2
-        idx &lt;- which.min(dists)
-
-        min_x &lt;- if (idx == 1) x_curr[1] else x_curr[idx - 1] + 0.01
-        max_x &lt;- if (idx == n) x_curr[n] else x_curr[idx + 1] - 0.01
-        new_x &lt;- max(min_x, min(max_x, cx))
-
-        x_curr[idx] &lt;- new_x
-        y_curr[idx] &lt;- cy
-
-        if (state$current_active == "High") {
-            state$high_x &lt;- x_curr
-            state$high_y &lt;- y_curr
-        } else {
-            state$low_x &lt;- x_curr
-            state$low_y &lt;- y_curr
-        }
-
-        sync_text_inputs()
-    })
-
-    shiny::observeEvent(list(input$x_coords, input$y_coords), {
-        shiny::req(input$x_coords, input$y_coords)
-
-        x_vals &lt;- tryCatch(as.numeric(trimws(strsplit(input$x_coords, ",")[[1]])), error = function(e) NA)
-        y_vals &lt;- tryCatch(as.numeric(trimws(strsplit(input$y_coords, ",")[[1]])), error = function(e) NA)
-
-        if (length(x_vals) &gt;= 3 &amp;&amp; length(x_vals) == length(y_vals) &amp;&amp;
-            !any(is.na(x_vals)) &amp;&amp; !any(is.na(y_vals)) &amp;&amp; all(diff(x_vals) &gt; 0)) {
-            if (state$current_active == "High") {
-                state$high_x &lt;- x_vals
-                state$high_y &lt;- y_vals
-            } else {
-                state$low_x &lt;- x_vals
-                state$low_y &lt;- y_vals
-            }
-        }
-    })
-
-    sim_reactive &lt;- shiny::reactive({
-        shiny::req(input$min_temp)
-
-        shiny::validate(
-            shiny::need(length(state$high_x) == length(state$high_y), "High temp X &amp; Y must have equal length."),
-            shiny::need(length(state$low_x) == length(state$low_y), "Low temp X &amp; Y must have equal length."),
-            shiny::need(length(state$high_x) &gt;= 3, "High temp spline requires at least 3 nodes."),
-            shiny::need(length(state$low_x) &gt;= 3, "Low temp spline requires at least 3 nodes."),
-            shiny::need(all(diff(state$high_x) &gt; 0), "High temp Day knots must be strictly increasing."),
-            shiny::need(all(diff(state$low_x) &gt; 0), "Low temp Day knots must be strictly increasing.")
-        )
-
-        tryCatch(
-            {
-                sp_high &lt;- splines::interpSpline(state$high_x, state$high_y)
-                sp_low &lt;- splines::interpSpline(state$low_x, state$low_y)
-
-                comm &lt;- community_default
-                comm &lt;- setTemp(comm, "High", sp_high)
-                comm &lt;- setTemp(comm, "Low", sp_low)
-                comm &lt;- setTemp(comm, "Min", input$min_temp)
-
-                comm &lt;- activeTemp(comm, messages = FALSE)
-
-                list(community = comm, high_spline = sp_high, low_spline = sp_low)
-            },
-            error = function(e) {
-                shiny::validate(paste("Error constructing temperature splines:", e$message))
-            }
-        )
-    })
-
-    output$plot_temp &lt;- shiny::renderPlot({
-        res &lt;- sim_reactive()
-        shiny::req(res)
-
-        high_sp &lt;- res$high_spline
-        low_sp &lt;- res$low_spline
-
-        x_range &lt;- range(c(state$high_x, state$low_x))
-        pred_x &lt;- seq(x_range[1], x_range[2], length.out = 200)
-
-        pred_high &lt;- stats::predict(high_sp, pred_x)$y
-        pred_low &lt;- stats::predict(low_sp, pred_x)$y
-
-        y_range &lt;- range(c(pred_high, pred_low, state$high_y, state$low_y))
-
-        graphics::par(bg = "white", col.axis = "#495057", col.lab = "#212529", col.main = "#1a73e8", fg = "#cccccc")
-        graphics::plot(pred_x, pred_high,
-            type = "l", col = "#dc3545", lwd = 3,
-            xlim = x_range, ylim = y_range,
-            xlab = "Day", ylab = "Temperature (°F)",
-            main = "Daily High &amp; Low Temperature Splines",
-            panel.first = graphics::grid(col = "#e9ecef", lty = 1)
-        )
-
-        graphics::lines(pred_x, pred_low, col = "#0d6efd", lwd = 3)
-
-        graphics::points(state$high_x, state$high_y, col = "#dc3545", pch = 19, cex = 1.6)
-        graphics::points(state$low_x, state$low_y, col = "#0d6efd", pch = 19, cex = 1.6)
-
-        if (state$current_active == "High") {
-            graphics::points(state$high_x, state$high_y, col = "#7209b7", pch = 1, cex = 2.6, lwd = 2)
-        } else {
-            graphics::points(state$low_x, state$low_y, col = "#7209b7", pch = 1, cex = 2.6, lwd = 2)
-        }
-
-        graphics::legend("topright",
-            legend = c("High Temp", "Low Temp", "Active Knots"),
-            col = c("#dc3545", "#0d6efd", "#7209b7"),
-            lty = c(1, 1, NA), pch = c(19, 19, 1), lwd = c(2, 2, 2), bty = "n"
-        )
-    })
-
-    output$plot_degreeday &lt;- shiny::renderPlot({
-        res &lt;- sim_reactive()
-        shiny::req(res)
-
-        graphics::par(bg = "white", col.axis = "#495057", col.lab = "#212529", col.main = "#2ec4b6", fg = "#cccccc")
-        temp.plot(res$community, main = "Degree-Day Dynamics over Time")
-    })
+    
+    p &lt;- ggplot2::ggplot()
+    if ("poly" %in% layers &amp;&amp; nrow(sub_obj$poly) &gt; 0) {
+      p &lt;- p + ggplot2::geom_polygon(data = sub_obj$poly, ggplot2::aes(x = x, y = y, group = substrate), 
+                                    fill = NA, color = "black", linewidth = 0.7)
+    }
+    if ("points" %in% layers &amp;&amp; nrow(sub_obj$points) &gt; 0) {
+      p &lt;- p + ggplot2::geom_point(data = sub_obj$points, ggplot2::aes(x = x, y = y, color = substrate), size = 1.6)
+    }
+    if ("centers" %in% layers &amp;&amp; nrow(sub_obj$centers) &gt; 0) {
+      p &lt;- p + ggplot2::geom_text(data = sub_obj$centers, ggplot2::aes(x = x, y = y, label = substrate), 
+                                  color = "black", fontface = "bold", size = 4.5)
+    }
+    if ("labels" %in% layers &amp;&amp; nrow(sub_obj$labels) &gt; 0) {
+      p &lt;- p + ggplot2::geom_text(data = sub_obj$labels, ggplot2::aes(x = x, y = y, label = label), 
+                                  color = "darkred", fontface = "bold", size = 3.5)
+    }
+    
+    p + ggplot2::theme_void() + 
+      ggplot2::coord_fixed() + 
+      ggplot2::ggtitle(paste0("Substrate Network Topology (Width = ", input$width_in, ", Step = ", input$step_in, ")"))
+  })
+  
+  output$summary_stats &lt;- shiny::renderUI({
+    sub_obj &lt;- substrate_data()
+    shiny::req(sub_obj)
+    
+    mods &lt;- input$modules_in
+    pts &lt;- if (!is.null(mods)) sub_obj$points[sub_obj$points$substrate %in% mods, ] else sub_obj$points[0, ]
+    
+    total_pts &lt;- nrow(pts)
+    active_mods_count &lt;- if (!is.null(mods)) length(mods) else 0
+    
+    counts &lt;- if (total_pts &gt; 0) table(pts$substrate) else numeric()
+    counts_html &lt;- if (length(counts) &gt; 0) {
+      paste0("&lt;li&gt;&lt;strong&gt;", names(counts), ":&lt;/strong&gt; ", counts, " points&lt;/li&gt;", collapse = "")
+    } else {
+      "&lt;li&gt;&lt;em&gt;No active modules selected&lt;/em&gt;&lt;/li&gt;"
+    }
+    
+    x_bounds &lt;- if (total_pts &gt; 0) paste0(round(range(pts$x), 2), collapse = " to ") else "N/A"
+    y_bounds &lt;- if (total_pts &gt; 0) paste0(round(range(pts$y), 2), collapse = " to ") else "N/A"
+    
+    shiny::HTML(paste0("
+      &lt;div class='stat-badge'&gt;
+        &lt;strong style='color: #1a73e8;'&gt;Active Modules:&lt;/strong&gt; ", active_mods_count, " / ", length(all_modules), "
+      &lt;/div&gt;
+      &lt;div class='stat-badge'&gt;
+        &lt;strong style='color: #7209b7;'&gt;Total Coordinate Dots:&lt;/strong&gt; ", total_pts, "
+      &lt;/div&gt;
+      &lt;div class='stat-badge'&gt;
+        &lt;strong style='color: #2ec4b6;'&gt;X Span:&lt;/strong&gt; ", x_bounds, "&lt;br/&gt;
+        &lt;strong style='color: #2ec4b6;'&gt;Y Span:&lt;/strong&gt; ", y_bounds, "
+      &lt;/div&gt;
+      &lt;hr style='margin: 10px 0; border-top: 1px solid rgba(0,0,0,0.1);'/&gt;
+      &lt;h5 style='font-size: 0.95em; font-weight: bold;'&gt;Points per Substrate:&lt;/h5&gt;
+      &lt;ul style='padding-left: 18px; font-size: 0.85em; line-height: 1.5em;'&gt;
+        ", counts_html, "
+      &lt;/ul&gt;
+    "))
+  })
 }
 
 shiny::shinyApp(ui = ui, server = server)</code></pre>
 <section id="source-code" class="level2">
 <h2 class="anchored" data-anchor-id="source-code">Source Code</h2>
-<p>View the source code for the app on <a href="https://github.com/byandell/ewing/blob/main/R/tempApp.R">GitHub</a>.</p>
+<p>View the source code for the app on <a href="https://github.com/byandell/ewing/blob/main/R/triangleApp.R">GitHub</a>.</p>
 
 
 </section>

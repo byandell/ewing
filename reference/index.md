@@ -152,3 +152,5 @@
   : graphical adjustment of daily high and low temperature
 - [`tempApp()`](https://byandell.github.io/ewing/reference/tempApp.md) :
   Interactive Daily Temperature Design Explorer App
+- [`triangleApp()`](https://byandell.github.io/ewing/reference/triangleApp.md)
+  : Interactive Tridiagonal Substrate Network Explorer App
