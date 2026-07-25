@@ -5,6 +5,7 @@
 
 library(leaflet)
 library(sf)
+library(terra)
 library(ewing)
 
 title <- "Hexagonal Watershed Map"
