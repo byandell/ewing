@@ -13,7 +13,6 @@
 <url><loc>https://byandell.github.io/ewing/index.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/TemperatureBase.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/autoplot.substrate.html</loc></url>
-<url><loc>https://byandell.github.io/ewing/reference/build_base_map.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/create_substrate.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/distPlotApp.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/downloadApp.html</loc></url>
@@ -33,11 +32,11 @@
 <url><loc>https://byandell.github.io/ewing/reference/future.host.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/future.meanvalue.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/futureApp.html</loc></url>
-<url><loc>https://byandell.github.io/ewing/reference/get_huc_from_point.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/get_substrate_grid.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/ggplot_ewing.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/ggplot_ewing_envelope.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/ggplot_ewing_envelopes.html</loc></url>
+<url><loc>https://byandell.github.io/ewing/reference/hexmapApp.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/host.parasite.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/index.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/init.population.html</loc></url>
@@ -45,6 +44,7 @@
 <url><loc>https://byandell.github.io/ewing/reference/initApp.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/initParApp.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/initTemp.html</loc></url>
+<url><loc>https://byandell.github.io/ewing/reference/leaflet.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/leafletApp.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/multApp.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/organism.features.html</loc></url>
@@ -60,5 +60,6 @@
 <url><loc>https://byandell.github.io/ewing/reference/temp.design.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/tempApp.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/triangleApp.html</loc></url>
+<url><loc>https://byandell.github.io/ewing/reference/watershed.html</loc></url>
 </urlset>
 

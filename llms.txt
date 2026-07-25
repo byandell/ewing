@@ -114,8 +114,6 @@ Reference: B Ewing, BS Yandell, JF Barbieri, and RF Luck (2002)
   : temperature data tables for simulation
 - [`autoplot(`*`<substrate>`*`)`](https://byandell.github.io/ewing/reference/autoplot.substrate.md)
   : Plot Visual Substrate Network Layouts
-- [`build_base_map()`](https://byandell.github.io/ewing/reference/build_base_map.md)
-  : Build Interactive Base Map
 - [`create_substrate()`](https://byandell.github.io/ewing/reference/create_substrate.md)
   : Create Substrate Geometric Object
 - [`distPlotApp()`](https://byandell.github.io/ewing/reference/distPlotApp.md)
@@ -180,8 +178,6 @@ Reference: B Ewing, BS Yandell, JF Barbieri, and RF Luck (2002)
   [`futureInput()`](https://byandell.github.io/ewing/reference/futureApp.md)
   [`futureOutput()`](https://byandell.github.io/ewing/reference/futureApp.md)
   : Ewing Future Events App
-- [`get_huc_from_point()`](https://byandell.github.io/ewing/reference/get_huc_from_point.md)
-  : Get HUC12 From Map Click Coordinate
 - [`get_substrate_grid()`](https://byandell.github.io/ewing/reference/get_substrate_grid.md)
   : Generate a Substrate Abstract Grid
 - [`ggplot_ewing()`](https://byandell.github.io/ewing/reference/ggplot_ewing.md)
@@ -193,6 +189,11 @@ Reference: B Ewing, BS Yandell, JF Barbieri, and RF Luck (2002)
   : GGplot of Ewing envelope
 - [`ggplot_ewing_envelopes()`](https://byandell.github.io/ewing/reference/ggplot_ewing_envelopes.md)
   : GGplot of Ewing multiple envelopes
+- [`hexmapInput()`](https://byandell.github.io/ewing/reference/hexmapApp.md)
+  [`hexmapOutput()`](https://byandell.github.io/ewing/reference/hexmapApp.md)
+  [`hexmapServer()`](https://byandell.github.io/ewing/reference/hexmapApp.md)
+  [`hexmapApp()`](https://byandell.github.io/ewing/reference/hexmapApp.md)
+  : Interactive Hexagonal Watershed Mapping UI (Input)
 - [`host.parasite`](https://byandell.github.io/ewing/reference/host.parasite.md)
   [`host.comperiella`](https://byandell.github.io/ewing/reference/host.parasite.md)
   [`host.encarsia`](https://byandell.github.io/ewing/reference/host.parasite.md)
@@ -213,6 +214,10 @@ Reference: B Ewing, BS Yandell, JF Barbieri, and RF Luck (2002)
   : Ewing Initialization App
 - [`initTemp()`](https://byandell.github.io/ewing/reference/initTemp.md)
   : temperature data tables for simulation
+- [`build_base_map()`](https://byandell.github.io/ewing/reference/leaflet.md)
+  [`get_huc_from_point()`](https://byandell.github.io/ewing/reference/leaflet.md)
+  [`add_leaflet_hex_overlay()`](https://byandell.github.io/ewing/reference/leaflet.md)
+  : Interactive Leaflet Geographic Utilities
 - [`leafletInput()`](https://byandell.github.io/ewing/reference/leafletApp.md)
   [`leafletOutput()`](https://byandell.github.io/ewing/reference/leafletApp.md)
   [`leafletServer()`](https://byandell.github.io/ewing/reference/leafletApp.md)
@@ -261,6 +266,11 @@ Reference: B Ewing, BS Yandell, JF Barbieri, and RF Luck (2002)
   Interactive Daily Temperature Design Explorer App
 - [`triangleApp()`](https://byandell.github.io/ewing/reference/triangleApp.md)
   : Interactive Tridiagonal Substrate Network Explorer App
+- [`get_watershed()`](https://byandell.github.io/ewing/reference/watershed.md)
+  [`add_watershed_hex_overlay()`](https://byandell.github.io/ewing/reference/watershed.md)
+  [`autoplot(`*`<watershed_hex_overlay>`*`)`](https://byandell.github.io/ewing/reference/watershed.md)
+  [`discover_watershed_features()`](https://byandell.github.io/ewing/reference/watershed.md)
+  : Watershed Boundary & Hexagonal Substrate Utilities
 
 # Articles
 
