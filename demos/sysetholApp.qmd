@@ -1,0 +1,64 @@
+---
+title: "Systems Ethology Platform"
+description: "The core Systems Ethology platform orchestrating Bland Ewing host-parasite individual-based simulations, age class distributions, degree-day timing, and spatial substrates."
+author: "Brian S. Yandell"
+engine: knitr
+toc: true
+format:
+  html:
+    embed-resources: false
+---
+
+[← Back to Demos Gallery](index.qmd)
+
+The **Systems Ethology Platform** (`ewingApp()`) serves as the central interactive hub for the `ewing` simulation package. Based on `inst/shinyApp/app.R`, it integrates species parameter initialization, event-driven competing risk transitions, substrate interactions, temperature regime Splines, and multi-run confidence envelope estimations.
+
+## Interactive Application Usage
+
+You can launch the full Systems Ethology interactive application natively in R:
+
+```r
+library(ewing)
+
+# Launch central Shiny app
+ewingApp()
+```
+
+> [!NOTE]
+> **Live Deployment:** The full interactive Systems Ethology application is deployed live on [Posit Connect (SystemsEthology)](https://connect.doit.wisc.edu/SystemsEthology).
+
+---
+
+## Workflow Example: Host-Parasite Simulation Run
+
+Below is a demonstration of initializing a simulation community (200 hosts, 100 parasites) and projecting host-parasite interactions across 4,000 discrete event steps using core `ewing` engine functions.
+
+```{r}
+#| message: false
+#| warning: false
+#| fig.width: 9
+#| fig.height: 6
+
+library(ewing)
+library(ggplot2)
+
+# 1. Initialize simulation community (default 200 hosts, 100 parasites)
+mysim <- init.simulation()
+
+# 2. Run simulation engine for 4,000 steps
+simres <- future.events(mysim, nstep = 4000, refresh = 500, plotit = FALSE)
+
+# 3. Visualize age class distributions and spatial substrate allocation
+plot(simres)
+```
+
+---
+
+## Platform Components & Architecture
+
+The platform combines modular Shiny components (`ewingInput`, `ewingOutput`, `ewingServer`) defined in [`R/ewingApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ewingApp.R) and deployed via [`inst/shinyApp/app.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/shinyApp/app.R):
+
+1. **Parameter Initialization (`initParApp`)**: Configure species life stage durations, attack rates, and reproduction probabilities.
+2. **Simulation Engine (`simApp`)**: Execute competing-risk event queues on leftist tree structures.
+3. **Dynamic Visualizations (`distPlotApp`, `substrateApp`, `envPlotApp`)**: Monitor real-time stage distributions, spatial agent positions, and multi-run variance envelopes.
+4. **Spatial & Hexagonal Integration (`hexmapApp`)**: Project abstract substrate coordinates onto real-world USGS watershed geography.

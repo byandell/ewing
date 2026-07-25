@@ -2,6 +2,7 @@
 
 This directory contains crucial architectural notes, tutorials, and development logs for the `ewing` project.
 
+- **[connect.md](connect.md)**: Architectural guide for Quarto demo publishing, comparing GitHub Pages static hosting and Shinylive with Posit Connect live R server deployment.
 - **[dataorg.md](dataorg.md)**: Explains the major data structures, operational baselines, and functional execution loops governing the central simulation network. Includes breakdowns of the core `community` object and mapping arrays.
 - **[futures.md](futures.md)**: An active status report and task tracker detailing ongoing structural development, Shiny app integration pipelines, and AI refactoring timelines.
 - **[leaflet.md](leaflet.md)**: Documentation for interactive geographic feature discovery and mapping utilities using Leaflet and Shiny.

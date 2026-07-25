@@ -1,16 +1,18 @@
 ---
 title: "ewing Demos Gallery"
-subtitle: "Interactive spline parameter and goal calculators running in your browser"
+subtitle: "Interactive spline parameter, spatial projection, and goal calculators"
 engine: knitr
 toc: false
 listing:
   contents:
+    - sysetholApp.qmd
     - fivePlotApp.qmd
     - fiveShowApp.qmd
     - tempApp.qmd
     - triangleApp.qmd
+    - hexmapApp.qmd
   type: grid
   categories: false
 ---
 
-This gallery showcases interactive spline tools from the **ewing** R package, running completely client-side in your browser using serverless WebAssembly.
+This gallery showcases interactive spline tools, spatial projection utilities, and the central Systems Ethology platform from the **ewing** R package.

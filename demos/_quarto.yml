@@ -10,6 +10,8 @@ website:
     left:
       - href: index.qmd
         text: Home
+      - href: sysetholApp.qmd
+        text: sysetholApp
       - href: fivePlotApp.qmd
         text: fivePlotApp
       - href: fiveShowApp.qmd
@@ -18,6 +20,8 @@ website:
         text: tempApp
       - href: triangleApp.qmd
         text: triangleApp
+      - href: hexmapApp.qmd
+        text: hexmapApp
     right:
       - icon: github
         href: https://github.com/byandell/ewing

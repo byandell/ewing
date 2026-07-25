@@ -1,0 +1,61 @@
+---
+title: "hexmapApp (Hexagonal Watershed Explorer)"
+description: "Interactively identify USGS HUC12 subwatershed boundaries using Leaflet, isolate geographic landmass features (e.g., Isle Royale), and overlay spatial hexagonal substrate networks."
+author: "Brian S. Yandell"
+engine: knitr
+toc: true
+format:
+  html:
+    embed-resources: false
+---
+
+[← Back to Demos Gallery](index.qmd)
+
+The **`hexmapApp()`** application provides an interactive interface for discovering USGS subwatersheds, isolating specific geographic features (such as island landmasses), and projecting spatial hexagonal substrate networks for quantitative population ethology simulations.
+
+## Interactive Application Usage
+
+You can launch the interactive application natively in R:
+
+```r
+library(ewing)
+
+# Launch interactive Shiny app
+hexmapApp()
+```
+
+> [!NOTE]
+> **Live Deployment:** The interactive application requires dynamic spatial intersection libraries (`sf`) and live USGS / OpenStreetMap API access. It is deployed live on [Posit Connect (HexMap)](https://connect.doit.wisc.edu/HexMap).
+
+---
+
+## Workflow Example: Isle Royale Watershed Projection
+
+Below is an example showing how `get_watershed()` retrieves the USGS HUC12 subwatershed boundary (`041800000101`), clips it to the **Isle Royale** landmass using OpenStreetMap nominatim geometry, and overlays a spatial hexagonal grid (`add_watershed_hex_overlay`).
+
+```{r}
+#| message: false
+#| warning: false
+#| fig.width: 8
+#| fig.height: 6
+
+library(ewing)
+library(ggplot2)
+
+# 1. Fetch HUC12 boundary and restrict to Isle Royale island landmass
+huc_info <- get_watershed("041800000101", feature_name = "Isle Royale")
+
+# 2. Construct spatial hexagonal overlay mesh (diameter = 0.01 degrees)
+hex_obj <- add_watershed_hex_overlay(huc_info, hex_diameter = 0.01)
+
+# 3. Visualize using autoplot
+ggplot2::autoplot(hex_obj)
+```
+
+---
+
+## Technical Features
+
+1. **Leaflet Spatial Discovery**: Click any location on North America or search landmark strings to reverse-geocode coordinates into USGS HUC12 subwatershed IDs (`get_huc_from_point`).
+2. **Feature Isolation**: Clip large HUC boundaries covering open water to target landmasses (e.g. Isle Royale) using `osmdata::getbb()`.
+3. **Hexagonal Mesh Scaling**: Parameterize cell extent diameter to scale spatial resolution dynamically.
