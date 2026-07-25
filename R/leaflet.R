@@ -1,11 +1,13 @@
-#' Build Interactive Base Map
+#' Interactive Leaflet Geographic Utilities
 #'
-#' Constructs a blank interactive Leaflet mapping canvas optimized for North America
-#' geographic search. It embeds the `leaflet.extras::addSearchOSM()` search bar,
-#' allowing text-based flying capabilities (Option A interaction paradigm).
+#' Helper utilities for building interactive Leaflet base maps with search capabilities,
+#' reverse-geocoding points to USGS HUC12 subwatershed boundaries, and rendering spatial
+#' hexagonal grid overlays.
 #'
-#' @return A `leaflet` HTML widget object
+#' @return `build_base_map`: A `leaflet` HTML widget object.
 #' @export
+#' @name leaflet
+#' @rdname leaflet
 #'
 #' @importFrom leaflet leaflet addTiles setView
 build_base_map <- function() {
@@ -33,17 +35,12 @@ build_base_map <- function() {
   return(map)
 }
 
-#' Get HUC12 From Map Click Coordinate
-#'
-#' Automatically retrieves the underlying USGS HUC12 subwatershed boundary polygon
-#' given an arbitrary Longitude and Latitude pair (usually derived from a user click).
-#' This powers the Option B interaction paradigm.
-#'
 #' @param lng Numeric longitude coordinate
 #' @param lat Numeric latitude coordinate
 #'
-#' @return An `sf` polygon representation of the covering HUC12.
+#' @return `get_huc_from_point`: An `sf` polygon representation of the covering HUC12.
 #' @export
+#' @rdname leaflet
 #'
 #' @importFrom sf st_sfc st_point
 #' @importFrom nhdplusTools get_huc
@@ -64,4 +61,52 @@ get_huc_from_point <- function(lng, lat) {
   })
   
   return(res)
+}
+
+#' @param map A `leaflet` map object or `leafletProxy` handle.
+#' @param hex_obj A `watershed_hex_overlay` S3 object (or a list containing `layer` and `hex_overlay` sf objects).
+#' @param hex_color Stroke color for hexagonal grid cells (default: "#C0392B").
+#' @param bound_color Stroke color for watershed boundary (default: "#2980B9").
+#'
+#' @return `add_leaflet_hex_overlay`: Updated `leaflet` map object.
+#' @export
+#' @rdname leaflet
+#'
+#' @importFrom leaflet addPolygons clearShapes
+#' @importFrom sf st_transform
+add_leaflet_hex_overlay <- function(map, hex_obj, hex_color = "#C0392B", bound_color = "#2980B9") {
+  if (is.null(hex_obj)) return(map)
+  
+  # Ensure geometries are transformed to WGS84 (EPSG 4326) for leaflet
+  bound_sf <- sf::st_transform(hex_obj$layer, 4326)
+  hex_sf <- sf::st_transform(hex_obj$hex_overlay, 4326)
+  
+  # Add watershed boundary polygon
+  map <- map |>
+    leaflet::addPolygons(
+      data = bound_sf,
+      color = bound_color,
+      weight = 2,
+      fillColor = "#3498DB",
+      fillOpacity = 0.15,
+      group = "Watershed Boundary",
+      popup = paste0("<b>HUC12:</b> ", hex_obj$huc_id, 
+                     if (!is.null(hex_obj$feature_name) && hex_obj$feature_name != "") 
+                       paste0("<br/><b>Feature:</b> ", hex_obj$feature_name) else "")
+    )
+  
+  # Add hex grid overlay
+  if (!is.null(hex_sf) && length(hex_sf) > 0) {
+    map <- map |>
+      leaflet::addPolygons(
+        data = hex_sf,
+        color = hex_color,
+        weight = 1,
+        fillColor = hex_color,
+        fillOpacity = 0.05,
+        group = "Hex Overlay"
+      )
+  }
+  
+  return(map)
 }

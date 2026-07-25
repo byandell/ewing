@@ -104,3 +104,27 @@ Two critical reliability structures were implemented to guarantee mapping backen
 
 1. **Topological Fixes**: Because public OpenStreetMap vectors are notoriously ill-formatted (possessing self-intersecting loops that naturally crash intersection logic), the spatial pipeline now securely disables Google's strict spherical geometry engine (`sf::sf_use_s2(FALSE)`) and patches incoming structural bounds natively via `sf::st_make_valid()` prior to topological rendering.
 2. **Reactive API Caching**: The Shiny UI was decoupled to drastically reduce network payloads to the USGS grid. By formally adapting `get_watershed()` to intercept pre-fetched shapes, we extracted `nhdplusTools::get_huc()` into a dedicated generic `base_huc` reactive. Now, modifying the overlay feature name simply pulls the identical map topographical foundation from internal memory rather than executing sequential 5-second internet fetches!
+
+### 6. Interactive Hexagonal Watershed App (`R/hexmapApp.R`)
+
+Combining `inst/scripts/watershed_overlay.R` with `R/leafletApp.R`, we developed `R/hexmapApp.R` using **Shiny Module Composition** to provide a unified pipeline connecting interactive Leaflet feature discovery with HUC12 boundary lookup, feature area restriction clipping, and hexagonal substrate grid overlays.
+
+#### Key Features & Architecture
+
+1. **Modular Shiny Composition**:
+   - Rather than duplicating map handling, `hexmapApp.R` composes the `leafletInput()`, `leafletOutput()`, and `leafletServer()` modules from `R/leafletApp.R`.
+   - `leafletServer()` returns a reactive list (`huc`, `status`, `click`), allowing `hexmapServer()` to seamlessly receive the user's clicked watershed boundary.
+
+2. **Feature Isolation & Polygon Clipping**:
+   - For HUCs containing extensive open water or surrounding land (e.g., Isle Royale HUC `041800000101`), `get_watershed(huc_id, feature_name)` uses `osmdata::getbb(feature_name)` to download the feature boundary (e.g. island polygon) and intersects it (`st_intersection`) with the HUC12 boundary.
+   - Only the restricted geographic feature geometry is retained for hexagonal substrate generation.
+
+3. **Hexagonal Mesh Generation & Multi-View Rendering**:
+   - Calculates spatial hexagonal grid via `add_watershed_hex_overlay(huc_info, hex_diameter)`.
+   - Renders interactive vector polygons dynamically on the Leaflet map canvas via `leafletProxy` and `add_leaflet_hex_overlay()`.
+   - Simultaneously renders static `ggplot2` autoplots via `autoplot.watershed_hex_overlay()`.
+
+4. **Modular Package Export**:
+   - Exported as `hexmapApp()`, with modular functions `hexmapInput()`, `hexmapOutput()`, and `hexmapServer()`.
+
+

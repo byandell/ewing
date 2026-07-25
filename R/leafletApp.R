@@ -27,7 +27,12 @@ leafletOutput <- function(id) {
 
 #' Interactive Leaflet Mapping Server Logic
 #'
+#' Server logic for interactive Leaflet discovery. Returns a list of reactives
+#' (`huc`, `status`, `click`) enabling Shiny module composition.
+#'
 #' @param id Module ID
+#' @return A list of reactive objects: `huc` (reactiveVal holding discovered `sf` HUC polygon),
+#'   `status` (reactiveVal holding HTML status message), and `click` (reactive holding map click details).
 #' @export
 #' @importFrom leaflet renderLeaflet leafletProxy addPolygons clearShapes
 #' @rdname leafletApp
@@ -86,6 +91,13 @@ leafletServer <- function(id) {
         }
       })
     })
+    
+    # Return reactives for parent Shiny modules (module composition)
+    return(list(
+      huc = huc_boundary,
+      status = status_msg,
+      click = shiny::reactive(input$mapper_click)
+    ))
   })
 }
 

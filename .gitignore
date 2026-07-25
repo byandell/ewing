@@ -56,5 +56,4 @@ demos/_extensions/
 demos/.quarto/
 
 .quarto/
-
-
+inst/scripts/*.png

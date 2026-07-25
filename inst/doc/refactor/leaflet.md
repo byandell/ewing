@@ -76,3 +76,7 @@ Using our standardized modular paradigm, we constructed `leafletApp()` across 4 
 #### Summary
 
 Users are now fully equipped to discover subwatersheds entirely decoupled from string dictionaries! They can launch `leafletApp()`, search for a landmark on the provided widget, click the physical body of water on the map, and instantly extract the underlying USGS HUC12 mapping configurations required for the `ewing` ecosystem simulations locally.
+
+Furthermore, `leafletServer()` returns a reactive list (`huc`, `status`, `click`), making it an adaptable spatial selector module. `hexmapApp()` (`R/hexmapApp.R`) composes `leafletInput` / `leafletOutput` / `leafletServer` directly, coupling map discovery with `add_watershed_hex_overlay()`, feature area restriction (e.g. "Isle Royale"), and dynamic Leaflet/ggplot hexagonal substrate rendering without duplicating code.
+
+
