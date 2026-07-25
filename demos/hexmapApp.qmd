@@ -31,7 +31,7 @@ hexmapApp()
 
 ## Workflow Example: Isle Royale Watershed Projection
 
-Below is an example showing how `get_watershed()` retrieves the USGS HUC12 subwatershed boundary (`041800000101`), clips it to the **Isle Royale** landmass using OpenStreetMap nominatim geometry, and overlays a spatial hexagonal grid (`add_watershed_hex_overlay`).
+Below is an example showing how `get_watershed()` retrieves the USGS HUC12 subwatershed boundary (`041800000101`), clips it to the **Isle Royale** landmass using OpenStreetMap nominatim geometry (when `osmdata` is available), and overlays a spatial hexagonal grid (`add_watershed_hex_overlay`).
 
 ```{r}
 #| message: false
@@ -42,8 +42,11 @@ Below is an example showing how `get_watershed()` retrieves the USGS HUC12 subwa
 library(ewing)
 library(ggplot2)
 
-# 1. Fetch HUC12 boundary and restrict to Isle Royale island landmass
-huc_info <- get_watershed("041800000101", feature_name = "Isle Royale")
+# Check if osmdata is installed for feature boundary restriction
+feat_name <- if (requireNamespace("osmdata", quietly = TRUE)) "Isle Royale" else NULL
+
+# 1. Fetch HUC12 boundary (optionally restricted to Isle Royale island landmass)
+huc_info <- get_watershed("041800000101", feature_name = feat_name)
 
 # 2. Construct spatial hexagonal overlay mesh (diameter = 0.01 degrees)
 hex_obj <- add_watershed_hex_overlay(huc_info, hex_diameter = 0.01)
