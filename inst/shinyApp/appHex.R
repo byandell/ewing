@@ -4,6 +4,7 @@
 # renv::record("byandell/ewing")
 
 library(leaflet)
+library(sf)
 library(ewing)
 
 title <- "Hexagonal Watershed Map"
