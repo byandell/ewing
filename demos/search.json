@@ -14,23 +14,16 @@
     "text": "Source Code\nView the source code for the app on GitHub."
   },
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "ewing Demos Gallery",
+    "objectID": "fiveShowApp.html",
+    "href": "fiveShowApp.html",
+    "title": "fiveShowApp (Shinylive)",
     "section": "",
-    "text": "This gallery showcases interactive spline tools from the ewing R package, running completely client-side in your browser using serverless WebAssembly.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nfivePlotApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to study single parameter sensitivity of spline curves using five.plot().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nfiveShowApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to search for 5-parameter adjustments using five.show().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\ntempApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to interactively adjust daily high and low temperature splines and observe degree-day accumulation dynamics using temp.design() and…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\ntriangleApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to interactively construct, visualize, and inspect tridiagonal substrate spatial networks using substrate_topology() and…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\nNo matching items"
+    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can click directly on the baseline spline plot on the left to move individual nodes, and adjust the target relative mean slider on the right to trigger the binary search."
   },
   {
-    "objectID": "triangleApp.html",
-    "href": "triangleApp.html",
-    "title": "triangleApp (Shinylive)",
-    "section": "",
-    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can interactively adjust substrate width, step density, toggle plant modules, and inspect spatial grid statistics."
-  },
-  {
-    "objectID": "triangleApp.html#source-code",
-    "href": "triangleApp.html#source-code",
-    "title": "triangleApp (Shinylive)",
+    "objectID": "fiveShowApp.html#source-code",
+    "href": "fiveShowApp.html#source-code",
+    "title": "fiveShowApp (Shinylive)",
     "section": "Source Code",
     "text": "Source Code\nView the source code for the app on GitHub."
   },
@@ -49,17 +42,80 @@
     "text": "Source Code\nView the source code for the app on GitHub."
   },
   {
-    "objectID": "fiveShowApp.html",
-    "href": "fiveShowApp.html",
-    "title": "fiveShowApp (Shinylive)",
+    "objectID": "sysetholApp.html",
+    "href": "sysetholApp.html",
+    "title": "Systems Ethology Platform",
     "section": "",
-    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can click directly on the baseline spline plot on the left to move individual nodes, and adjust the target relative mean slider on the right to trigger the binary search."
+    "text": "← Back to Demos Gallery\nThe Systems Ethology Platform (ewingApp()) serves as the central interactive hub for the ewing simulation package. Based on inst/shinyApp/app.R, it integrates species parameter initialization, event-driven competing risk transitions, substrate interactions, temperature regime Splines, and multi-run confidence envelope estimations."
   },
   {
-    "objectID": "fiveShowApp.html#source-code",
-    "href": "fiveShowApp.html#source-code",
-    "title": "fiveShowApp (Shinylive)",
+    "objectID": "sysetholApp.html#interactive-application-usage",
+    "href": "sysetholApp.html#interactive-application-usage",
+    "title": "Systems Ethology Platform",
+    "section": "Interactive Application Usage",
+    "text": "Interactive Application Usage\nYou can launch the full Systems Ethology interactive application natively in R:\nlibrary(ewing)\n\n# Launch central Shiny app\newingApp()\n\n[!NOTE] Live Deployment: The full interactive Systems Ethology application is deployed live on Posit Connect (SystemsEthology)."
+  },
+  {
+    "objectID": "sysetholApp.html#workflow-example-host-parasite-simulation-run",
+    "href": "sysetholApp.html#workflow-example-host-parasite-simulation-run",
+    "title": "Systems Ethology Platform",
+    "section": "Workflow Example: Host-Parasite Simulation Run",
+    "text": "Workflow Example: Host-Parasite Simulation Run\nBelow is a demonstration of initializing a simulation community (200 hosts, 100 parasites) and projecting host-parasite interactions across 4,000 discrete event steps using core ewing engine functions.\n\nlibrary(ewing)\nlibrary(ggplot2)\n\n# 1. Initialize simulation community (default 200 hosts, 100 parasites)\nmysim &lt;- init.simulation()\n\nData organism.features already loaded\nInitializing Temperature Profile ...\nData temperature.par already loaded\nData temperature.base already loaded\nBase daily temperature fluctuation:\nTemperature set for days 0 to 202 \nDaily low temperature range: 68 to 77 \nDaily high temperature range: 83 to 92 \nRun temp.design() to adjust temperature range\nInitial active temperature:\nlo.hour hi.hour \n      0      24 \nCreating simulation organism set using species:\n host, parasite \n\nData future.host already loaded\nData substrate.host already loaded\nData future.parasite already loaded\nData host.parasite already loaded\nData substrate.parasite already loaded\nData substrate.substrate already loaded\n\nInitialize host at size 200...\nInitializing events for host with 200 individuals\nInitialize parasite at size 200...\nInitializing events for parasite with 200 individuals\n\n# 2. Run simulation engine for 4,000 steps\nsimres &lt;- future.events(mysim, nstep = 4000, refresh = 500, plotit = FALSE)\n\ninitial: host 200: parasite 200\nlo.hour hi.hour \n      0      48 \nrefresh 500: host 280: parasite 200\nrefresh 1000: host 332: parasite 200\nrefresh 1500: host 438: parasite 200\nrefresh 2000: host 435: parasite 200\nrefresh 2500: host 435: parasite 200\nrefresh 3000: host 435: parasite 200\nrefresh 3500: host 435: parasite 200\nrefresh 4000: host 435: parasite 200\n\n# 3. Visualize age class distributions and spatial substrate allocation\nplot(simres)"
+  },
+  {
+    "objectID": "sysetholApp.html#platform-components-architecture",
+    "href": "sysetholApp.html#platform-components-architecture",
+    "title": "Systems Ethology Platform",
+    "section": "Platform Components & Architecture",
+    "text": "Platform Components & Architecture\nThe platform combines modular Shiny components (ewingInput, ewingOutput, ewingServer) defined in R/ewingApp.R and deployed via inst/shinyApp/app.R:\n\nParameter Initialization (initParApp): Configure species life stage durations, attack rates, and reproduction probabilities.\nSimulation Engine (simApp): Execute competing-risk event queues on leftist tree structures.\nDynamic Visualizations (distPlotApp, substrateApp, envPlotApp): Monitor real-time stage distributions, spatial agent positions, and multi-run variance envelopes.\nSpatial & Hexagonal Integration (hexmapApp): Project abstract substrate coordinates onto real-world USGS watershed geography."
+  },
+  {
+    "objectID": "triangleApp.html",
+    "href": "triangleApp.html",
+    "title": "triangleApp (Shinylive)",
+    "section": "",
+    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can interactively adjust substrate width, step density, toggle plant modules, and inspect spatial grid statistics."
+  },
+  {
+    "objectID": "triangleApp.html#source-code",
+    "href": "triangleApp.html#source-code",
+    "title": "triangleApp (Shinylive)",
     "section": "Source Code",
     "text": "Source Code\nView the source code for the app on GitHub."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "ewing Demos Gallery",
+    "section": "",
+    "text": "This gallery showcases interactive spline tools, spatial projection utilities, and the central Systems Ethology platform from the ewing R package.\n\n\n\n\n\n\n\n\n\n\n\n\nSystems Ethology Platform\n\n\nThe core Systems Ethology platform orchestrating Bland Ewing host-parasite individual-based simulations, age class distributions, degree-day timing, and spatial substrates.\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nfivePlotApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to study single parameter sensitivity of spline curves using five.plot().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nfiveShowApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to search for 5-parameter adjustments using five.show().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\nhexmapApp (Hexagonal Watershed Explorer)\n\n\nInteractively identify USGS HUC12 subwatershed boundaries using Leaflet, isolate geographic landmass features (e.g., Isle Royale), and overlay spatial hexagonal substrate…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\ntempApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to interactively adjust daily high and low temperature splines and observe degree-day accumulation dynamics using temp.design() and…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\ntriangleApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to interactively construct, visualize, and inspect tridiagonal substrate spatial networks using substrate_topology() and…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "hexmapApp.html",
+    "href": "hexmapApp.html",
+    "title": "hexmapApp (Hexagonal Watershed Explorer)",
+    "section": "",
+    "text": "← Back to Demos Gallery\nThe hexmapApp() application provides an interactive interface for discovering USGS subwatersheds, isolating specific geographic features (such as island landmasses), and projecting spatial hexagonal substrate networks for quantitative population ethology simulations."
+  },
+  {
+    "objectID": "hexmapApp.html#interactive-application-usage",
+    "href": "hexmapApp.html#interactive-application-usage",
+    "title": "hexmapApp (Hexagonal Watershed Explorer)",
+    "section": "Interactive Application Usage",
+    "text": "Interactive Application Usage\nYou can launch the interactive application natively in R:\nlibrary(ewing)\n\n# Launch interactive Shiny app\nhexmapApp()\n\n[!NOTE] Live Deployment: The interactive application requires dynamic spatial intersection libraries (sf) and live USGS / OpenStreetMap API access. It is deployed live on Posit Connect (HexMap)."
+  },
+  {
+    "objectID": "hexmapApp.html#workflow-example-isle-royale-watershed-projection",
+    "href": "hexmapApp.html#workflow-example-isle-royale-watershed-projection",
+    "title": "hexmapApp (Hexagonal Watershed Explorer)",
+    "section": "Workflow Example: Isle Royale Watershed Projection",
+    "text": "Workflow Example: Isle Royale Watershed Projection\nBelow is an example showing how get_watershed() retrieves the USGS HUC12 subwatershed boundary (041800000101), clips it to the Isle Royale landmass using OpenStreetMap nominatim geometry (when osmdata is available), and overlays a spatial hexagonal grid (add_watershed_hex_overlay).\n\nlibrary(ewing)\nlibrary(ggplot2)\n\n# Check if osmdata is installed for feature boundary restriction\nfeat_name &lt;- if (requireNamespace(\"osmdata\", quietly = TRUE)) \"Isle Royale\" else NULL\n\n# 1. Fetch HUC12 boundary (optionally restricted to Isle Royale island landmass)\nhuc_info &lt;- get_watershed(\"041800000101\", feature_name = feat_name)\n\n# 2. Construct spatial hexagonal overlay mesh (diameter = 0.01 degrees)\nhex_obj &lt;- add_watershed_hex_overlay(huc_info, hex_diameter = 0.01)\n\n# 3. Visualize using autoplot\nggplot2::autoplot(hex_obj)"
+  },
+  {
+    "objectID": "hexmapApp.html#technical-features",
+    "href": "hexmapApp.html#technical-features",
+    "title": "hexmapApp (Hexagonal Watershed Explorer)",
+    "section": "Technical Features",
+    "text": "Technical Features\n\nLeaflet Spatial Discovery: Click any location on North America or search landmark strings to reverse-geocode coordinates into USGS HUC12 subwatershed IDs (get_huc_from_point).\nFeature Isolation: Clip large HUC boundaries covering open water to target landmasses (e.g. Isle Royale) using osmdata::getbb().\nHexagonal Mesh Scaling: Parameterize cell extent diameter to scale spatial resolution dynamically."
   }
 ]
