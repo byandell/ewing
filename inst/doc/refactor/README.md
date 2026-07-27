@@ -5,7 +5,7 @@ This directory contains crucial architectural notes, tutorials, design logs, and
 - **[connect.md](connect.md)**: Architectural guide for Quarto demo publishing, comparing GitHub Pages static hosting and Shinylive WebAssembly with Posit Connect live R server deployment.
 - **[dataorg.md](dataorg.md)**: Explains major data structures, operational baselines, and functional execution loops governing the central simulation network. Includes breakdowns of the core `community` object and mapping arrays.
 - **[futures.md](futures.md)**: An active status report and task tracker detailing ongoing structural development, Shiny app integration pipelines, and AI refactoring timelines.
-- **[hexmove.md](hexmove.md)**: Details organism movement on hexagonal substrate grid overlays (`hexmoveApp`), per-substrate unit triangle coordinate rescaling ($[0, W_{sub\_S}]$), 6-sided polygon tile overlay generation (`create_hex_overlay`), multi-species overlay vs separate stacked maps, and interactive simulation stepping.
+- **[hexmove.md](hexmove.md)**: Details organism movement on hexagonal substrate grid overlays (`hexmoveApp`), per-substrate unit triangle coordinate rescaling ($[0, W_{sub\_S}]$), 6-sided polygon tile overlay generation (`create_hex_overlay`), multi-species overlay vs separate adjacent maps, and interactive simulation stepping.
 - **[leaflet.md](leaflet.md)**: Interactive geographic feature search and watershed discovery utilities (`leafletApp`, `hexmapApp`, `build_base_map`, `get_huc_from_point`, `add_watershed_hex_overlay`).
 - **[notes.md](notes.md)**: Architectural notes and development scratchpads on simulation design and package restructuring.
 - **[prompts.md](prompts.md)**: A collection of prompt inputs and contexts used to steer AI tooling behavior.

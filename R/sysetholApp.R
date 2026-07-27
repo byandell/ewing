@@ -107,7 +107,7 @@ sysetholInput <- function(id) {
                                 choices = c("Host" = "host", "Parasite" = "parasite"),
                                 selected = c("host", "parasite"), inline = TRUE),
       shiny::radioButtons(ns("species_mode"), "Species Mode:",
-                          choices = c("Overlay (1 Map)" = "overlay", "Separate (Stacked Maps)" = "separate"),
+                          choices = c("Overlay (1 Map)" = "overlay", "Separate (Adjacent Maps)" = "separate"),
                           selected = "overlay", inline = TRUE)
     )
   )
@@ -225,8 +225,10 @@ sysetholServer <- function(id) {
       mode_val <- input$species_mode %||% "overlay"
       
       # Extract single simulation object if discrete
-      sim_single <- if (inherits(sim, "ewing_discrete")) sim[[1]] else sim
-      if (!inherits(sim_single, "ewing")) return(list())
+      sim_single <- if (inherits(sim, "ewing_discrete")) {
+        if (is.list(sim) && length(sim) > 0 && inherits(sim[[1]], "ewing")) sim[[1]] else NULL
+      } else sim
+      if (is.null(sim_single) || !inherits(sim_single, "ewing")) return(list())
       
       if (mode_val == "overlay") {
         sub_data <- ewing_substrate(sim_single, spp, layout = "hex", width = 10, step_density = 1)
@@ -243,7 +245,7 @@ sysetholServer <- function(id) {
     output$sppPlot <- shiny::renderPlot({
       plots <- sppplot()
       if (!is.null(plots) && length(plots) > 0) {
-        cowplot::plot_grid(plotlist = plots, nrow = length(plots), align = "v")
+        cowplot::plot_grid(plotlist = plots, ncol = length(plots), align = "h")
       } else {
         ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No species selected to plot")
       }
@@ -251,8 +253,7 @@ sysetholServer <- function(id) {
     
     output$substrate_ui <- shiny::renderUI({
       plots <- sppplot()
-      n_plots <- if (!is.null(plots)) max(1, length(plots)) else 1
-      h_in <- 4.5 * n_plots
+      h_in <- 5.0
       shiny::plotOutput(ns("sppPlot"), height = paste0(h_in, "in"))
     })
     

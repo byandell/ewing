@@ -75,7 +75,7 @@ This guarantees that all organisms on substrate $S$ are displayed strictly insid
 
 2. **Multi-Species View Modes**:
    - **`Overlay (1 Map)`**: Renders all selected species (hosts AND parasites) simultaneously on a single unified hexagonal substrate map. Host stage symbols (`0`, `1`, `2`, `3`...) and parasite stage symbols (`E`, `L`, `P`, `p`...) sit together on the same hexagonal grid layout, allowing direct visualization of spatial host-parasite overlaps.
-   - **`Separate (Adjacent Maps)`**: Renders each selected species on its own distinct hexagonal grid map, stacked one above the other (`cowplot::plot_grid(nrow = length(species))`).
+   - **`Separate (Adjacent Maps)`**: Renders each selected species on its own distinct hexagonal grid map side-by-side (`cowplot::plot_grid(ncol = length(species), align = "h")`).
 
 ---
 

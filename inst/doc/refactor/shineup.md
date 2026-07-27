@@ -221,7 +221,7 @@ To create a clean, modern user experience, controls in `sysetholInput` are condi
 - Inline **`Species to Display`** checkboxes (`Host`, `Parasite`).
 - Inline **`Species Mode`** radio buttons:
   - **`Overlay (1 Map)`**: Draws hosts and parasites simultaneously on a single hexagonal substrate map to reveal spatial parasitism overlaps.
-  - **`Separate (Stacked Maps)`**: Displays host and parasite maps on separate hex grids stacked vertically (`cowplot::plot_grid(nrow = length(spp), align = "v")`) with 2pt tight margins to eliminate excess whitespace.
+  - **`Separate (Adjacent Maps)`**: Displays host and parasite maps on separate hex grids side-by-side (`cowplot::plot_grid(ncol = length(spp), align = "h")`) with a 5.0in fixed height to eliminate excess whitespace and tall vertical scrolling.
 
 ### Composition of `ewingApp.R` from `sysetholApp.R`
 

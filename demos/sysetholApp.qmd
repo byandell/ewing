@@ -268,6 +268,7 @@ make_sim_community <- function(nhost = 200, nparasite = 200) {
   )
 
   sim <- record_history(sim)
+  class(sim) <- c("ewing", "list")
   sim
 }
 
@@ -314,8 +315,9 @@ future.events <- function(sim, nstep = 50, ...) {
 }
 
 ewing_discrete <- function(nsim = 10, nstep = 1000, count = c(200, 100), ...) {
-  res <- step_sim_community(make_sim_community(count[1], count[2]), nstep)
-  class(res) <- c("ewing_discrete", class(res))
+  s1 <- step_sim_community(make_sim_community(count[1], count[2]), nstep)
+  res <- list(s1)
+  class(res) <- c("ewing_discrete", "list")
   res
 }
 

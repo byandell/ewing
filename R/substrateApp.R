@@ -148,9 +148,10 @@ substrateServer <- function(id, simres, width = 10, step_density = 1) {
       sd_val <- if (!is.null(input$step_density)) input$step_density else step_density
       layers_val <- if (!is.null(input$layers)) input$layers else c("poly", "hex", "organisms", "centers", "labels")
       
-      if (inherits(sim, "ewing")) {
+      sim_single <- if (inherits(sim, "ewing_discrete") && is.list(sim) && length(sim) > 0) sim[[1]] else sim
+      if (inherits(sim_single, "ewing")) {
         if (mode_val == "overlay" && layout_val == "hex") {
-          sub_data <- ewing_substrate(sim, spp, layout = layout_val, width = w_val, step_density = sd_val)
+          sub_data <- ewing_substrate(sim_single, spp, layout = layout_val, width = w_val, step_density = sd_val)
           if (!is.null(sub_data)) {
             p_obj <- ggplot_ewing_substrate(sub_data, layout = layout_val, width = w_val, step_density = sd_val, layers = layers_val)
             list(p_obj)
@@ -159,7 +160,7 @@ substrateServer <- function(id, simres, width = 10, step_density = 1) {
           }
         } else {
           p <- lapply(spp, function(x) {
-            sub_data <- ewing_substrate(sim, x, layout = layout_val, width = w_val, step_density = sd_val)
+            sub_data <- ewing_substrate(sim_single, x, layout = layout_val, width = w_val, step_density = sd_val)
             if (!is.null(sub_data)) {
               p_obj <- ggplot_ewing_substrate(sub_data, layout = layout_val, width = w_val, step_density = sd_val, layers = layers_val)
               p_obj
@@ -177,7 +178,7 @@ substrateServer <- function(id, simres, width = 10, step_density = 1) {
     output$sppPlot <- shiny::renderPlot({
       plots <- sppplot()
       if (!is.null(plots) && length(plots) > 0) {
-        cowplot::plot_grid(plotlist = plots, nrow = length(plots), align = "v")
+        cowplot::plot_grid(plotlist = plots, ncol = length(plots), align = "h")
       } else {
         ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No active species selected to plot")
       }
@@ -185,8 +186,7 @@ substrateServer <- function(id, simres, width = 10, step_density = 1) {
     
     output$substrate_plot <- shiny::renderUI({
       plots <- sppplot()
-      n_plots <- if (!is.null(plots)) max(1, length(plots)) else 1
-      h_in <- 4.5 * n_plots
+      h_in <- 5.0
       shiny::plotOutput(ns("sppPlot"), height = paste0(h_in, "in"))
     })
     
