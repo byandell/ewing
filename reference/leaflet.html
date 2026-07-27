@@ -61,6 +61,8 @@ hexagonal grid overlays.</p>
 <span></span>
 <span><span class="fu">get_huc_from_point</span><span class="op">(</span><span class="va">lng</span>, <span class="va">lat</span><span class="op">)</span></span>
 <span></span>
+<span><span class="fu">get_hucs_from_polygon</span><span class="op">(</span><span class="va">polygon_sf</span>, max_hucs <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span></span>
 <span><span class="fu">add_leaflet_hex_overlay</span><span class="op">(</span></span>
 <span>  <span class="va">map</span>,</span>
 <span>  <span class="va">hex_obj</span>,</span>
@@ -79,6 +81,14 @@ hexagonal grid overlays.</p>
 
 <dt id="arg-lat">lat<a class="anchor" aria-label="anchor" href="#arg-lat"></a></dt>
 <dd><p>Numeric latitude coordinate</p></dd>
+
+
+<dt id="arg-polygon-sf">polygon_sf<a class="anchor" aria-label="anchor" href="#arg-polygon-sf"></a></dt>
+<dd><p>An `sf` or `sfc` polygon object representing a drawn rubberband region.</p></dd>
+
+
+<dt id="arg-max-hucs">max_hucs<a class="anchor" aria-label="anchor" href="#arg-max-hucs"></a></dt>
+<dd><p>Maximum number of subwatersheds before scaling up to broader HUC levels (default: 10).</p></dd>
 
 
 <dt id="arg-map">map<a class="anchor" aria-label="anchor" href="#arg-map"></a></dt>
@@ -101,6 +111,7 @@ hexagonal grid overlays.</p>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>`build_base_map`: A `leaflet` HTML widget object.</p>
 <p>`get_huc_from_point`: An `sf` polygon representation of the covering HUC12.</p>
+<p>`get_hucs_from_polygon`: An `sf` data frame of overlapping HUC subwatersheds (auto-scaled to HUC12, HUC10, or HUC8).</p>
 <p>`add_leaflet_hex_overlay`: Updated `leaflet` map object.</p>
     </div>
 
