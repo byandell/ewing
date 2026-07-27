@@ -46,21 +46,21 @@
     "href": "sysetholApp.html",
     "title": "sysetholApp (Systems Ethology Platform)",
     "section": "",
-    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can interactively configure species populations, run simulation event queues, inspect age-class stage distributions, and map spatial organism positions on hexagonal substrate overlays."
+    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). It provides a streamlined Systems Ethology platform (sysetholApp()) with clean sidebar controls (sysetholInput), dynamic conditional panels (Steps per click when nsim = 1, Confidence Band when nsim &gt; 1), sidebar Run Engine & Reset buttons, and focused main tabs (sysetholOutput: Dist Plots, Substrate Plots, Envelope Plots, Input Data)."
   },
   {
-    "objectID": "sysetholApp.html#workflow-example-host-parasite-simulation-run",
-    "href": "sysetholApp.html#workflow-example-host-parasite-simulation-run",
+    "objectID": "sysetholApp.html#programmatic-application-usage",
+    "href": "sysetholApp.html#programmatic-application-usage",
     "title": "sysetholApp (Systems Ethology Platform)",
-    "section": "Workflow Example: Host-Parasite Simulation Run",
-    "text": "Workflow Example: Host-Parasite Simulation Run\nBelow is a demonstration of initializing a simulation community (200 hosts, 100 parasites) and projecting host-parasite interactions across 4,000 discrete event steps using core ewing engine functions.\n\nlibrary(ewing)\nlibrary(ggplot2)\n\n# 1. Initialize simulation community (default 200 hosts, 100 parasites)\nmysim &lt;- init.simulation()\n\nData organism.features already loaded\nInitializing Temperature Profile ...\nData temperature.par already loaded\nData temperature.base already loaded\nBase daily temperature fluctuation:\nTemperature set for days 0 to 202 \nDaily low temperature range: 68 to 77 \nDaily high temperature range: 83 to 92 \nRun temp.design() to adjust temperature range\nInitial active temperature:\nlo.hour hi.hour \n      0      24 \nCreating simulation organism set using species:\n host, parasite \n\nData future.host already loaded\nData substrate.host already loaded\nData future.parasite already loaded\nData host.parasite already loaded\nData substrate.parasite already loaded\nData substrate.substrate already loaded\n\nInitialize host at size 200...\nInitializing events for host with 200 individuals\nInitialize parasite at size 200...\nInitializing events for parasite with 200 individuals\n\n# 2. Run simulation engine for 4,000 steps\nsimres &lt;- future.events(mysim, nstep = 4000, refresh = 500, plotit = FALSE)\n\ninitial: host 200: parasite 200\nlo.hour hi.hour \n      0      48 \nrefresh 500: host 248: parasite 200\nrefresh 1000: host 283: parasite 200\nrefresh 1500: host 381: parasite 200\nrefresh 2000: host 381: parasite 200\nrefresh 2500: host 381: parasite 200\nrefresh 3000: host 381: parasite 200\nrefresh 3500: host 381: parasite 200\nrefresh 4000: host 381: parasite 200\n\n# 3. Visualize age class distributions and spatial substrate allocation\nplot(simres)"
+    "section": "Programmatic Application Usage",
+    "text": "Programmatic Application Usage\nLaunch the Systems Ethology Platform natively in R using exported package functions:\nlibrary(ewing)\n\n# Launch interactive Systems Ethology platform app\nsysetholApp()\nThe app launcher script is located at inst/scripts/sysetholApp.R."
   },
   {
-    "objectID": "sysetholApp.html#platform-components-architecture",
-    "href": "sysetholApp.html#platform-components-architecture",
+    "objectID": "sysetholApp.html#platform-architecture-features",
+    "href": "sysetholApp.html#platform-architecture-features",
     "title": "sysetholApp (Systems Ethology Platform)",
-    "section": "Platform Components & Architecture",
-    "text": "Platform Components & Architecture\nThe platform combines modular Shiny components (ewingInput, ewingOutput, ewingServer) defined in R/ewingApp.R:\n\nParameter Initialization (initParApp): Configure species life stage durations, attack rates, and reproduction probabilities.\nSimulation Engine (simApp): Execute competing-risk event queues on leftist tree structures.\nDynamic Visualizations (distPlotApp, substrateApp, envPlotApp): Monitor real-time stage distributions, spatial agent positions, and multi-run variance envelopes."
+    "section": "Platform Architecture & Features",
+    "text": "Platform Architecture & Features\nThe platform combines modular Shiny components (sysetholInput, sysetholOutput, sysetholServer) exported in R/sysetholApp.R:\n\nSidebar Setup & De-cluttering: Dynamic conditional panels display Steps per click when nsim = 1 and Total Simulation steps / Confidence Band Envelope when nsim &gt; 1. Side panel Run Engine and Reset buttons keep the main interface focused and clean.\nDist Plots: Visualizes population age-class distributions across active species.\nSubstrate Plots: Projects organism positions onto hexagonal substrate topology overlays with species filtering and Overlay (1 Map) vs Separate (Stacked Maps) view modes.\nEnvelope Plots: Computes multi-run simulation envelopes across nsim stochastic iterations.\nInput Data: Interactive table explorer for underlying organism.features, future.host, future.parasite, substrate.host, substrate.parasite, and substrate.substrate datasets."
   },
   {
     "objectID": "hexmoveApp.html",

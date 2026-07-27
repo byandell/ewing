@@ -158,6 +158,11 @@
   : Define Tridiagonal Substrate Topology
 - [`summary(`*`<ewing>`*`)`](https://byandell.github.io/ewing/reference/summary.ewing.md)
   : summary of Ewing simulation models
+- [`sysetholApp()`](https://byandell.github.io/ewing/reference/sysetholApp.md)
+  [`sysetholInput()`](https://byandell.github.io/ewing/reference/sysetholApp.md)
+  [`sysetholOutput()`](https://byandell.github.io/ewing/reference/sysetholApp.md)
+  [`sysetholServer()`](https://byandell.github.io/ewing/reference/sysetholApp.md)
+  : Systems Ethology App
 - [`temp.design()`](https://byandell.github.io/ewing/reference/temp.design.md)
   : graphical adjustment of daily high and low temperature
 - [`tempApp()`](https://byandell.github.io/ewing/reference/tempApp.md) :
