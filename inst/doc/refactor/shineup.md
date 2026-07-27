@@ -12,7 +12,10 @@
 - [Modularization Refactor](#modularization-refactor)
   - [Prompt](#prompt-1)
   - [Walkthrough](#walkthrough-1)
-- [Systems Ethology Platform Refactor (`sysetholApp` & `ewingApp`)](#systems-ethology-platform-refactor-sysetholapp--ewingapp)
+- [Systems Ethology Platform Refactor (`sysetholApp`, `inputApp` & `ewingApp`)](#systems-ethology-platform-refactor-sysetholapp-inputapp--ewingapp)
+  - [Geometric Log-Scale Step Size Slider](#geometric-log-scale-step-size-slider)
+  - [Standalone `inputApp` Module Extraction](#standalone-inputapp-module-extraction)
+  - [Fine Time-Series Granularity in Dist Plots](#fine-time-series-granularity-in-dist-plots)
   - [Sidebar De-cluttering & Conditional Panels](#sidebar-de-cluttering--conditional-panels)
   - [Multi-Species Hex Substrate Layouts](#multi-species-hex-substrate-layouts)
   - [Composition of `ewingApp.R` from `sysetholApp.R`](#composition-of-ewingappr-from-sysetholappr)
@@ -161,9 +164,31 @@ The `ewingApp.R` script was entirely refactored across several purpose-built mod
 
 ---
 
-## Systems Ethology Platform Refactor (`sysetholApp` & `ewingApp`)
+## Systems Ethology Platform Refactor (`sysetholApp`, `inputApp` & `ewingApp`)
 
-The Systems Ethology platform was further refactored to introduce **[`R/sysetholApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/sysetholApp.R)** (`sysetholApp`, `sysetholInput`, `sysetholOutput`, `sysetholServer`) and streamline **[`R/ewingApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ewingApp.R)** as a composable wrapper.
+The Systems Ethology platform was further refactored to introduce **[`R/sysetholApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/sysetholApp.R)** (`sysetholApp`, `sysetholInput`, `sysetholOutput`, `sysetholServer`), export **[`R/inputApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/inputApp.R)** (`inputApp`, `inputAppInput`, `inputAppOutput`, `inputAppServer`), and streamline **[`R/ewingApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ewingApp.R)** as a composable wrapper.
+
+### Geometric Log-Scale Step Size Slider
+
+To provide intuitive logarithmic control over simulation step increments, the **`Steps per click`** slider in `sysetholInput` uses discrete geometric steps:
+
+- **Discrete Values**: `1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000`.
+- **`step_size_slider()` Helper**: Attaches `data-values="1,2,5,10,20,50,100,200,500,1000,2000"` to `shiny::sliderInput`, configuring the underlying JavaScript slider (`ion.rangeSlider`) to display discrete geometric tick marks.
+- **`parse_step_size()` Server Parsing**: Evaluates incoming values from the client slider, resolving string values directly or falling back to index positions.
+
+### Standalone `inputApp` Module Extraction
+
+The dataset table inspection tab was extracted into a reusable module export **[`R/inputApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/inputApp.R)**:
+
+- **`inputAppInput()`**: Renders dataset selection (`organism.features`, `future.host`, `future.parasite`, `substrate.host`, `substrate.parasite`, `substrate.substrate`, `host.parasite`, `temperature.base`, `temperature.par`).
+- **`inputAppOutput()`**: Displays formatted table output (`tableOutput`).
+- **`inputAppServer()`**: Dynamically extracts parameter and interaction matrices from active `ewing` simulation instances.
+
+### Fine Time-Series Granularity in Dist Plots
+
+The **`Dist Plots`** panel visualizes age-class counts over time using `geom_step()` step lines and `geom_point()`:
+
+- In `demos/sysetholApp.qmd`, `step_sim_community` executes sub-stepping at intermediate intervals (e.g., recording history ticks every 5 steps during a 50-step click) so that age class time-series step curves render fine granularity over time matching `ewing_ageclass` in `R/sysetholApp.R`.
 
 ### Sidebar De-cluttering & Conditional Panels
 

@@ -27,6 +27,27 @@ sysetholApp <- function(title = "Systems Ethology Platform") {
   shiny::shinyApp(ui = ui, server = server)
 }
 
+step_size_choices <- c(1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000)
+
+step_size_slider <- function(inputId, label = "Steps per click:", selected = 50) {
+  idx <- match(selected, step_size_choices)
+  if (is.na(idx)) idx <- 6
+  sl <- shiny::sliderInput(inputId, label, min = 1, max = length(step_size_choices), value = idx, step = 1, ticks = TRUE)
+  sl$children[[2]]$attribs[['data-values']] <- paste(step_size_choices, collapse = ",")
+  sl
+}
+
+parse_step_size <- function(val) {
+  if (is.null(val)) return(50)
+  num <- as.numeric(val)
+  if (is.na(num)) return(50)
+  if (!num %in% step_size_choices && num >= 1 && num <= length(step_size_choices)) {
+    step_size_choices[num]
+  } else {
+    num
+  }
+}
+
 #' Systems Ethology Input Controls Module
 #' @export
 #' @rdname sysetholApp
@@ -40,10 +61,10 @@ sysetholInput <- function(id) {
       shiny::sliderInput(ns("n_parasite"), "Number of parasites:", min = 0, max = 500, value = 100, step = 20),
       shiny::radioButtons(ns("nsim"), "Number of Simulations:", choices = c(1, 10, 20, 50, 100, 200), selected = 1, inline = TRUE),
       
-      # Conditional Control: Steps per click ONLY shown when nsim == 1
+      # Conditional Control: Steps per click ONLY shown when nsim == 1 (Geometric log scale choices 1..2000)
       shiny::conditionalPanel(
         condition = sprintf("input['%s'] == '1'", ns("nsim")),
-        shiny::sliderInput(ns("step_size"), "Steps per click:", min = 10, max = 500, value = 50, step = 10)
+        step_size_slider(ns("step_size"), "Steps per click:", selected = 50)
       ),
       
       # Conditional Control: Total Simulation steps ONLY shown when nsim > 1
@@ -120,7 +141,7 @@ sysetholServer <- function(id) {
         if (is.null(sim)) {
           sim <- init.simulation(count = c(nh, np))
         }
-        sz <- input$step_size %||% 50
+        sz <- parse_step_size(input$step_size %||% 50)
         new_state <- future.events(sim, nstep = sz, plotit = FALSE)
         current_sim(new_state)
       } else {

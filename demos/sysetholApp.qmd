@@ -12,7 +12,7 @@ format:
 
 [← Back to Demos Gallery](index.qmd)
 
-The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). It provides a streamlined **Systems Ethology platform (`sysetholApp()`)** with clean sidebar controls (`sysetholInput`), dynamic conditional panels (`Steps per click` when `nsim = 1`, `Confidence Band` when `nsim > 1`), sidebar **Run Engine** & **Reset** buttons, and modular tabs (`sysetholOutput`: **Dist Plots** time-series step plots, **Substrate Plots**, **Envelope Plots**, and **Input Data** via `inputApp`).
+The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). It provides a streamlined **Systems Ethology platform (`sysetholApp()`)** with clean sidebar controls (`sysetholInput`), dynamic conditional panels (`Steps per click` log-scale geometric slider when `nsim = 1`, `Confidence Band` when `nsim > 1`), sidebar **Run Engine** & **Reset** buttons, and modular tabs (`sysetholOutput`: **Dist Plots** fine time-granularity step plots, **Substrate Plots**, **Envelope Plots**, and **Input Data** via `inputApp`).
 
 ```{shinylive-r}
 #| standalone: true
@@ -199,6 +199,29 @@ create_hex_overlay <- function(object, step = 1) {
   do.call(rbind, hex_list)
 }
 
+# --- Geometric Log Scale Step Size Slider Helper ---
+
+step_size_choices <- c(1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000)
+
+step_size_slider <- function(inputId, label = "Steps per click:", selected = 50) {
+  idx <- match(selected, step_size_choices)
+  if (is.na(idx)) idx <- 6
+  sl <- shiny::sliderInput(inputId, label, min = 1, max = length(step_size_choices), value = idx, step = 1, ticks = TRUE)
+  sl$children[[2]]$attribs[['data-values']] <- paste(step_size_choices, collapse = ",")
+  sl
+}
+
+parse_step_size <- function(val) {
+  if (is.null(val)) return(50)
+  num <- as.numeric(val)
+  if (is.na(num)) return(50)
+  if (!num %in% step_size_choices && num >= 1 && num <= length(step_size_choices)) {
+    step_size_choices[num]
+  } else {
+    num
+  }
+}
+
 # --- Standalone Simulation Engine ---
 
 record_history <- function(sim) {
@@ -210,7 +233,6 @@ record_history <- function(sim) {
     stg <- org["stage", ]
     pch <- sim$pop[[sp]]$pch
     
-    # Stage counts
     for (s_idx in seq_along(pch)) {
       stg_name <- pch[s_idx]
       cnt <- sum(stg + 1 == s_idx)
@@ -220,7 +242,6 @@ record_history <- function(sim) {
       )
     }
     
-    # Total count
     df_list[[length(df_list) + 1]] <- data.frame(
       time = t_val, Species = sp, State = "total",
       Count = ncol(org), Type = "ageclass", stringsAsFactors = FALSE
@@ -271,25 +292,37 @@ make_sim_community <- function(nhost = 200, nparasite = 200) {
 }
 
 step_sim_community <- function(sim, nstep = 50) {
-  sim$step <- sim$step + nstep
-  for (sp in names(sim$pop)) {
-    org <- sim$pop[[sp]]$org
-    n <- ncol(org)
+  # Granular sub-stepping to mirror ewing_ageclass time resolution
+  sub_interval <- if (nstep <= 5) 1 else if (nstep <= 20) 2 else if (nstep <= 100) 5 else if (nstep <= 500) 25 else 50
+  sub_steps <- seq(sub_interval, nstep, by = sub_interval)
+  if (length(sub_steps) == 0 || tail(sub_steps, 1) != nstep) sub_steps <- c(sub_steps, nstep)
+  
+  last_step <- 0
+  for (s_inc in sub_steps) {
+    inc <- s_inc - last_step
+    last_step <- s_inc
+    sim$step <- sim$step + inc
     
-    stg <- org["stage", ]
-    stg <- pmin(stg + sample(0:1, n, replace = TRUE, prob = c(0.7, 0.3)), 6)
-    org["stage", ] <- stg
-    
-    org["pos.a", ] <- org["pos.a", ] + runif(n, -15, 15)
-    org["pos.b", ] <- org["pos.b", ] + runif(n, -15, 15)
-    org["pos.c", ] <- -(org["pos.a", ] + org["pos.b", ])
-    
-    switch_idx <- sample(1:n, max(1, round(n * 0.10)))
-    org["sub.stage", switch_idx] <- sample(1:7, length(switch_idx), replace = TRUE)
-    
-    sim$pop[[sp]]$org <- org
+    for (sp in names(sim$pop)) {
+      org <- sim$pop[[sp]]$org
+      n <- ncol(org)
+      
+      stg <- org["stage", ]
+      stg <- pmin(stg + sample(0:1, n, replace = TRUE, prob = c(0.85, 0.15)), 6)
+      org["stage", ] <- stg
+      
+      org["pos.a", ] <- org["pos.a", ] + runif(n, -10, 10)
+      org["pos.b", ] <- org["pos.b", ] + runif(n, -10, 10)
+      org["pos.c", ] <- -(org["pos.a", ] + org["pos.b", ])
+      
+      switch_idx <- sample(1:n, max(1, round(n * 0.05)))
+      org["sub.stage", switch_idx] <- sample(1:7, length(switch_idx), replace = TRUE)
+      
+      sim$pop[[sp]]$org <- org
+    }
+    sim <- record_history(sim)
   }
-  sim <- record_history(sim)
+  
   sim
 }
 
@@ -454,7 +487,7 @@ plot_dist <- function(sim, norm = TRUE, total = TRUE) {
   
   ggplot2::ggplot(df, ggplot2::aes(x = time, y = Count, color = State, group = State)) +
     ggplot2::geom_step(linewidth = 0.8) +
-    ggplot2::geom_point(size = 2) +
+    ggplot2::geom_point(size = 1.8) +
     ggplot2::facet_wrap(~ Species, scales = "free_y") +
     ggplot2::theme_minimal() +
     ggplot2::labs(title = "Population Age Class Distribution Progression over Time",
@@ -579,7 +612,7 @@ sysetholInput <- function(id) {
       
       shiny::conditionalPanel(
         condition = sprintf("input['%s'] == '1'", ns("nsim")),
-        shiny::sliderInput(ns("step_size"), "Steps per click:", min = 10, max = 500, value = 50, step = 10)
+        step_size_slider(ns("step_size"), "Steps per click:", selected = 50)
       ),
       
       shiny::conditionalPanel(
@@ -629,7 +662,7 @@ sysetholServer <- function(id) {
       nsim_val <- as.numeric(input$nsim %||% 1)
       if (nsim_val == 1) {
         sim <- active_sim()
-        sz <- input$step_size %||% 50
+        sz <- parse_step_size(input$step_size %||% 50)
         new_state <- step_sim_community(sim, sz)
         active_sim(new_state)
       } else {
@@ -780,8 +813,8 @@ The app launcher script is located at [`inst/scripts/sysetholApp.R`](https://git
 
 The platform combines modular Shiny components exported in [`R/sysetholApp.R`](https://github.com/byandell/ewing/blob/main/R/sysetholApp.R) and [`R/inputApp.R`](https://github.com/byandell/ewing/blob/main/R/inputApp.R):
 
-1. **Sidebar Setup & De-cluttering**: Dynamic conditional panels display `Steps per click` when `nsim = 1` and `Total Simulation steps` / `Confidence Band Envelope` when `nsim > 1`. Side panel **Run Engine** and **Reset** buttons keep the main interface focused and clean.
-2. **Dist Plots**: Visualizes population age-class distributions over simulation steps ($t = 0, 50, 100...$) using `geom_step()` step lines and `geom_point()`.
+1. **Sidebar Setup & De-cluttering**: Dynamic conditional panels display geometric log-scale `Steps per click` slider (`1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000`) when `nsim = 1` and `Total Simulation steps` / `Confidence Band Envelope` when `nsim > 1`. Side panel **Run Engine** and **Reset** buttons keep the main interface focused and clean.
+2. **Dist Plots**: Visualizes population age-class distributions over simulation steps ($t = 0, 5, 10, 15, 20, ...$) with full intermediate sub-step time resolution using `geom_step()` step lines and `geom_point()`.
 3. **Substrate Plots**: Projects organism positions onto hexagonal substrate topology overlays with species filtering and `Overlay (1 Map)` vs `Separate (Stacked Maps)` view modes.
 4. **Envelope Plots**: Computes multi-run simulation envelopes across `nsim` stochastic iterations (visible when `nsim > 1`).
 5. **Input Data (`inputApp`)**: Interactive table explorer (`inputAppInput`, `inputAppOutput`, `inputAppServer`) for underlying `organism.features`, `future.host`, `future.parasite`, `substrate.host`, `substrate.parasite`, `substrate.substrate`, `host.parasite`, `temperature.base`, and `temperature.par` datasets.
