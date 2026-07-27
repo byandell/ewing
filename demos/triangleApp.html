@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Brian S. Yandell">
-<meta name="description" content="A serverless WebAssembly-powered explorer to interactively construct, visualize, and inspect tridiagonal substrate spatial networks using substrate_topology() and create_substrate().">
+<meta name="description" content="A spatial geometric network visualizer rendering triangular substrates, hexagonal cell overlays, and connectivity topologies.">
 
 <title>triangleApp (Shinylive) – ewing Demos</title>
 <style>
@@ -27,6 +27,41 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -162,7 +197,7 @@ ul.task-list li input[type="checkbox"] {
 
 <div>
   <div class="description">
-    A serverless WebAssembly-powered explorer to interactively construct, visualize, and inspect tridiagonal substrate spatial networks using substrate_topology() and create_substrate().
+    A spatial geometric network visualizer rendering triangular substrates, hexagonal cell overlays, and connectivity topologies.
   </div>
 </div>
 
@@ -199,8 +234,39 @@ library(bslib)
 library(ggplot2)
 library(stats)
 
-# --- Standalone Substrate Core Functions ---
+# --- Auto-Included from R/triangle.R ---
 
+## $Id: triangle.R,v 0.9 2002/12/09 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###########################################################################################
+## rtri( n, width )
+##
+## plot.current( x, species )
+## text.current( x, species )
+##
+###########################################################################################
+###########################################################################################
+### Tridiagonal Coordinate System S3 Classes &amp; Algebra
+###########################################################################################
+#' @export
 tricoord &lt;- function(a, b = NULL, c = NULL) {
   if (is.data.frame(a) &amp;&amp; all(c("a", "b", "c") %in% names(a))) {
     res &lt;- a
@@ -218,7 +284,9 @@ tricoord &lt;- function(a, b = NULL, c = NULL) {
   res
 }
 
+#' @export
 `+.tricoord` &lt;- function(e1, e2) {
+  # Handle vector offsets cleanly
   if (is.numeric(e2) &amp;&amp; length(e2) == 3) {
     tricoord(e1$a + e2[1], e1$b + e2[2], e1$c + e2[3])
   } else if (inherits(e2, "tricoord")) {
@@ -228,20 +296,125 @@ tricoord &lt;- function(a, b = NULL, c = NULL) {
   }
 }
 
-tri2car &lt;- function(tri, xmult = 2 / (2 + sqrt(3)), ymult = 6 / (3 + 2 * sqrt(3))) {
-  if (inherits(tri, "tricoord")) {
-    x &lt;- (tri$a - tri$b) * xmult
-    y &lt;- - (tri$a + tri$b) * ymult
+#' @export
+`-.tricoord` &lt;- function(e1, e2) {
+  if (is.numeric(e2) &amp;&amp; length(e2) == 3) {
+    tricoord(e1$a - e2[1], e1$b - e2[2], e1$c - e2[3])
+  } else if (inherits(e2, "tricoord")) {
+    tricoord(e1$a - e2$a, e1$b - e2$b, e1$c - e2$c)
   } else {
-    if (!is.matrix(tri)) tri &lt;- as.matrix(tri)
-    x &lt;- (tri[1, ] - tri[2, ]) * xmult
-    y &lt;- - (tri[1, ] + tri[2, ]) * ymult
+    stop("Invalid right hand operand for tricoord subtraction")
   }
-  data.frame(x = x, y = y)
 }
 
+###########################################################################################
+#' @importFrom stats runif
+rtri &lt;- function( n, width, tri = matrix(0,3,n), roundoff = TRUE )
+{
+  tri &lt;- as.matrix( tri )
+  if( n == 1 ) {
+    xy &lt;- stats::runif( 2, 0, width )
+    if( roundoff )
+      xy &lt;- round( xy )
+
+    i &lt;- sample( 3, 1  )
+    i1 &lt;- 1 + i%%3
+    i2 &lt;- 1 + (i+1)%%3
+    tri[i1,] &lt;- tri[i1,] + xy[1]
+    tri[i2,] &lt;- tri[i2,] - xy[2]
+    tri[i,] &lt;- - ( tri[i1,] + tri[i2,] )
+    return( tri )
+  }
+  else {
+    xy &lt;- data.frame( x = stats::runif( n, 0, width ),
+      y = - stats::runif( n, 0, width ))
+    if( roundoff )
+      xy &lt;- round( xy )
+
+    out &lt;- sample( 3, n, replace = TRUE )
+    for( i in 1:3 ) {
+      outi &lt;- out == i
+      if( any( outi )) {
+        i1 &lt;- 1 + i%%3
+        i2 &lt;- 1 + (i+1)%%3
+        tri[i1,outi] &lt;- tri[i1,outi] + xy$x[outi]
+        tri[i2,outi] &lt;- tri[i2,outi] + xy$y[outi]
+        tri[i,outi] &lt;- - ( tri[i1,outi] + tri[i2,outi] )
+      }
+    }
+  }
+  tri
+}
+###########################################################################################
+car2tri.default &lt;- function(x,y)
+  car2tri( cbind( x, y ))
+car2tri &lt;- function( xy, xmult = ( 2 + sq3 ) / 4, ymult = ( 3 + 2 * sq3 ) / 12,
+  sq3 = sqrt( 3 ))
+{
+#  if( !is.matrix( xy ))
+#    xy &lt;- t( as.matrix( xy ))
+  aa &lt;- xmult * xy[,1] - ymult * xy[,2]
+  bb &lt;- - xmult * xy[,1] - ymult * xy[,2]
+  cc &lt;- -( aa + bb )
+  rbind( a = aa, b = bb, c = cc )
+}
+###########################################################################################
+tri2car.default &lt;- function(aa,bb,cc=-(aa+bb))
+  tri2car( rbind( aa, bb, cc ))
+tri2car &lt;- function(tri, xmult = 2 / ( 2 + sq3 ), ymult = 6 / ( 3 + 2 * sq3 ),
+  sq3 = sqrt( 3 ))
+{
+  if( inherits(tri, "tricoord") ) {
+    # If the user passes our S3 tricoord dataframe, map it correctly natively.
+    x &lt;- ( tri$a - tri$b ) * xmult
+    y &lt;- - ( tri$a + tri$b ) * ymult
+  } else {
+    if( !is.matrix( tri ))
+      tri &lt;- as.matrix( tri )
+    x &lt;- ( tri[1,] - tri[2,] ) * xmult
+    y &lt;- - ( tri[1,] + tri[2,] ) * ymult
+  }
+  data.frame( x = x, y = y )
+}
+###########################################################################################
+cardist &lt;- function( xy )
+  sqrt( xy[,1]^2 + xy[,2]^2 )
+###########################################################################################
+tridist &lt;- function( tri )
+  apply( tri, 1, max )
+###########################################################################################
+gasket &lt;- function( aa, bb )
+{
+  n &lt;- length( aa )
+  pp &lt;- c(-1,1,0,1)
+  dda &lt;- diff( aa )
+  ddb &lt;- diff( bb )
+  ss &lt;- sign( sign( dda ) - sign( ddb ))
+  dda &lt;- 2 - abs( dda )
+  ddb &lt;- 2 - abs( ddb )
+  aa &lt;- 2 * aa
+  aa &lt;- c( aa[1], rbind( aa[-n] + pp[dda+1+ss], aa[-1] + pp[dda+1-ss], aa[-1] ))
+  bb &lt;- 2 * bb
+  bb &lt;- c( bb[1], rbind( bb[-n] + pp[ddb+1-ss], bb[-1] + pp[ddb+1+ss], bb[-1] ))
+  data.frame( aa = aa, bb = bb )
+}
+
+# --- Auto-Included from R/substrate_triangle.R ---
+
+#' Generate a Substrate Abstract Grid
+#'
+#' Constructs the analytical coordinate points bounding a standard subset of a tridiagonal geometric matrix.
+#'
+#' @param width Integer representing the radius spanning across a substrate patch.
+#' @param step Integer interval density between geometric dots.
+#' @param orientation Character metric "up" or "down" dictating mathematical inversion of coordinate arrays.
+#'
+#' @return A data.frame holding the computed relative tridiagonal mappings (`a`, `b`, `c`).
+#' @export
 get_substrate_grid &lt;- function(width, step = 1, orientation = "up") {
-  pts &lt;- expand.grid(a = seq(0, width - step, by = step), b = seq(0, width - step, by = step))
+  pts &lt;- expand.grid(a = seq(0, width - step, by = step), 
+                     b = seq(0, width - step, by = step))
+  
   if (orientation == "up") {
     pts &lt;- subset(pts, a + b &lt;= width - step)
     pts$c &lt;- -(pts$a + pts$b)
@@ -251,23 +424,49 @@ get_substrate_grid &lt;- function(width, step = 1, orientation = "up") {
     pts$b &lt;- -pts$b
     pts$c &lt;- -(pts$a + pts$b)
   }
-  pts
+  return(pts)
 }
 
+#' Define Tridiagonal Substrate Topology
+#'
+#' Constructs the foundational topological mapping linking multiple substrate component offsets
+#' (e.g., fruit vs. leaf elements) into an interconnected mathematical mesh matrix.
+#'
+#' @param width Integer representing the radius size limits of spatial components.
+#' @param step Numeric grid density spacing. 
+#'
+#' @return A list encompassing adjacency parameters `offset` and structural `dir` for specific modules.
+#' @export
 substrate_topology &lt;- function(width = 10, step = 1) {
   W &lt;- width - step
+  
+  # Topology adjacency offsets
   list(
     fr2   = list(offset = c(0, 0, 0), dir = "down"),
-    fr1   = list(offset = c(-W, -W, 2 * W), dir = "up"),
+    fr1   = list(offset = c(-W, -W, 2*W), dir = "up"),
     fr3   = list(offset = c(-W, 0, W), dir = "up"),
     fr4   = list(offset = c(0, -W, W), dir = "up"),
     tw1   = list(offset = c(-W, 0, W), dir = "down"),
-    tw2   = list(offset = c(-2 * W, 0, 2 * W), dir = "up"),
-    lftop = list(offset = c(-2 * W, W, W), dir = "down"),
-    lfbot = list(offset = c(-3 * W, W, 2 * W), dir = "up")
+    twig  = list(offset = c(-W, 0, W), dir = "down"),
+    tw2   = list(offset = c(-2*W, 0, 2*W), dir = "up"),
+    lftop = list(offset = c(-2*W, W, W), dir = "down"),
+    lfbot = list(offset = c(-3*W, W, 2*W), dir = "up")
   )
 }
 
+#' Create Substrate Geometric Object
+#'
+#' Iterates against a defined configuration metric to build explicit spatial network definitions
+#' tracking Euclidean point plots, dynamic border labels, and spanning geometric boundary polygons.
+#'
+#' @param topology Abstract parameter list derived from `substrate_topology()`.
+#' @param width Physical geometric limits of bounding constraints.
+#' @param step Inner plotting density logic parameter.
+#'
+#' @return An S3 object of format class `substrate`, storing resolved attributes.
+#' @export
+#'
+#' @importFrom stats aggregate
 create_substrate &lt;- function(topology, width = 10, step = 1) {
   W &lt;- width - step
   all_points &lt;- data.frame()
@@ -277,29 +476,50 @@ create_substrate &lt;- function(topology, width = 10, step = 1) {
   for (sub in names(topology)) {
     cfg &lt;- topology[[sub]]
     grid &lt;- get_substrate_grid(width, step, cfg$dir)
-    grid_tri &lt;- tricoord(grid$a, grid$b, grid$c) + cfg$offset
+    
+    o_a &lt;- cfg$offset[1]
+    o_b &lt;- cfg$offset[2]
+    o_c &lt;- cfg$offset[3]
+
+    # Needs tricoord and tri2car which are presumably exported/available from R/triangle.R
+    grid_tri &lt;- tricoord(grid$a, grid$b, grid$c)
+    grid_tri &lt;- grid_tri + cfg$offset
+    
     car_pts &lt;- tri2car(grid_tri)
     car_pts$substrate &lt;- sub
     all_points &lt;- rbind(all_points, car_pts)
     
-    o_a &lt;- cfg$offset[1]; o_b &lt;- cfg$offset[2]; o_c &lt;- cfg$offset[3]
+    # Determine bounds and midpoints for side labels 1,2,3
     if (cfg$dir == "up") {
-      v_top &lt;- c(o_a, o_b, o_c); v_br &lt;- c(o_a + W, o_b, o_c - W); v_bl &lt;- c(o_a, o_b + W, o_c - W)
-      m1 &lt;- (v_top + v_bl) / 2; m2 &lt;- (v_top + v_br) / 2; m3 &lt;- (v_bl + v_br) / 2
+      v_top &lt;- c(o_a, o_b, o_c)
+      v_br  &lt;- c(o_a + W, o_b, o_c - W)
+      v_bl  &lt;- c(o_a, o_b + W, o_c - W)
+      
+      m1 &lt;- (v_top + v_bl) / 2
+      m2 &lt;- (v_top + v_br) / 2
+      m3 &lt;- (v_bl + v_br)  / 2
       centroid &lt;- (v_top + v_br + v_bl) / 3
       p_mat &lt;- cbind(v_top, v_br, v_bl)
     } else {
-      v_bot &lt;- c(o_a, o_b, o_c); v_tr &lt;- c(o_a, o_b - W, o_c + W); v_tl &lt;- c(o_a - W, o_b, o_c + W)
-      m1 &lt;- (v_bot + v_tr) / 2; m2 &lt;- (v_bot + v_tl) / 2; m3 &lt;- (v_tl + v_tr) / 2
+      v_bot &lt;- c(o_a, o_b, o_c)
+      v_tr  &lt;- c(o_a, o_b - W, o_c + W)
+      v_tl  &lt;- c(o_a - W, o_b, o_c + W)
+      
+      m1 &lt;- (v_bot + v_tr) / 2
+      m2 &lt;- (v_bot + v_tl) / 2
+      m3 &lt;- (v_tl + v_tr)  / 2
       centroid &lt;- (v_bot + v_tr + v_tl) / 3
       p_mat &lt;- cbind(v_bot, v_tr, v_tl)
     }
     
-    w_in &lt;- 0.25
+    # Interpolate slightly towards the centroid to put text "just inside" the edges
+    w_in &lt;- 0.25 # weight towards centroid
     l1 &lt;- m1 * (1 - w_in) + centroid * w_in
     l2 &lt;- m2 * (1 - w_in) + centroid * w_in
     l3 &lt;- m3 * (1 - w_in) + centroid * w_in
-    car_l &lt;- tri2car(cbind(l1, l2, l3))
+    
+    mat_l &lt;- cbind(l1, l2, l3)
+    car_l &lt;- tri2car(mat_l)
     car_l$label &lt;- c("1", "2", "3")
     car_l$substrate &lt;- sub
     labels_df &lt;- rbind(labels_df, car_l)
@@ -309,231 +529,357 @@ create_substrate &lt;- function(topology, width = 10, step = 1) {
     poly_df &lt;- rbind(poly_df, car_p)
   }
   
-  centers &lt;- stats::aggregate(cbind(x, y) ~ substrate, data = all_points, mean)
-  list(points = all_points, labels = labels_df, poly = poly_df, centers = centers, topology = topology)
+  centers &lt;- stats::aggregate(cbind(x,y) ~ substrate, data=all_points, mean)
+  
+  obj &lt;- list(
+    points = all_points, 
+    labels = labels_df, 
+    poly = poly_df, 
+    centers = centers,
+    topology = topology
+  )
+  class(obj) &lt;- "substrate"
+  return(obj)
 }
 
-all_modules &lt;- c("fr1", "fr2", "fr3", "fr4", "tw1", "tw2", "lftop", "lfbot")
+#' Plot Visual Substrate Network Layouts
+#'
+#' Organizes numerical nodes logically over explicit geometrical borders defined by `create_substrate` attributes.
+#'
+#' @param object Data structure of type `substrate` mapped previously via abstract tridiagonal coordinates.
+#' @param ... Additional graphical tracking arguments passing to generic rendering matrices.
+#'
+#' @return A `ggplot` visual abstraction of the Ewing network.
+#' @export
+#'
+#' @importFrom ggplot2 ggplot geom_polygon aes geom_point geom_text theme_void coord_fixed ggtitle
+autoplot.substrate &lt;- function(object, ...) {
+  ggplot2::ggplot() +
+    # Draw the black boundary lines outlining the substrates exactly over outer dots
+    ggplot2::geom_polygon(data=object$poly, ggplot2::aes(x=x, y=y, group=substrate), fill=NA, color="black", linewidth=0.7) +
+    # Plot grid dots
+    ggplot2::geom_point(data=object$points, ggplot2::aes(x=x, y=y, color=substrate), size=1.5) +
+    # Plot Substrate Labels (Centers)
+    ggplot2::geom_text(data=object$centers, ggplot2::aes(x=x, y=y, label=substrate), color="black", fontface="bold", size=5) +
+    # Axis side numbers
+    ggplot2::geom_text(data=object$labels, ggplot2::aes(x=x, y=y, label=label), color="darkred", fontface="bold", size=4) +
+    ggplot2::theme_void() +
+    ggplot2::coord_fixed() +
+    ggplot2::ggtitle("Ewing Tridiagonal Substrate Network Mapping")
+}
 
-# --- Shiny Application UI ---
+#' Create Hexagonal Grid Overlay Dataframe
+#'
+#' Generates 6-vertex polygon tiles for each lattice dot in a substrate object.
+#'
+#' @param object An S3 object of class `substrate` or a dataframe with columns `x`, `y`, `substrate`.
+#' @param step Numeric grid density spacing interval (default: 1).
+#'
+#' @return A data.frame suitable for `geom_polygon(group = cell_id)`.
+#' @export
+create_hex_overlay &lt;- function(object, step = 1) {
+  pts &lt;- if (inherits(object, "substrate")) object$points else object
+  if (is.null(pts) || nrow(pts) == 0) return(data.frame())
+  
+  xmult &lt;- 2 / (2 + sqrt(3))
+  ymult &lt;- 6 / (3 + 2 * sqrt(3))
+  d &lt;- step * sqrt(xmult^2 + ymult^2)
+  r &lt;- d / sqrt(3)
+  
+  angles &lt;- (seq(0, 5) * 60 + 30) * pi / 180
+  dx &lt;- r * cos(angles)
+  dy &lt;- r * sin(angles)
+  
+  n_pts &lt;- nrow(pts)
+  hex_list &lt;- vector("list", n_pts)
+  
+  for (i in seq_len(n_pts)) {
+    px &lt;- pts$x[i] + dx
+    py &lt;- pts$y[i] + dy
+    sub &lt;- pts$substrate[i]
+    hex_list[[i]] &lt;- data.frame(
+      x = px,
+      y = py,
+      cell_id = i,
+      substrate = sub,
+      stringsAsFactors = FALSE
+    )
+  }
+  
+  do.call(rbind, hex_list)
+}
 
-app_theme &lt;- bslib::bs_theme(
-  version = 5,
-  bg = "#ffffff",
-  fg = "#212529",
-  primary = "#1a73e8",
-  secondary = "#7209b7",
-  success = "#2ec4b6"
-)
 
-ui &lt;- bslib::page_sidebar(
-  title = "Tridiagonal Substrate Network Explorer",
-  theme = app_theme,
-  sidebar = bslib::sidebar(
-    width = 300,
-    shiny::div(
-      style = "font-size: 0.85rem; padding: 5px 0;",
+# --- Auto-Included from R/triangleApp.R ---
+
+#' Interactive Tridiagonal Substrate Network Explorer App
+#' 
+#' Shiny application to interactively build, visualize, and inspect tridiagonal
+#' geometric substrate spatial networks (\code{substrate_topology}, \code{create_substrate}, \code{autoplot.substrate}).
+#' 
+#' @param width Integer radius size limit of spatial components (default: 10)
+#' @param step Numeric grid density spacing interval (default: 1)
+#' @param title Application title
+#' @export
+#' @importFrom shiny shinyApp fluidPage tags div h3 h4 p fluidRow column hr
+#' @importFrom shiny reactive renderPlot renderText req selectizeInput sliderInput numericInput textInput textOutput verbatimTextOutput observeEvent updateSliderInput updateNumericInput validate need uiOutput renderUI tagList updateTextInput radioButtons actionButton checkboxGroupInput updateCheckboxGroupInput updateSelectizeInput
+#' @importFrom bslib page_sidebar sidebar card card_body card_header bs_theme
+#' @importFrom ggplot2 ggplot geom_polygon aes geom_point geom_text theme_void coord_fixed ggtitle
+#' @importFrom stats aggregate
+triangleApp &lt;- function(width = 10, step = 1, title = "Tridiagonal Substrate Network Explorer") {
+  
+  app_theme &lt;- bslib::bs_theme(
+    version = 5,
+    bg = "#ffffff",
+    fg = "#212529",
+    primary = "#1a73e8",
+    secondary = "#7209b7",
+    success = "#2ec4b6"
+  )
+  
+  all_modules &lt;- c("fr1", "fr2", "fr3", "fr4", "tw1", "tw2", "lftop", "lfbot")
+  
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    theme = app_theme,
+    
+    sidebar = bslib::sidebar(
+      width = 300,
       shiny::div(
-        style = "display: flex; gap: 8px; align-items: flex-end; margin-bottom: 6px;",
+        style = "font-size: 0.85rem; padding: 5px 0;",
         shiny::div(
-          style = "flex: 1;",
-          shiny::span("Width (Radius):", style = "font-weight: 600; color: #1a73e8; display: block; margin-bottom: 2px;"),
-          shiny::numericInput("width_in", NULL, value = 10, min = 2, max = 30, step = 1)
+          style = "display: flex; gap: 8px; align-items: flex-end; margin-bottom: 6px;",
+          shiny::div(
+            style = "flex: 1;",
+            shiny::span("Width (Radius):", style = "font-weight: 600; color: #1a73e8; display: block; margin-bottom: 2px;"),
+            shiny::numericInput("width_in", NULL, value = width, min = 2, max = 30, step = 1)
+          ),
+          shiny::div(
+            style = "flex: 1;",
+            shiny::span("Step Density:", style = "font-weight: 600; color: #1a73e8; display: block; margin-bottom: 2px;"),
+            shiny::numericInput("step_in", NULL, value = step, min = 0.5, max = 5, step = 0.5)
+          )
         ),
+        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
         shiny::div(
-          style = "flex: 1;",
-          shiny::span("Step Density:", style = "font-weight: 600; color: #1a73e8; display: block; margin-bottom: 2px;"),
-          shiny::numericInput("step_in", NULL, value = 1, min = 0.5, max = 5, step = 0.5)
+          style = "margin-bottom: 6px;",
+          shiny::span("Substrate Modules:", style = "font-weight: 600; color: #7209b7; display: block; margin-bottom: 2px;"),
+          shiny::selectizeInput("modules_in", NULL,
+                                choices = all_modules,
+                                selected = all_modules,
+                                multiple = TRUE,
+                                options = list(plugins = list("remove_button")))
+        ),
+        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+        shiny::div(
+          style = "margin-bottom: 6px;",
+          shiny::span("Display Layers:", style = "font-weight: 600; color: #2ec4b6; display: block; margin-bottom: 2px;"),
+          shiny::checkboxGroupInput("layers_in", NULL,
+                                    choices = c("Boundaries" = "poly", "Dots" = "points", "Labels" = "centers", "Numbers" = "labels"),
+                                    selected = c("poly", "points", "centers", "labels"),
+                                    inline = TRUE)
+        ),
+        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+        shiny::actionButton("reset_btn", "Reset Defaults", class = "btn-outline-secondary btn-sm w-100 mt-1")
+      )
+    ),
+    
+    shiny::tags$head(
+      shiny::tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&amp;display=swap"),
+      shiny::tags$style(shiny::HTML("
+        body {
+          background-color: #f8f9fa;
+          font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .card {
+          background: #ffffff !important;
+          border: 1px solid rgba(0, 0, 0, 0.08) !important;
+          border-radius: 12px !important;
+          box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05);
+          transition: all 0.3s ease;
+          margin-bottom: 20px;
+        }
+        .card:hover {
+          border-color: rgba(26, 115, 232, 0.3) !important;
+        }
+        .card-header {
+          background: rgba(0, 0, 0, 0.02) !important;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+          font-weight: bold;
+        }
+        .sidebar {
+          background: #ffffff !important;
+          border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+        }
+        .stat-badge {
+          background: #f1f3f5;
+          padding: 8px 12px;
+          border-radius: 8px;
+          margin-bottom: 8px;
+        }
+      "))
+    ),
+    
+    shiny::fluidRow(
+      shiny::column(
+        width = 8,
+        bslib::card(
+          bslib::card_header("Tridiagonal Substrate Spatial Network Mapping"),
+          bslib::card_body(
+            shiny::plotOutput("plot_substrate", height = "520px")
+          )
         )
       ),
-      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
-      shiny::div(
-        style = "margin-bottom: 6px;",
-        shiny::span("Substrate Modules:", style = "font-weight: 600; color: #7209b7; display: block; margin-bottom: 2px;"),
-        shiny::selectizeInput("modules_in", NULL,
-                              choices = all_modules,
-                              selected = all_modules,
-                              multiple = TRUE,
-                              options = list(plugins = list("remove_button")))
-      ),
-      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
-      shiny::div(
-        style = "margin-bottom: 6px;",
-        shiny::span("Display Layers:", style = "font-weight: 600; color: #2ec4b6; display: block; margin-bottom: 2px;"),
-        shiny::checkboxGroupInput("layers_in", NULL,
-                                  choices = c("Boundaries" = "poly", "Dots" = "points", "Labels" = "centers", "Numbers" = "labels"),
-                                  selected = c("poly", "points", "centers", "labels"),
-                                  inline = TRUE)
-      ),
-      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
-      shiny::actionButton("reset_btn", "Reset Defaults", class = "btn-outline-secondary btn-sm w-100 mt-1")
-    )
-  ),
-  shiny::tags$head(
-    shiny::tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&amp;display=swap"),
-    shiny::tags$style(shiny::HTML("
-      body { background-color: #f8f9fa; font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-      .card {
-        background: #ffffff !important;
-        border: 1px solid rgba(0, 0, 0, 0.08) !important;
-        border-radius: 12px !important;
-        box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.04);
-        margin-bottom: 15px;
-      }
-      .card-header { font-weight: bold; background: rgba(0, 0, 0, 0.01) !important; }
-      .stat-badge {
-        background: #f1f3f5;
-        padding: 8px 12px;
-        border-radius: 8px;
-        margin-bottom: 8px;
-      }
-    "))
-  ),
-  shiny::fluidRow(
-    shiny::column(
-      width = 8,
-      bslib::card(
-        bslib::card_header("Tridiagonal Substrate Spatial Network Mapping"),
-        bslib::card_body(
-          shiny::plotOutput("plot_substrate", height = "520px")
+      shiny::column(
+        width = 4,
+        bslib::card(
+          bslib::card_header("Substrate Grid Statistics &amp; Topology"),
+          bslib::card_body(
+            shiny::uiOutput("summary_stats")
+          )
         )
       )
     ),
-    shiny::column(
-      width = 4,
-      bslib::card(
-        bslib::card_header("Substrate Grid Statistics &amp; Topology"),
-        bslib::card_body(
-          shiny::uiOutput("summary_stats")
-        )
-      )
-    )
-  ),
-  shiny::fluidRow(
-    shiny::column(
-      width = 12,
-      bslib::card(
-        bslib::card_header("Instructions"),
-        bslib::card_body(
-          shiny::HTML("&lt;p style='font-size: 0.9em;'&gt;Adjust &lt;em&gt;Width (Radius)&lt;/em&gt; and &lt;em&gt;Step Density&lt;/em&gt; to scale the tridiagonal coordinate system. Use the module selector to filter specific plant components or toggle layer visibility.&lt;/p&gt;")
+    shiny::fluidRow(
+      shiny::column(
+        width = 12,
+        bslib::card(
+          bslib::card_header("Instructions &amp; Substrate Network Background"),
+          bslib::card_body(
+            shiny::HTML("
+              &lt;p&gt;&lt;strong&gt;Instructions:&lt;/strong&gt; Adjust the &lt;em&gt;Width (Radius)&lt;/em&gt; and &lt;em&gt;Step Density&lt;/em&gt; to dynamically scale the tridiagonal coordinate system. Use the module selector to filter specific plant components (fruits &lt;code&gt;fr1..fr4&lt;/code&gt;, twigs &lt;code&gt;tw1..tw2&lt;/code&gt;, leaves &lt;code&gt;lftop..lfbot&lt;/code&gt;) or toggle layer visibility.&lt;/p&gt;
+              &lt;p&gt;&lt;strong&gt;Background:&lt;/strong&gt; In Bland Ewing's population ethology model, individuals navigate a triangular substrate network represented by 3D isometric coordinates &lt;code&gt;(a, b, c)&lt;/code&gt; where &lt;code&gt;c = -(a + b)&lt;/code&gt;. Geometric patch topologies seamlessly map connectivity between plant micro-habitats.&lt;/p&gt;
+            ")
+          )
         )
       )
     )
   )
-)
-
-# --- Shiny Application Server ---
-
-server &lt;- function(input, output, session) {
-  shiny::observeEvent(input$reset_btn, {
-    shiny::updateNumericInput(session, "width_in", value = 10)
-    shiny::updateNumericInput(session, "step_in", value = 1)
-    shiny::updateSelectizeInput(session, "modules_in", selected = all_modules)
-    shiny::updateCheckboxGroupInput(session, "layers_in", selected = c("poly", "points", "centers", "labels"))
-  })
   
-  substrate_data &lt;- shiny::reactive({
-    shiny::req(input$width_in, input$step_in)
+  server &lt;- function(input, output, session) {
     
-    shiny::validate(
-      shiny::need(input$width_in &gt;= 2, "Width must be at least 2."),
-      shiny::need(input$step_in &gt; 0, "Step must be greater than 0."),
-      shiny::need(input$width_in &gt; input$step_in, "Width must be greater than Step density.")
-    )
-    
-    tryCatch({
-      topo &lt;- substrate_topology(width = input$width_in, step = input$step_in)
-      create_substrate(topo, width = input$width_in, step = input$step_in)
-    }, error = function(e) {
-      shiny::validate(paste("Error constructing substrate topology:", e$message))
+    shiny::observeEvent(input$reset_btn, {
+      shiny::updateNumericInput(session, "width_in", value = width)
+      shiny::updateNumericInput(session, "step_in", value = step)
+      shiny::updateSelectizeInput(session, "modules_in", selected = all_modules)
+      shiny::updateCheckboxGroupInput(session, "layers_in", selected = c("poly", "points", "centers", "labels"))
     })
-  })
+    
+    substrate_data &lt;- shiny::reactive({
+      shiny::req(input$width_in, input$step_in)
+      
+      shiny::validate(
+        shiny::need(input$width_in &gt;= 2, "Width must be at least 2."),
+        shiny::need(input$step_in &gt; 0, "Step must be greater than 0."),
+        shiny::need(input$width_in &gt; input$step_in, "Width must be greater than Step density.")
+      )
+      
+      tryCatch({
+        topo &lt;- substrate_topology(width = input$width_in, step = input$step_in)
+        sub_obj &lt;- create_substrate(topo, width = input$width_in, step = input$step_in)
+        sub_obj
+      }, error = function(e) {
+        shiny::validate(paste("Error constructing substrate topology:", e$message))
+      })
+    })
+    
+    output$plot_substrate &lt;- shiny::renderPlot({
+      sub_obj &lt;- substrate_data()
+      shiny::req(sub_obj)
+      
+      mods &lt;- input$modules_in
+      layers &lt;- input$layers_in
+      
+      if (!is.null(mods) &amp;&amp; length(mods) &gt; 0) {
+        sub_obj$points  &lt;- sub_obj$points[sub_obj$points$substrate %in% mods, ]
+        sub_obj$poly    &lt;- sub_obj$poly[sub_obj$poly$substrate %in% mods, ]
+        sub_obj$labels  &lt;- sub_obj$labels[sub_obj$labels$substrate %in% mods, ]
+        sub_obj$centers &lt;- sub_obj$centers[sub_obj$centers$substrate %in% mods, ]
+      } else {
+        sub_obj$points  &lt;- sub_obj$points[0, ]
+        sub_obj$poly    &lt;- sub_obj$poly[0, ]
+        sub_obj$labels  &lt;- sub_obj$labels[0, ]
+        sub_obj$centers &lt;- sub_obj$centers[0, ]
+      }
+      
+      p &lt;- ggplot2::ggplot()
+      if ("poly" %in% layers &amp;&amp; nrow(sub_obj$poly) &gt; 0) {
+        p &lt;- p + ggplot2::geom_polygon(data = sub_obj$poly, ggplot2::aes(x = x, y = y, group = substrate), 
+                                      fill = NA, color = "black", linewidth = 0.7)
+      }
+      if ("points" %in% layers &amp;&amp; nrow(sub_obj$points) &gt; 0) {
+        p &lt;- p + ggplot2::geom_point(data = sub_obj$points, ggplot2::aes(x = x, y = y, color = substrate), size = 1.6)
+      }
+      if ("centers" %in% layers &amp;&amp; nrow(sub_obj$centers) &gt; 0) {
+        p &lt;- p + ggplot2::geom_text(data = sub_obj$centers, ggplot2::aes(x = x, y = y, label = substrate), 
+                                    color = "black", fontface = "bold", size = 4.5)
+      }
+      if ("labels" %in% layers &amp;&amp; nrow(sub_obj$labels) &gt; 0) {
+        p &lt;- p + ggplot2::geom_text(data = sub_obj$labels, ggplot2::aes(x = x, y = y, label = label), 
+                                    color = "darkred", fontface = "bold", size = 3.5)
+      }
+      
+      p + ggplot2::theme_void() + 
+        ggplot2::coord_fixed() + 
+        ggplot2::ggtitle(paste0("Substrate Network Topology (Width = ", input$width_in, ", Step = ", input$step_in, ")"))
+    })
+    
+    output$summary_stats &lt;- shiny::renderUI({
+      sub_obj &lt;- substrate_data()
+      shiny::req(sub_obj)
+      
+      mods &lt;- input$modules_in
+      pts &lt;- if (!is.null(mods)) sub_obj$points[sub_obj$points$substrate %in% mods, ] else sub_obj$points[0, ]
+      
+      total_pts &lt;- nrow(pts)
+      active_mods_count &lt;- if (!is.null(mods)) length(mods) else 0
+      
+      counts &lt;- if (total_pts &gt; 0) table(pts$substrate) else numeric()
+      counts_html &lt;- if (length(counts) &gt; 0) {
+        paste0("&lt;li&gt;&lt;strong&gt;", names(counts), ":&lt;/strong&gt; ", counts, " points&lt;/li&gt;", collapse = "")
+      } else {
+        "&lt;li&gt;&lt;em&gt;No active modules selected&lt;/em&gt;&lt;/li&gt;"
+      }
+      
+      x_bounds &lt;- if (total_pts &gt; 0) paste0(round(range(pts$x), 2), collapse = " to ") else "N/A"
+      y_bounds &lt;- if (total_pts &gt; 0) paste0(round(range(pts$y), 2), collapse = " to ") else "N/A"
+      
+      shiny::HTML(paste0("
+        &lt;div class='stat-badge'&gt;
+          &lt;strong style='color: #1a73e8;'&gt;Active Modules:&lt;/strong&gt; ", active_mods_count, " / ", length(all_modules), "
+        &lt;/div&gt;
+        &lt;div class='stat-badge'&gt;
+          &lt;strong style='color: #7209b7;'&gt;Total Coordinate Dots:&lt;/strong&gt; ", total_pts, "
+        &lt;/div&gt;
+        &lt;div class='stat-badge'&gt;
+          &lt;strong style='color: #2ec4b6;'&gt;X Span:&lt;/strong&gt; ", x_bounds, "&lt;br/&gt;
+          &lt;strong style='color: #2ec4b6;'&gt;Y Span:&lt;/strong&gt; ", y_bounds, "
+        &lt;/div&gt;
+        &lt;hr style='margin: 10px 0; border-top: 1px solid rgba(0,0,0,0.1);'/&gt;
+        &lt;h5 style='font-size: 0.95em; font-weight: bold;'&gt;Points per Substrate:&lt;/h5&gt;
+        &lt;ul style='padding-left: 18px; font-size: 0.85em; line-height: 1.5em;'&gt;
+          ", counts_html, "
+        &lt;/ul&gt;
+      "))
+    })
+  }
   
-  output$plot_substrate &lt;- shiny::renderPlot({
-    sub_obj &lt;- substrate_data()
-    shiny::req(sub_obj)
-    
-    mods &lt;- input$modules_in
-    layers &lt;- input$layers_in
-    
-    if (!is.null(mods) &amp;&amp; length(mods) &gt; 0) {
-      sub_obj$points  &lt;- sub_obj$points[sub_obj$points$substrate %in% mods, ]
-      sub_obj$poly    &lt;- sub_obj$poly[sub_obj$poly$substrate %in% mods, ]
-      sub_obj$labels  &lt;- sub_obj$labels[sub_obj$labels$substrate %in% mods, ]
-      sub_obj$centers &lt;- sub_obj$centers[sub_obj$centers$substrate %in% mods, ]
-    } else {
-      sub_obj$points  &lt;- sub_obj$points[0, ]
-      sub_obj$poly    &lt;- sub_obj$poly[0, ]
-      sub_obj$labels  &lt;- sub_obj$labels[0, ]
-      sub_obj$centers &lt;- sub_obj$centers[0, ]
-    }
-    
-    p &lt;- ggplot2::ggplot()
-    if ("poly" %in% layers &amp;&amp; nrow(sub_obj$poly) &gt; 0) {
-      p &lt;- p + ggplot2::geom_polygon(data = sub_obj$poly, ggplot2::aes(x = x, y = y, group = substrate), 
-                                    fill = NA, color = "black", linewidth = 0.7)
-    }
-    if ("points" %in% layers &amp;&amp; nrow(sub_obj$points) &gt; 0) {
-      p &lt;- p + ggplot2::geom_point(data = sub_obj$points, ggplot2::aes(x = x, y = y, color = substrate), size = 1.6)
-    }
-    if ("centers" %in% layers &amp;&amp; nrow(sub_obj$centers) &gt; 0) {
-      p &lt;- p + ggplot2::geom_text(data = sub_obj$centers, ggplot2::aes(x = x, y = y, label = substrate), 
-                                  color = "black", fontface = "bold", size = 4.5)
-    }
-    if ("labels" %in% layers &amp;&amp; nrow(sub_obj$labels) &gt; 0) {
-      p &lt;- p + ggplot2::geom_text(data = sub_obj$labels, ggplot2::aes(x = x, y = y, label = label), 
-                                  color = "darkred", fontface = "bold", size = 3.5)
-    }
-    
-    p + ggplot2::theme_void() + 
-      ggplot2::coord_fixed() + 
-      ggplot2::ggtitle(paste0("Substrate Network Topology (Width = ", input$width_in, ", Step = ", input$step_in, ")"))
-  })
-  
-  output$summary_stats &lt;- shiny::renderUI({
-    sub_obj &lt;- substrate_data()
-    shiny::req(sub_obj)
-    
-    mods &lt;- input$modules_in
-    pts &lt;- if (!is.null(mods)) sub_obj$points[sub_obj$points$substrate %in% mods, ] else sub_obj$points[0, ]
-    
-    total_pts &lt;- nrow(pts)
-    active_mods_count &lt;- if (!is.null(mods)) length(mods) else 0
-    
-    counts &lt;- if (total_pts &gt; 0) table(pts$substrate) else numeric()
-    counts_html &lt;- if (length(counts) &gt; 0) {
-      paste0("&lt;li&gt;&lt;strong&gt;", names(counts), ":&lt;/strong&gt; ", counts, " points&lt;/li&gt;", collapse = "")
-    } else {
-      "&lt;li&gt;&lt;em&gt;No active modules selected&lt;/em&gt;&lt;/li&gt;"
-    }
-    
-    x_bounds &lt;- if (total_pts &gt; 0) paste0(round(range(pts$x), 2), collapse = " to ") else "N/A"
-    y_bounds &lt;- if (total_pts &gt; 0) paste0(round(range(pts$y), 2), collapse = " to ") else "N/A"
-    
-    shiny::HTML(paste0("
-      &lt;div class='stat-badge'&gt;
-        &lt;strong style='color: #1a73e8;'&gt;Active Modules:&lt;/strong&gt; ", active_mods_count, " / ", length(all_modules), "
-      &lt;/div&gt;
-      &lt;div class='stat-badge'&gt;
-        &lt;strong style='color: #7209b7;'&gt;Total Coordinate Dots:&lt;/strong&gt; ", total_pts, "
-      &lt;/div&gt;
-      &lt;div class='stat-badge'&gt;
-        &lt;strong style='color: #2ec4b6;'&gt;X Span:&lt;/strong&gt; ", x_bounds, "&lt;br/&gt;
-        &lt;strong style='color: #2ec4b6;'&gt;Y Span:&lt;/strong&gt; ", y_bounds, "
-      &lt;/div&gt;
-      &lt;hr style='margin: 10px 0; border-top: 1px solid rgba(0,0,0,0.1);'/&gt;
-      &lt;h5 style='font-size: 0.95em; font-weight: bold;'&gt;Points per Substrate:&lt;/h5&gt;
-      &lt;ul style='padding-left: 18px; font-size: 0.85em; line-height: 1.5em;'&gt;
-        ", counts_html, "
-      &lt;/ul&gt;
-    "))
-  })
+  shiny::shinyApp(ui = ui, server = server)
 }
 
+# --- Launch Application ---
+
+app_theme &lt;- bslib::bs_theme(version = 5, bg = '#ffffff', fg = '#212529', primary = '#2a9d8f')
+ui &lt;- bslib::page_sidebar(title = 'Triangular Substrate Explorer (triangleApp)', theme = app_theme, sidebar = bslib::sidebar(width = 320, triangleAppInput('tri')), triangleAppOutput('tri'))
+server &lt;- function(input, output, session) { triangleAppServer('tri') }
 shiny::shinyApp(ui = ui, server = server)</code></pre>
-<section id="source-code" class="level2">
-<h2 class="anchored" data-anchor-id="source-code">Source Code</h2>
-<p>View the source code for the app on <a href="https://github.com/byandell/ewing/blob/main/R/triangleApp.R">GitHub</a>.</p>
+<hr>
+<section id="programmatic-application-usage" class="level2">
+<h2 class="anchored" data-anchor-id="programmatic-application-usage">Programmatic Application Usage</h2>
+<p>Launch the interactive application natively in R:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ewing)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">triangleApp</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 
 </section>

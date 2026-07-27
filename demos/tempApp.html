@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Brian S. Yandell">
-<meta name="description" content="A serverless WebAssembly-powered explorer to interactively adjust daily high and low temperature splines and observe degree-day accumulation dynamics using temp.design() and temp.plot().">
+<meta name="description" content="An interactive thermal regime explorer allowing real-time editing of daily temperature splines and degree-day accumulations.">
 
 <title>tempApp (Shinylive) – ewing Demos</title>
 <style>
@@ -27,6 +27,41 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -162,7 +197,7 @@ ul.task-list li input[type="checkbox"] {
 
 <div>
   <div class="description">
-    A serverless WebAssembly-powered explorer to interactively adjust daily high and low temperature splines and observe degree-day accumulation dynamics using temp.design() and temp.plot().
+    An interactive thermal regime explorer allowing real-time editing of daily temperature splines and degree-day accumulations.
   </div>
 </div>
 
@@ -200,474 +235,761 @@ library(splines)
 library(stats)
 library(graphics)
 
-# --- Standalone Temperature Core Functions ---
+# --- Auto-Included from R/temp.R ---
 
-getTemp &lt;- function(community, element, sub) {
-    tempelem &lt;- community$temp[[element]]
-    if (!missing(sub)) tempelem &lt;- tempelem[[sub]]
-    tempelem
+## $Id: temp.R,v 1.0 2002/12/09 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###########################################################################################
+## initTemp( community, lo.hour, hi.hour )  ### creates Temperature object
+## activeTemp( community, lo.hour, hi.hour )    ### updates Temperature object
+## checkTime( ) # check if activeTemp needs updating to cover time interval
+##
+## temp.design( )
+## temp.plot( )
+###########################################################################################
+#' @importFrom stats predict
+#' @importFrom splines backSpline
+rescale.temp &lt;- function( low, high, newry = ry, newrx = rx,
+  ry = range( c( stats::predict( low, low$knots )$y, stats::predict( high, high$knots )$y )))
+{
+  if( max( abs( ry - newry )) &gt; 0 ) {
+    tmpy &lt;- diff( newry ) / diff( ry )
+    low$coefficients &lt;- low$coefficients * tmpy
+    high$coefficients &lt;- high$coefficients * tmpy
+    tmpy &lt;- newry[1] - ry[1] * tmpy
+    low$coefficients[,1] &lt;- tmpy + low$coefficients[,1]
+    high$coefficients[,1] &lt;- tmpy + high$coefficients[,1]
+  }
+  rx &lt;- range( low$knots, high$knots )
+  if( max( abs( rx - newrx )) &gt; 0 ) {
+    newx &lt;- diff( newrx ) / diff( rx )
+    low$knots &lt;- newrx[1] + newx * low$knots
+    high$knots &lt;- newrx[1] + newx * high$knots
+    tmp &lt;- 1
+    for( i in seq( 2, ncol( low$coefficients ))) {
+      tmp &lt;- tmp * newx
+      low$coefficients[,i] &lt;- low$coefficients[,i] / tmp
+      high$coefficients[,i] &lt;- high$coefficients[,i] / tmp
+    }
+  }
+  list( low = low, high = high )
 }
+###########################################################################################
+### Temperature data structure
+### Min minimum temperature for degree-day computations
+### Time    list of hours when temperature changes through a day
+### Base    list of temperature shifts through a day
+###     list names indicate first day Hour and Base applies
+### Low spline fit for daily low temperatures
+### High    spline fit for daily high temperatures
+### DegreeDay   spline fit (hour-&gt;DD) for currently active days
+### Hour        ramped backspline fit (DD-&gt;hour) for currently active days
+### Idea is that DegreeDay and Hour are updated whenever a future event is scheduled
+### past the latest future event already scheduled. At that time, the first
+### and last time of fit are both adjusted. This can be done without rebuilding
+### the whole spline fit by appropriate adjustment of knots and coefficents.
+### Steps:  (1) combine Hour, Low and High to get knots
+###     (2) build spline coefficients
+###########################################################################################
+temp.spline &lt;- function( community, hour, temp, start = 0,
+  mintemp = getTemp( community, "Min" ), cumulative = TRUE,
+  mult = getTemp( community, "Unit" ) )
+{
+  if( is.data.frame( hour ) &amp; missing( temp )) {
+    temp &lt;- hour$temp
+    hour &lt;- hour$hour
+  }
+  ## drop low value if ones on either side are low
+  low &lt;- temp &lt;= mintemp
+  toolow &lt;- low &amp; c(FALSE,low[-length(low)]) &amp; c(low[-1],FALSE)
+  hour &lt;- hour[!toolow]
+  temp &lt;- temp[!toolow]
+  lh &lt;- length( hour )
+  ## expand single low in middle to two
+  low &lt;- temp &lt;= mintemp
+  toolow &lt;- low &amp; c(FALSE,!low[-length(low)]) &amp; c(!low[-1],FALSE)
+  if( any( toolow )) {
+    hour &lt;- c(hour,hour[toolow])
+    temp &lt;- c(temp,temp[toolow])
+    temp &lt;- temp[ order( hour ) ]
+    hour &lt;- sort( hour )
+  }
+  ## truncate on left
+  low &lt;- temp &lt;= mintemp &amp; c(temp[-1] &gt; mintemp,FALSE)
+  low1 &lt;- c(FALSE,low[-lh])
+  if( any( low ))
+    hour[low] &lt;- hour[low] + ( hour[low1] - hour[low] ) * ( mintemp - temp[low] ) /
+      ( temp[low1] - temp[low] )
+  ## truncate on right
+  low &lt;- temp &lt;= mintemp &amp; c(FALSE,temp[-lh] &gt; mintemp)
+  low1 &lt;- c(low[-1],FALSE)
+  if( any( low ))
+    hour[low] &lt;- hour[low] + ( hour[low1] - hour[low] ) * ( mintemp - temp[low] ) /
+      ( temp[low1] - temp[low] )
+  temp[ temp &lt; mintemp ] &lt;- mintemp
+  temp &lt;- temp[ !duplicated( hour ) ]
+  hour &lt;- unique( hour )
 
-setTemp &lt;- function(community, element, value) {
-    community$temp[[element]] &lt;- value
-    community
+  ## linear interpolating spline for temp
+  lh &lt;- length( hour ) - 1
+  h0 &lt;- 1:lh
+  aa &lt;- ( temp[1+h0] - temp[h0] ) / ( hour[1+h0]-hour[h0] )
+  aa &lt;- c( aa, aa[lh] )
+  bb &lt;- temp - mintemp
+  s &lt;- list( knots = hour, coefficients = cbind( bb,aa,0,0) )
+  dimnames( s$coefficients ) &lt;- list( paste( floor( hour / mult ), round( hour %% mult ),
+    sep = "." ), c("const","linear","quad","cubic") )
+  attr(s,"formula") &lt;- temp ~ hour
+  class( s ) &lt;- c("npolySpline","polySpline","spline")
+  if( !cumulative )
+    return( s )
+
+  ## quadratic spline for cumulative temp
+  aa &lt;- s$coefficients[,3] &lt;- s$coefficients[,2] / 2 / mult / mult
+  lh &lt;- length( aa ) - 1
+  h0 &lt;- 1:lh
+  h1 &lt;- 1 + h0
+  hour &lt;- s$knots
+  bb &lt;- s$coefficients[,2] &lt;- s$coefficients[,1] / mult
+  cc &lt;- ( hour[h1] - hour[h0] ) * ( bb[h0] + aa[h0] *
+    ( hour[h1] - hour[h0] ))
+  s$coefficients[,1] &lt;- start + c( 0, cumsum( cc ))
+  s
 }
+###########################################################################################
+temp.repeat &lt;- function( community, period = range( days ))
+{
+  lodays &lt;- range( getTemp( community, "Low" )$knots )
+  hidays &lt;- range( getTemp( community, "High" )$knots )
+  days &lt;- c( max( lodays[1], hidays[1] ), min( lodays[2], hidays[2] ))
+  lodays &lt;- period[1] &gt;= days[1] &amp; period[1] &lt;= days[2]
+  if( lodays )
+    days[1] &lt;- period[1]
+  hidays &lt;- period[2] &lt;= days[2] &amp; period[2] &gt;= days[1]
+  if( hidays )
+    days[2] &lt;- period[2]
+  if( !( lodays &amp; hidays )) {
+    stop( paste( "\nSimulation period is outside of Temperature days:\n period =",
+      paste( round( period ), collapse = "," ), "; days =",
+      paste( round( days ), collapse = "," ), "\nNeed to run temp.design() and start over!" ))
+  }
+  period &lt;- days
 
-temp.spline &lt;- function(community, hour, temp, start = 0,
-                        mintemp = getTemp(community, "Min"),
-                        cumulative = TRUE, mult = getTemp(community, "Unit")) {
-    if (is.data.frame(hour) &amp;&amp; missing(temp)) {
-        temp &lt;- hour$temp
-        hour &lt;- hour$hour
+  days &lt;- seq( days[1], days[2] )
+  low &lt;- stats::predict( getTemp( community, "Low" ), days )$y
+  high &lt;- stats::predict( getTemp( community, "High" ), days )$y
+  periods &lt;- c( as.numeric( names( getTemp( community, "Time" ))), Inf )
+  temps &lt;- hours &lt;- numeric( )
+  period[2] &lt;- period[2] + 1
+  for( i in seq( length( periods ) - 1 )) {
+    day &lt;- max( period[1], periods[i] )
+    this.period &lt;- days &gt;= day &amp; days &lt; min( period[2], periods[i+1] )
+    n &lt;- sum( this.period )
+    if( n ) {
+      if( !is.null( getTemp( community, "Time", i ))) {
+        time &lt;- getTemp( community, "Time", i )
+        base &lt;- getTemp( community, "Base", i )
+      }
+      h &lt;- length( time )
+      lotemp &lt;- rep( low[this.period], rep(h,n) )
+      hitemp &lt;- rep( high[this.period], rep(h,n) )
+      temp &lt;- ( base - min( base )) / diff( range( base ))
+      temps &lt;- c( temps, rep( temp, n ) * ( hitemp - lotemp ) + lotemp )
+
+      hours &lt;- c( hours, rep( time, n ) + rep( getTemp( community, "Unit" ) *
+        seq( day, day + n - 1 ), rep(h,n) ))
     }
-    low &lt;- temp &lt;= mintemp
-    toolow &lt;- low &amp; c(FALSE, low[-length(low)]) &amp; c(low[-1], FALSE)
-    hour &lt;- hour[!toolow]
-    temp &lt;- temp[!toolow]
-    lh &lt;- length(hour)
-    low &lt;- temp &lt;= mintemp
-    toolow &lt;- low &amp; c(FALSE, !low[-length(low)]) &amp; c(!low[-1], FALSE)
-    if (any(toolow)) {
-        hour &lt;- c(hour, hour[toolow])
-        temp &lt;- c(temp, temp[toolow])
-        temp &lt;- temp[order(hour)]
-        hour &lt;- sort(hour)
-    }
-    low &lt;- temp &lt;= mintemp &amp; c(temp[-1] &gt; mintemp, FALSE)
-    low1 &lt;- c(FALSE, low[-lh])
-    if (any(low)) {
-        hour[low] &lt;- hour[low] + (hour[low1] - hour[low]) * (mintemp - temp[low]) / (temp[low1] - temp[low])
-    }
-    low &lt;- temp &lt;= mintemp &amp; c(FALSE, temp[-lh] &gt; mintemp)
-    low1 &lt;- c(low[-1], FALSE)
-    if (any(low)) {
-        hour[low] &lt;- hour[low] + (hour[low1] - hour[low]) * (mintemp - temp[low]) / (temp[low1] - temp[low])
-    }
-    temp[temp &lt; mintemp] &lt;- mintemp
-    temp &lt;- temp[!duplicated(hour)]
-    hour &lt;- unique(hour)
-    lh &lt;- length(hour) - 1
-    h0 &lt;- 1:lh
-    aa &lt;- (temp[1 + h0] - temp[h0]) / (hour[1 + h0] - hour[h0])
-    aa &lt;- c(aa, aa[lh])
-    bb &lt;- temp - mintemp
-    s &lt;- list(knots = hour, coefficients = cbind(bb, aa, 0, 0))
-    dimnames(s$coefficients) &lt;- list(paste(floor(hour / mult), round(hour %% mult), sep = "."), c("const", "linear", "quad", "cubic"))
-    attr(s, "formula") &lt;- temp ~ hour
-    class(s) &lt;- c("npolySpline", "polySpline", "spline")
-    if (!cumulative) {
-        return(s)
-    }
-    aa &lt;- s$coefficients[, 3] &lt;- s$coefficients[, 2] / 2 / mult / mult
-    lh &lt;- length(aa) - 1
-    h0 &lt;- 1:lh
-    h1 &lt;- 1 + h0
-    hour &lt;- s$knots
-    bb &lt;- s$coefficients[, 2] &lt;- s$coefficients[, 1] / mult
-    cc &lt;- (hour[h1] - hour[h0]) * (bb[h0] + aa[h0] * (hour[h1] - hour[h0]))
-    s$coefficients[, 1] &lt;- start + c(0, cumsum(cc))
-    s
+  }
+  day &lt;- days == period[2]
+  if( any( day )) {
+    temps &lt;- c( temps, low[day] + temp[1] * ( high[day] -
+      getTemp( community, "Low" )[day] ))
+    hours &lt;- c( hours, getTemp( community, "Unit" ) * period[2] )
+  }
+  data.frame( hour = hours, temp = temps )
 }
-
-temp.repeat &lt;- function(community, period = range(days)) {
-    lodays &lt;- range(getTemp(community, "Low")$knots)
-    hidays &lt;- range(getTemp(community, "High")$knots)
-    days &lt;- c(max(lodays[1], hidays[1]), min(lodays[2], hidays[2]))
-    lodays &lt;- period[1] &gt;= days[1] &amp; period[1] &lt;= days[2]
-    if (lodays) days[1] &lt;- period[1]
-    hidays &lt;- period[2] &lt;= days[2] &amp; period[2] &gt;= days[1]
-    if (hidays) days[2] &lt;- period[2]
-    if (!(lodays &amp; hidays)) stop("Simulation period outside temperature days")
-    period &lt;- days
-    days &lt;- seq(days[1], days[2])
-    low &lt;- stats::predict(getTemp(community, "Low"), days)$y
-    high &lt;- stats::predict(getTemp(community, "High"), days)$y
-    periods &lt;- c(as.numeric(names(getTemp(community, "Time"))), Inf)
-    temps &lt;- hours &lt;- numeric()
-    period[2] &lt;- period[2] + 1
-    for (i in seq(length(periods) - 1)) {
-        day &lt;- max(period[1], periods[i])
-        this.period &lt;- days &gt;= day &amp; days &lt; min(period[2], periods[i + 1])
-        n &lt;- sum(this.period)
-        if (n) {
-            if (!is.null(getTemp(community, "Time", i))) {
-                time &lt;- getTemp(community, "Time", i)
-                base &lt;- getTemp(community, "Base", i)
-            }
-            h &lt;- length(time)
-            lotemp &lt;- rep(low[this.period], rep(h, n))
-            hitemp &lt;- rep(high[this.period], rep(h, n))
-            temp &lt;- (base - min(base)) / diff(range(base))
-            temps &lt;- c(temps, rep(temp, n) * (hitemp - lotemp) + lotemp)
-            hours &lt;- c(hours, rep(time, n) + rep(getTemp(community, "Unit") * seq(day, day + n - 1), rep(h, n)))
-        }
-    }
-    day &lt;- days == period[2]
-    if (any(day)) {
-        temps &lt;- c(temps, low[day] + temp[1] * (high[day] - getTemp(community, "Low")[day]))
-        hours &lt;- c(hours, getTemp(community, "Unit") * period[2])
-    }
-    data.frame(hour = hours, temp = temps)
+##########################################################################################
+showTemp &lt;- function( community )
+{
+  cat( "Temperature set for days",
+      paste( range( getTemp( community, "Low" )$knots ), collapse = " to " ), "\n" )
+  cat( "Daily low temperature range:",
+      paste( round( range( stats::predict( getTemp( community, "Low" ))$y )),
+            collapse = " to " ), "\n" )
+  cat( "Daily high temperature range:",
+      paste( round( range( stats::predict( getTemp( community, "High" ))$y )),
+            collapse = " to " ), "\n" )
+  if( !is.null( getTemp( community, "DegreeDay" ) ))
+    cat( "Active temperature range:",
+        paste( round( range( getTemp( community, "DegreeDay", "knots" ) )),
+              collapse = " to " ), "\n" )
+  cat( "Run temp.design() to adjust temperature range\n" )
 }
+##########################################################################################
+activeTemp &lt;- function( community,
+                       lo.hour = min( getTemp( community, "DegreeDay", "knots" ) ),
+                       hi.hour = max( getTemp( community, "DegreeDay", "knots" ) ),
+                       degreeday, messages = TRUE )
+{
+  unit &lt;- getTemp( community, "Unit" )
+  if( missing( hi.hour )) {
+    hi.hour &lt;- if( length( lo.hour ) &gt; 1 )
+      lo.hour[2]
+    else
+      lo.hour + unit
+  }
+  ## period is in units of hours
+  period &lt;- c( floor( lo.hour[1] / unit ), ceiling( hi.hour / unit ))
+  if( missing( degreeday )) {
+    degreeday &lt;- if( is.null( getTemp( community, "DegreeDay" ) ))
+      0
+    else
+      getDegreeDay( community, lo.hour[1] )
+  }
+  if( is.na( degreeday ))
+    degreeday &lt;- 0
+  community &lt;- setTemp( community, "DegreeDay",
+                       temp.spline( community, temp.repeat( community, period ),
+                                   start = degreeday ))
+  community &lt;- setTemp( community, "Hour",
+                       break.backSpline( getTemp( community, "DegreeDay" )))
 
-break.backSpline &lt;- function(tmp) {
-    tmpc &lt;- diff(tmp$coefficients[, 1]) == 0
-    tmpk &lt;- cumsum(diff(tmp$knots) * tmpc)
-    tmpk &lt;- c(tmpk, tmpk[length(tmpk)])
-    tmp$knots &lt;- tmp$knots - tmpk
-    tmpc &lt;- c(!tmpc, TRUE)
-    tmp$knots &lt;- tmp$knots[tmpc]
-    tmp$coefficients &lt;- tmp$coefficients[tmpc, ]
-    nb &lt;- dim(tmp$coefficients)
-    tmpn &lt;- tmp$coefficients[, 2] == 0
-    if (any(tmpn)) {
-        tmpn &lt;- seq(tmpn)[tmpn]
-        tmp$coefficients[tmpn, 2:nb[2]] &lt;- (tmp$coefficients[pmin(nb[1], tmpn + 1), 2:nb[2]] + tmp$coefficients[pmax(1, tmpn - 1), 2:nb[2]]) / 2
+  if(messages) {
+    tmp &lt;- period * unit
+    names( tmp ) &lt;- c("lo.hour","hi.hour")
+    print( tmp )
+  }
+  community
+}
+###########################################################################################
+updateTemp &lt;- function( community,
+                       period = range( getTemp( community, "DegreeDay", "knots" ) ))
+{
+  ## period is in units of hours
+  first &lt;- period[1]
+  last &lt;- period[2]
+
+  s &lt;- getTemp( community, "DegreeDay" )
+  knots &lt;- s$knots
+  ## drop earlier times that are now in the past
+  drop &lt;- sum( knots &lt; first ) - 1
+  nk &lt;- length( knots )
+  change &lt;- drop &gt; 0
+  if( change ) {
+    s$knots &lt;- knots[ - seq( drop ) ]
+    s$coefficients &lt;- s$coefficients[ - seq( drop ), ]
+  }
+  ## add new days to include last
+  period &lt;- ceiling( c( knots[nk], last ) / getTemp( community, "Unit" ) )
+  if( period[1] &lt;= period[2] ) {
+    change &lt;- TRUE
+    news &lt;- temp.spline( community, temp.repeat( community, period ),
+      start = getHour( getTemp( community, "Unit" ) * period[1] ))
+    nk &lt;- length( s$knots )
+    if( s$knots[nk] == news$knots[1] ) {
+      s$knots &lt;- s$knots[-nk]
+      s$coefficients &lt;- s$coefficients[-nk,]
     }
-    tmpb &lt;- splines::backSpline(tmp)
-    if (any(tmpc)) tmpb$coefficients[, 1] &lt;- tmpb$coefficients[, 1] + tmpk[tmpc]
-    tmpb
+    else
+      s$coefficients[nk,] &lt;- news$coefficients[1,]
+    s$knots &lt;- c( s$knots, news$knots )
+    s$coefficients &lt;- rbind( s$coefficients, news$coefficients )    
+  }
+  if( change ) {
+    community &lt;- setTemp( community, "DegreeDay", s )
+    community &lt;- setTemp( community, "Hour", break.backSpline( s ))
+  }
+  community
 }
+###########################################################################################
+ramp.backSpline &lt;- function( s )
+{
+  ## ramped backspline is a trick to get backSpline when curve is flat in spots
+  ## if tmp &lt;- stats::predict( ramp.backSpline( s ))
+  ## then plot tmp$y versus tmp$x-tmp$y to "recover" original curve.
+  ## problem is that one cannot recover particular x this way!
 
-activeTemp &lt;- function(community, lo.hour = min(getTemp(community, "DegreeDay", "knots")),
-                       hi.hour = max(getTemp(community, "DegreeDay", "knots")), degreeday, messages = FALSE) {
-    unit &lt;- getTemp(community, "Unit")
-    if (missing(hi.hour)) {
-        hi.hour &lt;- if (length(lo.hour) &gt; 1) lo.hour[2] else lo.hour + unit
-    }
-    period &lt;- c(floor(lo.hour[1] / unit), ceiling(hi.hour / unit))
-    if (missing(degreeday)) {
-        degreeday &lt;- if (is.null(getTemp(community, "DegreeDay"))) 0 else stats::predict(getTemp(community, "DegreeDay"), lo.hour[1])$y
-    }
-    if (is.na(degreeday)) degreeday &lt;- 0
-    community &lt;- setTemp(community, "DegreeDay", temp.spline(community, temp.repeat(community, period), start = degreeday))
-    community &lt;- setTemp(community, "Hour", break.backSpline(getTemp(community, "DegreeDay")))
-    community
+  s$coefficients[,1] &lt;- s$coefficients[,1] + s$knots
+  s$coefficients[,2] &lt;- s$coefficients[,2] + 1
+  splines::backSpline( s )
 }
+###########################################################################################
+break.backSpline &lt;- function( tmp )
+{
+  ## alternative to ramped backSpline that first removes flat regions (slope 0)
+  ## problem remains that leftover may still have slope 0 at a point
+  ## this can cause anomolous results!
 
-temp.plot &lt;- function(community, lo.hour = s$knots[1], hi.hour = max(s$knots), length = 201, col = NULL, derivative = FALSE, ..., printit = FALSE) {
-    s &lt;- getTemp(community, "DegreeDay")
-    x &lt;- seq(lo.hour, hi.hour, length = length)
-    x &lt;- unique(sort(c(x, s$knots[s$knots &gt;= lo.hour &amp; s$knots &lt;= hi.hour])))
-    ylab &lt;- "degree-days"
-    if (derivative) {
-        ylab &lt;- "degrees above min"
-        s$coefficients &lt;- s$coefficients[, -1]
-        for (i in seq(2, ncol(s$coefficients))) s$coefficients[, i] &lt;- s$coefficients[, i] * i
-    }
-    y &lt;- stats::predict(s, x)$y
-    graphics::plot(x / getTemp(community, "Unit"), y, type = "l", xlab = "day", ylab = ylab, ...)
+  ## find flat regions and cut out
+  tmpc &lt;- diff(tmp$coefficients[,1]) == 0 
+  tmpk &lt;- cumsum( diff(tmp$knots) * ( tmpc ))
+  tmpk &lt;- c(tmpk,tmpk[length(tmpk)])
+  tmp$knots &lt;- tmp$knots - tmpk
+  tmpc &lt;- c(!tmpc,TRUE)
+  tmp$knots &lt;- tmp$knots[tmpc]
+  tmp$coefficients &lt;- tmp$coefficients[tmpc,]
+  tmp$breaks
+  nb &lt;- dim( tmp$coefficients )
+
+  ## kludge for backspline: cannot handle slope of zero
+  tmpn &lt;- tmp$coefficients[,2] == 0
+  if( any( tmpn )) {
+    tmpn &lt;- seq( tmpn )[ tmpn ]
+    tmp$coefficients[ tmpn, 2:nb[2] ] &lt;-
+      ( tmp$coefficients[ pmin( nb[1], tmpn + 1 ), 2:nb[2] ] +
+       tmp$coefficients[ pmax(     1, tmpn - 1 ), 2:nb[2] ] ) / 2
+  }
+
+  ## back spline
+  tmpb &lt;- splines::backSpline(tmp )
+
+  if( any( tmpc )) {
+    ## shift back spline based on breaks
+    tmpb$coefficients[,1] &lt;- tmpb$coefficients[,1] + tmpk[tmpc]
+  }
+  tmpb
 }
-
-# Construct default simulation community object
-init_temp_community &lt;- function() {
-    Unit &lt;- 24
-    Min &lt;- 50
-    Days &lt;- 200
-    tmp &lt;- seq(0, Days, length = 8)
-    tmp0 &lt;- seq(0, 1, length = 8)
-    tmp1 &lt;- 0.25 * (90 - 70)
-    Low &lt;- splines::interpSpline(tmp, 70 * (1 - tmp0) + 75 * tmp0 + sin(pi * 4 * tmp0) * tmp1)
-    High &lt;- splines::interpSpline(tmp, 85 * (1 - tmp0) + 90 * tmp0 + sin(pi * (0.125 + 4 * tmp0)) * tmp1)
-    Time &lt;- list("0" = c(0, 6, 12, 18, 24))
-    Base &lt;- list("0" = c(0, 0.5, 1, 0.5, 0))
-    comm &lt;- list(temp = list(Unit = Unit, Min = Min, Time = Time, Base = Base, Low = Low, High = High, DegreeDay = NULL, Hour = NULL))
-    class(comm) &lt;- "ewing"
-    activeTemp(comm, lo.hour = 0, hi.hour = 24, messages = FALSE)
+###########################################################################################
+getDegreeDay &lt;- function( community, hour )
+{
+  stats::predict( getTemp( community, "DegreeDay" ), hour )$y
 }
-
-community_default &lt;- init_temp_community()
-
-get_spline_coords &lt;- function(comm, element = "High") {
-    sp &lt;- getTemp(comm, element)
-    knots &lt;- sp$knots
-    yvals &lt;- stats::predict(sp, knots)$y
-    list(x = knots, y = yvals, spline = sp)
+###########################################################################################
+getHour &lt;- function( community, dd )
+{
+  stats::predict( getTemp( community, "Hour" ), dd )$y
 }
+###########################################################################################
+getTime &lt;- function( community, species, x )
+{
+  if( is.na(x)){
+    cat("getTime missing value\n")
+    browser()
+  }
+  switch( getOrgFeature( community, species, "units" ),
+    ## organisms on hour basis assumed to be active only 6am-6pm
+    hr = getDegreeDay( community,
+      ( getTemp( community, "Unit" ) / 2 + x + floor( x / getTemp( community, "Unit" ) )) / 2 ),
+    DD = x )
+}
+###########################################################################################
+checkTime &lt;- function( community, x, base, units )
+{
+## NOTE: Sometimes base can be negative!! (reset to 0)
+  if( units == "hr" ) {
+    x &lt;- max( x )
+#    print( c( base = base, x = x, knots = range( getTemp( community, "DegreeDay", "knots" ))))
+    if( x &gt; max( getTemp( community, "DegreeDay", "knots" )))
+      community &lt;- activeTemp( community, max( base, 0 ),
+                              x + getTemp( community, "Unit" ), messages = FALSE )
+  }
+  community
+}
+###########################################################################################
+transTime &lt;- function( community, org1name, org2name, x,
+                      unit1 = getOrgFeature( community, org1name, "units" ),
+                      unit2 = getOrgFeature( community, org2name, "units" ))
+{
+  if( is.na(x)){
+    cat("transTime missing value\n")
+    browser()
+  }
+  if( unit1 == unit2 )
+    return( x )
+  switch( unit1,
+    ## organisms on hour basis assumed to be active only 6am-6pm
+    hr = getDegreeDay( community,
+      ( getTemp( community, "Unit" ) / 2 + x + floor( x / getTemp( community, "Unit" ))) / 2 ),
+    DD = getHour( x ))
+}
+###########################################################################################
+### To do:
+### 1. interactive designer for hourly temp fluctation over one day
+### 2. interactive designer for daily lows and highs over season: temp.design() DONE
+### 3. check future event trees hour vs. DD
+### 4. schedule interaction events with hour-DD translation
+### 5. make aphytis dormant at night
+###########################################################################################
 
-init_high &lt;- get_spline_coords(community_default, "High")
-init_low &lt;- get_spline_coords(community_default, "Low")
-init_min &lt;- 50
+# --- Auto-Included from R/tempApp.R ---
 
-# --- Shiny Application UI ---
-
-app_theme &lt;- bslib::bs_theme(
+#' Interactive Daily Temperature Design Explorer App
+#' 
+#' Shiny application to interactively adjust daily high and low temperature splines
+#' and visualize degree-day accumulation dynamics for an \code{ewing} simulation.
+#' 
+#' @param community Simulation object of class \code{ewing} (default: \code{init.simulation()})
+#' @param title Application title
+#' @export
+#' @importFrom shiny shinyApp fluidPage tags div h3 h4 p fluidRow column hr
+#' @importFrom shiny reactive renderPlot renderText req selectizeInput sliderInput numericInput textInput textOutput verbatimTextOutput observeEvent updateSliderInput updateNumericInput validate need uiOutput renderUI tagList updateTextInput radioButtons actionButton reactiveVal reactiveValues
+#' @importFrom bslib page_sidebar sidebar card card_body card_header bs_theme
+#' @importFrom splines interpSpline
+#' @importFrom stats predict
+tempApp &lt;- function(community = NULL, title = "Daily Temperature Design Explorer") {
+  
+  # Initialize baseline community simulation if not supplied
+  if (is.null(community)) {
+    community &lt;- init.simulation(messages = FALSE)
+  }
+  
+  # Curated modern light color scheme
+  app_theme &lt;- bslib::bs_theme(
     version = 5,
     bg = "#ffffff",
     fg = "#212529",
     primary = "#1a73e8",
     secondary = "#7209b7",
     success = "#2ec4b6"
-)
-
-ui &lt;- bslib::page_sidebar(
-    title = "Daily Temperature Design Explorer",
-    theme = app_theme,
-    sidebar = bslib::sidebar(
-        width = 300,
-        shiny::div(
-            style = "font-size: 0.85rem; padding: 5px 0;",
-            shiny::div(
-                style = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;",
-                shiny::span("Active Curve:", style = "font-weight: bold; color: #1a73e8;"),
-                shiny::radioButtons(
-                    "active_curve", NULL,
-                    choices = c("High" = "High", "Low" = "Low"),
-                    selected = "High",
-                    inline = TRUE
-                )
-            ),
-            shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
-            shiny::div(
-                style = "margin-bottom: 6px;",
-                shiny::span("Day Knots (X):", style = "font-weight: 600; color: #7209b7; display: block; margin-bottom: 2px;"),
-                shiny::textInput("x_coords", NULL, value = paste(round(init_high$x, 1), collapse = ", "))
-            ),
-            shiny::div(
-                style = "margin-bottom: 6px;",
-                shiny::span("Temperatures °F (Y):", style = "font-weight: 600; color: #7209b7; display: block; margin-bottom: 2px;"),
-                shiny::textInput("y_coords", NULL, value = paste(round(init_high$y, 1), collapse = ", "))
-            ),
-            shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
-            shiny::div(
-                style = "display: flex; gap: 8px; align-items: flex-end; margin-top: 6px;",
-                shiny::div(
-                    style = "flex: 1;",
-                    shiny::span("Min Temp:", style = "font-weight: 600; color: #2ec4b6; display: block; margin-bottom: 2px;"),
-                    shiny::numericInput("min_temp", NULL, value = init_min, min = 0, max = 120, step = 1)
-                ),
-                shiny::actionButton("reset_btn", "Reset", class = "btn-outline-secondary btn-sm", style = "height: 38px; margin-bottom: 0px;")
-            )
-        )
-    ),
-    shiny::tags$head(
-        shiny::tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&amp;display=swap"),
-        shiny::tags$style(shiny::HTML("
-      body { background-color: #f8f9fa; font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-      .card {
-        background: #ffffff !important;
-        border: 1px solid rgba(0, 0, 0, 0.08) !important;
-        border-radius: 12px !important;
-        box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.04);
-        margin-bottom: 15px;
+  )
+  
+  # Helper to extract knots and y-values from a spline object
+  get_spline_coords &lt;- function(comm, element = "High") {
+    sp &lt;- getTemp(comm, element)
+    if (is.null(sp)) {
+      tmp &lt;- seq(0, 60, length = 8)
+      sp &lt;- if (element == "Low") {
+        splines::interpSpline(tmp, 60 + 0.125 * tmp + sin(0.25 * tmp))
+      } else {
+        splines::interpSpline(tmp, 70 + 0.15 * tmp + sin((pi / 8) + 0.225 * tmp))
       }
-      .card-header { font-weight: bold; background: rgba(0, 0, 0, 0.01) !important; }
-    "))
-    ),
-    shiny::fluidRow(
-        shiny::column(
-            width = 6,
-            bslib::card(
-                bslib::card_header("Daily High &amp; Low Temperature Splines (Click plot to move nodes)"),
-                bslib::card_body(
-                    shiny::plotOutput("plot_temp", height = "450px", click = "temp_click")
-                )
-            )
-        ),
-        shiny::column(
-            width = 6,
-            bslib::card(
-                bslib::card_header("Degree-Day Dynamics: temp.plot()"),
-                bslib::card_body(
-                    shiny::plotOutput("plot_degreeday", height = "450px")
-                )
-            )
-        )
-    ),
-    shiny::fluidRow(
-        shiny::column(
-            width = 12,
-            bslib::card(
-                bslib::card_header("Instructions"),
-                bslib::card_body(
-                    shiny::HTML("&lt;p style='font-size: 0.9em;'&gt;Select either &lt;em&gt;High Temperature&lt;/em&gt; or &lt;em&gt;Low Temperature&lt;/em&gt; in the sidebar and click anywhere on the left plot to reposition knot coordinates. Degree-day dynamics are recalculated dynamically via &lt;code&gt;activeTemp()&lt;/code&gt;.&lt;/p&gt;")
-                )
-            )
-        )
-    )
-)
-
-# --- Shiny Application Server ---
-
-server &lt;- function(input, output, session) {
-    state &lt;- shiny::reactiveValues(
-        high_x = init_high$x,
-        high_y = init_high$y,
-        low_x = init_low$x,
-        low_y = init_low$y,
-        current_active = "High"
-    )
-
-    sync_text_inputs &lt;- function() {
-        if (state$current_active == "High") {
-            shiny::updateTextInput(session, "x_coords", value = paste(round(state$high_x, 1), collapse = ", "))
-            shiny::updateTextInput(session, "y_coords", value = paste(round(state$high_y, 1), collapse = ", "))
-        } else {
-            shiny::updateTextInput(session, "x_coords", value = paste(round(state$low_x, 1), collapse = ", "))
-            shiny::updateTextInput(session, "y_coords", value = paste(round(state$low_y, 1), collapse = ", "))
-        }
     }
-
-    shiny::observeEvent(input$active_curve,
-        {
-            state$current_active &lt;- input$active_curve
-            sync_text_inputs()
-        },
-        ignoreInit = TRUE
+    knots &lt;- sp$knots
+    yvals &lt;- stats::predict(sp, knots)$y
+    list(x = knots, y = yvals, spline = sp)
+  }
+  
+  init_high &lt;- get_spline_coords(community, "High")
+  init_low  &lt;- get_spline_coords(community, "Low")
+  init_min  &lt;- getTemp(community, "Min")
+  if (is.null(init_min) || is.na(init_min)) init_min &lt;- 50
+  
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    theme = app_theme,
+    
+    sidebar = bslib::sidebar(
+      width = 300,
+      shiny::div(
+        style = "font-size: 0.85rem; padding: 5px 0;",
+        shiny::div(
+          style = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;",
+          shiny::span("Active Curve:", style = "font-weight: bold; color: #1a73e8;"),
+          shiny::radioButtons(
+            "active_curve", NULL,
+            choices = c("High" = "High", "Low" = "Low"),
+            selected = "High",
+            inline = TRUE
+          )
+        ),
+        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+        shiny::div(
+          style = "margin-bottom: 6px;",
+          shiny::span("Day Knots (X):", style = "font-weight: 600; color: #7209b7; display: block; margin-bottom: 2px;"),
+          shiny::textInput("x_coords", NULL, value = paste(round(init_high$x, 1), collapse = ", "))
+        ),
+        shiny::div(
+          style = "margin-bottom: 6px;",
+          shiny::span("Temperatures °F (Y):", style = "font-weight: 600; color: #7209b7; display: block; margin-bottom: 2px;"),
+          shiny::textInput("y_coords", NULL, value = paste(round(init_high$y, 1), collapse = ", "))
+        ),
+        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+        shiny::div(
+          style = "display: flex; gap: 8px; align-items: flex-end; margin-top: 6px;",
+          shiny::div(
+            style = "flex: 1;",
+            shiny::span("Min Temp:", style = "font-weight: 600; color: #2ec4b6; display: block; margin-bottom: 2px;"),
+            shiny::numericInput("min_temp", NULL, value = init_min, min = 0, max = 120, step = 1)
+          ),
+          shiny::actionButton("reset_btn", "Reset", class = "btn-outline-secondary btn-sm", style = "height: 38px; margin-bottom: 0px;")
+        )
+      )
+    ),
+    
+    shiny::tags$head(
+      shiny::tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&amp;display=swap"),
+      shiny::tags$style(shiny::HTML("
+        body {
+          background-color: #f8f9fa;
+          font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .card {
+          background: #ffffff !important;
+          border: 1px solid rgba(0, 0, 0, 0.08) !important;
+          border-radius: 12px !important;
+          box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05);
+          transition: all 0.3s ease;
+          margin-bottom: 20px;
+        }
+        .card:hover {
+          border-color: rgba(26, 115, 232, 0.3) !important;
+        }
+        .card-header {
+          background: rgba(0, 0, 0, 0.02) !important;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+          font-weight: bold;
+        }
+        .sidebar {
+          background: #ffffff !important;
+          border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+        }
+      "))
+    ),
+    
+    shiny::fluidRow(
+      shiny::column(
+        width = 6,
+        bslib::card(
+          bslib::card_header("Daily High &amp; Low Temperature Splines (Click plot to move nodes)"),
+          bslib::card_body(
+            shiny::plotOutput("plot_temp", height = "500px", click = "temp_click")
+          )
+        )
+      ),
+      shiny::column(
+        width = 6,
+        bslib::card(
+          bslib::card_header("Degree-Day &amp; Temperature Dynamics: temp.plot()"),
+          bslib::card_body(
+            shiny::plotOutput("plot_degreeday", height = "500px")
+          )
+        )
+      )
+    ),
+    shiny::fluidRow(
+      shiny::column(
+        width = 12,
+        bslib::card(
+          bslib::card_header("Instructions &amp; Temperature Regime Overview"),
+          bslib::card_body(
+            shiny::HTML("
+              &lt;p&gt;&lt;strong&gt;Instructions:&lt;/strong&gt; Select the curve you wish to modify (&lt;em&gt;High Temperature&lt;/em&gt; or &lt;em&gt;Low Temperature&lt;/em&gt;) from the sidebar. Click directly on the &lt;em&gt;Daily High &amp; Low Temperature Splines&lt;/em&gt; plot to move individual knot coordinates. The coordinates will update in real time while maintaining strict day monotonicity.&lt;/p&gt;
+              &lt;p&gt;&lt;strong&gt;Background:&lt;/strong&gt; In the &lt;strong&gt;ewing&lt;/strong&gt; Quantitative Population Ethology framework, stage transitions and rate dynamics depend on degree-days (DD). Daily high and low temperature curves are modeled as cubic splines over time. Updating high/low temperatures dynamically recalculates degree-day accumulation via &lt;code&gt;activeTemp()&lt;/code&gt;.&lt;/p&gt;
+              &lt;ul style='padding-left: 20px; font-size: 0.9em;'&gt;
+                &lt;li&gt;&lt;strong style='color: #dc3545;'&gt;High Temperature (Red):&lt;/strong&gt; Peak temperature expected each day.&lt;/li&gt;
+                &lt;li&gt;&lt;strong style='color: #0d6efd;'&gt;Low Temperature (Blue):&lt;/strong&gt; Minimum temperature expected each day.&lt;/li&gt;
+                &lt;li&gt;&lt;strong&gt;Min Temp Threshold:&lt;/strong&gt; Base thermal threshold below which degree-days do not accumulate.&lt;/li&gt;
+              &lt;/ul&gt;
+            ")
+          )
+        )
+      )
     )
-
+  )
+  
+  server = function(input, output, session) {
+    
+    # Store state for High and Low curves
+    state &lt;- shiny::reactiveValues(
+      high_x = init_high$x,
+      high_y = init_high$y,
+      low_x  = init_low$x,
+      low_y  = init_low$y,
+      current_active = "High"
+    )
+    
+    # Sync text inputs when active curve changes or state is updated
+    sync_text_inputs &lt;- function() {
+      if (state$current_active == "High") {
+        shiny::updateTextInput(session, "x_coords", value = paste(round(state$high_x, 2), collapse = ", "))
+        shiny::updateTextInput(session, "y_coords", value = paste(round(state$high_y, 2), collapse = ", "))
+      } else {
+        shiny::updateTextInput(session, "x_coords", value = paste(round(state$low_x, 2), collapse = ", "))
+        shiny::updateTextInput(session, "y_coords", value = paste(round(state$low_y, 2), collapse = ", "))
+      }
+    }
+    
+    # Observe active curve toggle
+    shiny::observeEvent(input$active_curve, {
+      state$current_active &lt;- input$active_curve
+      sync_text_inputs()
+    }, ignoreInit = TRUE)
+    
+    # Reset button handler
     shiny::observeEvent(input$reset_btn, {
-        state$high_x &lt;- init_high$x
-        state$high_y &lt;- init_high$y
-        state$low_x &lt;- init_low$x
-        state$low_y &lt;- init_low$y
-        shiny::updateNumericInput(session, "min_temp", value = init_min)
-        sync_text_inputs()
+      state$high_x &lt;- init_high$x
+      state$high_y &lt;- init_high$y
+      state$low_x  &lt;- init_low$x
+      state$low_y  &lt;- init_low$y
+      shiny::updateNumericInput(session, "min_temp", value = init_min)
+      sync_text_inputs()
     })
-
+    
+    # Handle click on temperature plot to reposition closest node
     shiny::observeEvent(input$temp_click, {
-        cx &lt;- input$temp_click$x
-        cy &lt;- input$temp_click$y
-
-        x_curr &lt;- if (state$current_active == "High") state$high_x else state$low_x
-        y_curr &lt;- if (state$current_active == "High") state$high_y else state$low_y
-
-        n &lt;- length(x_curr)
-        if (n &lt; 3) {
-            return()
-        }
-
-        xr &lt;- max(x_curr) - min(x_curr)
-        yr &lt;- max(y_curr) - min(y_curr)
-        if (xr == 0) xr &lt;- 1
-        if (yr == 0) yr &lt;- 1
-
-        dists &lt;- ((x_curr - cx) / xr)^2 + ((y_curr - cy) / yr)^2
-        idx &lt;- which.min(dists)
-
-        min_x &lt;- if (idx == 1) x_curr[1] else x_curr[idx - 1] + 0.01
-        max_x &lt;- if (idx == n) x_curr[n] else x_curr[idx + 1] - 0.01
-        new_x &lt;- max(min_x, min(max_x, cx))
-
-        x_curr[idx] &lt;- new_x
-        y_curr[idx] &lt;- cy
-
-        if (state$current_active == "High") {
-            state$high_x &lt;- x_curr
-            state$high_y &lt;- y_curr
-        } else {
-            state$low_x &lt;- x_curr
-            state$low_y &lt;- y_curr
-        }
-
-        sync_text_inputs()
+      cx &lt;- input$temp_click$x
+      cy &lt;- input$temp_click$y
+      
+      x_curr &lt;- if (state$current_active == "High") state$high_x else state$low_x
+      y_curr &lt;- if (state$current_active == "High") state$high_y else state$low_y
+      
+      n &lt;- length(x_curr)
+      if (n &lt; 3) return()
+      
+      # Find nearest node in normalized distance
+      xr &lt;- max(x_curr) - min(x_curr)
+      yr &lt;- max(y_curr) - min(y_curr)
+      if (xr == 0) xr &lt;- 1
+      if (yr == 0) yr &lt;- 1
+      
+      dists &lt;- ((x_curr - cx) / xr)^2 + ((y_curr - cy) / yr)^2
+      idx &lt;- which.min(dists)
+      
+      # Monotonicity bounds for Day (X)
+      min_x &lt;- if (idx == 1) x_curr[1] else x_curr[idx - 1] + 0.01
+      max_x &lt;- if (idx == n) x_curr[n] else x_curr[idx + 1] - 0.01
+      new_x &lt;- max(min_x, min(max_x, cx))
+      
+      x_curr[idx] &lt;- new_x
+      y_curr[idx] &lt;- cy
+      
+      if (state$current_active == "High") {
+        state$high_x &lt;- x_curr
+        state$high_y &lt;- y_curr
+      } else {
+        state$low_x  &lt;- x_curr
+        state$low_y  &lt;- y_curr
+      }
+      
+      sync_text_inputs()
     })
-
+    
+    # Parse text inputs when user edits text directly
     shiny::observeEvent(list(input$x_coords, input$y_coords), {
-        shiny::req(input$x_coords, input$y_coords)
-
-        x_vals &lt;- tryCatch(as.numeric(trimws(strsplit(input$x_coords, ",")[[1]])), error = function(e) NA)
-        y_vals &lt;- tryCatch(as.numeric(trimws(strsplit(input$y_coords, ",")[[1]])), error = function(e) NA)
-
-        if (length(x_vals) &gt;= 3 &amp;&amp; length(x_vals) == length(y_vals) &amp;&amp;
-            !any(is.na(x_vals)) &amp;&amp; !any(is.na(y_vals)) &amp;&amp; all(diff(x_vals) &gt; 0)) {
-            if (state$current_active == "High") {
-                state$high_x &lt;- x_vals
-                state$high_y &lt;- y_vals
-            } else {
-                state$low_x &lt;- x_vals
-                state$low_y &lt;- y_vals
-            }
-        }
-    })
-
-    sim_reactive &lt;- shiny::reactive({
-        shiny::req(input$min_temp)
-
-        shiny::validate(
-            shiny::need(length(state$high_x) == length(state$high_y), "High temp X &amp; Y must have equal length."),
-            shiny::need(length(state$low_x) == length(state$low_y), "Low temp X &amp; Y must have equal length."),
-            shiny::need(length(state$high_x) &gt;= 3, "High temp spline requires at least 3 nodes."),
-            shiny::need(length(state$low_x) &gt;= 3, "Low temp spline requires at least 3 nodes."),
-            shiny::need(all(diff(state$high_x) &gt; 0), "High temp Day knots must be strictly increasing."),
-            shiny::need(all(diff(state$low_x) &gt; 0), "Low temp Day knots must be strictly increasing.")
-        )
-
-        tryCatch(
-            {
-                sp_high &lt;- splines::interpSpline(state$high_x, state$high_y)
-                sp_low &lt;- splines::interpSpline(state$low_x, state$low_y)
-
-                comm &lt;- community_default
-                comm &lt;- setTemp(comm, "High", sp_high)
-                comm &lt;- setTemp(comm, "Low", sp_low)
-                comm &lt;- setTemp(comm, "Min", input$min_temp)
-
-                comm &lt;- activeTemp(comm, messages = FALSE)
-
-                list(community = comm, high_spline = sp_high, low_spline = sp_low)
-            },
-            error = function(e) {
-                shiny::validate(paste("Error constructing temperature splines:", e$message))
-            }
-        )
-    })
-
-    output$plot_temp &lt;- shiny::renderPlot({
-        res &lt;- sim_reactive()
-        shiny::req(res)
-
-        high_sp &lt;- res$high_spline
-        low_sp &lt;- res$low_spline
-
-        x_range &lt;- range(c(state$high_x, state$low_x))
-        pred_x &lt;- seq(x_range[1], x_range[2], length.out = 200)
-
-        pred_high &lt;- stats::predict(high_sp, pred_x)$y
-        pred_low &lt;- stats::predict(low_sp, pred_x)$y
-
-        y_range &lt;- range(c(pred_high, pred_low, state$high_y, state$low_y))
-
-        graphics::par(bg = "white", col.axis = "#495057", col.lab = "#212529", col.main = "#1a73e8", fg = "#cccccc")
-        graphics::plot(pred_x, pred_high,
-            type = "l", col = "#dc3545", lwd = 3,
-            xlim = x_range, ylim = y_range,
-            xlab = "Day", ylab = "Temperature (°F)",
-            main = "Daily High &amp; Low Temperature Splines",
-            panel.first = graphics::grid(col = "#e9ecef", lty = 1)
-        )
-
-        graphics::lines(pred_x, pred_low, col = "#0d6efd", lwd = 3)
-
-        graphics::points(state$high_x, state$high_y, col = "#dc3545", pch = 19, cex = 1.6)
-        graphics::points(state$low_x, state$low_y, col = "#0d6efd", pch = 19, cex = 1.6)
-
+      shiny::req(input$x_coords, input$y_coords)
+      
+      x_vals &lt;- tryCatch(as.numeric(trimws(strsplit(input$x_coords, ",")[[1]])), error = function(e) NA)
+      y_vals &lt;- tryCatch(as.numeric(trimws(strsplit(input$y_coords, ",")[[1]])), error = function(e) NA)
+      
+      if (length(x_vals) &gt;= 3 &amp;&amp; length(x_vals) == length(y_vals) &amp;&amp; 
+          !any(is.na(x_vals)) &amp;&amp; !any(is.na(y_vals)) &amp;&amp; all(diff(x_vals) &gt; 0)) {
         if (state$current_active == "High") {
-            graphics::points(state$high_x, state$high_y, col = "#7209b7", pch = 1, cex = 2.6, lwd = 2)
+          state$high_x &lt;- x_vals
+          state$high_y &lt;- y_vals
         } else {
-            graphics::points(state$low_x, state$low_y, col = "#7209b7", pch = 1, cex = 2.6, lwd = 2)
+          state$low_x  &lt;- x_vals
+          state$low_y  &lt;- y_vals
         }
-
-        graphics::legend("topright",
-            legend = c("High Temp", "Low Temp", "Active Knots"),
-            col = c("#dc3545", "#0d6efd", "#7209b7"),
-            lty = c(1, 1, NA), pch = c(19, 19, 1), lwd = c(2, 2, 2), bty = "n"
-        )
+      }
     })
-
+    
+    # Rebuild simulation community with active splines
+    sim_reactive &lt;- shiny::reactive({
+      shiny::req(input$min_temp)
+      
+      # Validate coordinate lengths and monotonicity
+      shiny::validate(
+        shiny::need(length(state$high_x) == length(state$high_y), "High temp X &amp; Y must have equal length."),
+        shiny::need(length(state$low_x)  == length(state$low_y),  "Low temp X &amp; Y must have equal length."),
+        shiny::need(length(state$high_x) &gt;= 3, "High temp spline requires at least 3 nodes."),
+        shiny::need(length(state$low_x)  &gt;= 3, "Low temp spline requires at least 3 nodes."),
+        shiny::need(all(diff(state$high_x) &gt; 0), "High temp Day knots must be strictly increasing."),
+        shiny::need(all(diff(state$low_x)  &gt; 0), "Low temp Day knots must be strictly increasing.")
+      )
+      
+      tryCatch({
+        sp_high &lt;- splines::interpSpline(state$high_x, state$high_y)
+        sp_low  &lt;- splines::interpSpline(state$low_x,  state$low_y)
+        
+        comm &lt;- community
+        comm &lt;- setTemp(comm, "High", sp_high)
+        comm &lt;- setTemp(comm, "Low",  sp_low)
+        comm &lt;- setTemp(comm, "Min",  input$min_temp)
+        
+        # Calculate active temperature degree-day integration
+        comm &lt;- activeTemp(comm, messages = FALSE)
+        
+        list(community = comm, high_spline = sp_high, low_spline = sp_low)
+      }, error = function(e) {
+        shiny::validate(paste("Error constructing temperature splines:", e$message))
+      })
+    })
+    
+    # Render daily high &amp; low temperature splines plot
+    output$plot_temp &lt;- shiny::renderPlot({
+      res &lt;- sim_reactive()
+      shiny::req(res)
+      
+      high_sp &lt;- res$high_spline
+      low_sp  &lt;- res$low_spline
+      
+      x_range &lt;- range(c(state$high_x, state$low_x))
+      pred_x  &lt;- seq(x_range[1], x_range[2], length.out = 200)
+      
+      pred_high &lt;- stats::predict(high_sp, pred_x)$y
+      pred_low  &lt;- stats::predict(low_sp,  pred_x)$y
+      
+      y_range &lt;- range(c(pred_high, pred_low, state$high_y, state$low_y))
+      
+      graphics::par(bg = "white", col.axis = "#495057", col.lab = "#212529", col.main = "#1a73e8", fg = "#cccccc")
+      graphics::plot(pred_x, pred_high, type = "l", col = "#dc3545", lwd = 3,
+                     xlim = x_range, ylim = y_range,
+                     xlab = "Day", ylab = "Temperature (°F)",
+                     main = "Daily High &amp; Low Temperature Splines",
+                     panel.first = graphics::grid(col = "#e9ecef", lty = 1))
+      
+      graphics::lines(pred_x, pred_low, col = "#0d6efd", lwd = 3)
+      
+      # Plot nodes
+      graphics::points(state$high_x, state$high_y, col = "#dc3545", pch = 19, cex = 1.6)
+      graphics::points(state$low_x,  state$low_y,  col = "#0d6efd", pch = 19, cex = 1.6)
+      
+      # Highlight nodes for currently active curve
+      if (state$current_active == "High") {
+        graphics::points(state$high_x, state$high_y, col = "#7209b7", pch = 1, cex = 2.6, lwd = 2)
+      } else {
+        graphics::points(state$low_x,  state$low_y,  col = "#7209b7", pch = 1, cex = 2.6, lwd = 2)
+      }
+      
+      graphics::legend("topright", legend = c("High Temp", "Low Temp", "Active Knots"),
+                       col = c("#dc3545", "#0d6efd", "#7209b7"),
+                       lty = c(1, 1, NA), pch = c(19, 19, 1), lwd = c(2, 2, 2), bty = "n")
+    })
+    
+    # Render degree-day calculation plot using temp.plot()
     output$plot_degreeday &lt;- shiny::renderPlot({
-        res &lt;- sim_reactive()
-        shiny::req(res)
-
-        graphics::par(bg = "white", col.axis = "#495057", col.lab = "#212529", col.main = "#2ec4b6", fg = "#cccccc")
-        temp.plot(res$community, main = "Degree-Day Dynamics over Time")
+      res &lt;- sim_reactive()
+      shiny::req(res)
+      
+      graphics::par(bg = "white", col.axis = "#495057", col.lab = "#212529", col.main = "#2ec4b6", fg = "#cccccc")
+      temp.plot(res$community, main = "Degree-Day Dynamics over Time")
     })
+  }
+  
+  shiny::shinyApp(ui = ui, server = server)
 }
 
+# --- Launch Application ---
+
+app_theme &lt;- bslib::bs_theme(version = 5, bg = '#ffffff', fg = '#212529', primary = '#e63946')
+ui &lt;- bslib::page_sidebar(title = 'Temperature Regime Explorer (tempApp)', theme = app_theme, sidebar = bslib::sidebar(width = 340, tempAppInput('temp')), tempAppOutput('temp'))
+server &lt;- function(input, output, session) { tempAppServer('temp') }
 shiny::shinyApp(ui = ui, server = server)</code></pre>
-<section id="source-code" class="level2">
-<h2 class="anchored" data-anchor-id="source-code">Source Code</h2>
-<p>View the source code for the app on <a href="https://github.com/byandell/ewing/blob/main/R/tempApp.R">GitHub</a>.</p>
+<hr>
+<section id="programmatic-application-usage" class="level2">
+<h2 class="anchored" data-anchor-id="programmatic-application-usage">Programmatic Application Usage</h2>
+<p>Launch the interactive application natively in R:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ewing)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tempApp</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 
 </section>

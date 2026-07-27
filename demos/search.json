@@ -7,11 +7,11 @@
     "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can click directly on the temperature spline plot on the left to move individual high or low temperature knot coordinates."
   },
   {
-    "objectID": "tempApp.html#source-code",
-    "href": "tempApp.html#source-code",
+    "objectID": "tempApp.html#programmatic-application-usage",
+    "href": "tempApp.html#programmatic-application-usage",
     "title": "tempApp (Shinylive)",
-    "section": "Source Code",
-    "text": "Source Code\nView the source code for the app on GitHub."
+    "section": "Programmatic Application Usage",
+    "text": "Programmatic Application Usage\nLaunch the interactive application natively in R:\nlibrary(ewing)\n\ntempApp()"
   },
   {
     "objectID": "fiveShowApp.html",
@@ -21,11 +21,11 @@
     "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can click directly on the baseline spline plot on the left to move individual nodes, and adjust the target relative mean slider on the right to trigger the binary search."
   },
   {
-    "objectID": "fiveShowApp.html#source-code",
-    "href": "fiveShowApp.html#source-code",
+    "objectID": "fiveShowApp.html#programmatic-application-usage",
+    "href": "fiveShowApp.html#programmatic-application-usage",
     "title": "fiveShowApp (Shinylive)",
-    "section": "Source Code",
-    "text": "Source Code\nView the source code for the app on GitHub."
+    "section": "Programmatic Application Usage",
+    "text": "Programmatic Application Usage\nLaunch the interactive application natively in R:\nlibrary(ewing)\n\nfiveShowApp()"
   },
   {
     "objectID": "fivePlotApp.html",
@@ -35,11 +35,11 @@
     "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can click directly on the baseline spline plot on the left to move individual nodes."
   },
   {
-    "objectID": "fivePlotApp.html#source-code",
-    "href": "fivePlotApp.html#source-code",
+    "objectID": "fivePlotApp.html#programmatic-application-usage",
+    "href": "fivePlotApp.html#programmatic-application-usage",
     "title": "fivePlotApp (Shinylive)",
-    "section": "Source Code",
-    "text": "Source Code\nView the source code for the app on GitHub."
+    "section": "Programmatic Application Usage",
+    "text": "Programmatic Application Usage\nLaunch the interactive application natively in R:\nlibrary(ewing)\n\nfivePlotApp()"
   },
   {
     "objectID": "sysetholApp.html",
@@ -53,14 +53,7 @@
     "href": "sysetholApp.html#programmatic-application-usage",
     "title": "sysetholApp (Systems Ethology Platform)",
     "section": "Programmatic Application Usage",
-    "text": "Programmatic Application Usage\nLaunch the Systems Ethology Platform natively in R using exported package functions:\nlibrary(ewing)\n\n# Launch interactive Systems Ethology platform app\nsysetholApp()\n\n# Or launch standalone Input Data Explorer\ninputApp()\nThe app launcher script is located at inst/scripts/sysetholApp.R."
-  },
-  {
-    "objectID": "sysetholApp.html#platform-architecture-features",
-    "href": "sysetholApp.html#platform-architecture-features",
-    "title": "sysetholApp (Systems Ethology Platform)",
-    "section": "Platform Architecture & Features",
-    "text": "Platform Architecture & Features\nThe platform combines modular Shiny components exported in R/sysetholApp.R and R/inputApp.R:\n\nSidebar Setup & De-cluttering: Dynamic conditional panels display geometric log-scale Steps per click slider (1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000) when nsim = 1 and Total Simulation steps / Confidence Band Envelope when nsim &gt; 1. Side panel Run Engine and Reset buttons keep the main interface focused and clean.\nDist Plots: Visualizes population age-class distributions over simulation steps (\\(t = 0, 5, 10, 15, 20, ...\\)) with full intermediate sub-step time resolution using geom_step() step lines and geom_point().\nSubstrate Plots: Projects organism positions onto hexagonal substrate topology overlays with species filtering and Overlay (1 Map) vs Separate (Stacked Maps) view modes.\nEnvelope Plots: Computes multi-run simulation envelopes across nsim stochastic iterations (visible when nsim &gt; 1).\nInput Data (inputApp): Interactive table explorer (inputAppInput, inputAppOutput, inputAppServer) for underlying organism.features, future.host, future.parasite, substrate.host, substrate.parasite, substrate.substrate, host.parasite, temperature.base, and temperature.par datasets."
+    "text": "Programmatic Application Usage\nLaunch the Systems Ethology Platform natively in R using exported package functions:\nlibrary(ewing)\n\nsysetholApp()"
   },
   {
     "objectID": "hexmoveApp.html",
@@ -70,11 +63,11 @@
     "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can interactively step through simulation events (+1, +10, +100 steps), toggle species visibility (Host, Parasite), switch between Overlay (1 Map) and Separate (Stacked Maps) view modes, and inspect organism positions on hexagonal substrate overlays."
   },
   {
-    "objectID": "hexmoveApp.html#source-code-documentation",
-    "href": "hexmoveApp.html#source-code-documentation",
+    "objectID": "hexmoveApp.html#programmatic-application-usage",
+    "href": "hexmoveApp.html#programmatic-application-usage",
     "title": "hexmoveApp (Shinylive)",
-    "section": "Source Code & Documentation",
-    "text": "Source Code & Documentation\n\nPackage source function: R/hexmoveApp.R\nArchitectural rationale and mathematical derivations: inst/doc/refactor/hexmove.md"
+    "section": "Programmatic Application Usage",
+    "text": "Programmatic Application Usage\nLaunch the interactive application natively in R:\nlibrary(ewing)\n\nhexmoveApp()"
   },
   {
     "objectID": "triangleApp.html",
@@ -84,18 +77,18 @@
     "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can interactively adjust substrate width, step density, toggle plant modules, and inspect spatial grid statistics."
   },
   {
-    "objectID": "triangleApp.html#source-code",
-    "href": "triangleApp.html#source-code",
+    "objectID": "triangleApp.html#programmatic-application-usage",
+    "href": "triangleApp.html#programmatic-application-usage",
     "title": "triangleApp (Shinylive)",
-    "section": "Source Code",
-    "text": "Source Code\nView the source code for the app on GitHub."
+    "section": "Programmatic Application Usage",
+    "text": "Programmatic Application Usage\nLaunch the interactive application natively in R:\nlibrary(ewing)\n\ntriangleApp()"
   },
   {
     "objectID": "index.html",
     "href": "index.html",
     "title": "ewing Demos Gallery",
     "section": "",
-    "text": "This gallery showcases interactive spline tools, spatial projection utilities, and the central Systems Ethology platform from the ewing R package.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nfivePlotApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to study single parameter sensitivity of spline curves using five.plot().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nfiveShowApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to search for 5-parameter adjustments using five.show().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\nhexmapApp (Hexagonal Watershed Explorer)\n\n\nInteractively identify USGS HUC12 subwatershed boundaries using Leaflet, isolate geographic landmass features (e.g., Isle Royale), and overlay spatial hexagonal substrate…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nhexmoveApp (Shinylive)\n\n\nA serverless WebAssembly-powered app to interactively step through population ethology simulations and visualize multi-species organism positions on hexagonal substrate grid…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nsysetholApp (Systems Ethology Platform)\n\n\nThe central Systems Ethology platform orchestrating host-parasite individual-based simulations, age class distributions over time, spatial substrate networks, and parameter…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\ntempApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to interactively adjust daily high and low temperature splines and observe degree-day accumulation dynamics using temp.design() and…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\ntriangleApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to interactively construct, visualize, and inspect tridiagonal substrate spatial networks using substrate_topology() and…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\nNo matching items"
+    "text": "This gallery showcases interactive spline tools, spatial projection utilities, and the central Systems Ethology platform from the ewing R package.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nfivePlotApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to study single parameter sensitivity of spline curves using five.plot().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nfiveShowApp (Shinylive)\n\n\nAn interactive binary search tool demonstrating how five.show() finds parameter values matching target mean response values.\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\nhexmapApp (Hexagonal Watershed Explorer)\n\n\nInteractively identify USGS HUC12 subwatershed boundaries using Leaflet, isolate geographic landmass features (e.g., Isle Royale), and overlay spatial hexagonal substrate…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nhexmoveApp (Shinylive)\n\n\nAn interactive spatial organism movement simulator tracking host-parasite positions across triangular substrate grids.\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nsysetholApp (Systems Ethology Platform)\n\n\nThe central Systems Ethology platform orchestrating host-parasite individual-based simulations, age class distributions over time, spatial substrate networks, and parameter…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\ntempApp (Shinylive)\n\n\nAn interactive thermal regime explorer allowing real-time editing of daily temperature splines and degree-day accumulations.\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\ntriangleApp (Shinylive)\n\n\nA spatial geometric network visualizer rendering triangular substrates, hexagonal cell overlays, and connectivity topologies.\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "hexmapApp.html",
