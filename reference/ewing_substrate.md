@@ -1,7 +1,7 @@
 # Ewing Substrate by Species
 
-Ewing Substrate by Species with optional hexagonal topology layout and
-substrate-level coordinate rescaling.
+Ewing Substrate by Species with optional hexagonal topology layout,
+multi-species support, and substrate-level coordinate rescaling.
 
 ## Usage
 
@@ -10,10 +10,10 @@ ewing_substrate(
   community,
   species,
   headstuff = c(0, "start", sum(to.plot)),
-  units = getOrgFeature(community, species, "units"),
-  right = species,
+  units = getOrgFeature(community, species[1], "units"),
+  right = species[1],
   adj = c(0, 0.5, 1),
-  show_sub = substrates,
+  show_sub = NULL,
   step = 0,
   layout = c("facet", "hex"),
   width = 10,
@@ -45,7 +45,8 @@ autoplot(object, ...)
 
 - species:
 
-  Species name (e.g. "host", "parasite")
+  Species name or vector of species names (e.g. \`"host"\`,
+  \`"parasite"\`, or \`c("host", "parasite")\`)
 
 - headstuff:
 
@@ -65,7 +66,7 @@ autoplot(object, ...)
 
 - show_sub:
 
-  Substrate filter
+  Substrate filter (defaults to all active substrates)
 
 - step:
 

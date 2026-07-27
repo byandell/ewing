@@ -7,9 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Brian S. Yandell">
-<meta name="description" content="Interactive Shiny app to visualize organism positions on a continuous hexagonal substrate grid based on global tridiagonal coordinates and step through simulation events.">
+<meta name="description" content="A serverless WebAssembly-powered app to interactively step through population ethology simulations and visualize multi-species organism positions on hexagonal substrate grid overlays.">
 
-<title>hexmoveApp (Organism Movement on Hex Grid) – ewing Demos</title>
+<title>hexmoveApp (Shinylive) – ewing Demos</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -27,41 +27,6 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -83,6 +48,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="site_libs/bootstrap/bootstrap-6ac2aec46ad7f46b16024ee4409aa65c.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<meta name="shinylive:serviceworker_dir" content=".">
+<script src="site_libs/quarto-contrib/shinylive-0.10.12/shinylive/load-shinylive-sw.js" type="module"></script>
+<script src="site_libs/quarto-contrib/shinylive-0.10.12/shinylive/run-python-blocks.js" type="module"></script>
+<link href="site_libs/quarto-contrib/shinylive-0.10.12/shinylive/shinylive.css" rel="stylesheet">
+<link href="site_libs/quarto-contrib/shinylive-quarto-css/shinylive-quarto.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -111,35 +81,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
-
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
 
 </head>
 
@@ -210,33 +151,23 @@ window.Quarto = {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" class="toc-active">
-    <h2 id="toc-title">On this page</h2>
-   
-  <ul class="collapse">
-  <li><a href="#interactive-application-usage" id="toc-interactive-application-usage" class="nav-link active" data-scroll-target="#interactive-application-usage">Interactive Application Usage</a></li>
-  <li><a href="#programmatic-code-example" id="toc-programmatic-code-example" class="nav-link" data-scroll-target="#programmatic-code-example">Programmatic Code Example</a></li>
-  <li><a href="#key-features" id="toc-key-features" class="nav-link" data-scroll-target="#key-features">Key Features</a></li>
-  </ul>
-</nav>
-    </div>
+    
 <!-- main -->
-<main class="content column-page-left" id="quarto-document-content">
+<main class="content column-page" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">hexmoveApp (Organism Movement on Hex Grid)</h1>
+<h1 class="title">hexmoveApp (Shinylive)</h1>
 </div>
 
 <div>
   <div class="description">
-    Interactive Shiny app to visualize organism positions on a continuous hexagonal substrate grid based on global tridiagonal coordinates and step through simulation events.
+    A serverless WebAssembly-powered app to interactively step through population ethology simulations and visualize multi-species organism positions on hexagonal substrate grid overlays.
   </div>
 </div>
 
 
-<div class="quarto-title-meta column-page-left">
+<div class="quarto-title-meta column-page">
 
     <div>
     <div class="quarto-title-meta-heading">Author</div>
@@ -255,111 +186,506 @@ window.Quarto = {
 
 
 <p><a href="./index.html">← Back to Demos Gallery</a></p>
-<p>The <strong><code>hexmoveApp()</code></strong> application visualizes host and parasite spatial positions mapped directly onto a unified hexagonal substrate network topology (<code>create_substrate</code>).</p>
-<p>Instead of rendering substrate components (<code>fr1..fr4</code>, <code>tw1..tw2</code>, <code>lftop</code>, <code>lfbot</code>) in isolated rectangular panel facets, <code>hexmoveApp()</code> places every organism on a continuous hexagonal substrate plane based on its native tridiagonal coordinates <span class="math inline">\((a, b, c)\)</span> rescaled into its active substrate patch area.</p>
-<hr>
-<section id="interactive-application-usage" class="level2">
-<h2 class="anchored" data-anchor-id="interactive-application-usage">Interactive Application Usage</h2>
-<p>Launch the application natively in R:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ewing)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize simulation and run initial 100 steps</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>mysim <span class="ot">&lt;-</span> <span class="fu">init.simulation</span>()</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>mysim <span class="ot">&lt;-</span> <span class="fu">future.events</span>(mysim, <span class="at">nstep =</span> <span class="dv">100</span>)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Launch interactive Shiny app</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">hexmoveApp</span>(mysim)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<blockquote class="blockquote">
-<p>[!NOTE] <strong>Live Deployment:</strong> You can also test <code>hexmoveApp()</code> live on the <a href="https://connect.doit.wisc.edu/SystemsEthology">SystemsEthology Connect Platform</a>.</p>
-</blockquote>
-<hr>
-</section>
-<section id="programmatic-code-example" class="level2">
-<h2 class="anchored" data-anchor-id="programmatic-code-example">Programmatic Code Example</h2>
-<p>Below is an R example illustrating how <code>ewing_substrate(mysim, species, layout = "hex")</code> converts organism coordinates into rescaled global Euclidean space and renders the hexagonal substrate overlay plot via <code>autoplot()</code>.</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ewing)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Initialize simulation and advance 100 steps</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>mysim <span class="ot">&lt;-</span> <span class="fu">init.simulation</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Data organism.features already loaded
-Initializing Temperature Profile ...
-Data temperature.par already loaded
-Data temperature.base already loaded
-Base daily temperature fluctuation:
-Temperature set for days 0 to 202 
-Daily low temperature range: 68 to 77 
-Daily high temperature range: 83 to 92 
-Run temp.design() to adjust temperature range
-Initial active temperature:
-lo.hour hi.hour 
-      0      24 
-Creating simulation organism set using species:
- host, parasite 
+<p>The live application below is running completely client-side in your browser using serverless <strong>Shinylive</strong> (WebAssembly). You can interactively step through simulation events (+1, +10, +100 steps), toggle species visibility (<code>Host</code>, <code>Parasite</code>), switch between <strong>Overlay (1 Map)</strong> and <strong>Separate (Stacked Maps)</strong> view modes, and inspect organism positions on hexagonal substrate overlays.</p>
+<pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
+#|   shinylive does not work in self-contained HTML documents.
+#|   Please set `embed-resources: false` in your metadata.
+#| standalone: true
+#| viewerHeight: 850
+#| components: [viewer]
 
-Data future.host already loaded
-Data substrate.host already loaded
-Data future.parasite already loaded
-Data host.parasite already loaded
-Data substrate.parasite already loaded
-Data substrate.substrate already loaded
+library(shiny)
+library(bslib)
+library(ggplot2)
+library(cowplot)
+library(stats)
 
-Initialize host at size 200...
-Initializing events for host with 200 individuals
-Initialize parasite at size 200...
-Initializing events for parasite with 200 individuals</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>mysim <span class="ot">&lt;-</span> <span class="fu">future.events</span>(mysim, <span class="at">nstep =</span> <span class="dv">100</span>, <span class="at">plotit =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>initial: host 200: parasite 200
-lo.hour hi.hour 
-      0      48 
-refresh 5: host 203: parasite 200
-refresh 10: host 204: parasite 200
-refresh 15: host 204: parasite 200
-refresh 20: host 207: parasite 200
-refresh 25: host 207: parasite 200
-refresh 30: host 208: parasite 200
-refresh 35: host 209: parasite 200
-refresh 40: host 212: parasite 200
-refresh 45: host 212: parasite 200
-refresh 50: host 213: parasite 200
-refresh 55: host 214: parasite 200
-refresh 60: host 215: parasite 200
-refresh 65: host 216: parasite 200
-refresh 70: host 217: parasite 200
-refresh 75: host 220: parasite 200
-refresh 80: host 220: parasite 200
-refresh 85: host 221: parasite 200
-refresh 90: host 223: parasite 200
-refresh 95: host 225: parasite 200
-refresh 100: host 225: parasite 200</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Extract host coordinates mapped to hexagonal substrate grid</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>host_hex <span class="ot">&lt;-</span> <span class="fu">ewing_substrate</span>(mysim, <span class="st">"host"</span>, <span class="at">layout =</span> <span class="st">"hex"</span>)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Render autoplot with hexagonal grid overlay</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">autoplot</span>(host_hex)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="hexmoveApp_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="768"></p>
-</figure>
-</div>
-</div>
-</div>
-<hr>
-</section>
-<section id="key-features" class="level2">
-<h2 class="anchored" data-anchor-id="key-features">Key Features</h2>
-<ol type="1">
-<li><strong>Per-Substrate Unit Triangle Rescaling</strong>: Organisms’ local tridiagonal coordinates <span class="math inline">\((pos.a, pos.b, pos.c)\)</span> are normalized and scaled into the unit triangle <span class="math inline">\([0, W_{sub}]\)</span> of each active substrate patch, guaranteeing all individuals sit strictly within their substrate bounds (and supporting substrates of varying sizes).</li>
-<li><strong>Hexagonal Polygon Overlay</strong>: Generates discrete 6-sided polygon cells (<code>create_hex_overlay</code>) across all plant substrate components (<code>fr1..fr4</code>, <code>tw1</code>, <code>lftop</code>, <code>lfbot</code>).</li>
-<li><strong>Interactive Simulation Stepping</strong>: Action buttons (<code>Step +1</code>, <code>Step +10</code>, <code>Step +100</code>, <code>Reset</code>) allow stepping through simulation horizon events with live reactive map updates.</li>
-<li><strong>Modular Layout Composition</strong>: Seamlessly switch between <code>"hex"</code> (global hexagonal grid overlay) and <code>"facet"</code> (panel view faceted by substrate element) layouts in <code>substrateInput</code> / <code>substrateServer</code>.</li>
-</ol>
+# --- Standalone Substrate &amp; Spatial Geometry Functions ---
+
+tricoord &lt;- function(a, b = NULL, c = NULL) {
+  if (is.data.frame(a) &amp;&amp; all(c("a", "b", "c") %in% names(a))) {
+    res &lt;- a
+  } else if (is.matrix(a) &amp;&amp; ncol(a) == 3) {
+    res &lt;- as.data.frame(a)
+    names(res) &lt;- c("a", "b", "c")
+  } else if (!is.null(b) &amp;&amp; !is.null(c)) {
+    res &lt;- data.frame(a = a, b = b, c = c)
+  } else if (is.numeric(a) &amp;&amp; length(a) == 3) {
+    res &lt;- data.frame(a = a[1], b = a[2], c = a[3])
+  } else {
+    stop("Invalid tricoord input format")
+  }
+  class(res) &lt;- c("tricoord", "data.frame")
+  res
+}
+
+`+.tricoord` &lt;- function(e1, e2) {
+  if (is.numeric(e2) &amp;&amp; length(e2) == 3) {
+    tricoord(e1$a + e2[1], e1$b + e2[2], e1$c + e2[3])
+  } else if (inherits(e2, "tricoord")) {
+    tricoord(e1$a + e2$a, e1$b + e2$b, e1$c + e2$c)
+  } else {
+    stop("Invalid right hand operand for tricoord addition")
+  }
+}
+
+tri2car &lt;- function(tri, xmult = 2 / (2 + sqrt(3)), ymult = 6 / (3 + 2 * sqrt(3))) {
+  if (inherits(tri, "tricoord")) {
+    x &lt;- (tri$a - tri$b) * xmult
+    y &lt;- - (tri$a + tri$b) * ymult
+  } else {
+    if (!is.matrix(tri)) tri &lt;- as.matrix(tri)
+    x &lt;- (tri[1, ] - tri[2, ]) * xmult
+    y &lt;- - (tri[1, ] + tri[2, ]) * ymult
+  }
+  data.frame(x = x, y = y)
+}
+
+get_substrate_grid &lt;- function(width, step = 1, orientation = "up") {
+  pts &lt;- expand.grid(a = seq(0, width - step, by = step), b = seq(0, width - step, by = step))
+  if (orientation == "up") {
+    pts &lt;- subset(pts, a + b &lt;= width - step)
+    pts$c &lt;- -(pts$a + pts$b)
+  } else {
+    pts &lt;- subset(pts, a + b &lt;= width - step)
+    pts$a &lt;- -pts$a
+    pts$b &lt;- -pts$b
+    pts$c &lt;- -(pts$a + pts$b)
+  }
+  pts
+}
+
+substrate_topology &lt;- function(width = 10, step = 1) {
+  W &lt;- width - step
+  list(
+    fr2   = list(offset = c(0, 0, 0), dir = "down"),
+    fr1   = list(offset = c(-W, -W, 2 * W), dir = "up"),
+    fr3   = list(offset = c(-W, 0, W), dir = "up"),
+    fr4   = list(offset = c(0, -W, W), dir = "up"),
+    tw1   = list(offset = c(-W, 0, W), dir = "down"),
+    twig  = list(offset = c(-W, 0, W), dir = "down"),
+    tw2   = list(offset = c(-2 * W, 0, 2 * W), dir = "up"),
+    lftop = list(offset = c(-2 * W, W, W), dir = "down"),
+    lfbot = list(offset = c(-3 * W, W, 2 * W), dir = "up")
+  )
+}
+
+create_substrate &lt;- function(topology, width = 10, step = 1) {
+  W &lt;- width - step
+  all_points &lt;- data.frame()
+  labels_df &lt;- data.frame()
+  poly_df &lt;- data.frame()
+  
+  for (sub in names(topology)) {
+    cfg &lt;- topology[[sub]]
+    grid &lt;- get_substrate_grid(width, step, cfg$dir)
+    
+    o_a &lt;- cfg$offset[1]
+    o_b &lt;- cfg$offset[2]
+    o_c &lt;- cfg$offset[3]
+
+    grid_tri &lt;- tricoord(grid$a, grid$b, grid$c)
+    grid_tri &lt;- grid_tri + cfg$offset
+    
+    car_pts &lt;- tri2car(grid_tri)
+    car_pts$substrate &lt;- sub
+    all_points &lt;- rbind(all_points, car_pts)
+    
+    if (cfg$dir == "up") {
+      v_top &lt;- c(o_a, o_b, o_c)
+      v_br  &lt;- c(o_a + W, o_b, o_c - W)
+      v_bl  &lt;- c(o_a, o_b + W, o_c - W)
+      
+      m1 &lt;- (v_top + v_bl) / 2
+      m2 &lt;- (v_top + v_br) / 2
+      m3 &lt;- (v_bl + v_br)  / 2
+      centroid &lt;- (v_top + v_br + v_bl) / 3
+      p_mat &lt;- cbind(v_top, v_br, v_bl)
+    } else {
+      v_bot &lt;- c(o_a, o_b, o_c)
+      v_tr  &lt;- c(o_a, o_b - W, o_c + W)
+      v_tl  &lt;- c(o_a - W, o_b, o_c + W)
+      
+      m1 &lt;- (v_bot + v_tr) / 2
+      m2 &lt;- (v_bot + v_tl) / 2
+      m3 &lt;- (v_tl + v_tr)  / 2
+      centroid &lt;- (v_bot + v_tr + v_tl) / 3
+      p_mat &lt;- cbind(v_bot, v_tr, v_tl)
+    }
+    
+    w_in &lt;- 0.25
+    l1 &lt;- m1 * (1 - w_in) + centroid * w_in
+    l2 &lt;- m2 * (1 - w_in) + centroid * w_in
+    l3 &lt;- m3 * (1 - w_in) + centroid * w_in
+    
+    mat_l &lt;- cbind(l1, l2, l3)
+    car_l &lt;- tri2car(mat_l)
+    car_l$label &lt;- c("1", "2", "3")
+    car_l$substrate &lt;- sub
+    labels_df &lt;- rbind(labels_df, car_l)
+    
+    car_p &lt;- tri2car(p_mat)
+    car_p$substrate &lt;- sub
+    poly_df &lt;- rbind(poly_df, car_p)
+  }
+  
+  centers &lt;- stats::aggregate(cbind(x, y) ~ substrate, data = all_points, mean)
+  
+  obj &lt;- list(
+    points = all_points, 
+    labels = labels_df, 
+    poly = poly_df, 
+    centers = centers,
+    topology = topology
+  )
+  class(obj) &lt;- "substrate"
+  return(obj)
+}
+
+create_hex_overlay &lt;- function(object, step = 1) {
+  pts &lt;- if (inherits(object, "substrate")) object$points else object
+  if (is.null(pts) || nrow(pts) == 0) return(data.frame())
+  
+  xmult &lt;- 2 / (2 + sqrt(3))
+  ymult &lt;- 6 / (3 + 2 * sqrt(3))
+  d &lt;- step * sqrt(xmult^2 + ymult^2)
+  r &lt;- d / sqrt(3)
+  
+  angles &lt;- (seq(0, 5) * 60 + 30) * pi / 180
+  dx &lt;- r * cos(angles)
+  dy &lt;- r * sin(angles)
+  
+  n_pts &lt;- nrow(pts)
+  hex_list &lt;- vector("list", n_pts)
+  
+  for (i in seq_len(n_pts)) {
+    px &lt;- pts$x[i] + dx
+    py &lt;- pts$y[i] + dy
+    sub &lt;- pts$substrate[i]
+    hex_list[[i]] &lt;- data.frame(
+      x = px,
+      y = py,
+      cell_id = i,
+      substrate = sub,
+      stringsAsFactors = FALSE
+    )
+  }
+  
+  do.call(rbind, hex_list)
+}
+
+# --- Standalone Simulation Engine ---
+
+make_sim_community &lt;- function(nhost = 200, nparasite = 200) {
+  sub_names &lt;- c("fr1", "fr2", "fr3", "fr4", "twig", "lftop", "lfbot")
+  
+  # Host population
+  h_stages &lt;- sample(0:6, nhost, replace = TRUE, prob = c(0.4, 0.2, 0.15, 0.1, 0.08, 0.05, 0.02))
+  h_subs &lt;- sample(1:7, nhost, replace = TRUE, prob = c(0.15, 0.1, 0.1, 0.1, 0.1, 0.4, 0.05))
+  h_pa &lt;- runif(nhost, -80, 80)
+  h_pb &lt;- runif(nhost, -80, 80)
+  h_pc &lt;- -(h_pa + h_pb)
+  
+  # Parasite population
+  p_stages &lt;- sample(1:5, nparasite, replace = TRUE, prob = c(0.35, 0.25, 0.2, 0.1, 0.1))
+  p_subs &lt;- sample(1:7, nparasite, replace = TRUE, prob = c(0.1, 0.1, 0.1, 0.15, 0.1, 0.4, 0.05))
+  p_pa &lt;- runif(nparasite, -80, 80)
+  p_pb &lt;- runif(nparasite, -80, 80)
+  p_pc &lt;- -(p_pa + p_pb)
+  
+  h_mat &lt;- rbind(pos.a = h_pa, pos.b = h_pb, pos.c = h_pc, stage = h_stages, sub.stage = h_subs)
+  p_mat &lt;- rbind(pos.a = p_pa, pos.b = p_pb, pos.c = p_pc, stage = p_stages, sub.stage = p_subs)
+  
+  h_pch &lt;- c("0", "1", "2", "3", "4", "5", "V")
+  h_col &lt;- c("brown", "green", "turquoise", "blue", "violet", "purple", "magenta")
+  
+  p_pch &lt;- c("E", "L", "p", "P", "F")
+  p_col &lt;- c("brown", "green", "turquoise", "blue", "orange")
+  
+  list(
+    step = 100,
+    pop = list(
+      host = list(org = h_mat, pch = h_pch, col = h_col),
+      parasite = list(org = p_mat, pch = p_pch, col = p_col)
+    ),
+    sub_names = sub_names
+  )
+}
+
+step_sim_community &lt;- function(sim, nstep = 10) {
+  sim$step &lt;- sim$step + nstep
+  for (sp in names(sim$pop)) {
+    org &lt;- sim$pop[[sp]]$org
+    n &lt;- ncol(org)
+    # Perform spatial movement perturbation
+    org["pos.a", ] &lt;- org["pos.a", ] + runif(n, -8, 8)
+    org["pos.b", ] &lt;- org["pos.b", ] + runif(n, -8, 8)
+    org["pos.c", ] &lt;- -(org["pos.a", ] + org["pos.b", ])
+    
+    # Substrate switching
+    switch_idx &lt;- sample(1:n, max(1, round(n * 0.05)))
+    org["sub.stage", switch_idx] &lt;- sample(1:7, length(switch_idx), replace = TRUE)
+    
+    sim$pop[[sp]]$org &lt;- org
+  }
+  sim
+}
+
+ewing_substrate &lt;- function(community, species, layout = "hex", width = 10, step_density = 1, rescale = TRUE) {
+  if (length(species) &gt; 1) {
+    res_list &lt;- lapply(species, function(sp) {
+      df &lt;- ewing_substrate(community, sp, layout = layout, width = width, step_density = step_density, rescale = rescale)
+      if (!is.null(df)) df$species &lt;- sp
+      df
+    })
+    res_list &lt;- res_list[!sapply(res_list, is.null)]
+    if (length(res_list) == 0) return(NULL)
+    combined &lt;- do.call(rbind, res_list)
+    attr(combined, "species") &lt;- paste(species, collapse = " &amp; ")
+    attr(combined, "step") &lt;- community$step
+    attr(combined, "layout") &lt;- layout
+    attr(combined, "width") &lt;- width
+    attr(combined, "step_density") &lt;- step_density
+    class(combined) &lt;- c("ewing_substrate", class(combined))
+    return(combined)
+  }
+  
+  sp_data &lt;- community$pop[[species]]
+  if (is.null(sp_data)) return(NULL)
+  
+  organism &lt;- sp_data$org
+  p_pch &lt;- sp_data$pch
+  p_col &lt;- sp_data$col
+  substrates &lt;- community$sub_names
+  
+  n_org &lt;- ncol(organism)
+  sub_indices &lt;- organism["sub.stage", ]
+  org_sub_names &lt;- substrates[sub_indices]
+  
+  topo &lt;- substrate_topology(width = width, step = step_density)
+  gx &lt;- numeric(n_org)
+  gy &lt;- numeric(n_org)
+  
+  unique_subs &lt;- unique(org_sub_names)
+  
+  for (sub in unique_subs) {
+    idx &lt;- which(org_sub_names == sub)
+    target_name &lt;- if (sub == "twig") "tw1" else sub
+    cfg &lt;- topo[[target_name]]
+    
+    pa &lt;- organism["pos.a", idx]
+    pb &lt;- organism["pos.b", idx]
+    pc &lt;- organism["pos.c", idx]
+    
+    if (!is.null(cfg)) {
+      W_sub &lt;- width - step_density
+      if (rescale) {
+        amin &lt;- min(pa); amax &lt;- max(pa)
+        bmin &lt;- min(pb); bmax &lt;- max(pb)
+        
+        u &lt;- if (amax &gt; amin) (pa - amin) / (amax - amin) else rep(0.5, length(idx))
+        v &lt;- if (bmax &gt; bmin) (pb - bmin) / (bmax - bmin) else rep(0.5, length(idx))
+        
+        u_m &lt;- 0.15 + 0.70 * u
+        v_m &lt;- 0.15 + 0.70 * v
+        
+        a_p &lt;- u_m * W_sub
+        b_p &lt;- v_m * (W_sub - a_p)
+        c_p &lt;- -(a_p + b_p)
+      } else {
+        a_p &lt;- pa; b_p &lt;- pb; c_p &lt;- pc
+      }
+      
+      off &lt;- cfg$offset
+      if (cfg$dir == "up") {
+        ga &lt;- a_p + off[1]; gb &lt;- b_p + off[2]; gc &lt;- c_p + off[3]
+      } else {
+        ga &lt;- -a_p + off[1]; gb &lt;- -b_p + off[2]; gc &lt;- -c_p + off[3]
+      }
+      car &lt;- tri2car(tricoord(ga, gb, gc))
+      gx[idx] &lt;- car$x
+      gy[idx] &lt;- car$y
+    } else {
+      car &lt;- tri2car(tricoord(pa, pb, pc))
+      gx[idx] &lt;- car$x
+      gy[idx] &lt;- car$y
+    }
+  }
+  
+  stg &lt;- organism["stage", ]
+  pch_val &lt;- factor(p_pch[pmin(stg + 1, length(p_pch))], levels = unique(p_pch))
+  col_val &lt;- p_col[pmin(stg + 1, length(p_col))]
+  
+  dat &lt;- data.frame(
+    x = gx, y = gy, stage = stg,
+    substrate = org_sub_names,
+    pchar = pch_val, color = col_val,
+    species = species, stringsAsFactors = FALSE
+  )
+  
+  attr(dat, "species") &lt;- species
+  attr(dat, "step") &lt;- community$step
+  attr(dat, "layout") &lt;- layout
+  attr(dat, "width") &lt;- width
+  attr(dat, "step_density") &lt;- step_density
+  class(dat) &lt;- c("ewing_substrate", class(dat))
+  dat
+}
+
+ggplot_ewing_substrate &lt;- function(object, layout = attr(object, "layout"), width = attr(object, "width"), step_density = attr(object, "step_density"), layers = c("poly", "hex", "organisms", "centers", "labels")) {
+  if (is.null(layout)) layout &lt;- "hex"
+  if (is.null(width)) width &lt;- 10
+  if (is.null(step_density)) step_density &lt;- 1
+  
+  species &lt;- attr(object, "species")
+  step &lt;- attr(object, "step")
+  
+  tmp &lt;- object[!duplicated(object$pchar), ]
+  col.palate &lt;- tmp$color
+  names(col.palate) &lt;- as.character(tmp$pchar)
+  
+  topo &lt;- substrate_topology(width = width, step = step_density)
+  sub_obj &lt;- create_substrate(topo, width = width, step = step_density)
+  hex_overlay &lt;- create_hex_overlay(sub_obj, step = step_density)
+  
+  p &lt;- ggplot2::ggplot()
+  if ("poly" %in% layers &amp;&amp; nrow(sub_obj$poly) &gt; 0) {
+    p &lt;- p + ggplot2::geom_polygon(data = sub_obj$poly, ggplot2::aes(x = x, y = y, group = substrate), fill = NA, color = "black", linewidth = 0.7)
+  }
+  if ("hex" %in% layers &amp;&amp; nrow(hex_overlay) &gt; 0) {
+    p &lt;- p + ggplot2::geom_polygon(data = hex_overlay, ggplot2::aes(x = x, y = y, group = cell_id), fill = NA, color = "gray75", linewidth = 0.3)
+  }
+  if ("organisms" %in% layers &amp;&amp; nrow(object) &gt; 0) {
+    p &lt;- p + ggplot2::geom_text(data = object, ggplot2::aes(x = x, y = y, label = pchar, color = pchar), fontface = "bold", size = 4) +
+      ggplot2::scale_color_manual(name = "Stage", values = col.palate) +
+      ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(label = names(col.palate))))
+  }
+  if ("centers" %in% layers &amp;&amp; nrow(sub_obj$centers) &gt; 0) {
+    p &lt;- p + ggplot2::geom_text(data = sub_obj$centers, ggplot2::aes(x = x, y = y, label = substrate), color = "black", fontface = "bold", size = 4.5)
+  }
+  if ("labels" %in% layers &amp;&amp; nrow(sub_obj$labels) &gt; 0) {
+    p &lt;- p + ggplot2::geom_text(data = sub_obj$labels, ggplot2::aes(x = x, y = y, label = label), color = "darkred", fontface = "bold", size = 3.5)
+  }
+  
+  p + ggplot2::theme_void() + 
+    ggplot2::theme(plot.margin = ggplot2::margin(2, 2, 2, 2, "pt")) +
+    ggplot2::coord_fixed() + 
+    ggplot2::ggtitle(paste(species, "on Hex Substrate Grid at", step, "steps"))
+}
+
+autoplot.ewing_substrate &lt;- function(object, ...) ggplot_ewing_substrate(object, ...)
+
+# --- App UI &amp; Server ---
+
+app_theme &lt;- bslib::bs_theme(
+  version = 5,
+  bg = "#ffffff", fg = "#212529", primary = "#1a73e8", secondary = "#7209b7"
+)
+
+ui &lt;- bslib::page_sidebar(
+  title = "Organism Movement on Hex Grid Explorer",
+  theme = app_theme,
+  sidebar = bslib::sidebar(
+    width = 320,
+    shiny::div(
+      style = "font-size: 0.85rem;",
+      shiny::h4("Multi-Species &amp; Layer Controls", style = "font-size: 0.95rem; font-weight: 600; margin-bottom: 6px;"),
+      shiny::checkboxGroupInput("show_species", "Species to Display:",
+                                choices = c("Host" = "host", "Parasite" = "parasite"),
+                                selected = c("host", "parasite"), inline = TRUE),
+      shiny::radioButtons("species_mode", "Species Mode:",
+                          choices = c("Overlay (1 Map)" = "overlay", "Separate (Stacked Maps)" = "separate"),
+                          selected = "overlay", inline = TRUE),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::span("Simulation Stepping:", style = "font-weight: 600; color: #1a73e8; display: block; margin-bottom: 4px;"),
+      shiny::div(
+        style = "display: flex; gap: 4px; margin-bottom: 8px;",
+        shiny::actionButton("step1", "+1 Step", class = "btn-sm btn-outline-primary flex-fill"),
+        shiny::actionButton("step10", "+10 Steps", class = "btn-sm btn-outline-primary flex-fill"),
+        shiny::actionButton("step100", "+100 Steps", class = "btn-sm btn-outline-primary flex-fill"),
+        shiny::actionButton("reset_sim", "Reset", class = "btn-sm btn-outline-secondary")
+      ),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::checkboxGroupInput("layers", "Display Layers:",
+                                choices = c("Substrate Boundaries" = "poly",
+                                            "Hex Grid Overlay" = "hex",
+                                            "Organisms" = "organisms",
+                                            "Substrate Names" = "centers",
+                                            "Side Numbers" = "labels"),
+                                selected = c("poly", "hex", "organisms", "centers", "labels")),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::div(
+        style = "display: flex; gap: 8px;",
+        shiny::numericInput("width_in", "Radius:", value = 10, min = 2, max = 30, step = 1),
+        shiny::numericInput("step_in", "Step Density:", value = 1, min = 0.5, max = 5, step = 0.5)
+      )
+    )
+  ),
+  bslib::card(
+    bslib::card_header("Hexagonal Substrate Spatial Organism Mapping"),
+    bslib::card_body(
+      shiny::uiOutput("substrate_ui")
+    )
+  )
+)
+
+server &lt;- function(input, output, session) {
+  current_sim &lt;- shiny::reactiveVal(make_sim_community())
+  
+  shiny::observeEvent(input$step1, { current_sim(step_sim_community(current_sim(), 1)) })
+  shiny::observeEvent(input$step10, { current_sim(step_sim_community(current_sim(), 10)) })
+  shiny::observeEvent(input$step100, { current_sim(step_sim_community(current_sim(), 100)) })
+  shiny::observeEvent(input$reset_sim, { current_sim(make_sim_community()) })
+  
+  selected_species &lt;- shiny::reactive({
+    sel &lt;- input$show_species
+    if (is.null(sel) || length(sel) == 0) c("host", "parasite") else sel
+  })
+  
+  sppplot &lt;- shiny::reactive({
+    sim &lt;- current_sim()
+    spp &lt;- selected_species()
+    mode_val &lt;- input$species_mode %||% "overlay"
+    w_val &lt;- input$width_in %||% 10
+    sd_val &lt;- input$step_in %||% 1
+    layers_val &lt;- input$layers %||% c("poly", "hex", "organisms", "centers", "labels")
+    
+    if (mode_val == "overlay") {
+      sub_data &lt;- ewing_substrate(sim, spp, layout = "hex", width = w_val, step_density = sd_val)
+      if (!is.null(sub_data)) list(ggplot_ewing_substrate(sub_data, layout = "hex", width = w_val, step_density = sd_val, layers = layers_val)) else list()
+    } else {
+      plots &lt;- lapply(spp, function(x) {
+        sub_data &lt;- ewing_substrate(sim, x, layout = "hex", width = w_val, step_density = sd_val)
+        if (!is.null(sub_data)) ggplot_ewing_substrate(sub_data, layout = "hex", width = w_val, step_density = sd_val, layers = layers_val) else NULL
+      })
+      plots[!sapply(plots, is.null)]
+    }
+  })
+  
+  output$sppPlot &lt;- shiny::renderPlot({
+    plots &lt;- sppplot()
+    if (!is.null(plots) &amp;&amp; length(plots) &gt; 0) {
+      cowplot::plot_grid(plotlist = plots, nrow = length(plots), align = "v")
+    } else {
+      ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No species selected to plot")
+    }
+  })
+  
+  output$substrate_ui &lt;- shiny::renderUI({
+    plots &lt;- sppplot()
+    n_plots &lt;- if (!is.null(plots)) max(1, length(plots)) else 1
+    h_in &lt;- 4.5 * n_plots
+    shiny::plotOutput("sppPlot", height = paste0(h_in, "in"))
+  })
+}
+
+shiny::shinyApp(ui = ui, server = server)</code></pre>
+<section id="source-code-documentation" class="level2">
+<h2 class="anchored" data-anchor-id="source-code-documentation">Source Code &amp; Documentation</h2>
+<ul>
+<li>Package source function: <a href="https://github.com/byandell/ewing/blob/main/R/hexmoveApp.R"><code>R/hexmoveApp.R</code></a></li>
+<li>Architectural rationale and mathematical derivations: <a href="https://github.com/byandell/ewing/blob/main/inst/doc/refactor/hexmove.md"><code>inst/doc/refactor/hexmove.md</code></a></li>
+</ul>
 
 
 </section>

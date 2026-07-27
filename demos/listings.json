@@ -2,11 +2,11 @@
   {
     "listing": "/index.html",
     "items": [
-      "/sysetholApp.html",
       "/fivePlotApp.html",
       "/fiveShowApp.html",
       "/hexmapApp.html",
       "/hexmoveApp.html",
+      "/sysetholApp.html",
       "/tempApp.html",
       "/triangleApp.html"
     ]
