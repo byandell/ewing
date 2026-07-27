@@ -29,5 +29,6 @@ substrateOutput(id)
 \description{
 A focused graphical module aggregating structural species progression separated distinctly across
 physical environment thresholds mapped by evaluating top-level topological definitions.
-Includes support for both hexagonal grid overlay mapping and classic faceted panels, as well as simulation stepping.
+Includes support for both hexagonal grid overlay mapping and classic faceted panels, as well as simulation stepping,
+multi-species overlays, and separate adjacent hex grid visualization modes.
 }

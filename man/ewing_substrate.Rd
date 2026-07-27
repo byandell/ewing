@@ -10,10 +10,10 @@ ewing_substrate(
   community,
   species,
   headstuff = c(0, "start", sum(to.plot)),
-  units = getOrgFeature(community, species, "units"),
-  right = species,
+  units = getOrgFeature(community, species[1], "units"),
+  right = species[1],
   adj = c(0, 0.5, 1),
-  show_sub = substrates,
+  show_sub = NULL,
   step = 0,
   layout = c("facet", "hex"),
   width = 10,
@@ -38,7 +38,7 @@ ggplot_ewing_substrate(
 \arguments{
 \item{community}{Simulation community object (`ewing` S3 class)}
 
-\item{species}{Species name (e.g. "host", "parasite")}
+\item{species}{Species name or vector of species names (e.g. `"host"`, `"parasite"`, or `c("host", "parasite")`)}
 
 \item{headstuff}{Title parameters}
 
@@ -48,7 +48,7 @@ ggplot_ewing_substrate(
 
 \item{adj}{Adjustment}
 
-\item{show_sub}{Substrate filter}
+\item{show_sub}{Substrate filter (defaults to all active substrates)}
 
 \item{step}{Current step}
 
@@ -71,5 +71,5 @@ ggplot_ewing_substrate(
 \item{layers}{Display layers for hex layout: vector containing any of `"poly"`, `"hex"`, `"organisms"`, `"centers"`, `"labels"`}
 }
 \description{
-Ewing Substrate by Species with optional hexagonal topology layout and substrate-level coordinate rescaling.
+Ewing Substrate by Species with optional hexagonal topology layout, multi-species support, and substrate-level coordinate rescaling.
 }

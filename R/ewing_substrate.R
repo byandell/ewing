@@ -1,15 +1,15 @@
 #' Ewing Substrate by Species
 #' 
-#' Ewing Substrate by Species with optional hexagonal topology layout and substrate-level coordinate rescaling.
+#' Ewing Substrate by Species with optional hexagonal topology layout, multi-species support, and substrate-level coordinate rescaling.
 #' 
 #' @aliases ewing_substrate ggplot_ewing_substrate autoplot.ewing_substrate
 #' @param community Simulation community object (`ewing` S3 class)
-#' @param species Species name (e.g. "host", "parasite")
+#' @param species Species name or vector of species names (e.g. `"host"`, `"parasite"`, or `c("host", "parasite")`)
 #' @param headstuff Title parameters
 #' @param units Unit labels
 #' @param right Right label
 #' @param adj Adjustment
-#' @param show_sub Substrate filter
+#' @param show_sub Substrate filter (defaults to all active substrates)
 #' @param step Current step
 #' @param layout Display layout: `"facet"` (default) for separated panels or `"hex"` for global hexagonal substrate grid overlay
 #' @param width Substrate radius limit (default: 10)
@@ -24,9 +24,9 @@
 ewing_substrate <- function( community,
                              species,
                              headstuff = c( 0, "start", sum( to.plot )),
-                             units = getOrgFeature( community, species, "units" ),
-                             right = species, adj = c(0,.5,1),
-                             show_sub = substrates,
+                             units = getOrgFeature( community, species[1], "units" ),
+                             right = species[1], adj = c(0,.5,1),
+                             show_sub = NULL,
                              step = 0,
                              layout = c("facet", "hex"),
                              width = 10,
@@ -35,6 +35,29 @@ ewing_substrate <- function( community,
                              ...)
 {
   layout <- match.arg(layout)
+  
+  if (length(species) > 1) {
+    res_list <- lapply(species, function(sp) {
+      df <- ewing_substrate(community = community, species = sp, headstuff = headstuff,
+                            units = units, right = right, adj = adj, show_sub = show_sub,
+                            step = step, layout = layout, width = width, step_density = step_density,
+                            rescale = rescale, ...)
+      if (!is.null(df) && nrow(df) > 0) {
+        df$species <- sp
+      }
+      df
+    })
+    res_list <- res_list[!sapply(res_list, is.null)]
+    if (length(res_list) == 0) return(NULL)
+    combined <- do.call(rbind, res_list)
+    attr(combined, "species") <- paste(species, collapse = " & ")
+    attr(combined, "step") <- if (!is.null(community$step)) community$step else step
+    attr(combined, "layout") <- layout
+    attr(combined, "width") <- width
+    attr(combined, "step_density") <- step_density
+    class(combined) <- c("ewing_substrate", class(combined))
+    return(combined)
+  }
   
   ## plot current stages for species (except random parasites)
   organism <- get.species( community, species )[,-1]
@@ -50,6 +73,7 @@ ewing_substrate <- function( community,
   if (is.null(substrates) || length(substrates) == 0) {
     substrates <- names(getOrgInteract(community, substrate_feat, substrate_feat))
   }
+  if (is.null(show_sub)) show_sub <- substrates
   
   position <- paste( "pos", letters[1:3], sep = "." )
   
@@ -135,7 +159,8 @@ ewing_substrate <- function( community,
       stage = organism["stage",],
       substrate = substrates[organism["sub.stage",]],
       pchar = factor(as.character( future$pch[.data$stage] ), levels = unique(as.character(future$pch))),
-      color = as.character( future$color[.data$stage] )),
+      color = as.character( future$color[.data$stage] ),
+      species = species),
     .data$substrate %in% show_sub)
   
   attr(dat, "species") <- species
@@ -214,6 +239,7 @@ ggplot_ewing_substrate <- function(object,
     }
     
     return(p + ggplot2::theme_void() + 
+             ggplot2::theme(plot.margin = ggplot2::margin(2, 2, 2, 2, "pt")) +
              ggplot2::coord_fixed() + 
              ggplot2::ggtitle(paste(species, "on Hex Substrate Grid at", step, "steps")))
   }

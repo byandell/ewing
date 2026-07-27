@@ -2,7 +2,8 @@
 #' 
 #' A focused graphical module aggregating structural species progression separated distinctly across
 #' physical environment thresholds mapped by evaluating top-level topological definitions.
-#' Includes support for both hexagonal grid overlay mapping and classic faceted panels, as well as simulation stepping.
+#' Includes support for both hexagonal grid overlay mapping and classic faceted panels, as well as simulation stepping,
+#' multi-species overlays, and separate adjacent hex grid visualization modes.
 #' 
 #' @param title Application title
 #' @param id module ID string
@@ -40,6 +41,14 @@ substrateInput <- function(id) {
     shiny::div(
       style = "font-size: 0.85rem;",
       shiny::h4("Substrate Display & Stepping", style = "font-size: 1rem; font-weight: 600; margin-bottom: 8px;"),
+      shiny::checkboxGroupInput(ns("show_species"), "Species to Display:",
+                                choices = c("Host" = "host", "Parasite" = "parasite"),
+                                selected = c("host", "parasite"),
+                                inline = TRUE),
+      shiny::radioButtons(ns("species_mode"), "Species Mode:",
+                          choices = c("Overlay (1 Map)" = "overlay", "Separate (Adjacent Maps)" = "separate"),
+                          selected = "overlay", inline = TRUE),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
       shiny::radioButtons(ns("layout"), "Layout View:",
                           choices = c("Hex Substrate Overlay" = "hex", "Faceted Substrates" = "facet"),
                           selected = "hex", inline = TRUE),
@@ -115,50 +124,69 @@ substrateServer <- function(id, simres, width = 10, step_density = 1) {
       current_sim(simres())
     })
     
-    species <- shiny::reactive({
+    available_species <- shiny::reactive({
       sim <- current_sim()
       if (!is.null(sim) && !is.null(sim$pop)) names(sim$pop) else NULL
     })
     
+    selected_species <- shiny::reactive({
+      avail <- available_species()
+      if (is.null(avail)) return(NULL)
+      sel <- input$show_species
+      if (is.null(sel) || length(sel) == 0) avail else intersect(sel, avail)
+    })
+    
     sppplot <- shiny::reactive({
-      shiny::req(species())
+      spp <- selected_species()
+      shiny::req(spp)
       sim <- current_sim()
       shiny::req(sim)
       
       layout_val <- if (!is.null(input$layout)) input$layout else "hex"
+      mode_val <- if (!is.null(input$species_mode)) input$species_mode else "overlay"
       w_val <- if (!is.null(input$width)) input$width else width
       sd_val <- if (!is.null(input$step_density)) input$step_density else step_density
       layers_val <- if (!is.null(input$layers)) input$layers else c("poly", "hex", "organisms", "centers", "labels")
       
       if (inherits(sim, "ewing")) {
-        p <- lapply(species(), function(x) {
-          sub_data <- ewing_substrate(sim, x, layout = layout_val, width = w_val, step_density = sd_val)
+        if (mode_val == "overlay" && layout_val == "hex") {
+          sub_data <- ewing_substrate(sim, spp, layout = layout_val, width = w_val, step_density = sd_val)
           if (!is.null(sub_data)) {
             p_obj <- ggplot_ewing_substrate(sub_data, layout = layout_val, width = w_val, step_density = sd_val, layers = layers_val)
-            p_obj
+            list(p_obj)
           } else {
-            NULL
+            list()
           }
-        })
-        if (any(unlist(purrr::map(p, is.null)))) p <- NULL
-        p
+        } else {
+          p <- lapply(spp, function(x) {
+            sub_data <- ewing_substrate(sim, x, layout = layout_val, width = w_val, step_density = sd_val)
+            if (!is.null(sub_data)) {
+              p_obj <- ggplot_ewing_substrate(sub_data, layout = layout_val, width = w_val, step_density = sd_val, layers = layers_val)
+              p_obj
+            } else {
+              NULL
+            }
+          })
+          p[!sapply(p, is.null)]
+        }
       } else {
-        ggplot2::ggplot()
+        list()
       }
     })
     
     output$sppPlot <- shiny::renderPlot({
       plots <- sppplot()
       if (!is.null(plots) && length(plots) > 0) {
-        cowplot::plot_grid(plotlist = plots, nrow = length(plots))
+        cowplot::plot_grid(plotlist = plots, nrow = length(plots), align = "v")
       } else {
-        ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No active species to plot")
+        ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No active species selected to plot")
       }
     })
     
     output$substrate_plot <- shiny::renderUI({
-      shiny::req(species())
-      h_in <- if (!is.null(input$layout) && input$layout == "hex") 6 * length(species()) else 3 * length(species())
+      plots <- sppplot()
+      n_plots <- if (!is.null(plots)) max(1, length(plots)) else 1
+      h_in <- 4.5 * n_plots
       shiny::plotOutput(ns("sppPlot"), height = paste0(h_in, "in"))
     })
     

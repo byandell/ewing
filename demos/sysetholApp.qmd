@@ -1,9 +1,10 @@
 ---
-title: "Systems Ethology Platform"
-description: "The core Systems Ethology platform orchestrating Bland Ewing host-parasite individual-based simulations, age class distributions, degree-day timing, and spatial substrates."
+title: "sysetholApp (Systems Ethology Platform)"
+description: "The central Systems Ethology platform orchestrating host-parasite individual-based simulations, age class distributions, spatial substrate networks, and parameter evaluations."
 author: "Brian S. Yandell"
 engine: knitr
-toc: true
+toc: false
+image: "images/fiveplot.png"
 format:
   html:
     embed-resources: false
@@ -11,21 +12,525 @@ format:
 
 [← Back to Demos Gallery](index.qmd)
 
-The **Systems Ethology Platform** (`ewingApp()`) serves as the central interactive hub for the `ewing` simulation package. Based on `inst/shinyApp/app.R`, it integrates species parameter initialization, event-driven competing risk transitions, substrate interactions, temperature regime Splines, and multi-run confidence envelope estimations.
+The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). You can interactively configure species populations, run simulation event queues, inspect age-class stage distributions, and map spatial organism positions on hexagonal substrate overlays.
 
-## Interactive Application Usage
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 850
+#| components: [viewer]
 
-You can launch the full Systems Ethology interactive application natively in R:
+library(shiny)
+library(bslib)
+library(ggplot2)
+library(cowplot)
+library(stats)
 
-```r
-library(ewing)
+# --- Standalone Substrate & Spatial Geometry Functions ---
 
-# Launch central Shiny app
-ewingApp()
+tricoord <- function(a, b = NULL, c = NULL) {
+  if (is.data.frame(a) && all(c("a", "b", "c") %in% names(a))) {
+    res <- a
+  } else if (is.matrix(a) && ncol(a) == 3) {
+    res <- as.data.frame(a)
+    names(res) <- c("a", "b", "c")
+  } else if (!is.null(b) && !is.null(c)) {
+    res <- data.frame(a = a, b = b, c = c)
+  } else if (is.numeric(a) && length(a) == 3) {
+    res <- data.frame(a = a[1], b = a[2], c = a[3])
+  } else {
+    stop("Invalid tricoord input format")
+  }
+  class(res) <- c("tricoord", "data.frame")
+  res
+}
+
+`+.tricoord` <- function(e1, e2) {
+  if (is.numeric(e2) && length(e2) == 3) {
+    tricoord(e1$a + e2[1], e1$b + e2[2], e1$c + e2[3])
+  } else if (inherits(e2, "tricoord")) {
+    tricoord(e1$a + e2$a, e1$b + e2$b, e1$c + e2$c)
+  } else {
+    stop("Invalid right hand operand for tricoord addition")
+  }
+}
+
+tri2car <- function(tri, xmult = 2 / (2 + sqrt(3)), ymult = 6 / (3 + 2 * sqrt(3))) {
+  if (inherits(tri, "tricoord")) {
+    x <- (tri$a - tri$b) * xmult
+    y <- - (tri$a + tri$b) * ymult
+  } else {
+    if (!is.matrix(tri)) tri <- as.matrix(tri)
+    x <- (tri[1, ] - tri[2, ]) * xmult
+    y <- - (tri[1, ] + tri[2, ]) * ymult
+  }
+  data.frame(x = x, y = y)
+}
+
+get_substrate_grid <- function(width, step = 1, orientation = "up") {
+  pts <- expand.grid(a = seq(0, width - step, by = step), b = seq(0, width - step, by = step))
+  if (orientation == "up") {
+    pts <- subset(pts, a + b <= width - step)
+    pts$c <- -(pts$a + pts$b)
+  } else {
+    pts <- subset(pts, a + b <= width - step)
+    pts$a <- -pts$a
+    pts$b <- -pts$b
+    pts$c <- -(pts$a + pts$b)
+  }
+  pts
+}
+
+substrate_topology <- function(width = 10, step = 1) {
+  W <- width - step
+  list(
+    fr2   = list(offset = c(0, 0, 0), dir = "down"),
+    fr1   = list(offset = c(-W, -W, 2 * W), dir = "up"),
+    fr3   = list(offset = c(-W, 0, W), dir = "up"),
+    fr4   = list(offset = c(0, -W, W), dir = "up"),
+    tw1   = list(offset = c(-W, 0, W), dir = "down"),
+    twig  = list(offset = c(-W, 0, W), dir = "down"),
+    tw2   = list(offset = c(-2 * W, 0, 2 * W), dir = "up"),
+    lftop = list(offset = c(-2 * W, W, W), dir = "down"),
+    lfbot = list(offset = c(-3 * W, W, 2 * W), dir = "up")
+  )
+}
+
+create_substrate <- function(topology, width = 10, step = 1) {
+  W <- width - step
+  all_points <- data.frame()
+  labels_df <- data.frame()
+  poly_df <- data.frame()
+  
+  for (sub in names(topology)) {
+    cfg <- topology[[sub]]
+    grid <- get_substrate_grid(width, step, cfg$dir)
+    
+    o_a <- cfg$offset[1]
+    o_b <- cfg$offset[2]
+    o_c <- cfg$offset[3]
+
+    grid_tri <- tricoord(grid$a, grid$b, grid$c)
+    grid_tri <- grid_tri + cfg$offset
+    
+    car_pts <- tri2car(grid_tri)
+    car_pts$substrate <- sub
+    all_points <- rbind(all_points, car_pts)
+    
+    if (cfg$dir == "up") {
+      v_top <- c(o_a, o_b, o_c)
+      v_br  <- c(o_a + W, o_b, o_c - W)
+      v_bl  <- c(o_a, o_b + W, o_c - W)
+      
+      m1 <- (v_top + v_bl) / 2
+      m2 <- (v_top + v_br) / 2
+      m3 <- (v_bl + v_br)  / 2
+      centroid <- (v_top + v_br + v_bl) / 3
+      p_mat <- cbind(v_top, v_br, v_bl)
+    } else {
+      v_bot <- c(o_a, o_b, o_c)
+      v_tr  <- c(o_a, o_b - W, o_c + W)
+      v_tl  <- c(o_a - W, o_b, o_c + W)
+      
+      m1 <- (v_bot + v_tr) / 2
+      m2 <- (v_bot + v_tl) / 2
+      m3 <- (v_tl + v_tr)  / 2
+      centroid <- (v_bot + v_tr + v_tl) / 3
+      p_mat <- cbind(v_bot, v_tr, v_tl)
+    }
+    
+    w_in <- 0.25
+    l1 <- m1 * (1 - w_in) + centroid * w_in
+    l2 <- m2 * (1 - w_in) + centroid * w_in
+    l3 <- m3 * (1 - w_in) + centroid * w_in
+    
+    mat_l <- cbind(l1, l2, l3)
+    car_l <- tri2car(mat_l)
+    car_l$label <- c("1", "2", "3")
+    car_l$substrate <- sub
+    labels_df <- rbind(labels_df, car_l)
+    
+    car_p <- tri2car(p_mat)
+    car_p$substrate <- sub
+    poly_df <- rbind(poly_df, car_p)
+  }
+  
+  centers <- stats::aggregate(cbind(x, y) ~ substrate, data = all_points, mean)
+  
+  obj <- list(
+    points = all_points, 
+    labels = labels_df, 
+    poly = poly_df, 
+    centers = centers,
+    topology = topology
+  )
+  class(obj) <- "substrate"
+  return(obj)
+}
+
+create_hex_overlay <- function(object, step = 1) {
+  pts <- if (inherits(object, "substrate")) object$points else object
+  if (is.null(pts) || nrow(pts) == 0) return(data.frame())
+  
+  xmult <- 2 / (2 + sqrt(3))
+  ymult <- 6 / (3 + 2 * sqrt(3))
+  d <- step * sqrt(xmult^2 + ymult^2)
+  r <- d / sqrt(3)
+  
+  angles <- (seq(0, 5) * 60 + 30) * pi / 180
+  dx <- r * cos(angles)
+  dy <- r * sin(angles)
+  
+  n_pts <- nrow(pts)
+  hex_list <- vector("list", n_pts)
+  
+  for (i in seq_len(n_pts)) {
+    px <- pts$x[i] + dx
+    py <- pts$y[i] + dy
+    sub <- pts$substrate[i]
+    hex_list[[i]] <- data.frame(
+      x = px,
+      y = py,
+      cell_id = i,
+      substrate = sub,
+      stringsAsFactors = FALSE
+    )
+  }
+  
+  do.call(rbind, hex_list)
+}
+
+# --- Standalone Simulation Engine ---
+
+make_sim_community <- function(nhost = 200, nparasite = 200) {
+  sub_names <- c("fr1", "fr2", "fr3", "fr4", "twig", "lftop", "lfbot")
+  
+  h_stages <- sample(0:6, nhost, replace = TRUE, prob = c(0.4, 0.2, 0.15, 0.1, 0.08, 0.05, 0.02))
+  h_subs <- sample(1:7, nhost, replace = TRUE, prob = c(0.15, 0.1, 0.1, 0.1, 0.1, 0.4, 0.05))
+  h_pa <- runif(nhost, -80, 80)
+  h_pb <- runif(nhost, -80, 80)
+  h_pc <- -(h_pa + h_pb)
+  
+  p_stages <- sample(1:5, nparasite, replace = TRUE, prob = c(0.35, 0.25, 0.2, 0.1, 0.1))
+  p_subs <- sample(1:7, nparasite, replace = TRUE, prob = c(0.1, 0.1, 0.1, 0.15, 0.1, 0.4, 0.05))
+  p_pa <- runif(nparasite, -80, 80)
+  p_pb <- runif(nparasite, -80, 80)
+  p_pc <- -(p_pa + p_pb)
+  
+  h_mat <- rbind(pos.a = h_pa, pos.b = h_pb, pos.c = h_pc, stage = h_stages, sub.stage = h_subs)
+  p_mat <- rbind(pos.a = p_pa, pos.b = p_pb, pos.c = p_pc, stage = p_stages, sub.stage = p_subs)
+  
+  h_pch <- c("0", "1", "2", "3", "4", "5", "V")
+  h_col <- c("brown", "green", "turquoise", "blue", "violet", "purple", "magenta")
+  
+  p_pch <- c("E", "L", "p", "P", "F")
+  p_col <- c("brown", "green", "turquoise", "blue", "orange")
+  
+  list(
+    step = 0,
+    pop = list(
+      host = list(org = h_mat, pch = h_pch, col = h_col),
+      parasite = list(org = p_mat, pch = p_pch, col = p_col)
+    ),
+    sub_names = sub_names
+  )
+}
+
+step_sim_community <- function(sim, nstep = 1000) {
+  sim$step <- sim$step + nstep
+  for (sp in names(sim$pop)) {
+    org <- sim$pop[[sp]]$org
+    n <- ncol(org)
+    
+    # Progress life stages
+    stg <- org["stage", ]
+    stg <- pmin(stg + sample(0:1, n, replace = TRUE, prob = c(0.7, 0.3)), 6)
+    org["stage", ] <- stg
+    
+    # Perform spatial movement perturbation
+    org["pos.a", ] <- org["pos.a", ] + runif(n, -15, 15)
+    org["pos.b", ] <- org["pos.b", ] + runif(n, -15, 15)
+    org["pos.c", ] <- -(org["pos.a", ] + org["pos.b", ])
+    
+    # Substrate switching
+    switch_idx <- sample(1:n, max(1, round(n * 0.10)))
+    org["sub.stage", switch_idx] <- sample(1:7, length(switch_idx), replace = TRUE)
+    
+    sim$pop[[sp]]$org <- org
+  }
+  sim
+}
+
+ewing_substrate <- function(community, species, layout = "hex", width = 10, step_density = 1, rescale = TRUE) {
+  if (length(species) > 1) {
+    res_list <- lapply(species, function(sp) {
+      df <- ewing_substrate(community, sp, layout = layout, width = width, step_density = step_density, rescale = rescale)
+      if (!is.null(df)) df$species <- sp
+      df
+    })
+    res_list <- res_list[!sapply(res_list, is.null)]
+    if (length(res_list) == 0) return(NULL)
+    combined <- do.call(rbind, res_list)
+    attr(combined, "species") <- paste(species, collapse = " & ")
+    attr(combined, "step") <- community$step
+    attr(combined, "layout") <- layout
+    attr(combined, "width") <- width
+    attr(combined, "step_density") <- step_density
+    class(combined) <- c("ewing_substrate", class(combined))
+    return(combined)
+  }
+  
+  sp_data <- community$pop[[species]]
+  if (is.null(sp_data)) return(NULL)
+  
+  organism <- sp_data$org
+  p_pch <- sp_data$pch
+  p_col <- sp_data$col
+  substrates <- community$sub_names
+  
+  n_org <- ncol(organism)
+  sub_indices <- organism["sub.stage", ]
+  org_sub_names <- substrates[sub_indices]
+  
+  topo <- substrate_topology(width = width, step = step_density)
+  gx <- numeric(n_org)
+  gy <- numeric(n_org)
+  
+  unique_subs <- unique(org_sub_names)
+  
+  for (sub in unique_subs) {
+    idx <- which(org_sub_names == sub)
+    target_name <- if (sub == "twig") "tw1" else sub
+    cfg <- topo[[target_name]]
+    
+    pa <- organism["pos.a", idx]
+    pb <- organism["pos.b", idx]
+    pc <- organism["pos.c", idx]
+    
+    if (!is.null(cfg)) {
+      W_sub <- width - step_density
+      if (rescale) {
+        amin <- min(pa); amax <- max(pa)
+        bmin <- min(pb); bmax <- max(pb)
+        
+        u <- if (amax > amin) (pa - amin) / (amax - amin) else rep(0.5, length(idx))
+        v <- if (bmax > bmin) (pb - bmin) / (bmax - bmin) else rep(0.5, length(idx))
+        
+        u_m <- 0.15 + 0.70 * u
+        v_m <- 0.15 + 0.70 * v
+        
+        a_p <- u_m * W_sub
+        b_p <- v_m * (W_sub - a_p)
+        c_p <- -(a_p + b_p)
+      } else {
+        a_p <- pa; b_p <- pb; c_p <- pc
+      }
+      
+      off <- cfg$offset
+      if (cfg$dir == "up") {
+        ga <- a_p + off[1]; gb <- b_p + off[2]; gc <- c_p + off[3]
+      } else {
+        ga <- -a_p + off[1]; gb <- -b_p + off[2]; gc <- -c_p + off[3]
+      }
+      car <- tri2car(tricoord(ga, gb, gc))
+      gx[idx] <- car$x
+      gy[idx] <- car$y
+    } else {
+      car <- tri2car(tricoord(pa, pb, pc))
+      gx[idx] <- car$x
+      gy[idx] <- car$y
+    }
+  }
+  
+  stg <- organism["stage", ]
+  pch_val <- factor(p_pch[pmin(stg + 1, length(p_pch))], levels = unique(p_pch))
+  col_val <- p_col[pmin(stg + 1, length(p_col))]
+  
+  dat <- data.frame(
+    x = gx, y = gy, stage = stg,
+    substrate = org_sub_names,
+    pchar = pch_val, color = col_val,
+    species = species, stringsAsFactors = FALSE
+  )
+  
+  attr(dat, "species") <- species
+  attr(dat, "step") <- community$step
+  attr(dat, "layout") <- layout
+  attr(dat, "width") <- width
+  attr(dat, "step_density") <- step_density
+  class(dat) <- c("ewing_substrate", class(dat))
+  dat
+}
+
+ggplot_ewing_substrate <- function(object, layout = attr(object, "layout"), width = attr(object, "width"), step_density = attr(object, "step_density"), layers = c("poly", "hex", "organisms", "centers", "labels")) {
+  if (is.null(layout)) layout <- "hex"
+  if (is.null(width)) width <- 10
+  if (is.null(step_density)) step_density <- 1
+  
+  species <- attr(object, "species")
+  step <- attr(object, "step")
+  
+  tmp <- object[!duplicated(object$pchar), ]
+  col.palate <- tmp$color
+  names(col.palate) <- as.character(tmp$pchar)
+  
+  topo <- substrate_topology(width = width, step = step_density)
+  sub_obj <- create_substrate(topo, width = width, step = step_density)
+  hex_overlay <- create_hex_overlay(sub_obj, step = step_density)
+  
+  p <- ggplot2::ggplot()
+  if ("poly" %in% layers && nrow(sub_obj$poly) > 0) {
+    p <- p + ggplot2::geom_polygon(data = sub_obj$poly, ggplot2::aes(x = x, y = y, group = substrate), fill = NA, color = "black", linewidth = 0.7)
+  }
+  if ("hex" %in% layers && nrow(hex_overlay) > 0) {
+    p <- p + ggplot2::geom_polygon(data = hex_overlay, ggplot2::aes(x = x, y = y, group = cell_id), fill = NA, color = "gray75", linewidth = 0.3)
+  }
+  if ("organisms" %in% layers && nrow(object) > 0) {
+    p <- p + ggplot2::geom_text(data = object, ggplot2::aes(x = x, y = y, label = pchar, color = pchar), fontface = "bold", size = 4) +
+      ggplot2::scale_color_manual(name = "Stage", values = col.palate) +
+      ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(label = names(col.palate))))
+  }
+  if ("centers" %in% layers && nrow(sub_obj$centers) > 0) {
+    p <- p + ggplot2::geom_text(data = sub_obj$centers, ggplot2::aes(x = x, y = y, label = substrate), color = "black", fontface = "bold", size = 4.5)
+  }
+  if ("labels" %in% layers && nrow(sub_obj$labels) > 0) {
+    p <- p + ggplot2::geom_text(data = sub_obj$labels, ggplot2::aes(x = x, y = y, label = label), color = "darkred", fontface = "bold", size = 3.5)
+  }
+  
+  p + ggplot2::theme_void() + 
+    ggplot2::theme(plot.margin = ggplot2::margin(2, 2, 2, 2, "pt")) +
+    ggplot2::coord_fixed() + 
+    ggplot2::ggtitle(paste(species, "on Hex Substrate Grid at", step, "steps"))
+}
+
+plot_dist <- function(sim) {
+  df_list <- lapply(names(sim$pop), function(sp) {
+    stg <- sim$pop[[sp]]$org["stage", ]
+    pch <- sim$pop[[sp]]$pch
+    col <- sim$pop[[sp]]$col
+    stage_names <- pch[pmin(stg + 1, length(pch))]
+    tb <- as.data.frame(table(stage = stage_names), stringsAsFactors = FALSE)
+    tb$species <- sp
+    tb
+  })
+  df <- do.call(rbind, df_list)
+  
+  ggplot2::ggplot(df, ggplot2::aes(x = stage, y = Freq, fill = species)) +
+    ggplot2::geom_col(position = "dodge") +
+    ggplot2::facet_wrap(~ species, scales = "free") +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(title = paste("Stage Distribution at Step", sim$step), x = "Life Stage", y = "Organism Count")
+}
+
+# --- App UI & Server ---
+
+app_theme <- bslib::bs_theme(
+  version = 5,
+  bg = "#ffffff", fg = "#212529", primary = "#1a73e8", secondary = "#7209b7"
+)
+
+ui <- bslib::page_sidebar(
+  title = "Systems Ethology Platform (ewingApp)",
+  theme = app_theme,
+  sidebar = bslib::sidebar(
+    width = 320,
+    shiny::div(
+      style = "font-size: 0.85rem;",
+      shiny::h4("Simulation Setup", style = "font-size: 0.95rem; font-weight: 600; margin-bottom: 6px;"),
+      shiny::sliderInput("nhost", "Initial Hosts:", min = 20, max = 500, value = 200, step = 20),
+      shiny::sliderInput("nparasite", "Initial Parasites:", min = 20, max = 500, value = 200, step = 20),
+      shiny::sliderInput("nsteps", "Run Steps:", min = 500, max = 5000, value = 1000, step = 500),
+      shiny::div(
+        style = "display: flex; gap: 6px; margin-bottom: 8px;",
+        shiny::actionButton("run_sim", "Run Engine", class = "btn-sm btn-primary flex-fill"),
+        shiny::actionButton("reset_sim", "Reset", class = "btn-sm btn-outline-secondary")
+      ),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::checkboxGroupInput("show_species", "Species to Display:",
+                                choices = c("Host" = "host", "Parasite" = "parasite"),
+                                selected = c("host", "parasite"), inline = TRUE),
+      shiny::radioButtons("species_mode", "Species Mode:",
+                          choices = c("Overlay (1 Map)" = "overlay", "Separate (Stacked Maps)" = "separate"),
+                          selected = "overlay", inline = TRUE)
+    )
+  ),
+  bslib::navset_tab(
+    bslib::nav_panel("Substrate Maps", bslib::card(shiny::uiOutput("substrate_ui"))),
+    bslib::nav_panel("Stage Distributions", bslib::card(shiny::plotOutput("dist_plot", height = "500px"))),
+    bslib::nav_panel("Input Parameters", bslib::card(shiny::htmlOutput("param_summary")))
+  )
+)
+
+server <- function(input, output, session) {
+  current_sim <- shiny::reactiveVal(make_sim_community(200, 200))
+  
+  shiny::observeEvent(input$run_sim, {
+    sim <- current_sim()
+    res <- step_sim_community(sim, input$nsteps)
+    current_sim(res)
+  })
+  
+  shiny::observeEvent(input$reset_sim, {
+    current_sim(make_sim_community(input$nhost, input$nparasite))
+  })
+  
+  selected_species <- shiny::reactive({
+    sel <- input$show_species
+    if (is.null(sel) || length(sel) == 0) c("host", "parasite") else sel
+  })
+  
+  sppplot <- shiny::reactive({
+    sim <- current_sim()
+    spp <- selected_species()
+    mode_val <- input$species_mode %||% "overlay"
+    
+    if (mode_val == "overlay") {
+      sub_data <- ewing_substrate(sim, spp, layout = "hex", width = 10, step_density = 1)
+      if (!is.null(sub_data)) list(ggplot_ewing_substrate(sub_data, layout = "hex")) else list()
+    } else {
+      plots <- lapply(spp, function(x) {
+        sub_data <- ewing_substrate(sim, x, layout = "hex", width = 10, step_density = 1)
+        if (!is.null(sub_data)) ggplot_ewing_substrate(sub_data, layout = "hex") else NULL
+      })
+      plots[!sapply(plots, is.null)]
+    }
+  })
+  
+  output$sppPlot <- shiny::renderPlot({
+    plots <- sppplot()
+    if (!is.null(plots) && length(plots) > 0) {
+      cowplot::plot_grid(plotlist = plots, nrow = length(plots), align = "v")
+    } else {
+      ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No species selected to plot")
+    }
+  })
+  
+  output$substrate_ui <- shiny::renderUI({
+    plots <- sppplot()
+    n_plots <- if (!is.null(plots)) max(1, length(plots)) else 1
+    h_in <- 4.5 * n_plots
+    shiny::plotOutput("sppPlot", height = paste0(h_in, "in"))
+  })
+  
+  output$dist_plot <- shiny::renderPlot({
+    plot_dist(current_sim())
+  })
+  
+  output$param_summary <- shiny::renderUI({
+    sim <- current_sim()
+    nh <- ncol(sim$pop$host$org)
+    np <- ncol(sim$pop$parasite$org)
+    shiny::HTML(paste0("
+      <h4>Systems Ethology Parameters & Summary</h4>
+      <p><strong>Current Simulation Step:</strong> ", sim$step, "</p>
+      <p><strong>Host Population Count:</strong> ", nh, "</p>
+      <p><strong>Parasite Population Count:</strong> ", np, "</p>
+      <p><strong>Substrate Network:</strong> 7 plant component surfaces (fr1, fr2, fr3, fr4, twig, lftop, lfbot)</p>
+    "))
+  })
+}
+
+shiny::shinyApp(ui = ui, server = server)
 ```
-
-> [!NOTE]
-> **Live Deployment:** The full interactive Systems Ethology application is deployed live on [Posit Connect (SystemsEthology)](https://connect.doit.wisc.edu/SystemsEthology).
 
 ---
 
@@ -56,9 +561,8 @@ plot(simres)
 
 ## Platform Components & Architecture
 
-The platform combines modular Shiny components (`ewingInput`, `ewingOutput`, `ewingServer`) defined in [`R/ewingApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ewingApp.R) and deployed via [`inst/shinyApp/app.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/shinyApp/app.R):
+The platform combines modular Shiny components (`ewingInput`, `ewingOutput`, `ewingServer`) defined in [`R/ewingApp.R`](https://github.com/byandell/ewing/blob/main/R/ewingApp.R):
 
 1. **Parameter Initialization (`initParApp`)**: Configure species life stage durations, attack rates, and reproduction probabilities.
 2. **Simulation Engine (`simApp`)**: Execute competing-risk event queues on leftist tree structures.
 3. **Dynamic Visualizations (`distPlotApp`, `substrateApp`, `envPlotApp`)**: Monitor real-time stage distributions, spatial agent positions, and multi-run variance envelopes.
-4. **Spatial & Hexagonal Integration (`hexmapApp`)**: Project abstract substrate coordinates onto real-world USGS watershed geography.

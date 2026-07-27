@@ -66,6 +66,19 @@ This guarantees that all organisms on substrate $S$ are displayed strictly insid
 
 ---
 
+## Multi-Species Display Modes & Filtering
+
+`hexmoveApp` supports multi-species simulation communities (e.g. host and parasite):
+
+1. **Species Filtering**:
+   Users can toggle which species to display (`Host` and/or `Parasite`) using inline checkboxes in the sidebar (`show_species`).
+
+2. **Multi-Species View Modes**:
+   - **`Overlay (1 Map)`**: Renders all selected species (hosts AND parasites) simultaneously on a single unified hexagonal substrate map. Host stage symbols (`0`, `1`, `2`, `3`...) and parasite stage symbols (`E`, `L`, `P`, `p`...) sit together on the same hexagonal grid layout, allowing direct visualization of spatial host-parasite overlaps.
+   - **`Separate (Adjacent Maps)`**: Renders each selected species on its own distinct hexagonal grid map, stacked one above the other (`cowplot::plot_grid(nrow = length(species))`).
+
+---
+
 ## Hexagonal Grid Overlay (`create_hex_overlay`)
 
 A discrete hexagonal grid overlay is generated over the substrate lattice points (`sub_obj$points`) using [create_hex_overlay()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/substrate_triangle.R#L175).
@@ -76,19 +89,11 @@ where radius $r = \frac{step \cdot d}{\sqrt{3}}$ scales with grid spacing `step`
 
 ---
 
-## Organism Symbol & Stage Representation
-
-Organism symbols and colors are derived directly from the simulation futures table (`getOrgFuture`):
-- **Stage Symbol (`pchar`)**: Character label (e.g. `'0'`, `'1'`, `'2'`, `'P'`) representing the organism's current life stage.
-- **Stage Color Palette (`color`)**: Stage-specific colors (e.g., `brown`, `green`, `turquoise`, `red`) matching `future.host` / `future.parasite`.
-- Organisms are rendered using `geom_text()` over their assigned substrate hexagons with standard ggplot2 legend key overrides matching `substrateApp()`.
-
----
-
 ## Interactive Simulation Stepping
 
 The interactive controls in [substrateInput](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/substrateApp.R#L35) and [substrateServer](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/substrateApp.R#L80) provide:
 - **Stepping Action Buttons**: `+1 Step`, `+10 Steps`, `+100 Steps`, and `Reset`. Clicking a step button executes `future.events(sim, nstep = n)` and reactively updates the substrate visualization.
+- **Species Filter & View Modes**: Checkboxes for selecting species (`host`, `parasite`) and radio buttons for `Overlay (1 Map)` vs `Separate (Adjacent Maps)`.
 - **Layout Switching**: Toggle between `"Hex Substrate Overlay"` (global hexagonal network) and `"Faceted Substrates"` (panel view faceted by substrate element `fr1..fr4`, `twig`, `lftop`, `lfbot`).
 - **Layer Controls**: Dynamic checkboxes for Substrate Boundaries (`poly`), Hex Grid Overlay (`hex`), Organism Symbols (`organisms`), Substrate Identifiers (`centers`), and Side Numbers (`labels`).
 
