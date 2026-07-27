@@ -1,6 +1,6 @@
 ---
 title: "sysetholApp (Systems Ethology Platform)"
-description: "The central Systems Ethology platform orchestrating host-parasite individual-based simulations, age class distributions, spatial substrate networks, and parameter evaluations."
+description: "The central Systems Ethology platform orchestrating host-parasite individual-based simulations, age class distributions over time, spatial substrate networks, and parameter evaluations."
 author: "Brian S. Yandell"
 engine: knitr
 toc: false
@@ -12,7 +12,7 @@ format:
 
 [← Back to Demos Gallery](index.qmd)
 
-The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). It provides a streamlined **Systems Ethology platform (`sysetholApp()`)** with clean sidebar controls (`sysetholInput`), dynamic conditional panels (`Steps per click` when `nsim = 1`, `Confidence Band` when `nsim > 1`), sidebar **Run Engine** & **Reset** buttons, and modular tabs (`sysetholOutput`: **Dist Plots**, **Substrate Plots**, **Envelope Plots**, and **Input Data** via `inputApp`).
+The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). It provides a streamlined **Systems Ethology platform (`sysetholApp()`)** with clean sidebar controls (`sysetholInput`), dynamic conditional panels (`Steps per click` when `nsim = 1`, `Confidence Band` when `nsim > 1`), sidebar **Run Engine** & **Reset** buttons, and modular tabs (`sysetholOutput`: **Dist Plots** time-series step plots, **Substrate Plots**, **Envelope Plots**, and **Input Data** via `inputApp`).
 
 ```{shinylive-r}
 #| standalone: true
@@ -201,6 +201,37 @@ create_hex_overlay <- function(object, step = 1) {
 
 # --- Standalone Simulation Engine ---
 
+record_history <- function(sim) {
+  t_val <- sim$step
+  df_list <- list()
+  
+  for (sp in names(sim$pop)) {
+    org <- sim$pop[[sp]]$org
+    stg <- org["stage", ]
+    pch <- sim$pop[[sp]]$pch
+    
+    # Stage counts
+    for (s_idx in seq_along(pch)) {
+      stg_name <- pch[s_idx]
+      cnt <- sum(stg + 1 == s_idx)
+      df_list[[length(df_list) + 1]] <- data.frame(
+        time = t_val, Species = sp, State = stg_name,
+        Count = cnt, Type = "ageclass", stringsAsFactors = FALSE
+      )
+    }
+    
+    # Total count
+    df_list[[length(df_list) + 1]] <- data.frame(
+      time = t_val, Species = sp, State = "total",
+      Count = ncol(org), Type = "ageclass", stringsAsFactors = FALSE
+    )
+  }
+  
+  hist_new <- do.call(rbind, df_list)
+  sim$history <- rbind(sim$history, hist_new)
+  sim
+}
+
 make_sim_community <- function(nhost = 200, nparasite = 200) {
   sub_names <- c("fr1", "fr2", "fr3", "fr4", "twig", "lftop", "lfbot")
   
@@ -225,14 +256,18 @@ make_sim_community <- function(nhost = 200, nparasite = 200) {
   p_pch <- c("E", "L", "p", "P", "F")
   p_col <- c("brown", "green", "turquoise", "blue", "orange")
   
-  list(
-    step = 50,
+  sim <- list(
+    step = 0,
     pop = list(
       host = list(org = h_mat, pch = h_pch, col = h_col),
       parasite = list(org = p_mat, pch = p_pch, col = p_col)
     ),
-    sub_names = sub_names
+    sub_names = sub_names,
+    history = data.frame()
   )
+  
+  sim <- record_history(sim)
+  sim
 }
 
 step_sim_community <- function(sim, nstep = 50) {
@@ -254,6 +289,7 @@ step_sim_community <- function(sim, nstep = 50) {
     
     sim$pop[[sp]]$org <- org
   }
+  sim <- record_history(sim)
   sim
 }
 
@@ -400,24 +436,29 @@ ggplot_ewing_substrate <- function(object, layout = attr(object, "layout"), widt
 }
 
 plot_dist <- function(sim, norm = TRUE, total = TRUE) {
-  df_list <- lapply(names(sim$pop), function(sp) {
-    stg <- sim$pop[[sp]]$org["stage", ]
-    pch <- sim$pop[[sp]]$pch
-    col <- sim$pop[[sp]]$col
-    stage_names <- pch[pmin(stg + 1, length(pch))]
-    tb <- as.data.frame(table(stage = stage_names), stringsAsFactors = FALSE)
-    if (norm && sum(tb$Freq) > 0) tb$Freq <- tb$Freq / sum(tb$Freq)
-    tb$species <- sp
-    tb
-  })
-  df <- do.call(rbind, df_list)
+  df <- sim$history
+  if (is.null(df) || nrow(df) == 0) {
+    return(ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No history data"))
+  }
   
-  ggplot2::ggplot(df, ggplot2::aes(x = stage, y = Freq, fill = species)) +
-    ggplot2::geom_col(position = "dodge") +
-    ggplot2::facet_wrap(~ species, scales = "free") +
+  if (!total) {
+    df <- df[df$State != "total", ]
+  }
+  
+  if (norm) {
+    max_counts <- stats::aggregate(Count ~ Species + State, data = df, max)
+    names(max_counts)[names(max_counts) == "Count"] <- "MaxCount"
+    df <- merge(df, max_counts, by = c("Species", "State"))
+    df$Count <- ifelse(df$MaxCount > 0, df$Count / df$MaxCount, df$Count)
+  }
+  
+  ggplot2::ggplot(df, ggplot2::aes(x = time, y = Count, color = State, group = State)) +
+    ggplot2::geom_step(linewidth = 0.8) +
+    ggplot2::geom_point(size = 2) +
+    ggplot2::facet_wrap(~ Species, scales = "free_y") +
     ggplot2::theme_minimal() +
-    ggplot2::labs(title = paste("Population Age Class Distribution at Step", sim$step),
-                  x = "Life Stage", y = if (norm) "Proportion" else "Count")
+    ggplot2::labs(title = "Population Age Class Distribution Progression over Time",
+                  x = "Simulation Step (Time)", y = if (norm) "Normalized Count" else "Organism Count")
 }
 
 plot_envelope <- function(nsim = 10, confidence = TRUE) {
@@ -740,7 +781,7 @@ The app launcher script is located at [`inst/scripts/sysetholApp.R`](https://git
 The platform combines modular Shiny components exported in [`R/sysetholApp.R`](https://github.com/byandell/ewing/blob/main/R/sysetholApp.R) and [`R/inputApp.R`](https://github.com/byandell/ewing/blob/main/R/inputApp.R):
 
 1. **Sidebar Setup & De-cluttering**: Dynamic conditional panels display `Steps per click` when `nsim = 1` and `Total Simulation steps` / `Confidence Band Envelope` when `nsim > 1`. Side panel **Run Engine** and **Reset** buttons keep the main interface focused and clean.
-2. **Dist Plots**: Visualizes population age-class distributions across active species.
+2. **Dist Plots**: Visualizes population age-class distributions over simulation steps ($t = 0, 50, 100...$) using `geom_step()` step lines and `geom_point()`.
 3. **Substrate Plots**: Projects organism positions onto hexagonal substrate topology overlays with species filtering and `Overlay (1 Map)` vs `Separate (Stacked Maps)` view modes.
 4. **Envelope Plots**: Computes multi-run simulation envelopes across `nsim` stochastic iterations (visible when `nsim > 1`).
 5. **Input Data (`inputApp`)**: Interactive table explorer (`inputAppInput`, `inputAppOutput`, `inputAppServer`) for underlying `organism.features`, `future.host`, `future.parasite`, `substrate.host`, `substrate.parasite`, `substrate.substrate`, `host.parasite`, `temperature.base`, and `temperature.par` datasets.
