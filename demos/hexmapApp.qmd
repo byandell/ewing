@@ -4,6 +4,7 @@ description: "Interactively identify USGS HUC12 subwatershed boundaries using Le
 author: "Brian S. Yandell"
 engine: knitr
 toc: true
+image: "images/hexmap.png"
 format:
   html:
     embed-resources: false

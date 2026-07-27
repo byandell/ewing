@@ -4,7 +4,7 @@ description: "An interactive thermal regime explorer allowing real-time editing 
 author: "Brian S. Yandell"
 engine: knitr
 toc: false
-image: "images/tempapp.png"
+image: "images/temp.png"
 format:
   html:
     embed-resources: false
@@ -29,10 +29,10 @@ cat("library(stats)\n")
 cat("library(graphics)\n\n")
 
 for (f in inc_files) {
-  src <- readLines(file.path("..", f), warn = FALSE)
-  cat(paste0("# --- Auto-Included from ", f, " ---\n\n"))
-  cat(paste(src, collapse = "\n"))
-  cat("\n\n")
+    src <- readLines(file.path("..", f), warn = FALSE)
+    cat(paste0("# --- Auto-Included from ", f, " ---\n\n"))
+    cat(paste(src, collapse = "\n"))
+    cat("\n\n")
 }
 
 cat("# --- Launch Application ---\n\n")
