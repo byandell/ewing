@@ -475,6 +475,7 @@ make_sim_community &lt;- function(nhost = 200, nparasite = 200) {
   )
 
   sim &lt;- record_history(sim)
+  class(sim) &lt;- c("ewing", "list")
   sim
 }
 
@@ -521,8 +522,9 @@ future.events &lt;- function(sim, nstep = 50, ...) {
 }
 
 ewing_discrete &lt;- function(nsim = 10, nstep = 1000, count = c(200, 100), ...) {
-  res &lt;- step_sim_community(make_sim_community(count[1], count[2]), nstep)
-  class(res) &lt;- c("ewing_discrete", class(res))
+  s1 &lt;- step_sim_community(make_sim_community(count[1], count[2]), nstep)
+  res &lt;- list(s1)
+  class(res) &lt;- c("ewing_discrete", "list")
   res
 }
 
@@ -987,7 +989,7 @@ sysetholInput &lt;- function(id) {
                                 choices = c("Host" = "host", "Parasite" = "parasite"),
                                 selected = c("host", "parasite"), inline = TRUE),
       shiny::radioButtons(ns("species_mode"), "Species Mode:",
-                          choices = c("Overlay (1 Map)" = "overlay", "Separate (Stacked Maps)" = "separate"),
+                          choices = c("Overlay (1 Map)" = "overlay", "Separate (Adjacent Maps)" = "separate"),
                           selected = "overlay", inline = TRUE)
     )
   )
@@ -1105,8 +1107,10 @@ sysetholServer &lt;- function(id) {
       mode_val &lt;- input$species_mode %||% "overlay"
       
       # Extract single simulation object if discrete
-      sim_single &lt;- if (inherits(sim, "ewing_discrete")) sim[[1]] else sim
-      if (!inherits(sim_single, "ewing")) return(list())
+      sim_single &lt;- if (inherits(sim, "ewing_discrete")) {
+        if (is.list(sim) &amp;&amp; length(sim) &gt; 0 &amp;&amp; inherits(sim[[1]], "ewing")) sim[[1]] else NULL
+      } else sim
+      if (is.null(sim_single) || !inherits(sim_single, "ewing")) return(list())
       
       if (mode_val == "overlay") {
         sub_data &lt;- ewing_substrate(sim_single, spp, layout = "hex", width = 10, step_density = 1)
@@ -1123,7 +1127,7 @@ sysetholServer &lt;- function(id) {
     output$sppPlot &lt;- shiny::renderPlot({
       plots &lt;- sppplot()
       if (!is.null(plots) &amp;&amp; length(plots) &gt; 0) {
-        cowplot::plot_grid(plotlist = plots, nrow = length(plots), align = "v")
+        cowplot::plot_grid(plotlist = plots, ncol = length(plots), align = "h")
       } else {
         ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No species selected to plot")
       }
@@ -1131,8 +1135,7 @@ sysetholServer &lt;- function(id) {
     
     output$substrate_ui &lt;- shiny::renderUI({
       plots &lt;- sppplot()
-      n_plots &lt;- if (!is.null(plots)) max(1, length(plots)) else 1
-      h_in &lt;- 4.5 * n_plots
+      h_in &lt;- 5.0
       shiny::plotOutput(ns("sppPlot"), height = paste0(h_in, "in"))
     })
     
