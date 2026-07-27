@@ -4,7 +4,7 @@ description: "The central Systems Ethology platform orchestrating host-parasite 
 author: "Brian S. Yandell"
 engine: knitr
 toc: false
-image: "images/fiveplot.png"
+image: "images/sysethol.png"
 format:
   html:
     embed-resources: false
@@ -103,27 +103,27 @@ create_substrate <- function(topology, width = 10, step = 1) {
   all_points <- data.frame()
   labels_df <- data.frame()
   poly_df <- data.frame()
-  
+
   for (sub in names(topology)) {
     cfg <- topology[[sub]]
     grid <- get_substrate_grid(width, step, cfg$dir)
-    
+
     o_a <- cfg$offset[1]
     o_b <- cfg$offset[2]
     o_c <- cfg$offset[3]
 
     grid_tri <- tricoord(grid$a, grid$b, grid$c)
     grid_tri <- grid_tri + cfg$offset
-    
+
     car_pts <- tri2car(grid_tri)
     car_pts$substrate <- sub
     all_points <- rbind(all_points, car_pts)
-    
+
     if (cfg$dir == "up") {
       v_top <- c(o_a, o_b, o_c)
       v_br  <- c(o_a + W, o_b, o_c - W)
       v_bl  <- c(o_a, o_b + W, o_c - W)
-      
+
       m1 <- (v_top + v_bl) / 2
       m2 <- (v_top + v_br) / 2
       m3 <- (v_bl + v_br)  / 2
@@ -133,36 +133,36 @@ create_substrate <- function(topology, width = 10, step = 1) {
       v_bot <- c(o_a, o_b, o_c)
       v_tr  <- c(o_a, o_b - W, o_c + W)
       v_tl  <- c(o_a - W, o_b, o_c + W)
-      
+
       m1 <- (v_bot + v_tr) / 2
       m2 <- (v_bot + v_tl) / 2
       m3 <- (v_tl + v_tr)  / 2
       centroid <- (v_bot + v_tr + v_tl) / 3
       p_mat <- cbind(v_bot, v_tr, v_tl)
     }
-    
+
     w_in <- 0.25
     l1 <- m1 * (1 - w_in) + centroid * w_in
     l2 <- m2 * (1 - w_in) + centroid * w_in
     l3 <- m3 * (1 - w_in) + centroid * w_in
-    
+
     mat_l <- cbind(l1, l2, l3)
     car_l <- tri2car(mat_l)
     car_l$label <- c("1", "2", "3")
     car_l$substrate <- sub
     labels_df <- rbind(labels_df, car_l)
-    
+
     car_p <- tri2car(p_mat)
     car_p$substrate <- sub
     poly_df <- rbind(poly_df, car_p)
   }
-  
+
   centers <- stats::aggregate(cbind(x, y) ~ substrate, data = all_points, mean)
-  
+
   obj <- list(
-    points = all_points, 
-    labels = labels_df, 
-    poly = poly_df, 
+    points = all_points,
+    labels = labels_df,
+    poly = poly_df,
     centers = centers,
     topology = topology
   )
@@ -173,19 +173,19 @@ create_substrate <- function(topology, width = 10, step = 1) {
 create_hex_overlay <- function(object, step = 1) {
   pts <- if (inherits(object, "substrate")) object$points else object
   if (is.null(pts) || nrow(pts) == 0) return(data.frame())
-  
+
   xmult <- 2 / (2 + sqrt(3))
   ymult <- 6 / (3 + 2 * sqrt(3))
   d <- step * sqrt(xmult^2 + ymult^2)
   r <- d / sqrt(3)
-  
+
   angles <- (seq(0, 5) * 60 + 30) * pi / 180
   dx <- r * cos(angles)
   dy <- r * sin(angles)
-  
+
   n_pts <- nrow(pts)
   hex_list <- vector("list", n_pts)
-  
+
   for (i in seq_len(n_pts)) {
     px <- pts$x[i] + dx
     py <- pts$y[i] + dy
@@ -198,7 +198,7 @@ create_hex_overlay <- function(object, step = 1) {
       stringsAsFactors = FALSE
     )
   }
-  
+
   do.call(rbind, hex_list)
 }\n\n')
 
@@ -207,12 +207,12 @@ cat("# --- Standalone Simulation Engine & Package Adapters ---\n\n")
 cat('record_history <- function(sim) {
   t_val <- sim$step
   df_list <- list()
-  
+
   for (sp in names(sim$pop)) {
     org <- sim$pop[[sp]]$org
     stg <- org["stage", ]
     pch <- sim$pop[[sp]]$pch
-    
+
     for (s_idx in seq_along(pch)) {
       stg_name <- pch[s_idx]
       cnt <- sum(stg + 1 == s_idx)
@@ -221,13 +221,13 @@ cat('record_history <- function(sim) {
         Count = cnt, Type = "ageclass", stringsAsFactors = FALSE
       )
     }
-    
+
     df_list[[length(df_list) + 1]] <- data.frame(
       time = t_val, Species = sp, State = "total",
       Count = ncol(org), Type = "ageclass", stringsAsFactors = FALSE
     )
   }
-  
+
   hist_new <- do.call(rbind, df_list)
   sim$history <- rbind(sim$history, hist_new)
   sim
@@ -235,28 +235,28 @@ cat('record_history <- function(sim) {
 
 make_sim_community <- function(nhost = 200, nparasite = 200) {
   sub_names <- c("fr1", "fr2", "fr3", "fr4", "twig", "lftop", "lfbot")
-  
+
   h_stages <- sample(0:6, nhost, replace = TRUE, prob = c(0.4, 0.2, 0.15, 0.1, 0.08, 0.05, 0.02))
   h_subs <- sample(1:7, nhost, replace = TRUE, prob = c(0.15, 0.1, 0.1, 0.1, 0.1, 0.4, 0.05))
   h_pa <- runif(nhost, -80, 80)
   h_pb <- runif(nhost, -80, 80)
   h_pc <- -(h_pa + h_pb)
-  
+
   p_stages <- sample(1:5, nparasite, replace = TRUE, prob = c(0.35, 0.25, 0.2, 0.1, 0.1))
   p_subs <- sample(1:7, nparasite, replace = TRUE, prob = c(0.1, 0.1, 0.1, 0.15, 0.1, 0.4, 0.05))
   p_pa <- runif(nparasite, -80, 80)
   p_pb <- runif(nparasite, -80, 80)
   p_pc <- -(p_pa + p_pb)
-  
+
   h_mat <- rbind(pos.a = h_pa, pos.b = h_pb, pos.c = h_pc, stage = h_stages, sub.stage = h_subs)
   p_mat <- rbind(pos.a = p_pa, pos.b = p_pb, pos.c = p_pc, stage = p_stages, sub.stage = p_subs)
-  
+
   h_pch <- c("0", "1", "2", "3", "4", "5", "V")
   h_col <- c("brown", "green", "turquoise", "blue", "violet", "purple", "magenta")
-  
+
   p_pch <- c("E", "L", "p", "P", "F")
   p_col <- c("brown", "green", "turquoise", "blue", "orange")
-  
+
   sim <- list(
     step = 0,
     pop = list(
@@ -266,7 +266,7 @@ make_sim_community <- function(nhost = 200, nparasite = 200) {
     sub_names = sub_names,
     history = data.frame()
   )
-  
+
   sim <- record_history(sim)
   sim
 }
@@ -275,33 +275,33 @@ step_sim_community <- function(sim, nstep = 50) {
   sub_interval <- if (nstep <= 5) 1 else if (nstep <= 20) 2 else if (nstep <= 100) 5 else if (nstep <= 500) 25 else 50
   sub_steps <- seq(sub_interval, nstep, by = sub_interval)
   if (length(sub_steps) == 0 || tail(sub_steps, 1) != nstep) sub_steps <- c(sub_steps, nstep)
-  
+
   last_step <- 0
   for (s_inc in sub_steps) {
     inc <- s_inc - last_step
     last_step <- s_inc
     sim$step <- sim$step + inc
-    
+
     for (sp in names(sim$pop)) {
       org <- sim$pop[[sp]]$org
       n <- ncol(org)
-      
+
       stg <- org["stage", ]
       stg <- pmin(stg + sample(0:1, n, replace = TRUE, prob = c(0.85, 0.15)), 6)
       org["stage", ] <- stg
-      
+
       org["pos.a", ] <- org["pos.a", ] + runif(n, -10, 10)
       org["pos.b", ] <- org["pos.b", ] + runif(n, -10, 10)
       org["pos.c", ] <- -(org["pos.a", ] + org["pos.b", ])
-      
+
       switch_idx <- sample(1:n, max(1, round(n * 0.05)))
       org["sub.stage", switch_idx] <- sample(1:7, length(switch_idx), replace = TRUE)
-      
+
       sim$pop[[sp]]$org <- org
     }
     sim <- record_history(sim)
   }
-  
+
   sim
 }
 
@@ -370,53 +370,53 @@ ewing_substrate <- function(community, species, layout = "hex", width = 10, step
     class(combined) <- c("ewing_substrate", class(combined))
     return(combined)
   }
-  
+
   sp_data <- community$pop[[species]]
   if (is.null(sp_data)) return(NULL)
-  
+
   organism <- sp_data$org
   p_pch <- sp_data$pch
   p_col <- sp_data$col
   substrates <- community$sub_names
-  
+
   n_org <- ncol(organism)
   sub_indices <- organism["sub.stage", ]
   org_sub_names <- substrates[sub_indices]
-  
+
   topo <- substrate_topology(width = width, step = step_density)
   gx <- numeric(n_org)
   gy <- numeric(n_org)
-  
+
   unique_subs <- unique(org_sub_names)
-  
+
   for (sub in unique_subs) {
     idx <- which(org_sub_names == sub)
     target_name <- if (sub == "twig") "tw1" else sub
     cfg <- topo[[target_name]]
-    
+
     pa <- organism["pos.a", idx]
     pb <- organism["pos.b", idx]
     pc <- organism["pos.c", idx]
-    
+
     if (!is.null(cfg)) {
       W_sub <- width - step_density
       if (rescale) {
         amin <- min(pa); amax <- max(pa)
         bmin <- min(pb); bmax <- max(pb)
-        
+
         u <- if (amax > amin) (pa - amin) / (amax - amin) else rep(0.5, length(idx))
         v <- if (bmax > bmin) (pb - bmin) / (bmax - bmin) else rep(0.5, length(idx))
-        
+
         u_m <- 0.15 + 0.70 * u
         v_m <- 0.15 + 0.70 * v
-        
+
         a_p <- u_m * W_sub
         b_p <- v_m * (W_sub - a_p)
         c_p <- -(a_p + b_p)
       } else {
         a_p <- pa; b_p <- pb; c_p <- pc
       }
-      
+
       off <- cfg$offset
       if (cfg$dir == "up") {
         ga <- a_p + off[1]; gb <- b_p + off[2]; gc <- c_p + off[3]
@@ -432,18 +432,18 @@ ewing_substrate <- function(community, species, layout = "hex", width = 10, step
       gy[idx] <- car$y
     }
   }
-  
+
   stg <- organism["stage", ]
   pch_val <- factor(p_pch[pmin(stg + 1, length(p_pch))], levels = unique(p_pch))
   col_val <- p_col[pmin(stg + 1, length(p_col))]
-  
+
   dat <- data.frame(
     x = gx, y = gy, stage = stg,
     substrate = org_sub_names,
     pchar = pch_val, color = col_val,
     species = species, stringsAsFactors = FALSE
   )
-  
+
   attr(dat, "species") <- species
   attr(dat, "step") <- community$step
   attr(dat, "layout") <- layout
@@ -457,18 +457,18 @@ ggplot_ewing_substrate <- function(object, layout = attr(object, "layout"), widt
   if (is.null(layout)) layout <- "hex"
   if (is.null(width)) width <- 10
   if (is.null(step_density)) step_density <- 1
-  
+
   species <- attr(object, "species")
   step <- attr(object, "step")
-  
+
   tmp <- object[!duplicated(object$pchar), ]
   col.palate <- tmp$color
   names(col.palate) <- as.character(tmp$pchar)
-  
+
   topo <- substrate_topology(width = width, step = step_density)
   sub_obj <- create_substrate(topo, width = width, step = step_density)
   hex_overlay <- create_hex_overlay(sub_obj, step = step_density)
-  
+
   p <- ggplot2::ggplot()
   if ("poly" %in% layers && nrow(sub_obj$poly) > 0) {
     p <- p + ggplot2::geom_polygon(data = sub_obj$poly, ggplot2::aes(x = x, y = y, group = substrate), fill = NA, color = "black", linewidth = 0.7)
@@ -487,10 +487,10 @@ ggplot_ewing_substrate <- function(object, layout = attr(object, "layout"), widt
   if ("labels" %in% layers && nrow(sub_obj$labels) > 0) {
     p <- p + ggplot2::geom_text(data = sub_obj$labels, ggplot2::aes(x = x, y = y, label = label), color = "darkred", fontface = "bold", size = 3.5)
   }
-  
-  p + ggplot2::theme_void() + 
+
+  p + ggplot2::theme_void() +
     ggplot2::theme(plot.margin = ggplot2::margin(2, 2, 2, 2, "pt")) +
-    ggplot2::coord_fixed() + 
+    ggplot2::coord_fixed() +
     ggplot2::ggtitle(paste(species, "on Hex Substrate Grid at", step, "steps"))
 }
 
@@ -498,21 +498,21 @@ plot_envelope <- function(nsim = 10, confidence = TRUE) {
   steps <- seq(0, 1000, by = 50)
   mean_h <- 100 + 0.15 * steps
   sd_h <- 10 + 0.05 * steps
-  
+
   mean_p <- 100 + 0.08 * steps
   sd_p <- 8 + 0.03 * steps
-  
+
   df_h <- data.frame(step = steps, mean = mean_h, lower = mean_h - 1.96 * sd_h, upper = mean_h + 1.96 * sd_h, species = "host")
   df_p <- data.frame(step = steps, mean = mean_p, lower = mean_p - 1.96 * sd_p, upper = mean_p + 1.96 * sd_p, species = "parasite")
   df <- rbind(df_h, df_p)
-  
+
   p <- ggplot2::ggplot(df, ggplot2::aes(x = step, y = mean, color = species, fill = species)) +
     ggplot2::geom_line(linewidth = 1)
-  
+
   if (confidence) {
     p <- p + ggplot2::geom_ribbon(ggplot2::aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA)
   }
-  
+
   p + ggplot2::theme_minimal() +
     ggplot2::labs(title = paste("Simulation Envelopes across", nsim, "Runs"),
                   x = "Simulation Step", y = "Population Count")
@@ -572,10 +572,10 @@ sample_input_datasets <- list(
 
 # --- Dynamically Auto-Include Selected R/ Source Files ---
 for (f in inc_files) {
-  src <- readLines(file.path("..", f), warn = FALSE)
-  cat(paste0("# --- Auto-Included from ", f, " ---\n\n"))
-  cat(paste(src, collapse = "\n"))
-  cat("\n\n")
+    src <- readLines(file.path("..", f), warn = FALSE)
+    cat(paste0("# --- Auto-Included from ", f, " ---\n\n"))
+    cat(paste(src, collapse = "\n"))
+    cat("\n\n")
 }
 
 cat("# --- Launch Application ---\n\n")
