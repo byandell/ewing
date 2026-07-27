@@ -1,0 +1,71 @@
+---
+title: "hexmoveApp (Organism Movement on Hex Grid)"
+description: "Interactive Shiny app to visualize organism positions on a continuous hexagonal substrate grid based on global tridiagonal coordinates and step through simulation events."
+author: "Brian S. Yandell"
+engine: knitr
+toc: true
+format:
+  html:
+    embed-resources: false
+---
+
+[← Back to Demos Gallery](index.qmd)
+
+The **`hexmoveApp()`** application visualizes host and parasite spatial positions mapped directly onto a unified hexagonal substrate network topology (`create_substrate`).
+
+Instead of rendering substrate components (`fr1..fr4`, `tw1..tw2`, `lftop`, `lfbot`) in isolated rectangular panel facets, `hexmoveApp()` places every organism on a continuous hexagonal substrate plane based on its native tridiagonal coordinates $(a, b, c)$ rescaled into its active substrate patch area.
+
+---
+
+## Interactive Application Usage
+
+Launch the application natively in R:
+
+```r
+library(ewing)
+
+# Initialize simulation and run initial 100 steps
+mysim <- init.simulation()
+mysim <- future.events(mysim, nstep = 100)
+
+# Launch interactive Shiny app
+hexmoveApp(mysim)
+```
+
+> [!NOTE]
+> **Live Deployment:** You can also test `hexmoveApp()` live on the [SystemsEthology Connect Platform](https://connect.doit.wisc.edu/SystemsEthology).
+
+---
+
+## Programmatic Code Example
+
+Below is an R example illustrating how `ewing_substrate(mysim, species, layout = "hex")` converts organism coordinates into rescaled global Euclidean space and renders the hexagonal substrate overlay plot via `autoplot()`.
+
+```{r}
+#| message: false
+#| warning: false
+#| fig.width: 8
+#| fig.height: 7
+
+library(ewing)
+library(ggplot2)
+
+# 1. Initialize simulation and advance 100 steps
+mysim <- init.simulation()
+mysim <- future.events(mysim, nstep = 100, plotit = FALSE)
+
+# 2. Extract host coordinates mapped to hexagonal substrate grid
+host_hex <- ewing_substrate(mysim, "host", layout = "hex")
+
+# 3. Render autoplot with hexagonal grid overlay
+ggplot2::autoplot(host_hex)
+```
+
+---
+
+## Key Features
+
+1. **Per-Substrate Unit Triangle Rescaling**: Organisms' local tridiagonal coordinates $(pos.a, pos.b, pos.c)$ are normalized and scaled into the unit triangle $[0, W_{sub}]$ of each active substrate patch, guaranteeing all individuals sit strictly within their substrate bounds (and supporting substrates of varying sizes).
+2. **Hexagonal Polygon Overlay**: Generates discrete 6-sided polygon cells (`create_hex_overlay`) across all plant substrate components (`fr1..fr4`, `tw1`, `lftop`, `lfbot`).
+3. **Interactive Simulation Stepping**: Action buttons (`Step +1`, `Step +10`, `Step +100`, `Reset`) allow stepping through simulation horizon events with live reactive map updates.
+4. **Modular Layout Composition**: Seamlessly switch between `"hex"` (global hexagonal grid overlay) and `"facet"` (panel view faceted by substrate element) layouts in `substrateInput` / `substrateServer`.

@@ -122,3 +122,17 @@ Document in `inst/doc/refactor/triangle.md`.
    - Includes standalone implementations of core substrate routines (`tricoord`, `tri2car`, `get_substrate_grid`, `substrate_topology`, `create_substrate`).
    - Indexed in `demos/index.qmd` (listing grid) and `demos/_quarto.yml` (navbar navigation).
 
+---
+
+## Hexagonal Grid Overlay & Global Organism Positioning (`hexmoveApp`)
+
+The tridiagonal substrate network engine has been expanded to map live simulation organism coordinates directly onto hexagonal substrate grid overlays:
+
+- **Substrate Patch Resolution ([ewing_substrate](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ewing_substrate.R#L44))**: Maps organism substrate stage indices `individual["sub.stage"]` to specific plant substrate elements (`fr1`, `fr2`, `fr3`, `fr4`, `twig`/`tw1`, `lftop`, `lfbot`).
+- **Hexagonal Overlay Generation ([create_hex_overlay](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/substrate_triangle.R#L175))**: Constructs 6-vertex polygon tiles for each lattice dot in a `substrate` object, rendering discrete hexagonal cells across all substrate components (`fr1..fr4`, `tw1..tw2`, `lftop..lfbot`).
+- **Per-Substrate Surface Coordinate Rescaling ([ewing_substrate](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ewing_substrate.R#L60))**: Rescales organism local coordinates $(pos.a, pos.b, pos.c)$ into the unit triangle $[0, W_{sub}]$ of each active substrate patch (supporting custom substrate sizes $W_{sub}$ per surface). Applies topological offsets (`offset`) and orientations (`dir = "up"` or `"down"`), converting to global Euclidean $(x, y)$ coordinates via `tri2car()` so all organisms are visualized strictly within their designated substrate surface bounds.
+- **Integrated Module Controls ([substrateApp](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/substrateApp.R#L35))**: Supports switching between `"hex"` (global hexagonal grid overlay) and `"facet"` (panel view faceted by substrate element), alongside action buttons for stepping through simulation events (`+1`, `+10`, `+100` steps).
+- **Interactive Application ([hexmoveApp](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/hexmoveApp.R#L16))**: Composes `initParInput`, `initServer`, and `substrateServer` into an interactive exploration tool. See [hexmove.md](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/doc/refactor/hexmove.md) for full documentation.
+
+
+

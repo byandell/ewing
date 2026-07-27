@@ -22,6 +22,8 @@ website:
         text: triangleApp
       - href: hexmapApp.qmd
         text: hexmapApp
+      - href: hexmoveApp.qmd
+        text: hexmoveApp
     right:
       - icon: github
         href: https://github.com/byandell/ewing

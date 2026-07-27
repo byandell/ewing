@@ -44,6 +44,7 @@ substrate_topology <- function(width = 10, step = 1) {
     fr3   = list(offset = c(-W, 0, W), dir = "up"),
     fr4   = list(offset = c(0, -W, W), dir = "up"),
     tw1   = list(offset = c(-W, 0, W), dir = "down"),
+    twig  = list(offset = c(-W, 0, W), dir = "down"),
     tw2   = list(offset = c(-2*W, 0, 2*W), dir = "up"),
     lftop = list(offset = c(-2*W, W, W), dir = "down"),
     lfbot = list(offset = c(-3*W, W, 2*W), dir = "up")
@@ -163,3 +164,45 @@ autoplot.substrate <- function(object, ...) {
     ggplot2::coord_fixed() +
     ggplot2::ggtitle("Ewing Tridiagonal Substrate Network Mapping")
 }
+
+#' Create Hexagonal Grid Overlay Dataframe
+#'
+#' Generates 6-vertex polygon tiles for each lattice dot in a substrate object.
+#'
+#' @param object An S3 object of class `substrate` or a dataframe with columns `x`, `y`, `substrate`.
+#' @param step Numeric grid density spacing interval (default: 1).
+#'
+#' @return A data.frame suitable for `geom_polygon(group = cell_id)`.
+#' @export
+create_hex_overlay <- function(object, step = 1) {
+  pts <- if (inherits(object, "substrate")) object$points else object
+  if (is.null(pts) || nrow(pts) == 0) return(data.frame())
+  
+  xmult <- 2 / (2 + sqrt(3))
+  ymult <- 6 / (3 + 2 * sqrt(3))
+  d <- step * sqrt(xmult^2 + ymult^2)
+  r <- d / sqrt(3)
+  
+  angles <- (seq(0, 5) * 60 + 30) * pi / 180
+  dx <- r * cos(angles)
+  dy <- r * sin(angles)
+  
+  n_pts <- nrow(pts)
+  hex_list <- vector("list", n_pts)
+  
+  for (i in seq_len(n_pts)) {
+    px <- pts$x[i] + dx
+    py <- pts$y[i] + dy
+    sub <- pts$substrate[i]
+    hex_list[[i]] <- data.frame(
+      x = px,
+      y = py,
+      cell_id = i,
+      substrate = sub,
+      stringsAsFactors = FALSE
+    )
+  }
+  
+  do.call(rbind, hex_list)
+}
+

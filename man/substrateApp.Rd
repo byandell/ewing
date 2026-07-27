@@ -2,24 +2,32 @@
 % Please edit documentation in R/substrateApp.R
 \name{substrateApp}
 \alias{substrateApp}
+\alias{substrateInput}
 \alias{substrateServer}
 \alias{substrateOutput}
 \title{Substrate Plot App}
 \usage{
-substrateApp()
+substrateApp(title = "Substrate Organism Movement Explorer")
 
-substrateServer(id, simres)
+substrateInput(id)
+
+substrateServer(id, simres, width = 10, step_density = 1)
 
 substrateOutput(id)
 }
 \arguments{
-\item{id}{module ID string}
-
-\item{simres}{reactive object resolving chronological population metrics}
-
 \item{title}{Application title}
+
+\item{id}{Module ID string}
+
+\item{simres}{Reactive object returning an `ewing` simulation community object}
+
+\item{width}{Default substrate radius limit (10)}
+
+\item{step_density}{Default step density spacing interval (1)}
 }
 \description{
 A focused graphical module aggregating structural species progression separated distinctly across
 physical environment thresholds mapped by evaluating top-level topological definitions.
+Includes support for both hexagonal grid overlay mapping and classic faceted panels, as well as simulation stepping.
 }
