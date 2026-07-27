@@ -46,21 +46,21 @@
     "href": "sysetholApp.html",
     "title": "sysetholApp (Systems Ethology Platform)",
     "section": "",
-    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). It provides a streamlined Systems Ethology platform (sysetholApp()) with clean sidebar controls (sysetholInput), dynamic conditional panels (Steps per click when nsim = 1, Confidence Band when nsim &gt; 1), sidebar Run Engine & Reset buttons, and focused main tabs (sysetholOutput: Dist Plots, Substrate Plots, Envelope Plots, Input Data)."
+    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). It provides a streamlined Systems Ethology platform (sysetholApp()) with clean sidebar controls (sysetholInput), dynamic conditional panels (Steps per click when nsim = 1, Confidence Band when nsim &gt; 1), sidebar Run Engine & Reset buttons, and modular tabs (sysetholOutput: Dist Plots, Substrate Plots, Envelope Plots, and Input Data via inputApp)."
   },
   {
     "objectID": "sysetholApp.html#programmatic-application-usage",
     "href": "sysetholApp.html#programmatic-application-usage",
     "title": "sysetholApp (Systems Ethology Platform)",
     "section": "Programmatic Application Usage",
-    "text": "Programmatic Application Usage\nLaunch the Systems Ethology Platform natively in R using exported package functions:\nlibrary(ewing)\n\n# Launch interactive Systems Ethology platform app\nsysetholApp()\nThe app launcher script is located at inst/scripts/sysetholApp.R."
+    "text": "Programmatic Application Usage\nLaunch the Systems Ethology Platform natively in R using exported package functions:\nlibrary(ewing)\n\n# Launch interactive Systems Ethology platform app\nsysetholApp()\n\n# Or launch standalone Input Data Explorer\ninputApp()\nThe app launcher script is located at inst/scripts/sysetholApp.R."
   },
   {
     "objectID": "sysetholApp.html#platform-architecture-features",
     "href": "sysetholApp.html#platform-architecture-features",
     "title": "sysetholApp (Systems Ethology Platform)",
     "section": "Platform Architecture & Features",
-    "text": "Platform Architecture & Features\nThe platform combines modular Shiny components (sysetholInput, sysetholOutput, sysetholServer) exported in R/sysetholApp.R:\n\nSidebar Setup & De-cluttering: Dynamic conditional panels display Steps per click when nsim = 1 and Total Simulation steps / Confidence Band Envelope when nsim &gt; 1. Side panel Run Engine and Reset buttons keep the main interface focused and clean.\nDist Plots: Visualizes population age-class distributions across active species.\nSubstrate Plots: Projects organism positions onto hexagonal substrate topology overlays with species filtering and Overlay (1 Map) vs Separate (Stacked Maps) view modes.\nEnvelope Plots: Computes multi-run simulation envelopes across nsim stochastic iterations.\nInput Data: Interactive table explorer for underlying organism.features, future.host, future.parasite, substrate.host, substrate.parasite, and substrate.substrate datasets."
+    "text": "Platform Architecture & Features\nThe platform combines modular Shiny components exported in R/sysetholApp.R and R/inputApp.R:\n\nSidebar Setup & De-cluttering: Dynamic conditional panels display Steps per click when nsim = 1 and Total Simulation steps / Confidence Band Envelope when nsim &gt; 1. Side panel Run Engine and Reset buttons keep the main interface focused and clean.\nDist Plots: Visualizes population age-class distributions across active species.\nSubstrate Plots: Projects organism positions onto hexagonal substrate topology overlays with species filtering and Overlay (1 Map) vs Separate (Stacked Maps) view modes.\nEnvelope Plots: Computes multi-run simulation envelopes across nsim stochastic iterations (visible when nsim &gt; 1).\nInput Data (inputApp): Interactive table explorer (inputAppInput, inputAppOutput, inputAppServer) for underlying organism.features, future.host, future.parasite, substrate.host, substrate.parasite, substrate.substrate, host.parasite, temperature.base, and temperature.par datasets."
   },
   {
     "objectID": "hexmoveApp.html",

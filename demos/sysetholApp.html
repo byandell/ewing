@@ -221,7 +221,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p><a href="./index.html">← Back to Demos Gallery</a></p>
-<p>The live application below is running completely client-side in your browser using serverless <strong>Shinylive</strong> (WebAssembly). It provides a streamlined <strong>Systems Ethology platform (<code>sysetholApp()</code>)</strong> with clean sidebar controls (<code>sysetholInput</code>), dynamic conditional panels (<code>Steps per click</code> when <code>nsim = 1</code>, <code>Confidence Band</code> when <code>nsim &gt; 1</code>), sidebar <strong>Run Engine</strong> &amp; <strong>Reset</strong> buttons, and focused main tabs (<code>sysetholOutput</code>: <strong>Dist Plots</strong>, <strong>Substrate Plots</strong>, <strong>Envelope Plots</strong>, <strong>Input Data</strong>).</p>
+<p>The live application below is running completely client-side in your browser using serverless <strong>Shinylive</strong> (WebAssembly). It provides a streamlined <strong>Systems Ethology platform (<code>sysetholApp()</code>)</strong> with clean sidebar controls (<code>sysetholInput</code>), dynamic conditional panels (<code>Steps per click</code> when <code>nsim = 1</code>, <code>Confidence Band</code> when <code>nsim &gt; 1</code>), sidebar <strong>Run Engine</strong> &amp; <strong>Reset</strong> buttons, and modular tabs (<code>sysetholOutput</code>: <strong>Dist Plots</strong>, <strong>Substrate Plots</strong>, <strong>Envelope Plots</strong>, and <strong>Input Data</strong> via <code>inputApp</code>).</p>
 <pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
 #|   shinylive does not work in self-contained HTML documents.
 #|   Please set `embed-resources: false` in your metadata.
@@ -692,10 +692,49 @@ sample_input_datasets &lt;- list(
     to = c("lfbot", "twig", "fr1", "fr2"),
     connectivity = c(0.8, 0.5, 0.6, 0.7),
     stringsAsFactors = FALSE
+  ),
+  "temperature.base" = data.frame(
+    day = 1:5,
+    low = c(68, 70, 72, 71, 69),
+    high = c(85, 87, 88, 86, 84),
+    stringsAsFactors = FALSE
+  ),
+  "temperature.par" = data.frame(
+    parameter = c("base_temp", "opt_temp", "max_temp"),
+    value = c(50, 75, 95),
+    stringsAsFactors = FALSE
   )
 )
 
-# --- App Modules ---
+# --- Modular Input App Component ---
+
+inputAppInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    shiny::selectInput(ns("dataname"), "Select Dataset Table:", 
+                       choices = c("organism.features", "future.host", "future.parasite", 
+                                   "substrate.host", "substrate.parasite", "substrate.substrate", 
+                                   "host.parasite", "temperature.base", "temperature.par"), 
+                       selected = "organism.features")
+  )
+}
+
+inputAppOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tableOutput(ns("org_table"))
+}
+
+inputAppServer &lt;- function(id, simres = shiny::reactiveVal(NULL)) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+    output$org_table &lt;- shiny::renderTable({
+      name &lt;- input$dataname %||% "organism.features"
+      sample_input_datasets[[name]]
+    }, striped = TRUE, hover = TRUE, bordered = TRUE)
+  })
+}
+
+# --- Systems Ethology App Modules ---
 
 sysetholInput &lt;- function(id) {
   ns &lt;- shiny::NS(id)
@@ -746,15 +785,7 @@ sysetholInput &lt;- function(id) {
 
 sysetholOutput &lt;- function(id) {
   ns &lt;- shiny::NS(id)
-  bslib::navset_tab(
-    bslib::nav_panel("Dist Plots", bslib::card(shiny::plotOutput(ns("dist_plot"), height = "500px"))),
-    bslib::nav_panel("Substrate Plots", bslib::card(shiny::uiOutput(ns("substrate_ui")))),
-    bslib::nav_panel("Envelope Plots", bslib::card(shiny::plotOutput(ns("env_plot"), height = "500px"))),
-    bslib::nav_panel("Input Data", bslib::card(
-      shiny::selectInput(ns("dataname"), "Select Dataset Table:", choices = names(sample_input_datasets), selected = "organism.features"),
-      shiny::tableOutput(ns("org_table"))
-    ))
-  )
+  shiny::uiOutput(ns("sysethol_tabs"))
 }
 
 sysetholServer &lt;- function(id) {
@@ -762,6 +793,7 @@ sysetholServer &lt;- function(id) {
     ns &lt;- session$ns
     active_sim &lt;- shiny::reactiveVal(make_sim_community(200, 100))
     
+    # Run Engine button
     shiny::observeEvent(input$run_engine, {
       nsim_val &lt;- as.numeric(input$nsim %||% 1)
       if (nsim_val == 1) {
@@ -779,18 +811,49 @@ sysetholServer &lt;- function(id) {
       }
     })
     
+    # Reset button
     shiny::observeEvent(input$reset_engine, {
       nh &lt;- input$n_host %||% 200
       np &lt;- input$n_parasite %||% 100
       active_sim(make_sim_community(nh, np))
     })
     
+    # Input App Module Server Call
+    inputAppServer("input_app", simres = active_sim)
+    
+    # Dynamic Tabs (Envelope Plots shown ONLY when nsim &gt; 1)
+    output$sysethol_tabs &lt;- shiny::renderUI({
+      nsim_val &lt;- as.numeric(input$nsim %||% 1)
+      if (nsim_val == 1) {
+        bslib::navset_tab(
+          bslib::nav_panel("Dist Plots", bslib::card(shiny::plotOutput(ns("dist_plot"), height = "500px"))),
+          bslib::nav_panel("Substrate Plots", bslib::card(shiny::uiOutput(ns("substrate_ui")))),
+          bslib::nav_panel("Input Data", bslib::card(
+            inputAppInput(ns("input_app")),
+            inputAppOutput(ns("input_app"))
+          ))
+        )
+      } else {
+        bslib::navset_tab(
+          bslib::nav_panel("Dist Plots", bslib::card(shiny::plotOutput(ns("dist_plot"), height = "500px"))),
+          bslib::nav_panel("Substrate Plots", bslib::card(shiny::uiOutput(ns("substrate_ui")))),
+          bslib::nav_panel("Envelope Plots", bslib::card(shiny::plotOutput(ns("env_plot"), height = "500px"))),
+          bslib::nav_panel("Input Data", bslib::card(
+            inputAppInput(ns("input_app")),
+            inputAppOutput(ns("input_app"))
+          ))
+        )
+      }
+    })
+    
+    # Dist Plots Tab
     output$dist_plot &lt;- shiny::renderPlot({
       sim &lt;- active_sim()
       shiny::req(sim)
       plot_dist(sim, norm = input$norm %||% TRUE, total = input$total %||% TRUE)
     })
     
+    # Substrate Plots Tab
     selected_species &lt;- shiny::reactive({
       sel &lt;- input$show_species
       if (is.null(sel) || length(sel) == 0) c("host", "parasite") else sel
@@ -829,20 +892,16 @@ sysetholServer &lt;- function(id) {
       shiny::plotOutput(ns("sppPlot"), height = paste0(h_in, "in"))
     })
     
+    # Envelope Plots Tab
     output$env_plot &lt;- shiny::renderPlot({
       nsim_val &lt;- as.numeric(input$nsim %||% 1)
       conf_val &lt;- input$confidence %||% TRUE
       plot_envelope(nsim = nsim_val, confidence = conf_val)
     })
-    
-    output$org_table &lt;- shiny::renderTable({
-      name &lt;- input$dataname %||% "organism.features"
-      sample_input_datasets[[name]]
-    }, striped = TRUE, hover = TRUE, bordered = TRUE)
   })
 }
 
-# --- App Execution ---
+# --- Execution ---
 
 app_theme &lt;- bslib::bs_theme(
   version = 5,
@@ -871,19 +930,22 @@ shiny::shinyApp(ui = ui, server = server)</code></pre>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ewing)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Launch interactive Systems Ethology platform app</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sysetholApp</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sysetholApp</span>()</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Or launch standalone Input Data Explorer</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">inputApp</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The app launcher script is located at <a href="https://github.com/byandell/ewing/blob/main/inst/scripts/sysetholApp.R"><code>inst/scripts/sysetholApp.R</code></a>.</p>
 <hr>
 </section>
 <section id="platform-architecture-features" class="level2">
 <h2 class="anchored" data-anchor-id="platform-architecture-features">Platform Architecture &amp; Features</h2>
-<p>The platform combines modular Shiny components (<code>sysetholInput</code>, <code>sysetholOutput</code>, <code>sysetholServer</code>) exported in <a href="https://github.com/byandell/ewing/blob/main/R/sysetholApp.R"><code>R/sysetholApp.R</code></a>:</p>
+<p>The platform combines modular Shiny components exported in <a href="https://github.com/byandell/ewing/blob/main/R/sysetholApp.R"><code>R/sysetholApp.R</code></a> and <a href="https://github.com/byandell/ewing/blob/main/R/inputApp.R"><code>R/inputApp.R</code></a>:</p>
 <ol type="1">
 <li><strong>Sidebar Setup &amp; De-cluttering</strong>: Dynamic conditional panels display <code>Steps per click</code> when <code>nsim = 1</code> and <code>Total Simulation steps</code> / <code>Confidence Band Envelope</code> when <code>nsim &gt; 1</code>. Side panel <strong>Run Engine</strong> and <strong>Reset</strong> buttons keep the main interface focused and clean.</li>
 <li><strong>Dist Plots</strong>: Visualizes population age-class distributions across active species.</li>
 <li><strong>Substrate Plots</strong>: Projects organism positions onto hexagonal substrate topology overlays with species filtering and <code>Overlay (1 Map)</code> vs <code>Separate (Stacked Maps)</code> view modes.</li>
-<li><strong>Envelope Plots</strong>: Computes multi-run simulation envelopes across <code>nsim</code> stochastic iterations.</li>
-<li><strong>Input Data</strong>: Interactive table explorer for underlying <code>organism.features</code>, <code>future.host</code>, <code>future.parasite</code>, <code>substrate.host</code>, <code>substrate.parasite</code>, and <code>substrate.substrate</code> datasets.</li>
+<li><strong>Envelope Plots</strong>: Computes multi-run simulation envelopes across <code>nsim</code> stochastic iterations (visible when <code>nsim &gt; 1</code>).</li>
+<li><strong>Input Data (<code>inputApp</code>)</strong>: Interactive table explorer (<code>inputAppInput</code>, <code>inputAppOutput</code>, <code>inputAppServer</code>) for underlying <code>organism.features</code>, <code>future.host</code>, <code>future.parasite</code>, <code>substrate.host</code>, <code>substrate.parasite</code>, <code>substrate.substrate</code>, <code>host.parasite</code>, <code>temperature.base</code>, and <code>temperature.par</code> datasets.</li>
 </ol>
 
 
