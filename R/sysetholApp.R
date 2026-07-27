@@ -139,6 +139,9 @@ sysetholServer <- function(id) {
       current_sim(sim)
     })
     
+    # Input Data App Server
+    inputAppServer("input_app", simres = current_sim)
+    
     # Dynamic Tabs (Envelope Plots shown ONLY when nsim > 1)
     output$sysethol_tabs <- shiny::renderUI({
       nsim_val <- as.numeric(input$nsim %||% 1)
@@ -147,12 +150,8 @@ sysetholServer <- function(id) {
           bslib::nav_panel("Dist Plots", bslib::card(shiny::plotOutput(ns("dist_plot"), height = "500px"))),
           bslib::nav_panel("Substrate Plots", bslib::card(shiny::uiOutput(ns("substrate_ui")))),
           bslib::nav_panel("Input Data", bslib::card(
-            shiny::selectInput(ns("dataname"), "Select Dataset Table:", 
-                               choices = c("organism.features", "future.host", "future.parasite", 
-                                           "substrate.host", "substrate.parasite", "substrate.substrate", 
-                                           "host.parasite", "temperature.par", "temperature.base"), 
-                               selected = "organism.features"),
-            shiny::tableOutput(ns("org_table"))
+            inputAppInput(ns("input_app")),
+            inputAppOutput(ns("input_app"))
           ))
         )
       } else {
@@ -161,12 +160,8 @@ sysetholServer <- function(id) {
           bslib::nav_panel("Substrate Plots", bslib::card(shiny::uiOutput(ns("substrate_ui")))),
           bslib::nav_panel("Envelope Plots", bslib::card(shiny::plotOutput(ns("env_plot"), height = "500px"))),
           bslib::nav_panel("Input Data", bslib::card(
-            shiny::selectInput(ns("dataname"), "Select Dataset Table:", 
-                               choices = c("organism.features", "future.host", "future.parasite", 
-                                           "substrate.host", "substrate.parasite", "substrate.substrate", 
-                                           "host.parasite", "temperature.par", "temperature.base"), 
-                               selected = "organism.features"),
-            shiny::tableOutput(ns("org_table"))
+            inputAppInput(ns("input_app")),
+            inputAppOutput(ns("input_app"))
           ))
         )
       }
@@ -244,25 +239,6 @@ sysetholServer <- function(id) {
         ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No active simulation for envelope plot")
       }
     })
-    
-    # Input Data Tab
-    output$org_table <- shiny::renderTable({
-      name <- input$dataname %||% "organism.features"
-      sim <- current_sim()
-      sim_single <- if (inherits(sim, "ewing_discrete")) sim[[1]] else sim
-      
-      # Extract dataset table from package/simulation environment
-      switch(name,
-        "organism.features" = getOrgFeature(sim_single, "host", "features"),
-        "future.host"       = getOrgFuture(sim_single, "host"),
-        "future.parasite"   = getOrgFuture(sim_single, "parasite"),
-        "substrate.host"    = getOrgInteract(sim_single, "substrate", "host"),
-        "substrate.parasite"= getOrgInteract(sim_single, "substrate", "parasite"),
-        "substrate.substrate"= getOrgInteract(sim_single, "substrate", "substrate"),
-        "host.parasite"     = getOrgInteract(sim_single, "host", "parasite"),
-        data.frame(Info = paste("Dataset", name, "selected"))
-      )
-    }, striped = TRUE, hover = TRUE, bordered = TRUE)
     
     # Return active simulation state
     current_sim
