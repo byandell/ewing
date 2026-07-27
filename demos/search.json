@@ -60,7 +60,7 @@
     "href": "hexmoveApp.html",
     "title": "hexmoveApp (Shinylive)",
     "section": "",
-    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can interactively step through simulation events (+1, +10, +100 steps), toggle species visibility (Host, Parasite), switch between Overlay (1 Map) and Separate (Stacked Maps) view modes, and inspect organism positions on hexagonal substrate overlays."
+    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can interactively step through simulation events (+1, +10, +100 steps), toggle species visibility (Host, Parasite), switch between Overlay (1 Map) and Separate (Adjacent Maps) view modes, and inspect organism positions on hexagonal substrate overlays."
   },
   {
     "objectID": "hexmoveApp.html#programmatic-application-usage",

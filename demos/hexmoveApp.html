@@ -221,7 +221,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p><a href="./index.html">← Back to Demos Gallery</a></p>
-<p>The live application below is running completely client-side in your browser using serverless <strong>Shinylive</strong> (WebAssembly). You can interactively step through simulation events (+1, +10, +100 steps), toggle species visibility (<code>Host</code>, <code>Parasite</code>), switch between <strong>Overlay (1 Map)</strong> and <strong>Separate (Stacked Maps)</strong> view modes, and inspect organism positions on hexagonal substrate overlays.</p>
+<p>The live application below is running completely client-side in your browser using serverless <strong>Shinylive</strong> (WebAssembly). You can interactively step through simulation events (+1, +10, +100 steps), toggle species visibility (<code>Host</code>, <code>Parasite</code>), switch between <strong>Overlay (1 Map)</strong> and <strong>Separate (Adjacent Maps)</strong> view modes, and inspect organism positions on hexagonal substrate overlays.</p>
 <pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
 #|   shinylive does not work in self-contained HTML documents.
 #|   Please set `embed-resources: false` in your metadata.
@@ -269,7 +269,9 @@ make_sim_community &lt;- function(nhost = 200, nparasite = 200) {
   h_pch &lt;- c("0", "1", "2", "3", "4", "5", "V"); h_col &lt;- c("brown", "green", "turquoise", "blue", "violet", "purple", "magenta")
   p_pch &lt;- c("E", "L", "p", "P", "F"); p_col &lt;- c("brown", "green", "turquoise", "blue", "orange")
   sim &lt;- list(step = 0, pop = list(host = list(org = h_mat, pch = h_pch, col = h_col), parasite = list(org = p_mat, pch = p_pch, col = p_col)), sub_names = sub_names, history = data.frame())
-  record_history(sim)
+  sim &lt;- record_history(sim)
+  class(sim) &lt;- c("ewing", "list")
+  sim
 }
 
 step_sim_community &lt;- function(sim, nstep = 50) {
@@ -302,6 +304,579 @@ step_sim_community &lt;- function(sim, nstep = 50) {
 future.events &lt;- function(sim, nstep = 50, ...) step_sim_community(sim, nstep)
 init.simulation &lt;- function(count = c(200, 100), ...) make_sim_community(count[1], count[2])
 
+
+# --- Auto-Included from R/inputApp.R ---
+
+#' Input Data App
+#'
+#' Shiny module for inspecting simulation input parameter data tables, organism features,
+#' stage transition futures, and substrate interaction matrices.
+#'
+#' @param title Application title
+#' @param id module ID string
+#' @param simres Reactive simulation state (`ewing` object)
+#' @param datafile Reactive optional datafile path
+#' @export
+#' @importFrom shiny moduleServer NS renderTable req selectInput tableOutput tagList uiOutput
+#' @importFrom bslib page_sidebar sidebar card
+inputApp &lt;- function(title = "Input Data Explorer") {
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      inputAppInput("input_app")
+    ),
+    bslib::card(
+      inputAppOutput("input_app")
+    )
+  )
+  server &lt;- function(input, output, session) {
+    inputAppServer("input_app")
+  }
+  shiny::shinyApp(ui = ui, server = server)
+}
+
+#' Input Data Controls Module
+#' @export
+#' @rdname inputApp
+inputAppInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    shiny::selectInput(ns("dataname"), "Select Dataset Table:",
+      choices = c(
+        "organism.features", "future.host", "future.parasite",
+        "substrate.host", "substrate.parasite", "substrate.substrate",
+        "host.parasite", "temperature.base", "temperature.par"
+      ),
+      selected = "organism.features"
+    )
+  )
+}
+
+#' Input Data Table Output Module
+#' @export
+#' @rdname inputApp
+inputAppOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tableOutput(ns("org_table"))
+}
+
+#' Input Data Server Module
+#' @param id Module ID string
+#' @param simres Reactive simulation state (`ewing` object)
+#' @param datafile Reactive optional datafile path
+#' @export
+#' @rdname inputApp
+inputAppServer &lt;- function(id, simres = shiny::reactiveVal(NULL), datafile = shiny::reactiveVal("")) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+
+    output$org_table &lt;- shiny::renderTable(
+      {
+        name &lt;- input$dataname %||% "organism.features"
+        sim &lt;- if (is.reactive(simres)) simres() else simres
+        if (is.null(sim)) sim &lt;- init.simulation()
+        sim_single &lt;- if (inherits(sim, "ewing_discrete")) sim[[1]] else sim
+
+        switch(name,
+          "organism.features" = {
+            ft_h &lt;- getOrgFeature(sim_single, "host", "features")
+            if (is.null(ft_h) || length(ft_h) == 0) {
+              data.frame(species = c("host", "parasite"), count = c(200, 100), stringsAsFactors = FALSE)
+            } else {
+              as.data.frame(ft_h)
+            }
+          },
+          "future.host" = getOrgFuture(sim_single, "host"),
+          "future.parasite" = getOrgFuture(sim_single, "parasite"),
+          "substrate.host" = getOrgInteract(sim_single, "substrate", "host"),
+          "substrate.parasite" = getOrgInteract(sim_single, "substrate", "parasite"),
+          "substrate.substrate" = getOrgInteract(sim_single, "substrate", "substrate"),
+          "host.parasite" = getOrgInteract(sim_single, "host", "parasite"),
+          "temperature.base" = getOrgData(sim_single, "temperature", "base"),
+          "temperature.par" = getOrgData(sim_single, "temperature", "par"),
+          data.frame(Info = paste("Dataset", name, "selected"))
+        )
+      },
+      striped = TRUE,
+      hover = TRUE,
+      bordered = TRUE
+    )
+  })
+}
+
+# --- Auto-Included from R/substrateApp.R ---
+
+#' Substrate Plot App
+#' 
+#' A focused graphical module aggregating structural species progression separated distinctly across
+#' physical environment thresholds mapped by evaluating top-level topological definitions.
+#' Includes support for both hexagonal grid overlay mapping and classic faceted panels, as well as simulation stepping,
+#' multi-species overlays, and separate adjacent hex grid visualization modes.
+#' 
+#' @param title Application title
+#' @param id module ID string
+#' @param simres reactive object resolving simulation state (`ewing` community S3 object)
+#' @export
+#' @importFrom purrr map
+#' @importFrom shiny actionButton bindCache bindEvent checkboxInput checkboxGroupInput column downloadButton downloadHandler fileInput fluidPage fluidRow HTML h4 incProgress isTruthy mainPanel moduleServer NS plotOutput reactive renderPlot renderUI req selectInput selectizeInput sidebarLayout sidebarPanel sliderInput numericInput radioButtons tagList textInput titlePanel withProgress uiOutput reactiveVal observeEvent
+#' @importFrom ggplot2 autoplot ggplot ggtitle
+#' @importFrom cowplot plot_grid
+#' @importFrom bslib page_sidebar sidebar
+substrateApp &lt;- function(title = "Substrate Organism Movement Explorer") {
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      initParInput("init_par"),
+      shiny::hr(),
+      substrateInput("substrate")),
+    substrateOutput("substrate")
+  )
+  server &lt;- function(input, output, server) {
+    init_par &lt;- initParServer("init_par")
+    siminit &lt;- initServer("init", init_par)
+    substrateServer("substrate", siminit)
+  }
+  
+  shiny::shinyApp(ui = ui, server = server)
+}
+
+#' Substrate Controls Input Module
+#' @export
+#' @rdname substrateApp
+substrateInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    shiny::div(
+      style = "font-size: 0.85rem;",
+      shiny::h4("Substrate Display &amp; Stepping", style = "font-size: 1rem; font-weight: 600; margin-bottom: 8px;"),
+      shiny::checkboxGroupInput(ns("show_species"), "Species to Display:",
+                                choices = c("Host" = "host", "Parasite" = "parasite"),
+                                selected = c("host", "parasite"),
+                                inline = TRUE),
+      shiny::radioButtons(ns("species_mode"), "Species Mode:",
+                          choices = c("Overlay (1 Map)" = "overlay", "Separate (Adjacent Maps)" = "separate"),
+                          selected = "overlay", inline = TRUE),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::radioButtons(ns("layout"), "Layout View:",
+                          choices = c("Hex Substrate Overlay" = "hex", "Faceted Substrates" = "facet"),
+                          selected = "hex", inline = TRUE),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::span("Simulation Stepping:", style = "font-weight: 600; color: #1a73e8; display: block; margin-bottom: 4px;"),
+      shiny::div(
+        style = "display: flex; gap: 4px; margin-bottom: 8px;",
+        shiny::actionButton(ns("step1"), "+1 Step", class = "btn-sm btn-outline-primary flex-fill"),
+        shiny::actionButton(ns("step10"), "+10 Steps", class = "btn-sm btn-outline-primary flex-fill"),
+        shiny::actionButton(ns("step100"), "+100 Steps", class = "btn-sm btn-outline-primary flex-fill"),
+        shiny::actionButton(ns("reset_sim"), "Reset", class = "btn-sm btn-outline-secondary")
+      ),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::checkboxGroupInput(ns("layers"), "Display Layers:",
+                                choices = c("Substrate Boundaries" = "poly",
+                                            "Hex Grid Overlay" = "hex",
+                                            "Organisms" = "organisms",
+                                            "Substrate Names" = "centers",
+                                            "Side Numbers" = "labels"),
+                                selected = c("poly", "hex", "organisms", "centers", "labels")),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::div(
+        style = "display: flex; gap: 8px;",
+        shiny::numericInput(ns("width"), "Radius:", value = 10, min = 2, max = 30, step = 1),
+        shiny::numericInput(ns("step_density"), "Step Density:", value = 1, min = 0.5, max = 5, step = 0.5)
+      )
+    )
+  )
+}
+
+#' Substrate Server Module
+#' @param id Module ID string
+#' @param simres Reactive object returning an `ewing` simulation community object
+#' @param width Default substrate radius limit (10)
+#' @param step_density Default step density spacing interval (1)
+#' @export
+#' @rdname substrateApp
+substrateServer &lt;- function(id, simres, width = 10, step_density = 1) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+    
+    current_sim &lt;- shiny::reactiveVal(NULL)
+    
+    shiny::observeEvent(simres(), {
+      current_sim(simres())
+    })
+    
+    shiny::observeEvent(input$step1, {
+      sim &lt;- current_sim()
+      if (!is.null(sim)) {
+        res &lt;- future.events(sim, nstep = 1, plotit = FALSE)
+        current_sim(res)
+      }
+    })
+    
+    shiny::observeEvent(input$step10, {
+      sim &lt;- current_sim()
+      if (!is.null(sim)) {
+        res &lt;- future.events(sim, nstep = 10, plotit = FALSE)
+        current_sim(res)
+      }
+    })
+    
+    shiny::observeEvent(input$step100, {
+      sim &lt;- current_sim()
+      if (!is.null(sim)) {
+        res &lt;- future.events(sim, nstep = 100, plotit = FALSE)
+        current_sim(res)
+      }
+    })
+    
+    shiny::observeEvent(input$reset_sim, {
+      current_sim(simres())
+    })
+    
+    available_species &lt;- shiny::reactive({
+      sim &lt;- current_sim()
+      if (!is.null(sim) &amp;&amp; !is.null(sim$pop)) names(sim$pop) else NULL
+    })
+    
+    selected_species &lt;- shiny::reactive({
+      avail &lt;- available_species()
+      if (is.null(avail)) return(NULL)
+      sel &lt;- input$show_species
+      if (is.null(sel) || length(sel) == 0) avail else intersect(sel, avail)
+    })
+    
+    sppplot &lt;- shiny::reactive({
+      spp &lt;- selected_species()
+      shiny::req(spp)
+      sim &lt;- current_sim()
+      shiny::req(sim)
+      
+      layout_val &lt;- if (!is.null(input$layout)) input$layout else "hex"
+      mode_val &lt;- if (!is.null(input$species_mode)) input$species_mode else "overlay"
+      w_val &lt;- if (!is.null(input$width)) input$width else width
+      sd_val &lt;- if (!is.null(input$step_density)) input$step_density else step_density
+      layers_val &lt;- if (!is.null(input$layers)) input$layers else c("poly", "hex", "organisms", "centers", "labels")
+      
+      sim_single &lt;- if (inherits(sim, "ewing_discrete") &amp;&amp; is.list(sim) &amp;&amp; length(sim) &gt; 0) sim[[1]] else sim
+      if (inherits(sim_single, "ewing")) {
+        if (mode_val == "overlay" &amp;&amp; layout_val == "hex") {
+          sub_data &lt;- ewing_substrate(sim_single, spp, layout = layout_val, width = w_val, step_density = sd_val)
+          if (!is.null(sub_data)) {
+            p_obj &lt;- ggplot_ewing_substrate(sub_data, layout = layout_val, width = w_val, step_density = sd_val, layers = layers_val)
+            list(p_obj)
+          } else {
+            list()
+          }
+        } else {
+          p &lt;- lapply(spp, function(x) {
+            sub_data &lt;- ewing_substrate(sim_single, x, layout = layout_val, width = w_val, step_density = sd_val)
+            if (!is.null(sub_data)) {
+              p_obj &lt;- ggplot_ewing_substrate(sub_data, layout = layout_val, width = w_val, step_density = sd_val, layers = layers_val)
+              p_obj
+            } else {
+              NULL
+            }
+          })
+          p[!sapply(p, is.null)]
+        }
+      } else {
+        list()
+      }
+    })
+    
+    output$sppPlot &lt;- shiny::renderPlot({
+      plots &lt;- sppplot()
+      if (!is.null(plots) &amp;&amp; length(plots) &gt; 0) {
+        cowplot::plot_grid(plotlist = plots, ncol = length(plots), align = "h")
+      } else {
+        ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No active species selected to plot")
+      }
+    })
+    
+    output$substrate_plot &lt;- shiny::renderUI({
+      plots &lt;- sppplot()
+      h_in &lt;- 5.0
+      shiny::plotOutput(ns("sppPlot"), height = paste0(h_in, "in"))
+    })
+    
+    # Return current simulation state for downstream composition
+    current_sim
+  })
+}
+
+#' Substrate Output Module
+#' @export
+#' @rdname substrateApp
+substrateOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::uiOutput(ns("substrate_plot"))
+}
+
+# --- Auto-Included from R/ewing_substrate.R ---
+
+#' Ewing Substrate by Species
+#' 
+#' Ewing Substrate by Species with optional hexagonal topology layout, multi-species support, and substrate-level coordinate rescaling.
+#' 
+#' @aliases ewing_substrate ggplot_ewing_substrate autoplot.ewing_substrate
+#' @param community Simulation community object (`ewing` S3 class)
+#' @param species Species name or vector of species names (e.g. `"host"`, `"parasite"`, or `c("host", "parasite")`)
+#' @param headstuff Title parameters
+#' @param units Unit labels
+#' @param right Right label
+#' @param adj Adjustment
+#' @param show_sub Substrate filter (defaults to all active substrates)
+#' @param step Current step
+#' @param layout Display layout: `"facet"` (default) for separated panels or `"hex"` for global hexagonal substrate grid overlay
+#' @param width Substrate radius limit (default: 10)
+#' @param step_density Grid density spacing interval (default: 1)
+#' @param rescale Logical; if `TRUE` (default for `"hex"` layout), rescales organism local coordinates so they fit strictly within each substrate patch's surface area.
+#' @param ... Additional arguments
+#' @export ewing_substrate
+#' @importFrom dplyr distinct filter mutate arrange
+#' @importFrom tibble tibble
+#' @importFrom ggplot2 aes facet_grid facet_wrap geom_text geom_polygon ggplot ggtitle scale_color_manual xlab ylab theme_void coord_fixed guides guide_legend
+#' @importFrom rlang .data
+ewing_substrate &lt;- function( community,
+                             species,
+                             headstuff = c( 0, "start", sum( to.plot )),
+                             units = getOrgFeature( community, species[1], "units" ),
+                             right = species[1], adj = c(0,.5,1),
+                             show_sub = NULL,
+                             step = 0,
+                             layout = c("facet", "hex"),
+                             width = 10,
+                             step_density = 1,
+                             rescale = TRUE,
+                             ...)
+{
+  layout &lt;- match.arg(layout)
+  
+  if (length(species) &gt; 1) {
+    res_list &lt;- lapply(species, function(sp) {
+      df &lt;- ewing_substrate(community = community, species = sp, headstuff = headstuff,
+                            units = units, right = right, adj = adj, show_sub = show_sub,
+                            step = step, layout = layout, width = width, step_density = step_density,
+                            rescale = rescale, ...)
+      if (!is.null(df) &amp;&amp; nrow(df) &gt; 0) {
+        df$species &lt;- sp
+      }
+      df
+    })
+    res_list &lt;- res_list[!sapply(res_list, is.null)]
+    if (length(res_list) == 0) return(NULL)
+    combined &lt;- do.call(rbind, res_list)
+    attr(combined, "species") &lt;- paste(species, collapse = " &amp; ")
+    step_val &lt;- if (!is.null(community$step)) community$step else if (!is.null(community$count$step)) community$count$step else if (!is.null(attr(community, "nstep"))) attr(community, "nstep") else step
+    attr(combined, "step") &lt;- step_val
+    attr(combined, "layout") &lt;- layout
+    attr(combined, "width") &lt;- width
+    attr(combined, "step_density") &lt;- step_density
+    class(combined) &lt;- c("ewing_substrate", class(combined))
+    return(combined)
+  }
+  
+  ## plot current stages for species (except random parasites)
+  organism &lt;- get.species( community, species )[,-1]
+  if(is.null(organism)) # species is not in community
+    return(NULL)
+  
+  future &lt;- getOrgFuture( community, species, c("color","pch") )
+  
+  # Substrate names mapping (e.g. fr1, fr2, fr3, fr4, twig, lftop, lfbot)
+  substrate_feat &lt;- getOrgFeature( community, species, "substrate")
+  sub_interact &lt;- getOrgInteract(community, substrate_feat, species)
+  substrates &lt;- rownames(sub_interact)
+  if (is.null(substrates) || length(substrates) == 0) {
+    substrates &lt;- names(getOrgInteract(community, substrate_feat, substrate_feat))
+  }
+  if (is.null(show_sub)) show_sub &lt;- substrates
+  
+  position &lt;- paste( "pos", letters[1:3], sep = "." )
+  
+  if (layout == "hex") {
+    topo &lt;- substrate_topology(width = width, step = step_density)
+    n_org &lt;- ncol(organism)
+    gx &lt;- numeric(n_org)
+    gy &lt;- numeric(n_org)
+    
+    sub_indices &lt;- organism["sub.stage", ]
+    org_sub_names &lt;- substrates[sub_indices]
+    
+    # Process organisms per substrate patch to rescale local coordinates into substrate surface triangle
+    unique_subs &lt;- unique(org_sub_names)
+    
+    for (sub in unique_subs) {
+      idx &lt;- which(org_sub_names == sub)
+      
+      target_name &lt;- sub
+      if (!target_name %in% names(topo)) {
+        if (target_name == "twig") target_name &lt;- "tw1"
+        if (target_name == "tw1") target_name &lt;- "twig"
+      }
+      
+      cfg &lt;- topo[[target_name]]
+      
+      pa &lt;- organism["pos.a", idx]
+      pb &lt;- organism["pos.b", idx]
+      pc &lt;- organism["pos.c", idx]
+      
+      if (!is.null(cfg)) {
+        # Determine substrate surface width (allows substrates of different sizes in future)
+        W_sub &lt;- if (!is.null(cfg$width)) (cfg$width - step_density) else (width - step_density)
+        
+        if (rescale) {
+          amin &lt;- min(pa); amax &lt;- max(pa)
+          bmin &lt;- min(pb); bmax &lt;- max(pb)
+          
+          u &lt;- if (amax &gt; amin) (pa - amin) / (amax - amin) else rep(0.5, length(idx))
+          v &lt;- if (bmax &gt; bmin) (pb - bmin) / (bmax - bmin) else rep(0.5, length(idx))
+          
+          # 15% inner padding to ensure symbols sit comfortably inside substrate polygon borders
+          u_m &lt;- 0.15 + 0.70 * u
+          v_m &lt;- 0.15 + 0.70 * v
+          
+          a_p &lt;- u_m * W_sub
+          b_p &lt;- v_m * (W_sub - a_p)
+          c_p &lt;- -(a_p + b_p)
+        } else {
+          a_p &lt;- pa
+          b_p &lt;- pb
+          c_p &lt;- pc
+        }
+        
+        off &lt;- cfg$offset
+        if (cfg$dir == "up") {
+          ga &lt;- a_p + off[1]
+          gb &lt;- b_p + off[2]
+          gc &lt;- c_p + off[3]
+        } else {
+          ga &lt;- -a_p + off[1]
+          gb &lt;- -b_p + off[2]
+          gc &lt;- -c_p + off[3]
+        }
+        car &lt;- tri2car(tricoord(ga, gb, gc))
+        gx[idx] &lt;- car$x
+        gy[idx] &lt;- car$y
+      } else {
+        car &lt;- tri2car(organism[position, idx, drop = FALSE])
+        gx[idx] &lt;- car$x
+        gy[idx] &lt;- car$y
+      }
+    }
+    
+    xy &lt;- data.frame(x = gx, y = gy)
+  } else {
+    xy &lt;- tri2car( organism[position,] )
+  }
+  
+  dat &lt;- dplyr::filter(
+    dplyr::mutate(
+      tibble::tibble(xy), 
+      stage = organism["stage",],
+      substrate = substrates[organism["sub.stage",]],
+      pchar = factor(as.character( future$pch[.data$stage] ), levels = unique(as.character(future$pch))),
+      color = as.character( future$color[.data$stage] ),
+      species = species),
+    .data$substrate %in% show_sub)
+  
+  attr(dat, "species") &lt;- species
+  step_val &lt;- if (!is.null(community$step)) community$step else if (!is.null(community$count$step)) community$count$step else if (!is.null(attr(community, "nstep"))) attr(community, "nstep") else step
+  attr(dat, "step") &lt;- step_val
+  attr(dat, "layout") &lt;- layout
+  attr(dat, "width") &lt;- width
+  attr(dat, "step_density") &lt;- step_density
+  class(dat) &lt;- c("ewing_substrate", class(dat))
+  dat
+}
+
+#' @param object Object of class `ewing_substrate`
+#' @param xlab Label for x axis (facet layout)
+#' @param ylab Label for y axis (facet layout)
+#' @param layout Display layout (`"facet"` or `"hex"`)
+#' @param width Substrate radius limit (for hex layout)
+#' @param step_density Grid density spacing interval (for hex layout)
+#' @param layers Display layers for hex layout: vector containing any of `"poly"`, `"hex"`, `"organisms"`, `"centers"`, `"labels"`
+#' @param ... Additional arguments
+#' @importFrom ggplot2 aes facet_grid facet_wrap geom_text geom_polygon ggplot scale_color_manual xlab ylab theme_void coord_fixed guides guide_legend
+#' @importFrom rlang .data
+#' @importFrom dplyr distinct arrange
+#' @rdname ewing_substrate
+#' @export
+ggplot_ewing_substrate &lt;- function(object,
+                                   xlab = "horizontal", ylab = "vertical",
+                                   layout = attr(object, "layout"),
+                                   width = attr(object, "width"),
+                                   step_density = attr(object, "step_density"),
+                                   layers = c("poly", "hex", "organisms", "centers", "labels"),
+                                   ...)
+{     
+  if (is.null(layout)) layout &lt;- "facet"
+  if (is.null(width)) width &lt;- 10
+  if (is.null(step_density)) step_density &lt;- 1
+  
+  species &lt;- attr(object, "species")
+  step &lt;- attr(object, "step")
+  
+  # Allows same color for different pchar, but only one color per pchar.
+  tmp &lt;- dplyr::arrange(
+    dplyr::distinct(
+      dplyr::distinct(object, .data$pchar, .data$color),
+      .data$pchar, .keep_all = TRUE),
+    .data$pchar)
+  col.palate &lt;- tmp$color
+  names(col.palate) &lt;- as.character(tmp$pchar)
+  
+  if (layout == "hex") {
+    topo &lt;- substrate_topology(width = width, step = step_density)
+    sub_obj &lt;- create_substrate(topo, width = width, step = step_density)
+    hex_overlay &lt;- create_hex_overlay(sub_obj, step = step_density)
+    
+    p &lt;- ggplot2::ggplot()
+    if ("poly" %in% layers &amp;&amp; nrow(sub_obj$poly) &gt; 0) {
+      p &lt;- p + ggplot2::geom_polygon(data = sub_obj$poly, ggplot2::aes(x = x, y = y, group = substrate), 
+                                     fill = NA, color = "black", linewidth = 0.7)
+    }
+    if ("hex" %in% layers &amp;&amp; nrow(hex_overlay) &gt; 0) {
+      p &lt;- p + ggplot2::geom_polygon(data = hex_overlay, ggplot2::aes(x = x, y = y, group = cell_id), 
+                                     fill = NA, color = "gray75", linewidth = 0.3)
+    }
+    if ("organisms" %in% layers &amp;&amp; nrow(object) &gt; 0) {
+      p &lt;- p + ggplot2::geom_text(data = object, ggplot2::aes(x = x, y = y, label = pchar, color = pchar), 
+                                  fontface = "bold", size = 4) +
+        ggplot2::scale_color_manual(name = "Stage", values = col.palate) +
+        ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(label = names(col.palate))))
+    }
+    if ("centers" %in% layers &amp;&amp; nrow(sub_obj$centers) &gt; 0) {
+      p &lt;- p + ggplot2::geom_text(data = sub_obj$centers, ggplot2::aes(x = x, y = y, label = substrate), 
+                                  color = "black", fontface = "bold", size = 4.5)
+    }
+    if ("labels" %in% layers &amp;&amp; nrow(sub_obj$labels) &gt; 0) {
+      p &lt;- p + ggplot2::geom_text(data = sub_obj$labels, ggplot2::aes(x = x, y = y, label = label), 
+                                  color = "darkred", fontface = "bold", size = 3.5)
+    }
+    
+    return(p + ggplot2::theme_void() + 
+             ggplot2::theme(plot.margin = ggplot2::margin(2, 2, 2, 2, "pt")) +
+             ggplot2::coord_fixed() + 
+             ggplot2::ggtitle(paste(species, "on Hex Substrate Grid at", step, "steps")))
+  }
+  
+  # Default Facet View by Substrate Component
+  ggplot2::ggplot(object) +
+    ggplot2::aes(.data$x, .data$y, label = .data$pchar, col = .data$pchar) +
+    ggplot2::geom_text() +
+    ggplot2::facet_wrap(~ substrate) +
+    ggplot2::xlab(xlab) +
+    ggplot2::ylab(ylab) +
+    ggplot2::scale_color_manual(name = "Stage", values = col.palate) + 
+    ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(label = names(col.palate)))) +
+    ggplot2::ggtitle(paste(species, "on substrate at", step, "steps"))
+}
+#' @export
+#' @rdname ewing_substrate
+#' @method autoplot ewing_substrate
+autoplot.ewing_substrate &lt;- function(object, ...)
+  ggplot_ewing_substrate(object, ...)
 
 # --- Auto-Included from R/substrate_triangle.R ---
 

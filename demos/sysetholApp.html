@@ -572,7 +572,8 @@ ewing_substrate &lt;- function(community, species, layout = "hex", width = 10, s
     if (length(res_list) == 0) return(NULL)
     combined &lt;- do.call(rbind, res_list)
     attr(combined, "species") &lt;- paste(species, collapse = " &amp; ")
-    attr(combined, "step") &lt;- community$step
+    step_val &lt;- if (!is.null(community$step)) community$step else if (!is.null(community$count$step)) community$count$step else if (!is.null(attr(community, "nstep"))) attr(community, "nstep") else 0
+    attr(combined, "step") &lt;- step_val
     attr(combined, "layout") &lt;- layout
     attr(combined, "width") &lt;- width
     attr(combined, "step_density") &lt;- step_density
@@ -654,7 +655,8 @@ ewing_substrate &lt;- function(community, species, layout = "hex", width = 10, s
   )
 
   attr(dat, "species") &lt;- species
-  attr(dat, "step") &lt;- community$step
+  step_val &lt;- if (!is.null(community$step)) community$step else if (!is.null(community$count$step)) community$count$step else if (!is.null(attr(community, "nstep"))) attr(community, "nstep") else 0
+  attr(dat, "step") &lt;- step_val
   attr(dat, "layout") &lt;- layout
   attr(dat, "width") &lt;- width
   attr(dat, "step_density") &lt;- step_density
