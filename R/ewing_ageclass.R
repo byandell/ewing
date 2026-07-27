@@ -8,6 +8,9 @@
 #' @param substrate include substrate if \code{TRUE}
 #' @param total add total column if \code{TRUE}
 #' @param normalize normalize counts to 1 if \code{TRUE}
+#' @param object object of class \code{ewing_ageclass}
+#' @param main plot main title
+#' @param title plot title
 #' @param ... extra parameters not used
 #' @author Brian S. Yandell, \email{yandell@@stat.wisc.edu}
 #' @seealso \code{\link{init.simulation}}, \code{\link{future.events}},
@@ -26,10 +29,17 @@
 #' @importFrom dplyr any_of bind_rows filter group_by mutate summarize ungroup
 #' @importFrom tidyr pivot_wider
 #' @importFrom tibble tibble
-#' @importFrom ggplot2 aes facet_wrap ggplot
+#' @importFrom ggplot2 aes facet_wrap geom_point geom_step ggplot ggtitle labs scale_shape_manual
 #' @importFrom rlang .data
 ewing_ageclass <- function(community, substrate = TRUE, total = TRUE,
                            normalize = TRUE, ...) {
+  nsim_val <- NULL
+  nstep_val <- NULL
+  if (inherits(community, "ewing_discrete")) {
+    nsim_val <- attr(community, "nsim")
+    nstep_val <- attr(community, "nstep")
+    community <- community[[1]]
+  }
   count <- readCount(community)
   if(!length(count)) return(NULL)
   species <- names(count)
@@ -86,17 +96,46 @@ ewing_ageclass <- function(community, substrate = TRUE, total = TRUE,
     ordered_levels <- unique(c(unlist(ageclass), "total", subs))
   }
   out$State <- factor(out$State, levels = ordered_levels)
+  
+  attr(out, "nstep") <- if (!is.null(nstep_val)) nstep_val else attr(community, "nstep")
+  if (is.null(attr(out, "nstep")) && !is.null(out$step)) {
+    attr(out, "nstep") <- max(out$step, na.rm = TRUE)
+  }
+  attr(out, "nsim") <- if (!is.null(nsim_val)) nsim_val else attr(community, "nsim")
+  
   class(out) <- c("ewing_ageclass", class(out))
   out
 }
 #' @export
 #' @rdname ewing_ageclass
-ggplot_ewing_ageclass <- function(object, ... )
+ggplot_ewing_ageclass <- function(object, main = NULL, title = NULL, ... )
 {
+  if (is.null(title)) title <- main
+  if (is.null(title)) {
+    nstep <- attr(object, "nstep")
+    if (is.null(nstep) && !is.null(object$step)) {
+      nstep <- max(object$step, na.rm = TRUE)
+    }
+    nsim <- attr(object, "nsim")
+    if (!is.null(nstep)) {
+      if (!is.null(nsim) && nsim > 1) {
+        title <- paste0("Age Distribution over Time (", nstep, " steps, nsim = ", nsim, ")")
+      } else {
+        title <- paste0("Age Distribution over Time (", nstep, " steps)")
+      }
+    } else if (!is.null(nsim) && nsim > 1) {
+      title <- paste0("Age Distribution over Time (nsim = ", nsim, ")")
+    } else {
+      title <- "Age Distribution over Time"
+    }
+  }
+  
   ggplot2::ggplot(object) +
-    ggplot2::aes(.data$time, .data$Count, col = .data$State, group = .data$State) +
+    ggplot2::aes(.data$time, .data$Count, col = .data$State, group = .data$State, shape = .data$Species) +
     ggplot2::geom_step() +
-    ggplot2::geom_point() +
+    ggplot2::geom_point(size = 2) +
+    ggplot2::scale_shape_manual(name = "Species", values = c(1, 2, 0, 5, 6, 3, 4)) +
+    ggplot2::labs(title = title, color = "State", shape = "Species") +
     ggplot2::facet_wrap(.data$Type ~ .data$Species, scales = "free")
 }
 #' @export
@@ -104,3 +143,4 @@ ggplot_ewing_ageclass <- function(object, ... )
 #' @method autoplot ewing_ageclass
 autoplot.ewing_ageclass <- function(object, ...)
   ggplot_ewing_ageclass(object, ...)
+

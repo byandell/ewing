@@ -76,12 +76,13 @@ This initializes the entire topological network from an arbitrary starting popul
 
 The quantitative framework iterates over timeline horizons.
 
-1. Generates counts and maps the lowest sequential transition milestone via `update.mintime`.
-2. Passes identified organisms to target handlers based on condition: 
+1. **Step & History Accumulation**: When called on a pre-existing `community` object containing event counts (`community$count$counts`), `future.events` automatically sets `append = TRUE` and computes `start_step` from `community$count$step`. Subsequent steps increment as `start_step + istep`, accumulating event logs continuously across sequential simulation blocks.
+2. Generates counts and maps the lowest sequential transition milestone via `update_mintime`.
+3. Passes identified organisms to target handlers based on condition: 
     - `event.death`: Eliminates nodes out of positional topological maps.
     - `event.future`: A monadic evaluator routing progress natively (moving between age classes and stages based on time horizons). Also triggers geographic movement `event.move` depending on active substrate mapping rules.
     - `event.attack`: A dyadic evaluator representing predation. Models parasitic search routines over distinct topological layers until a target is acquired. Results either functionally remove targets (Ectoparasite) or compromise them.
-3. Automatically triggers sequence translation outputs tracking aggregate structural states.
+4. **Count Logging (`sim.R` & `fileCount.R`)**: `updateCount()` updates `community$count$step` and captures return values from `writeCount()`, persisting complete event histories into `community$count$counts`. `setEvents()` cleanly updates period tallies without truncating `community` when life stage vectors are empty.
 
 ### C. Temporal Updates (`temp.R`)
 
@@ -91,10 +92,9 @@ Used actively by temporal evaluations (like `event.future`) to translate rigid s
 
 ## 4. Plot Routines
 
-Graphic outputs are natively aggregated via standard libraries `ggplot_ewing` and structured outputs.
+Graphic outputs are natively aggregated via S3 method generics (`autoplot` / `ggplot_ewing_*`) and structured outputs:
 
-Additional legacy visualization parameters map explicitly to granular metrics:
-
+- `ewing_ageclass.R`: Reshapes continuous event counts from `readCount(community)` into age-class time-series. `ggplot_ewing_ageclass()` formats titles dynamically (e.g. `"Age Distribution over Time (<nstep> steps)"`), assigns open shape markers per species (`scale_shape_manual(name = "Species", values = c(1, 2, 0, 5, 6, 3, 4))`), and displays step-by-step history from step 0 to the final accumulated step.
 - `temp.R/temp.plot` & `temp.design`: Evaluation vectors tracking degree-day dynamics and temperature threshold simulations
 - `triangle.R/plot_current`: Two-dimensional plotting logic tracking population clusters specifically using triangular mappings upon the target substrates
 - `spline.R/five.plot`: Interactive functional graphics used for plotting development loops

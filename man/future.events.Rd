@@ -6,7 +6,6 @@
 \usage{
 future.events(
   community,
-  ...,
   nstep = 4000,
   species = get.species(community),
   refresh = nstep/20,
@@ -15,13 +14,13 @@ future.events(
   extinct = TRUE,
   timeit = TRUE,
   debugit = FALSE,
-  messages = TRUE
+  messages = TRUE,
+  append = NULL,
+  ...
 )
 }
 \arguments{
 \item{community}{object with population data by species}
-
-\item{...}{additional arguments passed to `initCount`}
 
 \item{nstep}{number of steps to perform}
 
@@ -38,6 +37,8 @@ future.events(
 \item{timeit}{record timing by event}
 
 \item{debugit}{detailed debug for advanced users}
+
+\item{...}{additional arguments passed to `initCount`}
 
 \item{plotit}{new plot at each refresh}
 

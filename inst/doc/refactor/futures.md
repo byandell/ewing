@@ -160,3 +160,9 @@ The `interactive step-by-step` refactor is completely deployed and verified. The
   - Added dynamic tab visibility in `sysetholOutput` (displaying **`Envelope Plots`** tab ONLY when `nsim > 1`).
   - Simplified [`R/ewingApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ewingApp.R) to compose UI/server directly from `sysetholApp` components + `downloadApp`.
   - Embedded serverless WebAssembly Shinylive block into [`demos/sysetholApp.qmd`](file:///Users/brianyandell/Documents/Research/ewing/ewing/demos/sysetholApp.qmd).
+
+- **Dist Plots Aesthetics & Continuous Stepping History**:
+  - Renamed title to `"Age Distribution over Time"` with dynamic step formatting (`"Age Distribution over Time (<nstep> steps)"` or `"(<nstep> steps, nsim = <nsim>)"`).
+  - Mapped species legends (`shape = .data$Species`) using distinct open symbol aesthetics (`scale_shape_manual(name = "Species", values = c(1, 2, 0, 5, 6, 3, 4))`) for open circles, triangles, squares, etc.
+  - Preserved continuous step history across sequential simulation stepping (`future.events.R`, `initCount.R`, `fileCount.R`, `sim.R`), accumulating step indices (`start_step + istep`) so "Run Engine" stepping renders complete history starting from step 0.
+  - Fixed `setEvents()` in [`R/Events.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/Events.R) so empty life stage vectors do not truncate the `community` object.

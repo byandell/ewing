@@ -79,22 +79,27 @@
 #' 
 #' 
 #' @export future.events
-future.events <- function( community, ...,
+future.events <- function( community,
                            nstep = 4000,
                            species = get.species( community ),
                            
                            refresh = nstep / 20, cex = 0.5,
                            substrate.plot = TRUE, extinct = TRUE,
                            timeit = TRUE, debugit = FALSE,
-                           messages = TRUE )
+                           messages = TRUE, append = NULL, ... )
   
 {
   ## Integrity check of dataset, and initialization of tallies.
   if( missing( community ))
     stop( "Must specify a community." )
   
+  if (is.null(append)) {
+    append <- !is.null(community$count$counts) && nrow(community$count$counts) > 0
+  }
+  
   if( debugit ) cat( "initialization\n" )
-  community <- initCount( community, species, debugit, messages = messages, ... )
+  community <- initCount( community, species, debugit = debugit, file = NULL,
+                           append = append, messages = messages )
   if( timeit )
     community <- init.timing( community )
   
@@ -109,6 +114,8 @@ future.events <- function( community, ...,
     p <- community$plot
     pstep <- length(p)
   }
+  
+  start_step <- if (append && !is.null(community$count$step)) community$count$step else 0
   
   ## for nstep steps schedule future events and process immediate events
   for( istep in seq( nstep )) {
@@ -150,7 +157,7 @@ future.events <- function( community, ...,
     if(!length(stage))
       stop(paste("no stage", current))
     community <- updateCount( community, species.now, individual, stage == "death",
-                              istep )
+                              start_step + istep )
     individual["stage"] <- current
     individual["sub.stage"] <- individual["sub.future"]
     community <- put.individual( community, species.now, individual )
@@ -189,7 +196,7 @@ future.events <- function( community, ...,
       community <- set.timing( community, "refresh" )
       # Save the ewing_ageclass and ewing_substrate objects.
       pstep <- pstep + 1
-      p[[pstep]] <- ewing_snapshot(community, istep, ...)
+      p[[pstep]] <- ewing_snapshot(community, start_step + istep, ...)
       
       if(messages) {
         cat( "refresh", istep )
@@ -219,11 +226,11 @@ future.events <- function( community, ...,
   community <- set.timing( community, "refresh", 1 )
   
   community <- fini.timing( community )
-  attr(community, "nstep") <- nstep
+  attr(community, "nstep") <- start_step + nstep
   
   if( !refresh | (nstep%%refresh)) {
     pstep <- pstep + 1
-    p[[pstep]] <- ewing_snapshot(community, istep, ...)
+    p[[pstep]] <- ewing_snapshot(community, start_step + istep, ...)
   }
   community$plot <- p
   

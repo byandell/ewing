@@ -8,6 +8,7 @@ putCount <- function( community, append = FALSE )
   countage <- getCount( community,, "countage")
   countsub <- getCount( community,, "countsub")
   countbase <- getCount( community,, "base")
+  step_now <- if (append) (getCount( community,, "step" ) %||% 0) else 0
   
   cnames <- c("step", "time", "future",
               paste( "count", 
@@ -18,14 +19,14 @@ putCount <- function( community, append = FALSE )
   cnums <- list()
   for( i in species ) {
     cnums[[i]] <- c(
-      0,
+      step_now,
       get.species.element( community, i, c("time","stage"), countbase[i] ),
       countage[[i]],
       countsub[[i]])
   }
 
   file <- getCount( community,, "file" )
-  if(!is.null(file)) {
+  if(!is.null(file) && is.character(file) && length(file) > 0) {
     if( !( file.exists( file ) & append ))
       cat( "species", cnames, "\n", file = file )
     for( i in species ) {
@@ -62,7 +63,7 @@ writeCount <- function( community, species, time, future, countage, countsub)
   cnums <- c(nstep, time, future, countage, countsub)
   
   file <- getCount( community,, "file" )
-  if(!is.null(file)) {
+  if(!is.null(file) && is.character(file) && length(file) > 0) {
     cat( species, cnums, "\n", file = file, append = TRUE )
     
     community

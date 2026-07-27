@@ -12,6 +12,9 @@ initCount <- function( community, species, debugit = FALSE, file = NULL, append 
     cat( "\n" )
   }
   
+  old_counts <- if (append) getCount( community, , "counts" ) else NULL
+  old_step <- if (append) getCount( community, , "step" ) else 0
+
   count <- list()
   ## leftist tree counters
   count$mintime <- numeric( length( species ))
@@ -79,6 +82,10 @@ initCount <- function( community, species, debugit = FALSE, file = NULL, append 
   
   # If file is NULL, then don't write to file; keep counts internal
   count$file <- file
+  if (append && !is.null(old_counts)) {
+    count$counts <- old_counts
+    count$step <- old_step
+  }
   
   community$count <- count
   

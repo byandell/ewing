@@ -66,7 +66,7 @@ updateCount <- function(community, species, individual, is.death = FALSE, step) 
   ## record counts
   community <- setCount( community, species,
                         list( countage = countage, countsub = countsub ))
-  writeCount( community, species, individual["time"], individual["future"],
+  community <- writeCount( community, species, individual["time"], individual["future"],
                countage, countsub )
 }
 ###########################################################################################
@@ -92,7 +92,7 @@ updateCounts <- function( community, species, newbirths )
   }
   community <- setCount( community, species,
                         list( countage = countage, countsub = countsub ))
-  writeCount( community, species, individual["time"], 1, countage, countsub )
+  community <- writeCount( community, species, individual["time"], 1, countage, countsub )
 }
 ###########################################################################################
 put.base <- function( community, species, id,

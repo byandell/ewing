@@ -15,12 +15,11 @@ setEvents <- function( community, period )
     names( events ) <- as.character( current )
     
     stage <- getOrgAlive( community, species, "stage" )
-    if( !length( stage ))
-      return( events )
-    
-    tmp <- tapply( stage, current[stage], length )
-    tmp[ is.na( tmp ) ] <- 0
-    events[ names( tmp ) ] <- tmp
+    if( length( stage )) {
+      tmp <- tapply( stage, current[stage], length )
+      tmp[ is.na( tmp ) ] <- 0
+      events[ names( tmp ) ] <- tmp
+    }
     
     count$events[[species]][,period] <- events
   }

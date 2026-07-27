@@ -262,19 +262,20 @@ getOrgData <- function(community, left, right,
   #     global data supplied by user
   #     external data file supplied by user
   sheet <- paste( left, right, sep = "." )
-  if((data_exists <- (datafile != ""))) {
-    if(dir.exists(datafile)) {
+  data_exists <- FALSE
+  if (is.character(datafile) && length(datafile) == 1 && nzchar(datafile)) {
+    if (dir.exists(datafile)) {
       extensions <- c(".txt", ".tsv", ".csv", ".xls", ".xlsx")
-      datafile <- file.path(datafile, paste0(sheet, extensions))
-      data_exists <- file.exists(datafile)
-      if(any(data_exists)) {
-        datafile <- datafile[data_exists][1]
+      datafile_paths <- file.path(datafile, paste0(sheet, extensions))
+      exist_idx <- file.exists(datafile_paths)
+      if (any(exist_idx)) {
+        datafile <- datafile_paths[exist_idx][1]
         data_exists <- TRUE
       } else {
         data_exists <- FALSE
       }
       sheet <- ""
-    } else { # datafile is a file, which must be xls or xlsx
+    } else if (file.exists(datafile)) {
       data_exists <- TRUE
     }
   }

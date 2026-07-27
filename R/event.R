@@ -52,7 +52,7 @@ parent.birth <- function( community, species, offspring )
   ## female starves when egg load depleted (less than or equal to 0)
   if( individual["offspring"] <= 0 )
     individual["stage"] <- set.future( community, species, "starved" )
-  put.individual( community, species, individual )
+  community <- put.individual( community, species, individual )
 }
 ###############################################################################
 get.birth <- function( community, species, offspring )
@@ -91,7 +91,7 @@ get.deplete <- function( community, species )
   individual["offspring"] <- individual["offspring"] - 
     ( individual["time"] - individual["location"] ) /
       getOrgFeature( community, species, "deplete" )
-  put.individual( community, species, individual )
+  community <- put.individual( community, species, individual )
 }
 ###############################################################################
 set.future <- function( community, species, stage )
@@ -137,7 +137,7 @@ event.attack <- function( community, species )
     individual["stage"] <- set.future( community, species, "starved" )
   }
   ## put updated individual back in community
-  put.individual( community, species, individual )
+  community <- put.individual( community, species, individual )
 }
 ###############################################################################
 get.attack <- function( community, species, individual )

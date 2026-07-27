@@ -192,14 +192,10 @@ sysetholServer <- function(id) {
     output$dist_plot <- shiny::renderPlot({
       sim <- current_sim()
       shiny::req(sim)
-      if (inherits(sim, "ewing_discrete")) {
-        autoplot(sim)
-      } else {
-        norm_val <- input$norm %||% TRUE
-        tot_val <- input$total %||% TRUE
-        ac <- ewing_ageclass(sim, total = tot_val, normalize = norm_val)
-        ggplot2::autoplot(ac)
-      }
+      norm_val <- input$norm %||% TRUE
+      tot_val <- input$total %||% TRUE
+      ac <- ewing_ageclass(sim, total = tot_val, normalize = norm_val)
+      ggplot2::autoplot(ac)
     })
     
     # Substrate Plots Tab

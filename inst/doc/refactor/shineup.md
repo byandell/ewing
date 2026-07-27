@@ -184,11 +184,14 @@ The dataset table inspection tab was extracted into a reusable module export **[
 - **`inputAppOutput()`**: Displays formatted table output (`tableOutput`).
 - **`inputAppServer()`**: Dynamically extracts parameter and interaction matrices from active `ewing` simulation instances.
 
-### Fine Time-Series Granularity in Dist Plots
+### Fine Time-Series Granularity & Continuous Stepping in Dist Plots
 
 The **`Dist Plots`** panel visualizes age-class counts over time using `geom_step()` step lines and `geom_point()`:
 
-- In `demos/sysetholApp.qmd`, `step_sim_community` executes sub-stepping at intermediate intervals (e.g., recording history ticks every 5 steps during a 50-step click) so that age class time-series step curves render fine granularity over time matching `ewing_ageclass` in `R/sysetholApp.R`.
+- **Title & Labels**: Uses `"Age Distribution over Time (<nstep> steps)"` (or `"(<nstep> steps, nsim = <nsim>)"` for multi-run simulations).
+- **Species Legend & Open Symbols**: Maps `shape = .data$Species` with open symbol aesthetics (`scale_shape_manual(name = "Species", values = c(1, 2, 0, 5, 6, 3, 4))`) to render species with distinct open shape markers (open circle, open triangle, open square, etc.).
+- **Continuous Step History Across Stepping**: When clicking **`Run Engine`** repeatedly in `sysetholApp()` / `ewingApp()`, simulation history is preserved continuously (`append = TRUE`) and step numbers accumulate (`start_step + istep`). Dist Plots display full time-series history from step 0 to the current total accumulated step count instead of resetting to the endpoint of the previous block.
+- **Granular Time-Series**: `step_sim_community` and `ewing_ageclass` retain history ticks across stepping intervals so age class time-series step curves render fine temporal granularity over time.
 
 ### Sidebar De-cluttering & Conditional Panels
 

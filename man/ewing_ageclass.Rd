@@ -14,7 +14,7 @@ ewing_ageclass(
   ...
 )
 
-ggplot_ewing_ageclass(object, ...)
+ggplot_ewing_ageclass(object, main = NULL, title = NULL, ...)
 
 \method{autoplot}{ewing_ageclass}(object, ...)
 }
@@ -29,6 +29,12 @@ species}
 \item{normalize}{normalize counts to 1 if \code{TRUE}}
 
 \item{...}{extra parameters not used}
+
+\item{object}{object of class \code{ewing_ageclass}}
+
+\item{main}{plot main title}
+
+\item{title}{plot title}
 }
 \description{
 Ravel counts to produce one comprehensive data frame across species
