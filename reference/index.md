@@ -7,6 +7,8 @@
   : temperature data tables for simulation
 - [`autoplot(`*`<substrate>`*`)`](https://byandell.github.io/ewing/reference/autoplot.substrate.md)
   : Plot Visual Substrate Network Layouts
+- [`create_hex_overlay()`](https://byandell.github.io/ewing/reference/create_hex_overlay.md)
+  : Create Hexagonal Grid Overlay Dataframe
 - [`create_substrate()`](https://byandell.github.io/ewing/reference/create_substrate.md)
   : Create Substrate Geometric Object
 - [`distPlotApp()`](https://byandell.github.io/ewing/reference/distPlotApp.md)
@@ -87,6 +89,8 @@
   [`hexmapServer()`](https://byandell.github.io/ewing/reference/hexmapApp.md)
   [`hexmapApp()`](https://byandell.github.io/ewing/reference/hexmapApp.md)
   : Interactive Hexagonal Watershed Mapping UI (Input)
+- [`hexmoveApp()`](https://byandell.github.io/ewing/reference/hexmoveApp.md)
+  : Interactive Hex Substrate Organism Movement Application
 - [`host.parasite`](https://byandell.github.io/ewing/reference/host.parasite.md)
   [`host.comperiella`](https://byandell.github.io/ewing/reference/host.parasite.md)
   [`host.encarsia`](https://byandell.github.io/ewing/reference/host.parasite.md)
@@ -146,6 +150,7 @@
   [`substrate.substrate`](https://byandell.github.io/ewing/reference/substrate.host.md)
   : substrate data for host-parasite movement
 - [`substrateApp()`](https://byandell.github.io/ewing/reference/substrateApp.md)
+  [`substrateInput()`](https://byandell.github.io/ewing/reference/substrateApp.md)
   [`substrateServer()`](https://byandell.github.io/ewing/reference/substrateApp.md)
   [`substrateOutput()`](https://byandell.github.io/ewing/reference/substrateApp.md)
   : Substrate Plot App

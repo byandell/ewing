@@ -7,9 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Brian S. Yandell">
-<meta name="description" content="Interactively identify USGS HUC12 subwatershed boundaries using Leaflet, isolate geographic landmass features (e.g., Isle Royale), and overlay spatial hexagonal substrate networks.">
+<meta name="description" content="Interactive Shiny app to visualize organism positions on a continuous hexagonal substrate grid based on global tridiagonal coordinates and step through simulation events.">
 
-<title>hexmapApp (Hexagonal Watershed Explorer) – ewing Demos</title>
+<title>hexmoveApp (Organism Movement on Hex Grid) – ewing Demos</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -111,6 +111,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 </head>
 
@@ -156,11 +185,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">triangleApp</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="./hexmapApp.html" aria-current="page"> 
+    <a class="nav-link" href="./hexmapApp.html"> 
 <span class="menu-text">hexmapApp</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./hexmoveApp.html"> 
+    <a class="nav-link active" href="./hexmoveApp.html" aria-current="page"> 
 <span class="menu-text">hexmoveApp</span></a>
   </li>  
 </ul>
@@ -187,8 +216,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
    
   <ul class="collapse">
   <li><a href="#interactive-application-usage" id="toc-interactive-application-usage" class="nav-link active" data-scroll-target="#interactive-application-usage">Interactive Application Usage</a></li>
-  <li><a href="#workflow-example-isle-royale-watershed-projection" id="toc-workflow-example-isle-royale-watershed-projection" class="nav-link" data-scroll-target="#workflow-example-isle-royale-watershed-projection">Workflow Example: Isle Royale Watershed Projection</a></li>
-  <li><a href="#technical-features" id="toc-technical-features" class="nav-link" data-scroll-target="#technical-features">Technical Features</a></li>
+  <li><a href="#programmatic-code-example" id="toc-programmatic-code-example" class="nav-link" data-scroll-target="#programmatic-code-example">Programmatic Code Example</a></li>
+  <li><a href="#key-features" id="toc-key-features" class="nav-link" data-scroll-target="#key-features">Key Features</a></li>
   </ul>
 </nav>
     </div>
@@ -197,12 +226,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">hexmapApp (Hexagonal Watershed Explorer)</h1>
+<h1 class="title">hexmoveApp (Organism Movement on Hex Grid)</h1>
 </div>
 
 <div>
   <div class="description">
-    Interactively identify USGS HUC12 subwatershed boundaries using Leaflet, isolate geographic landmass features (e.g., Isle Royale), and overlay spatial hexagonal substrate networks.
+    Interactive Shiny app to visualize organism positions on a continuous hexagonal substrate grid based on global tridiagonal coordinates and step through simulation events.
   </div>
 </div>
 
@@ -226,53 +255,110 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p><a href="./index.html">← Back to Demos Gallery</a></p>
-<p>The <strong><code>hexmapApp()</code></strong> application provides an interactive interface for discovering USGS subwatersheds, isolating specific geographic features (such as island landmasses), and projecting spatial hexagonal substrate networks for quantitative population ethology simulations.</p>
+<p>The <strong><code>hexmoveApp()</code></strong> application visualizes host and parasite spatial positions mapped directly onto a unified hexagonal substrate network topology (<code>create_substrate</code>).</p>
+<p>Instead of rendering substrate components (<code>fr1..fr4</code>, <code>tw1..tw2</code>, <code>lftop</code>, <code>lfbot</code>) in isolated rectangular panel facets, <code>hexmoveApp()</code> places every organism on a continuous hexagonal substrate plane based on its native tridiagonal coordinates <span class="math inline">\((a, b, c)\)</span> rescaled into its active substrate patch area.</p>
+<hr>
 <section id="interactive-application-usage" class="level2">
 <h2 class="anchored" data-anchor-id="interactive-application-usage">Interactive Application Usage</h2>
-<p>You can launch the interactive application natively in R:</p>
+<p>Launch the application natively in R:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ewing)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Launch interactive Shiny app</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">hexmapApp</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize simulation and run initial 100 steps</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>mysim <span class="ot">&lt;-</span> <span class="fu">init.simulation</span>()</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>mysim <span class="ot">&lt;-</span> <span class="fu">future.events</span>(mysim, <span class="at">nstep =</span> <span class="dv">100</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Launch interactive Shiny app</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">hexmoveApp</span>(mysim)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <blockquote class="blockquote">
-<p>[!NOTE] <strong>Live Deployment:</strong> The interactive application requires dynamic spatial intersection libraries (<code>sf</code>) and live USGS / OpenStreetMap API access. It is deployed live on <a href="https://connect.doit.wisc.edu/HexMap">Posit Connect (HexMap)</a>.</p>
+<p>[!NOTE] <strong>Live Deployment:</strong> You can also test <code>hexmoveApp()</code> live on the <a href="https://connect.doit.wisc.edu/SystemsEthology">SystemsEthology Connect Platform</a>.</p>
 </blockquote>
 <hr>
 </section>
-<section id="workflow-example-isle-royale-watershed-projection" class="level2">
-<h2 class="anchored" data-anchor-id="workflow-example-isle-royale-watershed-projection">Workflow Example: Isle Royale Watershed Projection</h2>
-<p>Below is an example showing how <code>get_watershed()</code> retrieves the USGS HUC12 subwatershed boundary (<code>041800000101</code>), clips it to the <strong>Isle Royale</strong> landmass using OpenStreetMap nominatim geometry (when <code>osmdata</code> is available), and overlays a spatial hexagonal grid (<code>add_watershed_hex_overlay</code>).</p>
+<section id="programmatic-code-example" class="level2">
+<h2 class="anchored" data-anchor-id="programmatic-code-example">Programmatic Code Example</h2>
+<p>Below is an R example illustrating how <code>ewing_substrate(mysim, species, layout = "hex")</code> converts organism coordinates into rescaled global Euclidean space and renders the hexagonal substrate overlay plot via <code>autoplot()</code>.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ewing)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if osmdata is installed for feature boundary restriction</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>feat_name <span class="ot">&lt;-</span> <span class="cf">if</span> (<span class="fu">requireNamespace</span>(<span class="st">"osmdata"</span>, <span class="at">quietly =</span> <span class="cn">TRUE</span>)) <span class="st">"Isle Royale"</span> <span class="cf">else</span> <span class="cn">NULL</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Fetch HUC12 boundary (optionally restricted to Isle Royale island landmass)</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>huc_info <span class="ot">&lt;-</span> <span class="fu">get_watershed</span>(<span class="st">"041800000101"</span>, <span class="at">feature_name =</span> feat_name)</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Construct spatial hexagonal overlay mesh (diameter = 0.01 degrees)</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>hex_obj <span class="ot">&lt;-</span> <span class="fu">add_watershed_hex_overlay</span>(huc_info, <span class="at">hex_diameter =</span> <span class="fl">0.01</span>)</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Visualize using autoplot</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">autoplot</span>(hex_obj)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Initialize simulation and advance 100 steps</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>mysim <span class="ot">&lt;-</span> <span class="fu">init.simulation</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Data organism.features already loaded
+Initializing Temperature Profile ...
+Data temperature.par already loaded
+Data temperature.base already loaded
+Base daily temperature fluctuation:
+Temperature set for days 0 to 202 
+Daily low temperature range: 68 to 77 
+Daily high temperature range: 83 to 92 
+Run temp.design() to adjust temperature range
+Initial active temperature:
+lo.hour hi.hour 
+      0      24 
+Creating simulation organism set using species:
+ host, parasite 
+
+Data future.host already loaded
+Data substrate.host already loaded
+Data future.parasite already loaded
+Data host.parasite already loaded
+Data substrate.parasite already loaded
+Data substrate.substrate already loaded
+
+Initialize host at size 200...
+Initializing events for host with 200 individuals
+Initialize parasite at size 200...
+Initializing events for parasite with 200 individuals</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>mysim <span class="ot">&lt;-</span> <span class="fu">future.events</span>(mysim, <span class="at">nstep =</span> <span class="dv">100</span>, <span class="at">plotit =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>initial: host 200: parasite 200
+lo.hour hi.hour 
+      0      48 
+refresh 5: host 203: parasite 200
+refresh 10: host 204: parasite 200
+refresh 15: host 204: parasite 200
+refresh 20: host 207: parasite 200
+refresh 25: host 207: parasite 200
+refresh 30: host 208: parasite 200
+refresh 35: host 209: parasite 200
+refresh 40: host 212: parasite 200
+refresh 45: host 212: parasite 200
+refresh 50: host 213: parasite 200
+refresh 55: host 214: parasite 200
+refresh 60: host 215: parasite 200
+refresh 65: host 216: parasite 200
+refresh 70: host 217: parasite 200
+refresh 75: host 220: parasite 200
+refresh 80: host 220: parasite 200
+refresh 85: host 221: parasite 200
+refresh 90: host 223: parasite 200
+refresh 95: host 225: parasite 200
+refresh 100: host 225: parasite 200</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Extract host coordinates mapped to hexagonal substrate grid</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>host_hex <span class="ot">&lt;-</span> <span class="fu">ewing_substrate</span>(mysim, <span class="st">"host"</span>, <span class="at">layout =</span> <span class="st">"hex"</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Render autoplot with hexagonal grid overlay</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">autoplot</span>(host_hex)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="hexmapApp_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="768"></p>
+<p><img src="hexmoveApp_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="768"></p>
 </figure>
 </div>
 </div>
 </div>
 <hr>
 </section>
-<section id="technical-features" class="level2">
-<h2 class="anchored" data-anchor-id="technical-features">Technical Features</h2>
+<section id="key-features" class="level2">
+<h2 class="anchored" data-anchor-id="key-features">Key Features</h2>
 <ol type="1">
-<li><strong>Leaflet Spatial Discovery</strong>: Click any location on North America or search landmark strings to reverse-geocode coordinates into USGS HUC12 subwatershed IDs (<code>get_huc_from_point</code>).</li>
-<li><strong>Feature Isolation</strong>: Clip large HUC boundaries covering open water to target landmasses (e.g.&nbsp;Isle Royale) using <code>osmdata::getbb()</code>.</li>
-<li><strong>Hexagonal Mesh Scaling</strong>: Parameterize cell extent diameter to scale spatial resolution dynamically.</li>
+<li><strong>Per-Substrate Unit Triangle Rescaling</strong>: Organisms’ local tridiagonal coordinates <span class="math inline">\((pos.a, pos.b, pos.c)\)</span> are normalized and scaled into the unit triangle <span class="math inline">\([0, W_{sub}]\)</span> of each active substrate patch, guaranteeing all individuals sit strictly within their substrate bounds (and supporting substrates of varying sizes).</li>
+<li><strong>Hexagonal Polygon Overlay</strong>: Generates discrete 6-sided polygon cells (<code>create_hex_overlay</code>) across all plant substrate components (<code>fr1..fr4</code>, <code>tw1</code>, <code>lftop</code>, <code>lfbot</code>).</li>
+<li><strong>Interactive Simulation Stepping</strong>: Action buttons (<code>Step +1</code>, <code>Step +10</code>, <code>Step +100</code>, <code>Reset</code>) allow stepping through simulation horizon events with live reactive map updates.</li>
+<li><strong>Modular Layout Composition</strong>: Seamlessly switch between <code>"hex"</code> (global hexagonal grid overlay) and <code>"facet"</code> (panel view faceted by substrate element) layouts in <code>substrateInput</code> / <code>substrateServer</code>.</li>
 </ol>
 
 
