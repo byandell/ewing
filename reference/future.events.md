@@ -8,7 +8,6 @@ Keeps track of counts by age classes and substrates.
 ``` r
 future.events(
   community,
-  ...,
   nstep = 4000,
   species = get.species(community),
   refresh = nstep/20,
@@ -17,7 +16,9 @@ future.events(
   extinct = TRUE,
   timeit = TRUE,
   debugit = FALSE,
-  messages = TRUE
+  messages = TRUE,
+  append = NULL,
+  ...
 )
 ```
 
@@ -26,10 +27,6 @@ future.events(
 - community:
 
   object with population data by species
-
-- ...:
-
-  additional arguments passed to \`initCount\`
 
 - nstep:
 
@@ -62,6 +59,10 @@ future.events(
 - debugit:
 
   detailed debug for advanced users
+
+- ...:
+
+  additional arguments passed to \`initCount\`
 
 - plotit:
 

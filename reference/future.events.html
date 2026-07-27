@@ -9,7 +9,7 @@ track of counts by age classes and substrates."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ewing</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.9.9</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,7 +56,6 @@ track of counts by age classes and substrates.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">future.events</span><span class="op">(</span></span>
 <span>  <span class="va">community</span>,</span>
-<span>  <span class="va">...</span>,</span>
 <span>  nstep <span class="op">=</span> <span class="fl">4000</span>,</span>
 <span>  species <span class="op">=</span> <span class="fu">get.species</span><span class="op">(</span><span class="va">community</span><span class="op">)</span>,</span>
 <span>  refresh <span class="op">=</span> <span class="va">nstep</span><span class="op">/</span><span class="fl">20</span>,</span>
@@ -65,7 +64,9 @@ track of counts by age classes and substrates.</p>
 <span>  extinct <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  timeit <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  debugit <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  messages <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  messages <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  append <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -75,10 +76,6 @@ track of counts by age classes and substrates.</p>
 
 <dl><dt id="arg-community">community<a class="anchor" aria-label="anchor" href="#arg-community"></a></dt>
 <dd><p>object with population data by species</p></dd>
-
-
-<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>additional arguments passed to `initCount`</p></dd>
 
 
 <dt id="arg-nstep">nstep<a class="anchor" aria-label="anchor" href="#arg-nstep"></a></dt>
@@ -111,6 +108,10 @@ track of counts by age classes and substrates.</p>
 
 <dt id="arg-debugit">debugit<a class="anchor" aria-label="anchor" href="#arg-debugit"></a></dt>
 <dd><p>detailed debug for advanced users</p></dd>
+
+
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
+<dd><p>additional arguments passed to `initCount`</p></dd>
 
 
 <dt id="arg-plotit">plotit<a class="anchor" aria-label="anchor" href="#arg-plotit"></a></dt>

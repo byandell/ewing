@@ -13,7 +13,7 @@ ewing_ageclass(
   ...
 )
 
-ggplot_ewing_ageclass(object, ...)
+ggplot_ewing_ageclass(object, main = NULL, title = NULL, ...)
 
 # S3 method for class 'ewing_ageclass'
 autoplot(object, ...)
@@ -40,6 +40,18 @@ autoplot(object, ...)
 - ...:
 
   extra parameters not used
+
+- object:
+
+  object of class `ewing_ageclass`
+
+- main:
+
+  plot main title
+
+- title:
+
+  plot title
 
 ## References
 
