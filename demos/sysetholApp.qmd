@@ -12,7 +12,7 @@ format:
 
 [← Back to Demos Gallery](index.qmd)
 
-The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). It provides a streamlined **Systems Ethology platform (`sysetholApp()`)** with clean sidebar controls (`sysetholInput`), dynamic conditional panels (`Steps per click` when `nsim = 1`, `Confidence Band` when `nsim > 1`), sidebar **Run Engine** & **Reset** buttons, and focused main tabs (`sysetholOutput`: **Dist Plots**, **Substrate Plots**, **Envelope Plots**, **Input Data**).
+The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). It provides a streamlined **Systems Ethology platform (`sysetholApp()`)** with clean sidebar controls (`sysetholInput`), dynamic conditional panels (`Steps per click` when `nsim = 1`, `Confidence Band` when `nsim > 1`), sidebar **Run Engine** & **Reset** buttons, and modular tabs (`sysetholOutput`: **Dist Plots**, **Substrate Plots**, **Envelope Plots**, and **Input Data** via `inputApp`).
 
 ```{shinylive-r}
 #| standalone: true
@@ -482,10 +482,49 @@ sample_input_datasets <- list(
     to = c("lfbot", "twig", "fr1", "fr2"),
     connectivity = c(0.8, 0.5, 0.6, 0.7),
     stringsAsFactors = FALSE
+  ),
+  "temperature.base" = data.frame(
+    day = 1:5,
+    low = c(68, 70, 72, 71, 69),
+    high = c(85, 87, 88, 86, 84),
+    stringsAsFactors = FALSE
+  ),
+  "temperature.par" = data.frame(
+    parameter = c("base_temp", "opt_temp", "max_temp"),
+    value = c(50, 75, 95),
+    stringsAsFactors = FALSE
   )
 )
 
-# --- App Modules ---
+# --- Modular Input App Component ---
+
+inputAppInput <- function(id) {
+  ns <- shiny::NS(id)
+  shiny::tagList(
+    shiny::selectInput(ns("dataname"), "Select Dataset Table:", 
+                       choices = c("organism.features", "future.host", "future.parasite", 
+                                   "substrate.host", "substrate.parasite", "substrate.substrate", 
+                                   "host.parasite", "temperature.base", "temperature.par"), 
+                       selected = "organism.features")
+  )
+}
+
+inputAppOutput <- function(id) {
+  ns <- shiny::NS(id)
+  shiny::tableOutput(ns("org_table"))
+}
+
+inputAppServer <- function(id, simres = shiny::reactiveVal(NULL)) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+    output$org_table <- shiny::renderTable({
+      name <- input$dataname %||% "organism.features"
+      sample_input_datasets[[name]]
+    }, striped = TRUE, hover = TRUE, bordered = TRUE)
+  })
+}
+
+# --- Systems Ethology App Modules ---
 
 sysetholInput <- function(id) {
   ns <- shiny::NS(id)
@@ -536,15 +575,7 @@ sysetholInput <- function(id) {
 
 sysetholOutput <- function(id) {
   ns <- shiny::NS(id)
-  bslib::navset_tab(
-    bslib::nav_panel("Dist Plots", bslib::card(shiny::plotOutput(ns("dist_plot"), height = "500px"))),
-    bslib::nav_panel("Substrate Plots", bslib::card(shiny::uiOutput(ns("substrate_ui")))),
-    bslib::nav_panel("Envelope Plots", bslib::card(shiny::plotOutput(ns("env_plot"), height = "500px"))),
-    bslib::nav_panel("Input Data", bslib::card(
-      shiny::selectInput(ns("dataname"), "Select Dataset Table:", choices = names(sample_input_datasets), selected = "organism.features"),
-      shiny::tableOutput(ns("org_table"))
-    ))
-  )
+  shiny::uiOutput(ns("sysethol_tabs"))
 }
 
 sysetholServer <- function(id) {
@@ -552,6 +583,7 @@ sysetholServer <- function(id) {
     ns <- session$ns
     active_sim <- shiny::reactiveVal(make_sim_community(200, 100))
     
+    # Run Engine button
     shiny::observeEvent(input$run_engine, {
       nsim_val <- as.numeric(input$nsim %||% 1)
       if (nsim_val == 1) {
@@ -569,18 +601,49 @@ sysetholServer <- function(id) {
       }
     })
     
+    # Reset button
     shiny::observeEvent(input$reset_engine, {
       nh <- input$n_host %||% 200
       np <- input$n_parasite %||% 100
       active_sim(make_sim_community(nh, np))
     })
     
+    # Input App Module Server Call
+    inputAppServer("input_app", simres = active_sim)
+    
+    # Dynamic Tabs (Envelope Plots shown ONLY when nsim > 1)
+    output$sysethol_tabs <- shiny::renderUI({
+      nsim_val <- as.numeric(input$nsim %||% 1)
+      if (nsim_val == 1) {
+        bslib::navset_tab(
+          bslib::nav_panel("Dist Plots", bslib::card(shiny::plotOutput(ns("dist_plot"), height = "500px"))),
+          bslib::nav_panel("Substrate Plots", bslib::card(shiny::uiOutput(ns("substrate_ui")))),
+          bslib::nav_panel("Input Data", bslib::card(
+            inputAppInput(ns("input_app")),
+            inputAppOutput(ns("input_app"))
+          ))
+        )
+      } else {
+        bslib::navset_tab(
+          bslib::nav_panel("Dist Plots", bslib::card(shiny::plotOutput(ns("dist_plot"), height = "500px"))),
+          bslib::nav_panel("Substrate Plots", bslib::card(shiny::uiOutput(ns("substrate_ui")))),
+          bslib::nav_panel("Envelope Plots", bslib::card(shiny::plotOutput(ns("env_plot"), height = "500px"))),
+          bslib::nav_panel("Input Data", bslib::card(
+            inputAppInput(ns("input_app")),
+            inputAppOutput(ns("input_app"))
+          ))
+        )
+      }
+    })
+    
+    # Dist Plots Tab
     output$dist_plot <- shiny::renderPlot({
       sim <- active_sim()
       shiny::req(sim)
       plot_dist(sim, norm = input$norm %||% TRUE, total = input$total %||% TRUE)
     })
     
+    # Substrate Plots Tab
     selected_species <- shiny::reactive({
       sel <- input$show_species
       if (is.null(sel) || length(sel) == 0) c("host", "parasite") else sel
@@ -619,20 +682,16 @@ sysetholServer <- function(id) {
       shiny::plotOutput(ns("sppPlot"), height = paste0(h_in, "in"))
     })
     
+    # Envelope Plots Tab
     output$env_plot <- shiny::renderPlot({
       nsim_val <- as.numeric(input$nsim %||% 1)
       conf_val <- input$confidence %||% TRUE
       plot_envelope(nsim = nsim_val, confidence = conf_val)
     })
-    
-    output$org_table <- shiny::renderTable({
-      name <- input$dataname %||% "organism.features"
-      sample_input_datasets[[name]]
-    }, striped = TRUE, hover = TRUE, bordered = TRUE)
   })
 }
 
-# --- App Execution ---
+# --- Execution ---
 
 app_theme <- bslib::bs_theme(
   version = 5,
@@ -667,6 +726,9 @@ library(ewing)
 
 # Launch interactive Systems Ethology platform app
 sysetholApp()
+
+# Or launch standalone Input Data Explorer
+inputApp()
 ```
 
 The app launcher script is located at [`inst/scripts/sysetholApp.R`](https://github.com/byandell/ewing/blob/main/inst/scripts/sysetholApp.R).
@@ -675,10 +737,10 @@ The app launcher script is located at [`inst/scripts/sysetholApp.R`](https://git
 
 ## Platform Architecture & Features
 
-The platform combines modular Shiny components (`sysetholInput`, `sysetholOutput`, `sysetholServer`) exported in [`R/sysetholApp.R`](https://github.com/byandell/ewing/blob/main/R/sysetholApp.R):
+The platform combines modular Shiny components exported in [`R/sysetholApp.R`](https://github.com/byandell/ewing/blob/main/R/sysetholApp.R) and [`R/inputApp.R`](https://github.com/byandell/ewing/blob/main/R/inputApp.R):
 
 1. **Sidebar Setup & De-cluttering**: Dynamic conditional panels display `Steps per click` when `nsim = 1` and `Total Simulation steps` / `Confidence Band Envelope` when `nsim > 1`. Side panel **Run Engine** and **Reset** buttons keep the main interface focused and clean.
 2. **Dist Plots**: Visualizes population age-class distributions across active species.
 3. **Substrate Plots**: Projects organism positions onto hexagonal substrate topology overlays with species filtering and `Overlay (1 Map)` vs `Separate (Stacked Maps)` view modes.
-4. **Envelope Plots**: Computes multi-run simulation envelopes across `nsim` stochastic iterations.
-5. **Input Data**: Interactive table explorer for underlying `organism.features`, `future.host`, `future.parasite`, `substrate.host`, `substrate.parasite`, and `substrate.substrate` datasets.
+4. **Envelope Plots**: Computes multi-run simulation envelopes across `nsim` stochastic iterations (visible when `nsim > 1`).
+5. **Input Data (`inputApp`)**: Interactive table explorer (`inputAppInput`, `inputAppOutput`, `inputAppServer`) for underlying `organism.features`, `future.host`, `future.parasite`, `substrate.host`, `substrate.parasite`, `substrate.substrate`, `host.parasite`, `temperature.base`, and `temperature.par` datasets.
