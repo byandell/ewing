@@ -11,8 +11,8 @@ hexmapInput <- function(id) {
   ns <- shiny::NS(id)
   shiny::tagList(
     shiny::h4("Interactive Hexagonal Watershed Controls"),
-    shiny::p(shiny::HTML('Search or click the Leaflet map to identify a USGS Watershed (HUC12), or enter details manually below.')),
-    shiny::textInput(ns("huc12_id"), "HUC12 ID:", value = "041800000101"),
+    shiny::p(shiny::HTML('Search, click, or outline a rubberband region on the Leaflet map, or manage selected HUCs below.')),
+    shiny::uiOutput(ns("huc_selector")),
     shiny::uiOutput(ns("feature_selector")),
     shiny::sliderInput(ns("hex_diameter"), "Hexagon Extent Diameter (Degrees):", 
                        min = 0.001, max = 0.05, value = 0.01, step = 0.001),
@@ -55,7 +55,7 @@ hexmapOutput <- function(id) {
 #'
 #' @param id Module ID
 #' @export
-#' @importFrom shiny moduleServer reactiveVal reactive renderUI observeEvent updateTextInput req withProgress bindEvent renderPlot HTML
+#' @importFrom shiny moduleServer reactiveVal reactive renderUI observeEvent updateSelectizeInput req withProgress bindEvent renderPlot HTML selectizeInput
 #' @importFrom leaflet leafletProxy clearShapes fitBounds
 #' @importFrom ggplot2 autoplot
 #' @importFrom sf st_bbox st_transform
@@ -70,6 +70,18 @@ hexmapServer <- function(id) {
     
     # Module Composition: Delegate map discovery to leafletServer module
     leaflet_mod <- leafletServer("map")
+    
+    # Render dynamic HUC selector UI (multi-select with remove_button plugin)
+    output$huc_selector <- shiny::renderUI({
+      shiny::selectizeInput(
+        ns("huc12_id"),
+        "Selected HUC Watershed(s):",
+        choices = c("041800000101" = "041800000101"),
+        selected = c("041800000101"),
+        multiple = TRUE,
+        options = list(plugins = list("remove_button"), create = TRUE)
+      )
+    })
     
     # Load dynamic landmark dictionary
     csv_path <- system.file("extdata/watershed/huc_features.csv", package = "ewing")
@@ -86,9 +98,9 @@ hexmapServer <- function(id) {
     # Render dynamic feature selector
     output$feature_selector <- shiny::renderUI({
       dict <- feature_dict()
-      huc <- input$huc12_id
+      huc_vec <- input$huc12_id
       
-      valid_features <- if (!is.null(huc)) dict$feature_name[dict$huc12_id == huc] else character(0)
+      valid_features <- if (!is.null(huc_vec)) dict$feature_name[dict$huc12_id %in% huc_vec] else character(0)
       
       if (length(valid_features) > 0) {
         shiny::selectizeInput(ns("feature_name"), "Geographic Feature Name (Optional):", 
@@ -97,32 +109,74 @@ hexmapServer <- function(id) {
                               options = list(create = TRUE))
       } else {
         shiny::textInput(ns("feature_name"), "Geographic Feature Name (Optional):", 
-                         value = ifelse(huc == "041800000101", "Isle Royale", ""))
+                         value = ifelse("041800000101" %in% huc_vec, "Isle Royale", ""))
       }
     })
     
-    # Sync HUC ID when user clicks map in the composed leaflet module
-    shiny::observeEvent(leaflet_mod$huc(), {
-      huc_sf <- leaflet_mod$huc()
-      if (!is.null(huc_sf) && nrow(huc_sf) > 0) {
-        huc_id <- huc_sf$huc12[1]
-        huc_name <- huc_sf$name[1]
-        shiny::updateTextInput(session, "huc12_id", value = huc_id)
-        status_msg(paste0("<div style='color:green;'><b>Identified HUC12 from Map:</b> ", huc_id, " (", huc_name, ")</div>"))
+    # Sync HUC selector choices & selected values when map search or polygon click occurs
+    shiny::observeEvent(list(leaflet_mod$all_hucs(), leaflet_mod$included_ids()), {
+      all_sf <- leaflet_mod$all_hucs()
+      inc_ids <- unname(as.character(leaflet_mod$included_ids()))
+      current_sel <- unname(as.character(input$huc12_id))
+      if (is.null(current_sel)) current_sel <- character(0)
+      
+      # Only trigger updateSelectizeInput if map selection differs from current sidebar selection
+      if (!is.null(all_sf) && nrow(all_sf) > 0 && !setequal(inc_ids, current_sel)) {
+        huc_col <- if ("huc12" %in% names(all_sf)) "huc12" else if ("huc10" %in% names(all_sf)) "huc10" else if ("huc8" %in% names(all_sf)) "huc8" else names(all_sf)[1]
+        ids <- unname(as.character(all_sf[[huc_col]]))
+        names_vec <- if ("name" %in% names(all_sf)) all_sf$name else rep("", length(ids))
+        
+        choices_vec <- stats::setNames(ids, paste0(ids, ifelse(names_vec != "", paste0(" (", names_vec, ")"), "")))
+        
+        shiny::updateSelectizeInput(
+          session,
+          "huc12_id",
+          choices = choices_vec,
+          selected = inc_ids,
+          server = FALSE
+        )
       }
-    })
+    }, ignoreNULL = TRUE)
     
-    # Debounce HUC ID changes to avoid excessive network calls
-    throttled_huc_id <- shiny::reactive(input$huc12_id) |> shiny::debounce(1500)
+    # Push sidebar selection changes back to leaflet module map shape rendering
+    shiny::observeEvent(input$huc12_id, {
+      selected_vec <- unname(as.character(input$huc12_id))
+      if (is.null(selected_vec)) selected_vec <- character(0)
+      
+      current_inc <- unname(as.character(leaflet_mod$included_ids()))
+      if (!setequal(selected_vec, current_inc)) {
+        if (!is.null(leaflet_mod$set_included_ids)) {
+          leaflet_mod$set_included_ids(selected_vec)
+        }
+      }
+    }, ignoreNULL = FALSE, ignoreInit = TRUE)
     
-    # Base geography cache reactive fetching ONLY when HUC ID legally stabilizes
+    # Debounce HUC selector inputs to avoid unnecessary processing
+    throttled_huc_id <- shiny::reactive(input$huc12_id) |> shiny::debounce(1000)
+    
+    # Base geography cache reactive: Filters from in-memory sf data if available (0 API calls), otherwise fetches
     base_huc <- shiny::reactive({
-      huc_req <- throttled_huc_id()
-      shiny::req(huc_req)
+      huc_vec <- throttled_huc_id()
+      shiny::req(huc_vec)
+      huc_vec <- huc_vec[huc_vec != ""]
+      shiny::req(length(huc_vec) > 0)
+      
+      all_sf <- leaflet_mod$all_hucs()
+      
+      # Zero-API-Call Cache: If candidate HUC geometries exist in memory, filter locally!
+      if (!is.null(all_sf) && nrow(all_sf) > 0) {
+        huc_col <- if ("huc12" %in% names(all_sf)) "huc12" else if ("huc10" %in% names(all_sf)) "huc10" else if ("huc8" %in% names(all_sf)) "huc8" else names(all_sf)[1]
+        mem_ids <- as.character(all_sf[[huc_col]])
+        if (all(huc_vec %in% mem_ids)) {
+          return(all_sf[mem_ids %in% huc_vec, ])
+        }
+      }
+      
+      # Fallback to network fetch only for newly typed/un-cached HUC IDs
       res <- NULL
       shiny::withProgress(message = 'Fetching USGS Base Boundary...', value = 0.3, {
         res <- tryCatch({
-          nhdplusTools::get_huc(id = huc_req, type = "huc12")
+          nhdplusTools::get_huc(id = huc_vec, type = "huc12")
         }, error = function(e) NULL)
       })
       return(res)

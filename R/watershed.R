@@ -14,9 +14,14 @@
 #' @rdname watershed
 #'
 #' @importFrom nhdplusTools get_huc
-#' @importFrom sf st_transform st_crs st_intersection st_centroid st_geometry st_coordinates
+#' @importFrom sf st_transform st_crs st_intersection st_union st_centroid st_geometry st_coordinates
 get_watershed <- function(huc_id, feature_name = NULL, huc_layer = NULL) {
-  # Get HUC12 sf object (queries USGS WBD)
+  # Standardize huc_id input (support comma-separated string or character vector)
+  if (is.character(huc_id) && length(huc_id) == 1 && grepl(",", huc_id)) {
+    huc_id <- trimws(unlist(strsplit(huc_id, ",")))
+  }
+  
+  # Get HUC12 sf object (queries USGS WBD if layer not provided)
   if (is.null(huc_layer)) {
     huc_layer <- nhdplusTools::get_huc(id = huc_id, type = "huc12")
   }
@@ -24,6 +29,10 @@ get_watershed <- function(huc_id, feature_name = NULL, huc_layer = NULL) {
   if (is.null(huc_layer) || nrow(huc_layer) == 0) {
     stop("Invalid HUC12 ID or could not retrieve watershed data from USGS.")
   }
+  
+  # Track individual component HUCs if multi-HUC
+  individual_hucs <- huc_layer
+  actual_huc_ids <- if ("huc12" %in% names(huc_layer)) unique(huc_layer$huc12) else huc_id
   
   if (!is.null(feature_name)) {
     if (!requireNamespace("osmdata", quietly = TRUE)) {
@@ -34,7 +43,7 @@ get_watershed <- function(huc_id, feature_name = NULL, huc_layer = NULL) {
     feature_geom <- tryCatch({
       osmdata::getbb(feature_name, format_out = "sf_polygon", limit = 1)
     }, error = function(e) {
-      warning(paste("osmdata could not find a valid polygon for feature:", feature_name, "- Generating whole HUC12 instead."))
+      warning(paste("osmdata could not find a valid polygon for feature:", feature_name, "- Generating whole HUC region instead."))
       return(NULL)
     })
     
@@ -62,24 +71,32 @@ get_watershed <- function(huc_id, feature_name = NULL, huc_layer = NULL) {
         if (nrow(clipped_layer) > 0) {
            huc_layer <- clipped_layer
         } else {
-           warning(paste("Feature", feature_name, "does not overlap with HUC12", huc_id, "- Generating whole HUC12 instead."))
+           warning(paste("Feature", feature_name, "does not overlap with specified HUC region - Generating whole HUC region instead."))
         }
       } else {
-        warning(paste("osmdata could not extract a valid polygon for feature:", feature_name, "- Generating whole HUC12 instead."))
+        warning(paste("osmdata could not extract a valid polygon for feature:", feature_name, "- Generating whole HUC region instead."))
       }
     }
   }
   
+  # Aggregate multiple HUC12 polygons into a single combined region geometry via sf::st_union
+  unified_layer <- if (nrow(huc_layer) > 1) {
+    suppressWarnings(sf::st_union(huc_layer))
+  } else {
+    huc_layer
+  }
+  
   # Calculate geographic centroid of the final geometry
-  centroid <- suppressWarnings(sf::st_centroid(sf::st_geometry(huc_layer)))
+  centroid <- suppressWarnings(sf::st_centroid(sf::st_geometry(unified_layer)))
   coords <- sf::st_coordinates(centroid)
   
   list(
-    huc_id = huc_id,
+    huc_id = actual_huc_ids,
     feature_name = feature_name,
     lon = as.numeric(coords[1, "X"]),
     lat = as.numeric(coords[1, "Y"]),
-    layer = huc_layer
+    individual_hucs = individual_hucs,
+    layer = unified_layer
   )
 }
 
@@ -117,20 +134,33 @@ add_watershed_hex_overlay <- function(huc_info, hex_diameter = 0.01) {
 #'
 #' @importFrom ggplot2 ggplot geom_sf theme_minimal ggtitle labs
 autoplot.watershed_hex_overlay <- function(object, ...) {
-  title_txt <- paste("Geographic Hexagonal Grid (Watershed:", object$huc_id, ")", 
+  huc_str <- if (length(object$huc_id) > 1) {
+    paste0(length(object$huc_id), " Combined HUC12s")
+  } else {
+    paste("Watershed:", object$huc_id)
+  }
+  
+  title_txt <- paste("Geographic Hexagonal Grid (", huc_str, ")", 
                      "\nHexagon Extent Diameter:", object$hex_diameter)
   if (!is.null(object$feature_name) && object$feature_name != "") {
     title_txt <- paste0(title_txt, " - Restricted to: ", object$feature_name)
   }
   
-  ggplot2::ggplot() +
+  p <- ggplot2::ggplot()
+  
+  # Display individual component HUC boundaries if multi-HUC
+  if (!is.null(object$individual_hucs) && nrow(object$individual_hucs) > 1) {
+    p <- p + ggplot2::geom_sf(data = object$individual_hucs, fill = NA, color = "purple", linetype = "dashed", linewidth = 0.4)
+  }
+  
+  p +
     # Represents underlying restricted outline
-    ggplot2::geom_sf(data = object$layer, fill="lightblue", alpha=0.3, color="blue", linewidth=0.5) +
+    ggplot2::geom_sf(data = object$layer, fill = "lightblue", alpha = 0.3, color = "blue", linewidth = 0.7) +
     # Overlay our spatial hexagons
-    ggplot2::geom_sf(data = object$hex_overlay, fill=NA, color="darkred", linewidth=0.7) +
+    ggplot2::geom_sf(data = object$hex_overlay, fill = NA, color = "darkred", linewidth = 0.7) +
     ggplot2::theme_minimal() +
     ggplot2::ggtitle(title_txt) +
-    ggplot2::labs(x="Longitude", y="Latitude")
+    ggplot2::labs(x = "Longitude", y = "Latitude")
 }
 
 #' @param feature_types A character vector of OSM keys to query (default: c("natural", "waterway", "leisure")).

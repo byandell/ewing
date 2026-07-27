@@ -127,4 +127,31 @@ Combining `inst/scripts/watershed_overlay.R` with `R/leafletApp.R`, we developed
 4. **Modular Package Export**:
    - Exported as `hexmapApp()`, with modular functions `hexmapInput()`, `hexmapOutput()`, and `hexmapServer()`.
 
+### 7. Multi-HUC Regional Aggregation & Rubberband Polygon Selection
+
+Building on individual HUC12 selection, we implemented user-defined spatial region selection via interactive rubberband polygon drawing, enabling the combination of adjacent subwatersheds into an aggregated regional domain.
+
+#### Architecture & Workflow
+
+1. **Interactive Rubberband Polygon Drawing & Toggle Control (`R/leaflet.R` & `R/leafletApp.R`)**:
+   - Integrated `leaflet.extras::addDrawToolbar()` into `build_base_map()`, providing intuitive polygon and rectangle draw tools on the Leaflet map widget.
+   - **Drawing Mode State Tracking (`is_drawing`)**: `leafletServer()` monitors `input$mapper_draw_start` and `input$mapper_draw_stop` events via an `is_drawing` reactive flag. This suppresses single-point reverse-geocoding (`input$mapper_click`) while placing vertex points, preventing duplicate progress bar triggers during drawing.
+   - **Inline Control Layout & Region Hiding**: **"Search Watersheds in Region"**, **"Clear Region"**, and **"Hide Drawn Region"** controls are aligned on a single flex horizontal line. Checking **"Hide Drawn Region"** toggles visibility of the drawn region polygon without losing boundary coordinates.
+
+2. **Reverse-Geocoding & Auto-Scaling HUC Hierarchy (`get_hucs_from_polygon`)**:
+   - `get_hucs_from_polygon(polygon_sf, max_hucs = 10)` projects the drawn rubberband region into WGS84 coordinates and queries `nhdplusTools::get_huc(AOI = poly, type = "huc12")`.
+   - **Dynamic HUC Scaling (HUC12 $\rightarrow$ HUC10 $\rightarrow$ HUC8)**: If the drawn region covers more than `max_hucs` (10) subwatersheds, the engine automatically scales up the USGS query from `huc12` to broader `huc10` or `huc8` levels. This guarantees scalable regional aggregation without overwhelming server memory or API limits.
+
+3. **Smooth Layer Group Updating & Bi-directional Syncing**:
+   - **Explicit Layer Purging & Group Redrawing**: Updates invoke `leafletProxy` with `removeShape(layerId = ids)` and `clearGroup("huc_polygons")`. This explicitly purges existing SVG shapes from Leaflet JS internal memory, allowing instant style re-rendering (solid purple vs bold crimson red `#C0392B` dashed `"6,6"`) when adding back or removing HUCs.
+   - **Robust Bi-directional Sidebar Syncing (`R/hexmapApp.R`)**: Populates a dynamic `selectizeInput(multiple = TRUE)` in the "Watershed Controls" input panel. Choices update with human-readable HUC IDs and feature names (e.g. `041800000101 (Isle Royale East)`). Observer logic uses `setequal(unname(as.character(...)))` to eliminate race conditions between dropdown updates and map shape events: adding or removing watershed tags in the sidebar dropdown instantly updates Leaflet map shape renderings, while clicking map shapes dynamically adds or removes tags in the sidebar dropdown.
+
+4. **Regional Aggregation & Topological Unioning (`R/watershed.R`)**:
+   - `get_watershed()` natively accepts single HUC IDs, character vectors of HUC IDs, or pre-fetched multi-HUC `sf` layers.
+   - For multi-HUC regions, `sf::st_union()` merges adjacent included component subwatershed polygons into a unified boundary representation (`$layer`), while preserving individual component HUC metadata (`$individual_hucs`).
+
+5. **Continuous Substrate Mesh Generation & Multi-View Rendering**:
+   - `add_watershed_hex_overlay()` generates a continuous hexagonal substrate grid spanning the aggregated multi-HUC regional polygon.
+   - `add_leaflet_hex_overlay()` renders component HUC boundaries in dashed lines, outer combined region boundaries in solid blue, and the unified hex mesh.
+   - `autoplot.watershed_hex_overlay()` renders static `ggplot2` autoplots featuring dashed component HUC boundaries and continuous regional hex overlays.
 
