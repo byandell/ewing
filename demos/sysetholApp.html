@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Brian S. Yandell">
-<meta name="description" content="The central Systems Ethology platform orchestrating host-parasite individual-based simulations, age class distributions, spatial substrate networks, and parameter evaluations.">
+<meta name="description" content="The central Systems Ethology platform orchestrating host-parasite individual-based simulations, age class distributions over time, spatial substrate networks, and parameter evaluations.">
 
 <title>sysetholApp (Systems Ethology Platform) – ewing Demos</title>
 <style>
@@ -116,6 +116,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 </head>
 
@@ -197,7 +226,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div>
   <div class="description">
-    The central Systems Ethology platform orchestrating host-parasite individual-based simulations, age class distributions, spatial substrate networks, and parameter evaluations.
+    The central Systems Ethology platform orchestrating host-parasite individual-based simulations, age class distributions over time, spatial substrate networks, and parameter evaluations.
   </div>
 </div>
 
@@ -221,7 +250,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p><a href="./index.html">← Back to Demos Gallery</a></p>
-<p>The live application below is running completely client-side in your browser using serverless <strong>Shinylive</strong> (WebAssembly). It provides a streamlined <strong>Systems Ethology platform (<code>sysetholApp()</code>)</strong> with clean sidebar controls (<code>sysetholInput</code>), dynamic conditional panels (<code>Steps per click</code> when <code>nsim = 1</code>, <code>Confidence Band</code> when <code>nsim &gt; 1</code>), sidebar <strong>Run Engine</strong> &amp; <strong>Reset</strong> buttons, and modular tabs (<code>sysetholOutput</code>: <strong>Dist Plots</strong>, <strong>Substrate Plots</strong>, <strong>Envelope Plots</strong>, and <strong>Input Data</strong> via <code>inputApp</code>).</p>
+<p>The live application below is running completely client-side in your browser using serverless <strong>Shinylive</strong> (WebAssembly). It provides a streamlined <strong>Systems Ethology platform (<code>sysetholApp()</code>)</strong> with clean sidebar controls (<code>sysetholInput</code>), dynamic conditional panels (<code>Steps per click</code> when <code>nsim = 1</code>, <code>Confidence Band</code> when <code>nsim &gt; 1</code>), sidebar <strong>Run Engine</strong> &amp; <strong>Reset</strong> buttons, and modular tabs (<code>sysetholOutput</code>: <strong>Dist Plots</strong> time-series step plots, <strong>Substrate Plots</strong>, <strong>Envelope Plots</strong>, and <strong>Input Data</strong> via <code>inputApp</code>).</p>
 <pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
 #|   shinylive does not work in self-contained HTML documents.
 #|   Please set `embed-resources: false` in your metadata.
@@ -411,6 +440,37 @@ create_hex_overlay &lt;- function(object, step = 1) {
 
 # --- Standalone Simulation Engine ---
 
+record_history &lt;- function(sim) {
+  t_val &lt;- sim$step
+  df_list &lt;- list()
+  
+  for (sp in names(sim$pop)) {
+    org &lt;- sim$pop[[sp]]$org
+    stg &lt;- org["stage", ]
+    pch &lt;- sim$pop[[sp]]$pch
+    
+    # Stage counts
+    for (s_idx in seq_along(pch)) {
+      stg_name &lt;- pch[s_idx]
+      cnt &lt;- sum(stg + 1 == s_idx)
+      df_list[[length(df_list) + 1]] &lt;- data.frame(
+        time = t_val, Species = sp, State = stg_name,
+        Count = cnt, Type = "ageclass", stringsAsFactors = FALSE
+      )
+    }
+    
+    # Total count
+    df_list[[length(df_list) + 1]] &lt;- data.frame(
+      time = t_val, Species = sp, State = "total",
+      Count = ncol(org), Type = "ageclass", stringsAsFactors = FALSE
+    )
+  }
+  
+  hist_new &lt;- do.call(rbind, df_list)
+  sim$history &lt;- rbind(sim$history, hist_new)
+  sim
+}
+
 make_sim_community &lt;- function(nhost = 200, nparasite = 200) {
   sub_names &lt;- c("fr1", "fr2", "fr3", "fr4", "twig", "lftop", "lfbot")
   
@@ -435,14 +495,18 @@ make_sim_community &lt;- function(nhost = 200, nparasite = 200) {
   p_pch &lt;- c("E", "L", "p", "P", "F")
   p_col &lt;- c("brown", "green", "turquoise", "blue", "orange")
   
-  list(
-    step = 50,
+  sim &lt;- list(
+    step = 0,
     pop = list(
       host = list(org = h_mat, pch = h_pch, col = h_col),
       parasite = list(org = p_mat, pch = p_pch, col = p_col)
     ),
-    sub_names = sub_names
+    sub_names = sub_names,
+    history = data.frame()
   )
+  
+  sim &lt;- record_history(sim)
+  sim
 }
 
 step_sim_community &lt;- function(sim, nstep = 50) {
@@ -464,6 +528,7 @@ step_sim_community &lt;- function(sim, nstep = 50) {
     
     sim$pop[[sp]]$org &lt;- org
   }
+  sim &lt;- record_history(sim)
   sim
 }
 
@@ -610,24 +675,29 @@ ggplot_ewing_substrate &lt;- function(object, layout = attr(object, "layout"), w
 }
 
 plot_dist &lt;- function(sim, norm = TRUE, total = TRUE) {
-  df_list &lt;- lapply(names(sim$pop), function(sp) {
-    stg &lt;- sim$pop[[sp]]$org["stage", ]
-    pch &lt;- sim$pop[[sp]]$pch
-    col &lt;- sim$pop[[sp]]$col
-    stage_names &lt;- pch[pmin(stg + 1, length(pch))]
-    tb &lt;- as.data.frame(table(stage = stage_names), stringsAsFactors = FALSE)
-    if (norm &amp;&amp; sum(tb$Freq) &gt; 0) tb$Freq &lt;- tb$Freq / sum(tb$Freq)
-    tb$species &lt;- sp
-    tb
-  })
-  df &lt;- do.call(rbind, df_list)
+  df &lt;- sim$history
+  if (is.null(df) || nrow(df) == 0) {
+    return(ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No history data"))
+  }
   
-  ggplot2::ggplot(df, ggplot2::aes(x = stage, y = Freq, fill = species)) +
-    ggplot2::geom_col(position = "dodge") +
-    ggplot2::facet_wrap(~ species, scales = "free") +
+  if (!total) {
+    df &lt;- df[df$State != "total", ]
+  }
+  
+  if (norm) {
+    max_counts &lt;- stats::aggregate(Count ~ Species + State, data = df, max)
+    names(max_counts)[names(max_counts) == "Count"] &lt;- "MaxCount"
+    df &lt;- merge(df, max_counts, by = c("Species", "State"))
+    df$Count &lt;- ifelse(df$MaxCount &gt; 0, df$Count / df$MaxCount, df$Count)
+  }
+  
+  ggplot2::ggplot(df, ggplot2::aes(x = time, y = Count, color = State, group = State)) +
+    ggplot2::geom_step(linewidth = 0.8) +
+    ggplot2::geom_point(size = 2) +
+    ggplot2::facet_wrap(~ Species, scales = "free_y") +
     ggplot2::theme_minimal() +
-    ggplot2::labs(title = paste("Population Age Class Distribution at Step", sim$step),
-                  x = "Life Stage", y = if (norm) "Proportion" else "Count")
+    ggplot2::labs(title = "Population Age Class Distribution Progression over Time",
+                  x = "Simulation Step (Time)", y = if (norm) "Normalized Count" else "Organism Count")
 }
 
 plot_envelope &lt;- function(nsim = 10, confidence = TRUE) {
@@ -942,7 +1012,7 @@ shiny::shinyApp(ui = ui, server = server)</code></pre>
 <p>The platform combines modular Shiny components exported in <a href="https://github.com/byandell/ewing/blob/main/R/sysetholApp.R"><code>R/sysetholApp.R</code></a> and <a href="https://github.com/byandell/ewing/blob/main/R/inputApp.R"><code>R/inputApp.R</code></a>:</p>
 <ol type="1">
 <li><strong>Sidebar Setup &amp; De-cluttering</strong>: Dynamic conditional panels display <code>Steps per click</code> when <code>nsim = 1</code> and <code>Total Simulation steps</code> / <code>Confidence Band Envelope</code> when <code>nsim &gt; 1</code>. Side panel <strong>Run Engine</strong> and <strong>Reset</strong> buttons keep the main interface focused and clean.</li>
-<li><strong>Dist Plots</strong>: Visualizes population age-class distributions across active species.</li>
+<li><strong>Dist Plots</strong>: Visualizes population age-class distributions over simulation steps (<span class="math inline">\(t = 0, 50, 100...\)</span>) using <code>geom_step()</code> step lines and <code>geom_point()</code>.</li>
 <li><strong>Substrate Plots</strong>: Projects organism positions onto hexagonal substrate topology overlays with species filtering and <code>Overlay (1 Map)</code> vs <code>Separate (Stacked Maps)</code> view modes.</li>
 <li><strong>Envelope Plots</strong>: Computes multi-run simulation envelopes across <code>nsim</code> stochastic iterations (visible when <code>nsim &gt; 1</code>).</li>
 <li><strong>Input Data (<code>inputApp</code>)</strong>: Interactive table explorer (<code>inputAppInput</code>, <code>inputAppOutput</code>, <code>inputAppServer</code>) for underlying <code>organism.features</code>, <code>future.host</code>, <code>future.parasite</code>, <code>substrate.host</code>, <code>substrate.parasite</code>, <code>substrate.substrate</code>, <code>host.parasite</code>, <code>temperature.base</code>, and <code>temperature.par</code> datasets.</li>
