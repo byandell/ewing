@@ -51,7 +51,8 @@ ewing_substrate <- function( community,
     if (length(res_list) == 0) return(NULL)
     combined <- do.call(rbind, res_list)
     attr(combined, "species") <- paste(species, collapse = " & ")
-    attr(combined, "step") <- if (!is.null(community$step)) community$step else step
+    step_val <- if (!is.null(community$step)) community$step else if (!is.null(community$count$step)) community$count$step else if (!is.null(attr(community, "nstep"))) attr(community, "nstep") else step
+    attr(combined, "step") <- step_val
     attr(combined, "layout") <- layout
     attr(combined, "width") <- width
     attr(combined, "step_density") <- step_density
@@ -164,7 +165,8 @@ ewing_substrate <- function( community,
     .data$substrate %in% show_sub)
   
   attr(dat, "species") <- species
-  attr(dat, "step") <- if (!is.null(community$step)) community$step else step
+  step_val <- if (!is.null(community$step)) community$step else if (!is.null(community$count$step)) community$count$step else if (!is.null(attr(community, "nstep"))) attr(community, "nstep") else step
+  attr(dat, "step") <- step_val
   attr(dat, "layout") <- layout
   attr(dat, "width") <- width
   attr(dat, "step_density") <- step_density

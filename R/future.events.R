@@ -226,6 +226,7 @@ future.events <- function( community,
   community <- set.timing( community, "refresh", 1 )
   
   community <- fini.timing( community )
+  community$step <- start_step + nstep
   attr(community, "nstep") <- start_step + nstep
   
   if( !refresh | (nstep%%refresh)) {
