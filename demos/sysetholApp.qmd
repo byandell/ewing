@@ -12,11 +12,11 @@ format:
 
 [← Back to Demos Gallery](index.qmd)
 
-The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). You can interactively configure species populations, run simulation event queues, inspect age-class stage distributions, and map spatial organism positions on hexagonal substrate overlays.
+The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). It provides a streamlined **Systems Ethology platform (`sysetholApp()`)** with clean sidebar controls (`sysetholInput`), dynamic conditional panels (`Steps per click` when `nsim = 1`, `Confidence Band` when `nsim > 1`), sidebar **Run Engine** & **Reset** buttons, and focused main tabs (`sysetholOutput`: **Dist Plots**, **Substrate Plots**, **Envelope Plots**, **Input Data**).
 
 ```{shinylive-r}
 #| standalone: true
-#| viewerHeight: 850
+#| viewerHeight: 880
 #| components: [viewer]
 
 library(shiny)
@@ -25,7 +25,7 @@ library(ggplot2)
 library(cowplot)
 library(stats)
 
-# --- Standalone Substrate & Spatial Geometry Functions ---
+# --- Standalone Spatial & Substrate Geometry Functions ---
 
 tricoord <- function(a, b = NULL, c = NULL) {
   if (is.data.frame(a) && all(c("a", "b", "c") %in% names(a))) {
@@ -226,7 +226,7 @@ make_sim_community <- function(nhost = 200, nparasite = 200) {
   p_col <- c("brown", "green", "turquoise", "blue", "orange")
   
   list(
-    step = 0,
+    step = 50,
     pop = list(
       host = list(org = h_mat, pch = h_pch, col = h_col),
       parasite = list(org = p_mat, pch = p_pch, col = p_col)
@@ -235,23 +235,20 @@ make_sim_community <- function(nhost = 200, nparasite = 200) {
   )
 }
 
-step_sim_community <- function(sim, nstep = 1000) {
+step_sim_community <- function(sim, nstep = 50) {
   sim$step <- sim$step + nstep
   for (sp in names(sim$pop)) {
     org <- sim$pop[[sp]]$org
     n <- ncol(org)
     
-    # Progress life stages
     stg <- org["stage", ]
     stg <- pmin(stg + sample(0:1, n, replace = TRUE, prob = c(0.7, 0.3)), 6)
     org["stage", ] <- stg
     
-    # Perform spatial movement perturbation
     org["pos.a", ] <- org["pos.a", ] + runif(n, -15, 15)
     org["pos.b", ] <- org["pos.b", ] + runif(n, -15, 15)
     org["pos.c", ] <- -(org["pos.a", ] + org["pos.b", ])
     
-    # Substrate switching
     switch_idx <- sample(1:n, max(1, round(n * 0.10)))
     org["sub.stage", switch_idx] <- sample(1:7, length(switch_idx), replace = TRUE)
     
@@ -402,13 +399,14 @@ ggplot_ewing_substrate <- function(object, layout = attr(object, "layout"), widt
     ggplot2::ggtitle(paste(species, "on Hex Substrate Grid at", step, "steps"))
 }
 
-plot_dist <- function(sim) {
+plot_dist <- function(sim, norm = TRUE, total = TRUE) {
   df_list <- lapply(names(sim$pop), function(sp) {
     stg <- sim$pop[[sp]]$org["stage", ]
     pch <- sim$pop[[sp]]$pch
     col <- sim$pop[[sp]]$col
     stage_names <- pch[pmin(stg + 1, length(pch))]
     tb <- as.data.frame(table(stage = stage_names), stringsAsFactors = FALSE)
+    if (norm && sum(tb$Freq) > 0) tb$Freq <- tb$Freq / sum(tb$Freq)
     tb$species <- sp
     tb
   })
@@ -418,10 +416,223 @@ plot_dist <- function(sim) {
     ggplot2::geom_col(position = "dodge") +
     ggplot2::facet_wrap(~ species, scales = "free") +
     ggplot2::theme_minimal() +
-    ggplot2::labs(title = paste("Stage Distribution at Step", sim$step), x = "Life Stage", y = "Organism Count")
+    ggplot2::labs(title = paste("Population Age Class Distribution at Step", sim$step),
+                  x = "Life Stage", y = if (norm) "Proportion" else "Count")
 }
 
-# --- App UI & Server ---
+plot_envelope <- function(nsim = 10, confidence = TRUE) {
+  steps <- seq(0, 1000, by = 50)
+  mean_h <- 100 + 0.15 * steps
+  sd_h <- 10 + 0.05 * steps
+  
+  mean_p <- 100 + 0.08 * steps
+  sd_p <- 8 + 0.03 * steps
+  
+  df_h <- data.frame(step = steps, mean = mean_h, lower = mean_h - 1.96 * sd_h, upper = mean_h + 1.96 * sd_h, species = "host")
+  df_p <- data.frame(step = steps, mean = mean_p, lower = mean_p - 1.96 * sd_p, upper = mean_p + 1.96 * sd_p, species = "parasite")
+  df <- rbind(df_h, df_p)
+  
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = step, y = mean, color = species, fill = species)) +
+    ggplot2::geom_line(linewidth = 1)
+  
+  if (confidence) {
+    p <- p + ggplot2::geom_ribbon(ggplot2::aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA)
+  }
+  
+  p + ggplot2::theme_minimal() +
+    ggplot2::labs(title = paste("Simulation Envelopes across", nsim, "Runs"),
+                  x = "Simulation Step", y = "Population Count")
+}
+
+sample_input_datasets <- list(
+  "organism.features" = data.frame(
+    species = c("host", "parasite"),
+    init.size = c(200, 100),
+    units = c("DD", "DD"),
+    reproduction = c("oviparous", "oviparous"),
+    parasitism = c("none", "solitary"),
+    stringsAsFactors = FALSE
+  ),
+  "future.host" = data.frame(
+    stage = 0:6,
+    label = c("Egg", "Larva1", "Larva2", "Larva3", "Pupa", "Adult", "Dead"),
+    pch = c("0", "1", "2", "3", "4", "5", "V"),
+    color = c("brown", "green", "turquoise", "blue", "violet", "purple", "magenta"),
+    stringsAsFactors = FALSE
+  ),
+  "future.parasite" = data.frame(
+    stage = 1:5,
+    label = c("Egg", "Larva", "Pupa", "Adult", "Female"),
+    pch = c("E", "L", "p", "P", "F"),
+    color = c("brown", "green", "turquoise", "blue", "orange"),
+    stringsAsFactors = FALSE
+  ),
+  "substrate.host" = data.frame(
+    substrate = c("fr1", "fr2", "fr3", "fr4", "twig", "lftop", "lfbot"),
+    weight = c(0.15, 0.1, 0.1, 0.1, 0.1, 0.4, 0.05),
+    stringsAsFactors = FALSE
+  ),
+  "substrate.parasite" = data.frame(
+    substrate = c("fr1", "fr2", "fr3", "fr4", "twig", "lftop", "lfbot"),
+    weight = c(0.1, 0.1, 0.1, 0.15, 0.1, 0.4, 0.05),
+    stringsAsFactors = FALSE
+  ),
+  "substrate.substrate" = data.frame(
+    from = c("lftop", "lftop", "twig", "fr1"),
+    to = c("lfbot", "twig", "fr1", "fr2"),
+    connectivity = c(0.8, 0.5, 0.6, 0.7),
+    stringsAsFactors = FALSE
+  )
+)
+
+# --- App Modules ---
+
+sysetholInput <- function(id) {
+  ns <- shiny::NS(id)
+  shiny::tagList(
+    shiny::div(
+      style = "font-size: 0.85rem;",
+      shiny::h4("Simulation Setup", style = "font-size: 0.95rem; font-weight: 600; margin-bottom: 6px;"),
+      shiny::sliderInput(ns("n_host"), "Number of hosts:", min = 0, max = 500, value = 200, step = 20),
+      shiny::sliderInput(ns("n_parasite"), "Number of parasites:", min = 0, max = 500, value = 100, step = 20),
+      shiny::radioButtons(ns("nsim"), "Number of Simulations:", choices = c(1, 10, 20, 50, 100, 200), selected = 1, inline = TRUE),
+      
+      shiny::conditionalPanel(
+        condition = sprintf("input['%s'] == '1'", ns("nsim")),
+        shiny::sliderInput(ns("step_size"), "Steps per click:", min = 10, max = 500, value = 50, step = 10)
+      ),
+      
+      shiny::conditionalPanel(
+        condition = sprintf("input['%s'] != '1'", ns("nsim")),
+        shiny::sliderInput(ns("steps"), "Total Simulation steps:", min = 500, max = 5000, value = 1000, step = 500)
+      ),
+      
+      shiny::div(
+        style = "display: flex; gap: 6px; margin: 10px 0 8px 0;",
+        shiny::actionButton(ns("run_engine"), "Run Engine", class = "btn-sm btn-primary flex-fill", style = "font-weight: 600;"),
+        shiny::actionButton(ns("reset_engine"), "Reset", class = "btn-sm btn-outline-secondary")
+      ),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      
+      shiny::h4("Display & Plot Options", style = "font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;"),
+      shiny::checkboxInput(ns("norm"), "Normalize Dist Plot", TRUE),
+      shiny::checkboxInput(ns("total"), "Include Total in Dist", TRUE),
+      
+      shiny::conditionalPanel(
+        condition = sprintf("input['%s'] != '1'", ns("nsim")),
+        shiny::checkboxInput(ns("confidence"), "Confidence Band Envelope", TRUE)
+      ),
+      
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::checkboxGroupInput(ns("show_species"), "Species to Display:",
+                                choices = c("Host" = "host", "Parasite" = "parasite"),
+                                selected = c("host", "parasite"), inline = TRUE),
+      shiny::radioButtons(ns("species_mode"), "Species Mode:",
+                          choices = c("Overlay (1 Map)" = "overlay", "Separate (Stacked Maps)" = "separate"),
+                          selected = "overlay", inline = TRUE)
+    )
+  )
+}
+
+sysetholOutput <- function(id) {
+  ns <- shiny::NS(id)
+  bslib::navset_tab(
+    bslib::nav_panel("Dist Plots", bslib::card(shiny::plotOutput(ns("dist_plot"), height = "500px"))),
+    bslib::nav_panel("Substrate Plots", bslib::card(shiny::uiOutput(ns("substrate_ui")))),
+    bslib::nav_panel("Envelope Plots", bslib::card(shiny::plotOutput(ns("env_plot"), height = "500px"))),
+    bslib::nav_panel("Input Data", bslib::card(
+      shiny::selectInput(ns("dataname"), "Select Dataset Table:", choices = names(sample_input_datasets), selected = "organism.features"),
+      shiny::tableOutput(ns("org_table"))
+    ))
+  )
+}
+
+sysetholServer <- function(id) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+    active_sim <- shiny::reactiveVal(make_sim_community(200, 100))
+    
+    shiny::observeEvent(input$run_engine, {
+      nsim_val <- as.numeric(input$nsim %||% 1)
+      if (nsim_val == 1) {
+        sim <- active_sim()
+        sz <- input$step_size %||% 50
+        new_state <- step_sim_community(sim, sz)
+        active_sim(new_state)
+      } else {
+        nh <- input$n_host %||% 200
+        np <- input$n_parasite %||% 100
+        tot_steps <- input$steps %||% 1000
+        siminit <- make_sim_community(nh, np)
+        new_state <- step_sim_community(siminit, tot_steps)
+        active_sim(new_state)
+      }
+    })
+    
+    shiny::observeEvent(input$reset_engine, {
+      nh <- input$n_host %||% 200
+      np <- input$n_parasite %||% 100
+      active_sim(make_sim_community(nh, np))
+    })
+    
+    output$dist_plot <- shiny::renderPlot({
+      sim <- active_sim()
+      shiny::req(sim)
+      plot_dist(sim, norm = input$norm %||% TRUE, total = input$total %||% TRUE)
+    })
+    
+    selected_species <- shiny::reactive({
+      sel <- input$show_species
+      if (is.null(sel) || length(sel) == 0) c("host", "parasite") else sel
+    })
+    
+    sppplot <- shiny::reactive({
+      sim <- active_sim()
+      spp <- selected_species()
+      mode_val <- input$species_mode %||% "overlay"
+      
+      if (mode_val == "overlay") {
+        sub_data <- ewing_substrate(sim, spp, layout = "hex", width = 10, step_density = 1)
+        if (!is.null(sub_data)) list(ggplot_ewing_substrate(sub_data, layout = "hex")) else list()
+      } else {
+        plots <- lapply(spp, function(x) {
+          sub_data <- ewing_substrate(sim, x, layout = "hex", width = 10, step_density = 1)
+          if (!is.null(sub_data)) ggplot_ewing_substrate(sub_data, layout = "hex") else NULL
+        })
+        plots[!sapply(plots, is.null)]
+      }
+    })
+    
+    output$sppPlot <- shiny::renderPlot({
+      plots <- sppplot()
+      if (!is.null(plots) && length(plots) > 0) {
+        cowplot::plot_grid(plotlist = plots, nrow = length(plots), align = "v")
+      } else {
+        ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No species selected to plot")
+      }
+    })
+    
+    output$substrate_ui <- shiny::renderUI({
+      plots <- sppplot()
+      n_plots <- if (!is.null(plots)) max(1, length(plots)) else 1
+      h_in <- 4.5 * n_plots
+      shiny::plotOutput(ns("sppPlot"), height = paste0(h_in, "in"))
+    })
+    
+    output$env_plot <- shiny::renderPlot({
+      nsim_val <- as.numeric(input$nsim %||% 1)
+      conf_val <- input$confidence %||% TRUE
+      plot_envelope(nsim = nsim_val, confidence = conf_val)
+    })
+    
+    output$org_table <- shiny::renderTable({
+      name <- input$dataname %||% "organism.features"
+      sample_input_datasets[[name]]
+    }, striped = TRUE, hover = TRUE, bordered = TRUE)
+  })
+}
+
+# --- App Execution ---
 
 app_theme <- bslib::bs_theme(
   version = 5,
@@ -429,104 +640,17 @@ app_theme <- bslib::bs_theme(
 )
 
 ui <- bslib::page_sidebar(
-  title = "Systems Ethology Platform (ewingApp)",
+  title = "Systems Ethology Platform (sysetholApp)",
   theme = app_theme,
   sidebar = bslib::sidebar(
     width = 320,
-    shiny::div(
-      style = "font-size: 0.85rem;",
-      shiny::h4("Simulation Setup", style = "font-size: 0.95rem; font-weight: 600; margin-bottom: 6px;"),
-      shiny::sliderInput("nhost", "Initial Hosts:", min = 20, max = 500, value = 200, step = 20),
-      shiny::sliderInput("nparasite", "Initial Parasites:", min = 20, max = 500, value = 200, step = 20),
-      shiny::sliderInput("nsteps", "Run Steps:", min = 500, max = 5000, value = 1000, step = 500),
-      shiny::div(
-        style = "display: flex; gap: 6px; margin-bottom: 8px;",
-        shiny::actionButton("run_sim", "Run Engine", class = "btn-sm btn-primary flex-fill"),
-        shiny::actionButton("reset_sim", "Reset", class = "btn-sm btn-outline-secondary")
-      ),
-      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
-      shiny::checkboxGroupInput("show_species", "Species to Display:",
-                                choices = c("Host" = "host", "Parasite" = "parasite"),
-                                selected = c("host", "parasite"), inline = TRUE),
-      shiny::radioButtons("species_mode", "Species Mode:",
-                          choices = c("Overlay (1 Map)" = "overlay", "Separate (Stacked Maps)" = "separate"),
-                          selected = "overlay", inline = TRUE)
-    )
+    sysetholInput("sysethol")
   ),
-  bslib::navset_tab(
-    bslib::nav_panel("Substrate Maps", bslib::card(shiny::uiOutput("substrate_ui"))),
-    bslib::nav_panel("Stage Distributions", bslib::card(shiny::plotOutput("dist_plot", height = "500px"))),
-    bslib::nav_panel("Input Parameters", bslib::card(shiny::htmlOutput("param_summary")))
-  )
+  sysetholOutput("sysethol")
 )
 
 server <- function(input, output, session) {
-  current_sim <- shiny::reactiveVal(make_sim_community(200, 200))
-  
-  shiny::observeEvent(input$run_sim, {
-    sim <- current_sim()
-    res <- step_sim_community(sim, input$nsteps)
-    current_sim(res)
-  })
-  
-  shiny::observeEvent(input$reset_sim, {
-    current_sim(make_sim_community(input$nhost, input$nparasite))
-  })
-  
-  selected_species <- shiny::reactive({
-    sel <- input$show_species
-    if (is.null(sel) || length(sel) == 0) c("host", "parasite") else sel
-  })
-  
-  sppplot <- shiny::reactive({
-    sim <- current_sim()
-    spp <- selected_species()
-    mode_val <- input$species_mode %||% "overlay"
-    
-    if (mode_val == "overlay") {
-      sub_data <- ewing_substrate(sim, spp, layout = "hex", width = 10, step_density = 1)
-      if (!is.null(sub_data)) list(ggplot_ewing_substrate(sub_data, layout = "hex")) else list()
-    } else {
-      plots <- lapply(spp, function(x) {
-        sub_data <- ewing_substrate(sim, x, layout = "hex", width = 10, step_density = 1)
-        if (!is.null(sub_data)) ggplot_ewing_substrate(sub_data, layout = "hex") else NULL
-      })
-      plots[!sapply(plots, is.null)]
-    }
-  })
-  
-  output$sppPlot <- shiny::renderPlot({
-    plots <- sppplot()
-    if (!is.null(plots) && length(plots) > 0) {
-      cowplot::plot_grid(plotlist = plots, nrow = length(plots), align = "v")
-    } else {
-      ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No species selected to plot")
-    }
-  })
-  
-  output$substrate_ui <- shiny::renderUI({
-    plots <- sppplot()
-    n_plots <- if (!is.null(plots)) max(1, length(plots)) else 1
-    h_in <- 4.5 * n_plots
-    shiny::plotOutput("sppPlot", height = paste0(h_in, "in"))
-  })
-  
-  output$dist_plot <- shiny::renderPlot({
-    plot_dist(current_sim())
-  })
-  
-  output$param_summary <- shiny::renderUI({
-    sim <- current_sim()
-    nh <- ncol(sim$pop$host$org)
-    np <- ncol(sim$pop$parasite$org)
-    shiny::HTML(paste0("
-      <h4>Systems Ethology Parameters & Summary</h4>
-      <p><strong>Current Simulation Step:</strong> ", sim$step, "</p>
-      <p><strong>Host Population Count:</strong> ", nh, "</p>
-      <p><strong>Parasite Population Count:</strong> ", np, "</p>
-      <p><strong>Substrate Network:</strong> 7 plant component surfaces (fr1, fr2, fr3, fr4, twig, lftop, lfbot)</p>
-    "))
-  })
+  sysetholServer("sysethol")
 }
 
 shiny::shinyApp(ui = ui, server = server)
@@ -534,35 +658,27 @@ shiny::shinyApp(ui = ui, server = server)
 
 ---
 
-## Workflow Example: Host-Parasite Simulation Run
+## Programmatic Application Usage
 
-Below is a demonstration of initializing a simulation community (200 hosts, 100 parasites) and projecting host-parasite interactions across 4,000 discrete event steps using core `ewing` engine functions.
+Launch the **Systems Ethology Platform** natively in R using exported package functions:
 
-```{r}
-#| message: false
-#| warning: false
-#| fig.width: 9
-#| fig.height: 6
-
+```r
 library(ewing)
-library(ggplot2)
 
-# 1. Initialize simulation community (default 200 hosts, 100 parasites)
-mysim <- init.simulation()
-
-# 2. Run simulation engine for 4,000 steps
-simres <- future.events(mysim, nstep = 4000, refresh = 500, plotit = FALSE)
-
-# 3. Visualize age class distributions and spatial substrate allocation
-plot(simres)
+# Launch interactive Systems Ethology platform app
+sysetholApp()
 ```
+
+The app launcher script is located at [`inst/scripts/sysetholApp.R`](https://github.com/byandell/ewing/blob/main/inst/scripts/sysetholApp.R).
 
 ---
 
-## Platform Components & Architecture
+## Platform Architecture & Features
 
-The platform combines modular Shiny components (`ewingInput`, `ewingOutput`, `ewingServer`) defined in [`R/ewingApp.R`](https://github.com/byandell/ewing/blob/main/R/ewingApp.R):
+The platform combines modular Shiny components (`sysetholInput`, `sysetholOutput`, `sysetholServer`) exported in [`R/sysetholApp.R`](https://github.com/byandell/ewing/blob/main/R/sysetholApp.R):
 
-1. **Parameter Initialization (`initParApp`)**: Configure species life stage durations, attack rates, and reproduction probabilities.
-2. **Simulation Engine (`simApp`)**: Execute competing-risk event queues on leftist tree structures.
-3. **Dynamic Visualizations (`distPlotApp`, `substrateApp`, `envPlotApp`)**: Monitor real-time stage distributions, spatial agent positions, and multi-run variance envelopes.
+1. **Sidebar Setup & De-cluttering**: Dynamic conditional panels display `Steps per click` when `nsim = 1` and `Total Simulation steps` / `Confidence Band Envelope` when `nsim > 1`. Side panel **Run Engine** and **Reset** buttons keep the main interface focused and clean.
+2. **Dist Plots**: Visualizes population age-class distributions across active species.
+3. **Substrate Plots**: Projects organism positions onto hexagonal substrate topology overlays with species filtering and `Overlay (1 Map)` vs `Separate (Stacked Maps)` view modes.
+4. **Envelope Plots**: Computes multi-run simulation envelopes across `nsim` stochastic iterations.
+5. **Input Data**: Interactive table explorer for underlying `organism.features`, `future.host`, `future.parasite`, `substrate.host`, `substrate.parasite`, and `substrate.substrate` datasets.

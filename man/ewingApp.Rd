@@ -22,5 +22,6 @@ ewingOutput(id)
 }
 \description{
 Core `Systems Ethology` Shiny platform acting as the central interactive wrapper modularizing
-age distributions, probability envelopes, and runtime data interactions.
+age distributions, probability envelopes, runtime data interactions, and file downloads.
+Composes elements from `sysetholApp` and `downloadApp`.
 }

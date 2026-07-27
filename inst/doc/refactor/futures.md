@@ -140,9 +140,23 @@ The `interactive step-by-step` refactor is completely deployed and verified. The
 - **Legend Output Formatting**:
   - `ewing_substrate.R`: Appended plotting aesthetic overrides (`override.aes`) directly to `geom_text` guides to natively render precise mapping characters natively instead of defaulting generic placeholder `"a"` labels.
   - `ewing_ageclass.R`: Built structured mapping indexing and explicitly typed raw variables into an ordered `factor`. Output graphs now render `State` progression chronologically instead of alphabetically natively! Adjusted conditional scaling block to explicitly position the `"total"` classification squarely between active species groups, and disabled substrates manually within `ewingApp.R` bindings.
-
 - **Plot Rendering Architecture**: Resolved a deep-seated rendering layer bug breaking shiny app reactivity locally and on posit servers (`Can't add sppplot()[[i]] to a <ggplot> object.`). Removed incompatible `ggplot2` addition (`+`) routines for combined application outputs across all primary files (`ewingApp.R`, `multApp.R`, `substrateApp.R`, and `origEwingApp.R`). Cleanly shifted visualization grids to properly utilize `cowplot::plot_grid(plotlist = sppplot())` list handling functions natively for scaled visual structures.
 
-### 📋 Remaining Tasks
+---
 
-- **Manual UI Testing**: Conduct a session to run the app and manually confirm the "Step Forward" behavior, especially plot scaling and updates.
+## Status Report (July 27, 2026)
+
+### ✅ Completed (July 27)
+
+- **Organism Movement on Hex Grid (`hexmoveApp`)**:
+  - Implemented per-substrate unit triangle coordinate rescaling ($[0, W_{sub\_S}]$) with a 15% inner padding buffer to keep organism symbols 100% inside their substrate polygon borders.
+  - Created discrete 6-sided polygon tile overlay (`create_hex_overlay`) across plant substrate elements.
+  - Created `hexmoveApp` launcher script ([`inst/scripts/hexmoveApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/scripts/hexmoveApp.R)) and Quarto demo ([`demos/hexmoveApp.qmd`](file:///Users/brianyandell/Documents/Research/ewing/ewing/demos/hexmoveApp.qmd)).
+
+- **Systems Ethology Platform Refactor (`sysetholApp` & `ewingApp`)**:
+  - Exported [`R/sysetholApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/sysetholApp.R) (`sysetholApp`, `sysetholInput`, `sysetholOutput`, `sysetholServer`).
+  - Added sidebar **`Run Engine`** and **`Reset`** action buttons to keep the main panel header clean.
+  - Added conditional sidebar controls (`conditionalPanel`): `Steps per click` when `nsim == 1`, `Total Simulation steps` / `Confidence Band Envelope` when `nsim > 1`.
+  - Added dynamic tab visibility in `sysetholOutput` (displaying **`Envelope Plots`** tab ONLY when `nsim > 1`).
+  - Simplified [`R/ewingApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ewingApp.R) to compose UI/server directly from `sysetholApp` components + `downloadApp`.
+  - Embedded serverless WebAssembly Shinylive block into [`demos/sysetholApp.qmd`](file:///Users/brianyandell/Documents/Research/ewing/ewing/demos/sysetholApp.qmd).
