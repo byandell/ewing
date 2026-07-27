@@ -87,7 +87,10 @@ ewing_ageclass <- function(community, substrate = TRUE, total = TRUE,
         dplyr::group_by(
           out,
           .data$Species, .data$State, .data$Type),
-        Count = .data$Count / max(.data$Count)))
+        Count = {
+          m <- max(.data$Count, na.rm = TRUE)
+          if (!is.na(m) && m > 0) .data$Count / m else 0
+        }))
   }
   subs <- if (substrate) unlist(substrates) else NULL
   if (length(species) > 1) {
@@ -132,8 +135,8 @@ ggplot_ewing_ageclass <- function(object, main = NULL, title = NULL, ... )
   
   ggplot2::ggplot(object) +
     ggplot2::aes(.data$time, .data$Count, col = .data$State, group = .data$State, shape = .data$Species) +
-    ggplot2::geom_step() +
-    ggplot2::geom_point(size = 2) +
+    ggplot2::geom_step(na.rm = TRUE) +
+    ggplot2::geom_point(size = 2, na.rm = TRUE) +
     ggplot2::scale_shape_manual(name = "Species", values = c(1, 2, 0, 5, 6, 3, 4)) +
     ggplot2::labs(title = title, color = "State", shape = "Species") +
     ggplot2::facet_wrap(.data$Type ~ .data$Species, scales = "free")

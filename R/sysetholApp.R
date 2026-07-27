@@ -39,13 +39,25 @@ step_size_slider <- function(inputId, label = "Steps per click:", selected = 50)
 
 parse_step_size <- function(val) {
   if (is.null(val)) return(50)
-  num <- as.numeric(val)
+  num <- round(as.numeric(val))
   if (is.na(num)) return(50)
-  if (!num %in% step_size_choices && num >= 1 && num <= length(step_size_choices)) {
-    step_size_choices[num]
-  } else {
-    num
+  
+  # Direct large values (e.g., 20, 50, 100, 200, 500, 1000, 2000)
+  if (num %in% step_size_choices && num > 10) {
+    return(num)
   }
+  
+  # 0-based JavaScript index from ion.rangeSlider (0 to 10)
+  if (num >= 0 && num < length(step_size_choices)) {
+    return(step_size_choices[num + 1])
+  }
+  
+  # Fallback for direct value
+  if (num %in% step_size_choices) {
+    return(num)
+  }
+  
+  50
 }
 
 #' Systems Ethology Input Controls Module
@@ -125,7 +137,8 @@ sysetholServer <- function(id) {
         nh <- input$n_host %||% 200
         np <- input$n_parasite %||% 100
         sim <- init.simulation(count = c(nh, np))
-        sim <- future.events(sim, nstep = 50, plotit = FALSE)
+        sz <- parse_step_size(input$step_size %||% 5)
+        sim <- future.events(sim, nstep = sz, plotit = FALSE)
         current_sim(sim)
       }
     })
@@ -141,7 +154,7 @@ sysetholServer <- function(id) {
         if (is.null(sim)) {
           sim <- init.simulation(count = c(nh, np))
         }
-        sz <- parse_step_size(input$step_size %||% 50)
+        sz <- parse_step_size(input$step_size %||% 5)
         new_state <- future.events(sim, nstep = sz, plotit = FALSE)
         current_sim(new_state)
       } else {
@@ -156,7 +169,8 @@ sysetholServer <- function(id) {
       nh <- input$n_host %||% 200
       np <- input$n_parasite %||% 100
       sim <- init.simulation(count = c(nh, np))
-      sim <- future.events(sim, nstep = 50, plotit = FALSE)
+      sz <- parse_step_size(input$step_size %||% 5)
+      sim <- future.events(sim, nstep = sz, plotit = FALSE)
       current_sim(sim)
     })
     

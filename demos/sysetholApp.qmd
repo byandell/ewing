@@ -14,20 +14,23 @@ format:
 
 The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). It provides a streamlined **Systems Ethology platform (`sysetholApp()`)** with clean sidebar controls (`sysetholInput`), dynamic conditional panels (`Steps per click` log-scale geometric slider when `nsim = 1`, `Confidence Band` when `nsim > 1`), sidebar **Run Engine** & **Reset** buttons, and modular tabs (`sysetholOutput`: **Dist Plots** fine time-granularity step plots, **Substrate Plots**, **Envelope Plots**, and **Input Data** via `inputApp`).
 
-```{shinylive-r}
-#| standalone: true
-#| viewerHeight: 880
-#| components: [viewer]
+```{r, echo=FALSE, results='asis'}
+inc_files <- c("R/inputApp.R", "R/sysetholApp.R")
 
-library(shiny)
-library(bslib)
-library(ggplot2)
-library(cowplot)
-library(stats)
+cat("```{shinylive-r}\n")
+cat("#| standalone: true\n")
+cat("#| viewerHeight: 880\n")
+cat("#| components: [viewer]\n\n")
 
-# --- Standalone Spatial & Substrate Geometry Functions ---
+cat("library(shiny)\n")
+cat("library(bslib)\n")
+cat("library(ggplot2)\n")
+cat("library(cowplot)\n")
+cat("library(stats)\n\n")
 
-tricoord <- function(a, b = NULL, c = NULL) {
+cat("# --- Standalone Spatial & Substrate Geometry Functions ---\n\n")
+
+cat('tricoord <- function(a, b = NULL, c = NULL) {
   if (is.data.frame(a) && all(c("a", "b", "c") %in% names(a))) {
     res <- a
   } else if (is.matrix(a) && ncol(a) == 3) {
@@ -197,34 +200,11 @@ create_hex_overlay <- function(object, step = 1) {
   }
   
   do.call(rbind, hex_list)
-}
+}\n\n')
 
-# --- Geometric Log Scale Step Size Slider Helper ---
+cat("# --- Standalone Simulation Engine & Package Adapters ---\n\n")
 
-step_size_choices <- c(1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000)
-
-step_size_slider <- function(inputId, label = "Steps per click:", selected = 50) {
-  idx <- match(selected, step_size_choices)
-  if (is.na(idx)) idx <- 6
-  sl <- shiny::sliderInput(inputId, label, min = 1, max = length(step_size_choices), value = idx, step = 1, ticks = TRUE)
-  sl$children[[2]]$attribs[['data-values']] <- paste(step_size_choices, collapse = ",")
-  sl
-}
-
-parse_step_size <- function(val) {
-  if (is.null(val)) return(50)
-  num <- as.numeric(val)
-  if (is.na(num)) return(50)
-  if (!num %in% step_size_choices && num >= 1 && num <= length(step_size_choices)) {
-    step_size_choices[num]
-  } else {
-    num
-  }
-}
-
-# --- Standalone Simulation Engine ---
-
-record_history <- function(sim) {
+cat('record_history <- function(sim) {
   t_val <- sim$step
   df_list <- list()
   
@@ -292,7 +272,6 @@ make_sim_community <- function(nhost = 200, nparasite = 200) {
 }
 
 step_sim_community <- function(sim, nstep = 50) {
-  # Granular sub-stepping to mirror ewing_ageclass time resolution
   sub_interval <- if (nstep <= 5) 1 else if (nstep <= 20) 2 else if (nstep <= 100) 5 else if (nstep <= 500) 25 else 50
   sub_steps <- seq(sub_interval, nstep, by = sub_interval)
   if (length(sub_steps) == 0 || tail(sub_steps, 1) != nstep) sub_steps <- c(sub_steps, nstep)
@@ -324,6 +303,53 @@ step_sim_community <- function(sim, nstep = 50) {
   }
   
   sim
+}
+
+init.simulation <- function(count = c(200, 100), ...) {
+  make_sim_community(count[1], count[2])
+}
+
+future.events <- function(sim, nstep = 50, ...) {
+  step_sim_community(sim, nstep)
+}
+
+ewing_discrete <- function(nsim = 10, nstep = 1000, count = c(200, 100), ...) {
+  res <- step_sim_community(make_sim_community(count[1], count[2]), nstep)
+  class(res) <- c("ewing_discrete", class(res))
+  res
+}
+
+ewing_ageclass <- function(sim, total = TRUE, normalize = TRUE, ...) {
+  df <- sim$history
+  if (is.null(df) || nrow(df) == 0) return(NULL)
+  if (!total) df <- df[df$State != "total", ]
+  if (normalize) {
+    max_counts <- stats::aggregate(Count ~ Species + State, data = df, max)
+    names(max_counts)[names(max_counts) == "Count"] <- "MaxCount"
+    df <- merge(df, max_counts, by = c("Species", "State"))
+    df$Count <- ifelse(df$MaxCount > 0, df$Count / df$MaxCount, 0)
+  }
+  attr(df, "nstep") <- sim$step
+  class(df) <- c("ewing_ageclass", class(df))
+  df
+}
+
+ggplot_ewing_ageclass <- function(object, main = NULL, title = NULL, ...) {
+  if (is.null(title)) {
+    nstep <- attr(object, "nstep")
+    title <- if (!is.null(nstep)) paste0("Age Distribution over Time (", nstep, " steps)") else "Age Distribution over Time"
+  }
+  ggplot2::ggplot(object, ggplot2::aes(x = time, y = Count, color = State, group = State, shape = Species)) +
+    ggplot2::geom_step(linewidth = 0.8, na.rm = TRUE) +
+    ggplot2::geom_point(size = 1.8, na.rm = TRUE) +
+    ggplot2::scale_shape_manual(name = "Species", values = c(1, 2, 0, 5, 6, 3, 4)) +
+    ggplot2::facet_wrap(~ Species, scales = "free_y") +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(title = title, x = "Simulation Step (Time)", y = "Count")
+}
+
+autoplot.ewing_ageclass <- function(object, ...) {
+  ggplot_ewing_ageclass(object, ...)
 }
 
 ewing_substrate <- function(community, species, layout = "hex", width = 10, step_density = 1, rescale = TRUE) {
@@ -468,32 +494,6 @@ ggplot_ewing_substrate <- function(object, layout = attr(object, "layout"), widt
     ggplot2::ggtitle(paste(species, "on Hex Substrate Grid at", step, "steps"))
 }
 
-plot_dist <- function(sim, norm = TRUE, total = TRUE) {
-  df <- sim$history
-  if (is.null(df) || nrow(df) == 0) {
-    return(ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No history data"))
-  }
-  
-  if (!total) {
-    df <- df[df$State != "total", ]
-  }
-  
-  if (norm) {
-    max_counts <- stats::aggregate(Count ~ Species + State, data = df, max)
-    names(max_counts)[names(max_counts) == "Count"] <- "MaxCount"
-    df <- merge(df, max_counts, by = c("Species", "State"))
-    df$Count <- ifelse(df$MaxCount > 0, df$Count / df$MaxCount, df$Count)
-  }
-  
-  ggplot2::ggplot(df, ggplot2::aes(x = time, y = Count, color = State, group = State)) +
-    ggplot2::geom_step(linewidth = 0.8) +
-    ggplot2::geom_point(size = 1.8) +
-    ggplot2::facet_wrap(~ Species, scales = "free_y") +
-    ggplot2::theme_minimal() +
-    ggplot2::labs(title = "Population Age Class Distribution Progression over Time",
-                  x = "Simulation Step (Time)", y = if (norm) "Normalized Count" else "Organism Count")
-}
-
 plot_envelope <- function(nsim = 10, confidence = TRUE) {
   steps <- seq(0, 1000, by = 50)
   mean_h <- 100 + 0.15 * steps
@@ -568,225 +568,22 @@ sample_input_datasets <- list(
     value = c(50, 75, 95),
     stringsAsFactors = FALSE
   )
-)
+)\n\n')
 
-# --- Modular Input App Component ---
-
-inputAppInput <- function(id) {
-  ns <- shiny::NS(id)
-  shiny::tagList(
-    shiny::selectInput(ns("dataname"), "Select Dataset Table:", 
-                       choices = c("organism.features", "future.host", "future.parasite", 
-                                   "substrate.host", "substrate.parasite", "substrate.substrate", 
-                                   "host.parasite", "temperature.base", "temperature.par"), 
-                       selected = "organism.features")
-  )
+# --- Dynamically Auto-Include Selected R/ Source Files ---
+for (f in inc_files) {
+  src <- readLines(file.path("..", f), warn = FALSE)
+  cat(paste0("# --- Auto-Included from ", f, " ---\n\n"))
+  cat(paste(src, collapse = "\n"))
+  cat("\n\n")
 }
 
-inputAppOutput <- function(id) {
-  ns <- shiny::NS(id)
-  shiny::tableOutput(ns("org_table"))
-}
-
-inputAppServer <- function(id, simres = shiny::reactiveVal(NULL)) {
-  shiny::moduleServer(id, function(input, output, session) {
-    ns <- session$ns
-    output$org_table <- shiny::renderTable({
-      name <- input$dataname %||% "organism.features"
-      sample_input_datasets[[name]]
-    }, striped = TRUE, hover = TRUE, bordered = TRUE)
-  })
-}
-
-# --- Systems Ethology App Modules ---
-
-sysetholInput <- function(id) {
-  ns <- shiny::NS(id)
-  shiny::tagList(
-    shiny::div(
-      style = "font-size: 0.85rem;",
-      shiny::h4("Simulation Setup", style = "font-size: 0.95rem; font-weight: 600; margin-bottom: 6px;"),
-      shiny::sliderInput(ns("n_host"), "Number of hosts:", min = 0, max = 500, value = 200, step = 20),
-      shiny::sliderInput(ns("n_parasite"), "Number of parasites:", min = 0, max = 500, value = 100, step = 20),
-      shiny::radioButtons(ns("nsim"), "Number of Simulations:", choices = c(1, 10, 20, 50, 100, 200), selected = 1, inline = TRUE),
-      
-      shiny::conditionalPanel(
-        condition = sprintf("input['%s'] == '1'", ns("nsim")),
-        step_size_slider(ns("step_size"), "Steps per click:", selected = 50)
-      ),
-      
-      shiny::conditionalPanel(
-        condition = sprintf("input['%s'] != '1'", ns("nsim")),
-        shiny::sliderInput(ns("steps"), "Total Simulation steps:", min = 500, max = 5000, value = 1000, step = 500)
-      ),
-      
-      shiny::div(
-        style = "display: flex; gap: 6px; margin: 10px 0 8px 0;",
-        shiny::actionButton(ns("run_engine"), "Run Engine", class = "btn-sm btn-primary flex-fill", style = "font-weight: 600;"),
-        shiny::actionButton(ns("reset_engine"), "Reset", class = "btn-sm btn-outline-secondary")
-      ),
-      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
-      
-      shiny::h4("Display & Plot Options", style = "font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;"),
-      shiny::checkboxInput(ns("norm"), "Normalize Dist Plot", TRUE),
-      shiny::checkboxInput(ns("total"), "Include Total in Dist", TRUE),
-      
-      shiny::conditionalPanel(
-        condition = sprintf("input['%s'] != '1'", ns("nsim")),
-        shiny::checkboxInput(ns("confidence"), "Confidence Band Envelope", TRUE)
-      ),
-      
-      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
-      shiny::checkboxGroupInput(ns("show_species"), "Species to Display:",
-                                choices = c("Host" = "host", "Parasite" = "parasite"),
-                                selected = c("host", "parasite"), inline = TRUE),
-      shiny::radioButtons(ns("species_mode"), "Species Mode:",
-                          choices = c("Overlay (1 Map)" = "overlay", "Separate (Stacked Maps)" = "separate"),
-                          selected = "overlay", inline = TRUE)
-    )
-  )
-}
-
-sysetholOutput <- function(id) {
-  ns <- shiny::NS(id)
-  shiny::uiOutput(ns("sysethol_tabs"))
-}
-
-sysetholServer <- function(id) {
-  shiny::moduleServer(id, function(input, output, session) {
-    ns <- session$ns
-    active_sim <- shiny::reactiveVal(make_sim_community(200, 100))
-    
-    # Run Engine button
-    shiny::observeEvent(input$run_engine, {
-      nsim_val <- as.numeric(input$nsim %||% 1)
-      if (nsim_val == 1) {
-        sim <- active_sim()
-        sz <- parse_step_size(input$step_size %||% 50)
-        new_state <- step_sim_community(sim, sz)
-        active_sim(new_state)
-      } else {
-        nh <- input$n_host %||% 200
-        np <- input$n_parasite %||% 100
-        tot_steps <- input$steps %||% 1000
-        siminit <- make_sim_community(nh, np)
-        new_state <- step_sim_community(siminit, tot_steps)
-        active_sim(new_state)
-      }
-    })
-    
-    # Reset button
-    shiny::observeEvent(input$reset_engine, {
-      nh <- input$n_host %||% 200
-      np <- input$n_parasite %||% 100
-      active_sim(make_sim_community(nh, np))
-    })
-    
-    # Input App Module Server Call
-    inputAppServer("input_app", simres = active_sim)
-    
-    # Dynamic Tabs (Envelope Plots shown ONLY when nsim > 1)
-    output$sysethol_tabs <- shiny::renderUI({
-      nsim_val <- as.numeric(input$nsim %||% 1)
-      if (nsim_val == 1) {
-        bslib::navset_tab(
-          bslib::nav_panel("Dist Plots", bslib::card(shiny::plotOutput(ns("dist_plot"), height = "500px"))),
-          bslib::nav_panel("Substrate Plots", bslib::card(shiny::uiOutput(ns("substrate_ui")))),
-          bslib::nav_panel("Input Data", bslib::card(
-            inputAppInput(ns("input_app")),
-            inputAppOutput(ns("input_app"))
-          ))
-        )
-      } else {
-        bslib::navset_tab(
-          bslib::nav_panel("Dist Plots", bslib::card(shiny::plotOutput(ns("dist_plot"), height = "500px"))),
-          bslib::nav_panel("Substrate Plots", bslib::card(shiny::uiOutput(ns("substrate_ui")))),
-          bslib::nav_panel("Envelope Plots", bslib::card(shiny::plotOutput(ns("env_plot"), height = "500px"))),
-          bslib::nav_panel("Input Data", bslib::card(
-            inputAppInput(ns("input_app")),
-            inputAppOutput(ns("input_app"))
-          ))
-        )
-      }
-    })
-    
-    # Dist Plots Tab
-    output$dist_plot <- shiny::renderPlot({
-      sim <- active_sim()
-      shiny::req(sim)
-      plot_dist(sim, norm = input$norm %||% TRUE, total = input$total %||% TRUE)
-    })
-    
-    # Substrate Plots Tab
-    selected_species <- shiny::reactive({
-      sel <- input$show_species
-      if (is.null(sel) || length(sel) == 0) c("host", "parasite") else sel
-    })
-    
-    sppplot <- shiny::reactive({
-      sim <- active_sim()
-      spp <- selected_species()
-      mode_val <- input$species_mode %||% "overlay"
-      
-      if (mode_val == "overlay") {
-        sub_data <- ewing_substrate(sim, spp, layout = "hex", width = 10, step_density = 1)
-        if (!is.null(sub_data)) list(ggplot_ewing_substrate(sub_data, layout = "hex")) else list()
-      } else {
-        plots <- lapply(spp, function(x) {
-          sub_data <- ewing_substrate(sim, x, layout = "hex", width = 10, step_density = 1)
-          if (!is.null(sub_data)) ggplot_ewing_substrate(sub_data, layout = "hex") else NULL
-        })
-        plots[!sapply(plots, is.null)]
-      }
-    })
-    
-    output$sppPlot <- shiny::renderPlot({
-      plots <- sppplot()
-      if (!is.null(plots) && length(plots) > 0) {
-        cowplot::plot_grid(plotlist = plots, nrow = length(plots), align = "v")
-      } else {
-        ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No species selected to plot")
-      }
-    })
-    
-    output$substrate_ui <- shiny::renderUI({
-      plots <- sppplot()
-      n_plots <- if (!is.null(plots)) max(1, length(plots)) else 1
-      h_in <- 4.5 * n_plots
-      shiny::plotOutput(ns("sppPlot"), height = paste0(h_in, "in"))
-    })
-    
-    # Envelope Plots Tab
-    output$env_plot <- shiny::renderPlot({
-      nsim_val <- as.numeric(input$nsim %||% 1)
-      conf_val <- input$confidence %||% TRUE
-      plot_envelope(nsim = nsim_val, confidence = conf_val)
-    })
-  })
-}
-
-# --- Execution ---
-
-app_theme <- bslib::bs_theme(
-  version = 5,
-  bg = "#ffffff", fg = "#212529", primary = "#1a73e8", secondary = "#7209b7"
-)
-
-ui <- bslib::page_sidebar(
-  title = "Systems Ethology Platform (sysetholApp)",
-  theme = app_theme,
-  sidebar = bslib::sidebar(
-    width = 320,
-    sysetholInput("sysethol")
-  ),
-  sysetholOutput("sysethol")
-)
-
-server <- function(input, output, session) {
-  sysetholServer("sysethol")
-}
-
-shiny::shinyApp(ui = ui, server = server)
+cat("# --- Launch Application ---\n\n")
+cat("app_theme <- bslib::bs_theme(version = 5, bg = '#ffffff', fg = '#212529', primary = '#1a73e8')\n")
+cat("ui <- bslib::page_sidebar(title = 'Systems Ethology Platform (sysetholApp)', theme = app_theme, sidebar = bslib::sidebar(width = 320, sysetholInput('sysethol')), sysetholOutput('sysethol'))\n")
+cat("server <- function(input, output, session) { sysetholServer('sysethol') }\n")
+cat("shiny::shinyApp(ui = ui, server = server)\n")
+cat("```\n")
 ```
 
 ---
@@ -798,23 +595,5 @@ Launch the **Systems Ethology Platform** natively in R using exported package fu
 ```r
 library(ewing)
 
-# Launch interactive Systems Ethology platform app
 sysetholApp()
-
-# Or launch standalone Input Data Explorer
-inputApp()
 ```
-
-The app launcher script is located at [`inst/scripts/sysetholApp.R`](https://github.com/byandell/ewing/blob/main/inst/scripts/sysetholApp.R).
-
----
-
-## Platform Architecture & Features
-
-The platform combines modular Shiny components exported in [`R/sysetholApp.R`](https://github.com/byandell/ewing/blob/main/R/sysetholApp.R) and [`R/inputApp.R`](https://github.com/byandell/ewing/blob/main/R/inputApp.R):
-
-1. **Sidebar Setup & De-cluttering**: Dynamic conditional panels display geometric log-scale `Steps per click` slider (`1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000`) when `nsim = 1` and `Total Simulation steps` / `Confidence Band Envelope` when `nsim > 1`. Side panel **Run Engine** and **Reset** buttons keep the main interface focused and clean.
-2. **Dist Plots**: Visualizes population age-class distributions over simulation steps ($t = 0, 5, 10, 15, 20, ...$) with full intermediate sub-step time resolution using `geom_step()` step lines and `geom_point()`.
-3. **Substrate Plots**: Projects organism positions onto hexagonal substrate topology overlays with species filtering and `Overlay (1 Map)` vs `Separate (Stacked Maps)` view modes.
-4. **Envelope Plots**: Computes multi-run simulation envelopes across `nsim` stochastic iterations (visible when `nsim > 1`).
-5. **Input Data (`inputApp`)**: Interactive table explorer (`inputAppInput`, `inputAppOutput`, `inputAppServer`) for underlying `organism.features`, `future.host`, `future.parasite`, `substrate.host`, `substrate.parasite`, `substrate.substrate`, `host.parasite`, `temperature.base`, and `temperature.par` datasets.

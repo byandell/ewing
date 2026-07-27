@@ -191,7 +191,12 @@ The **`Dist Plots`** panel visualizes age-class counts over time using `geom_ste
 - **Title & Labels**: Uses `"Age Distribution over Time (<nstep> steps)"` (or `"(<nstep> steps, nsim = <nsim>)"` for multi-run simulations).
 - **Species Legend & Open Symbols**: Maps `shape = .data$Species` with open symbol aesthetics (`scale_shape_manual(name = "Species", values = c(1, 2, 0, 5, 6, 3, 4))`) to render species with distinct open shape markers (open circle, open triangle, open square, etc.).
 - **Continuous Step History Across Stepping**: When clicking **`Run Engine`** repeatedly in `sysetholApp()` / `ewingApp()`, simulation history is preserved continuously (`append = TRUE`) and step numbers accumulate (`start_step + istep`). Dist Plots display full time-series history from step 0 to the current total accumulated step count instead of resetting to the endpoint of the previous block.
-- **Granular Time-Series**: `step_sim_community` and `ewing_ageclass` retain history ticks across stepping intervals so age class time-series step curves render fine temporal granularity over time.
+- **Granular Time-Series & Vector-Preserving Normalization**: `step_sim_community` and `ewing_ageclass` retain history ticks across stepping intervals so age class time-series step curves render fine temporal granularity over time. Replaced `ifelse()` logic inside `mutate()` with scalar-evaluated vector normalization (`{ m <- max(...); if (!is.na(m) && m > 0) .data$Count / m else 0 }`) to preserve the full time-series vector for each state instead of truncating data to single-row flatlines. Sets `na.rm = TRUE` on `geom_step()` / `geom_point()` to suppress spurious missing-value warnings.
+
+### Geometric Log-Scale Step Size Slider & Reset Behavior
+
+- **Log-Scale Slider Parsing (`parse_step_size`)**: Fixed a 1-off index offset where Shiny's `ion.rangeSlider` sent 0-based JavaScript indices (`0..10`) for custom `data-values`. Updated `parse_step_size()` to map 0-based JS indices (`num + 1`) to `step_size_choices[1..11]`. This ensures selecting 50 advances exactly 50 steps, 100 advances 100 steps, etc., eliminating the 1-off mapping error.
+- **Dynamic Reset & Startup Steps**: App startup and the **`Reset`** button now dynamically read `parse_step_size(input$step_size)` to initialize the simulation with the exact number of steps selected on the **Steps per click** slider.
 
 ### Sidebar De-cluttering & Conditional Panels
 
@@ -252,3 +257,45 @@ ewingServer <- function(id) {
   })
 }
 ```
+
+### Automated R Source Code Ingestion for Quarto Shinylive Demos (`inc_files`)
+
+To eliminate manual code duplication between R package source files in `R/` and the serverless WebAssembly Shinylive demo documents in `demos/*.qmd`, all `.qmd` demonstration applications use a dynamic `results='asis'` knitr code block.
+
+During `quarto render`, knitr reads the specified R source files directly from `R/` via `readLines()` and dynamically injects them into the `shinylive-r` code block before Shinylive WebAssembly compilation:
+
+```r
+```{r, echo=FALSE, results='asis'}
+inc_files <- c("R/inputApp.R", "R/sysetholApp.R")
+
+cat("```{shinylive-r}\n")
+cat("#| standalone: true\n")
+cat("#| viewerHeight: 880\n")
+cat("#| components: [viewer]\n\n")
+
+# [Libraries & Standalone Adapters]
+
+for (f in inc_files) {
+  src <- readLines(file.path("..", f), warn = FALSE)
+  cat(paste0("# --- Auto-Included from ", f, " ---\n\n"))
+  cat(paste(src, collapse = "\n"))
+  cat("\n\n")
+}
+
+# [App Launcher]
+cat("```\n")
+```
+```
+
+#### Demo Ingestion Mapping
+
+| Quarto Demo Document | Dynamic `inc_files` Auto-Included Source Files |
+| :--- | :--- |
+| **`demos/sysetholApp.qmd`** | `R/inputApp.R`, `R/sysetholApp.R` |
+| **`demos/fivePlotApp.qmd`** | `R/spline.R`, `R/five.R`, `R/fiveShowApp.R`, `R/fivePlotApp.R` |
+| **`demos/fiveShowApp.qmd`** | `R/spline.R`, `R/five.R`, `R/fiveShowApp.R` |
+| **`demos/tempApp.qmd`** | `R/temp.R`, `R/tempApp.R` |
+| **`demos/triangleApp.qmd`** | `R/triangle.R`, `R/substrate_triangle.R`, `R/triangleApp.R` |
+| **`demos/hexmoveApp.qmd`** | `R/substrate_triangle.R`, `R/hexmoveApp.R` |
+
+Whenever any R function, UI layout, slider parser, or state calculation in `R/` is modified, running `quarto render demos` automatically pulls all updated code across all gallery applications with zero manual copy-pasting required.
