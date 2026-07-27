@@ -111,6 +111,11 @@
   : Ewing Initialization App
 - [`initTemp()`](https://byandell.github.io/ewing/reference/initTemp.md)
   : temperature data tables for simulation
+- [`inputApp()`](https://byandell.github.io/ewing/reference/inputApp.md)
+  [`inputAppInput()`](https://byandell.github.io/ewing/reference/inputApp.md)
+  [`inputAppOutput()`](https://byandell.github.io/ewing/reference/inputApp.md)
+  [`inputAppServer()`](https://byandell.github.io/ewing/reference/inputApp.md)
+  : Input Data App
 - [`build_base_map()`](https://byandell.github.io/ewing/reference/leaflet.md)
   [`get_huc_from_point()`](https://byandell.github.io/ewing/reference/leaflet.md)
   [`get_hucs_from_polygon()`](https://byandell.github.io/ewing/reference/leaflet.md)
