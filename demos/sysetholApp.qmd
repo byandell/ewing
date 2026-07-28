@@ -264,7 +264,8 @@ make_sim_community <- function(nhost = 200, nparasite = 200) {
       parasite = list(org = p_mat, pch = p_pch, col = p_col)
     ),
     sub_names = sub_names,
-    history = data.frame()
+    history = data.frame(),
+    datasets = sample_input_datasets
   )
 
   sim <- record_history(sim)

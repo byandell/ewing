@@ -65,28 +65,50 @@ inputAppServer <- function(id, simres = shiny::reactiveVal(NULL), datafile = shi
       {
         name <- input$dataname %||% "organism.features"
         sim <- if (is.reactive(simres)) simres() else simres
-        if (is.null(sim)) sim <- init.simulation()
+        dfile <- if (is.reactive(datafile)) datafile() else datafile
+
+        if (is.null(sim)) sim <- tryCatch(init.simulation(datafile = dfile), error = function(e) NULL)
         sim_single <- if (inherits(sim, "ewing_discrete")) sim[[1]] else sim
 
-        switch(name,
-          "organism.features" = {
-            ft_h <- getOrgFeature(sim_single, "host", "features")
-            if (is.null(ft_h) || length(ft_h) == 0) {
-              data.frame(species = c("host", "parasite"), count = c(200, 100), stringsAsFactors = FALSE)
+        res <- NULL
+
+        # 1. Check if dataset is stored in sim$datasets (e.g. injected in webR demo)
+        if (!is.null(sim_single$datasets) && !is.null(sim_single$datasets[[name]])) {
+          res <- sim_single$datasets[[name]]
+        }
+
+        # 2. Extract dynamically via getOrgDataSimple or getOrg* package routines
+        if (is.null(res)) {
+          res <- tryCatch({
+            getOrgDataSimple(sim_single, name, datafile = dfile)
+          }, error = function(e) NULL)
+        }
+
+        # 3. Dynamic fallback to extracting from sim_single$org state structures
+        if (is.null(res) || !is.data.frame(res) || nrow(res) == 0) {
+          res <- tryCatch({
+            left <- stringr::str_remove(name, "\\..*")
+            right <- stringr::str_remove(name, ".*\\.")
+
+            if (left == "organism" && right == "features") {
+              if (!is.null(sim_single$org$Feature)) as.data.frame(sim_single$org$Feature) else NULL
+            } else if (left == "future") {
+              if (!is.null(sim_single$org$Future[[right]])) sim_single$org$Future[[right]] else getOrgFuture(sim_single, right)
+            } else if (!is.null(sim_single$org$Interact[[left]][[right]])) {
+              sim_single$org$Interact[[left]][[right]]
+            } else if (!is.null(sim_single$org[[left]][[right]])) {
+              sim_single$org[[left]][[right]]
             } else {
-              as.data.frame(ft_h)
+              NULL
             }
-          },
-          "future.host" = getOrgFuture(sim_single, "host"),
-          "future.parasite" = getOrgFuture(sim_single, "parasite"),
-          "substrate.host" = getOrgInteract(sim_single, "substrate", "host"),
-          "substrate.parasite" = getOrgInteract(sim_single, "substrate", "parasite"),
-          "substrate.substrate" = getOrgInteract(sim_single, "substrate", "substrate"),
-          "host.parasite" = getOrgInteract(sim_single, "host", "parasite"),
-          "temperature.base" = getOrgData(sim_single, "temperature", "base"),
-          "temperature.par" = getOrgData(sim_single, "temperature", "par"),
-          data.frame(Info = paste("Dataset", name, "selected"))
-        )
+          }, error = function(e) NULL)
+        }
+
+        if (is.null(res) || !is.data.frame(res) || nrow(res) == 0) {
+          res <- data.frame(Info = paste("Dataset", name, "is not available in current simulation instance."))
+        }
+
+        res
       },
       striped = TRUE,
       hover = TRUE,
