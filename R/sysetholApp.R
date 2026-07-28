@@ -103,12 +103,7 @@ sysetholInput <- function(id) {
       ),
       
       shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
-      shiny::checkboxGroupInput(ns("show_species"), "Species to Display:",
-                                choices = c("Host" = "host", "Parasite" = "parasite"),
-                                selected = c("host", "parasite"), inline = TRUE),
-      shiny::radioButtons(ns("species_mode"), "Species Mode:",
-                          choices = c("Overlay (1 Map)" = "overlay", "Separate (Adjacent Maps)" = "separate"),
-                          selected = "overlay", inline = TRUE)
+      substrateInput(ns("substrate"))
     )
   )
 }
@@ -183,7 +178,7 @@ sysetholServer <- function(id) {
       if (nsim_val == 1) {
         bslib::navset_tab(
           bslib::nav_panel("Dist Plots", bslib::card(shiny::plotOutput(ns("dist_plot"), height = "500px"))),
-          bslib::nav_panel("Substrate Plots", bslib::card(shiny::uiOutput(ns("substrate_ui")))),
+          bslib::nav_panel("Substrate Plots", bslib::card(substrateOutput(ns("substrate")))),
           bslib::nav_panel("Input Data", bslib::card(
             inputAppInput(ns("input_app")),
             inputAppOutput(ns("input_app"))
@@ -192,7 +187,7 @@ sysetholServer <- function(id) {
       } else {
         bslib::navset_tab(
           bslib::nav_panel("Dist Plots", bslib::card(shiny::plotOutput(ns("dist_plot"), height = "500px"))),
-          bslib::nav_panel("Substrate Plots", bslib::card(shiny::uiOutput(ns("substrate_ui")))),
+          bslib::nav_panel("Substrate Plots", bslib::card(substrateOutput(ns("substrate")))),
           bslib::nav_panel("Envelope Plots", bslib::card(shiny::plotOutput(ns("env_plot"), height = "500px"))),
           bslib::nav_panel("Input Data", bslib::card(
             inputAppInput(ns("input_app")),
@@ -212,50 +207,8 @@ sysetholServer <- function(id) {
       ggplot2::autoplot(ac)
     })
     
-    # Substrate Plots Tab
-    selected_species <- shiny::reactive({
-      sel <- input$show_species
-      if (is.null(sel) || length(sel) == 0) c("host", "parasite") else sel
-    })
-    
-    sppplot <- shiny::reactive({
-      sim <- current_sim()
-      shiny::req(sim)
-      spp <- selected_species()
-      mode_val <- input$species_mode %||% "overlay"
-      
-      # Extract single simulation object if discrete
-      sim_single <- if (inherits(sim, "ewing_discrete")) {
-        if (is.list(sim) && length(sim) > 0 && inherits(sim[[1]], "ewing")) sim[[1]] else NULL
-      } else sim
-      if (is.null(sim_single) || !inherits(sim_single, "ewing")) return(list())
-      
-      if (mode_val == "overlay") {
-        sub_data <- ewing_substrate(sim_single, spp, layout = "hex", width = 10, step_density = 1)
-        if (!is.null(sub_data)) list(ggplot_ewing_substrate(sub_data, layout = "hex")) else list()
-      } else {
-        plots <- lapply(spp, function(x) {
-          sub_data <- ewing_substrate(sim_single, x, layout = "hex", width = 10, step_density = 1)
-          if (!is.null(sub_data)) ggplot_ewing_substrate(sub_data, layout = "hex") else NULL
-        })
-        plots[!sapply(plots, is.null)]
-      }
-    })
-    
-    output$sppPlot <- shiny::renderPlot({
-      plots <- sppplot()
-      if (!is.null(plots) && length(plots) > 0) {
-        cowplot::plot_grid(plotlist = plots, ncol = length(plots), align = "h")
-      } else {
-        ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No species selected to plot")
-      }
-    })
-    
-    output$substrate_ui <- shiny::renderUI({
-      plots <- sppplot()
-      h_in <- 5.0
-      shiny::plotOutput(ns("sppPlot"), height = paste0(h_in, "in"))
-    })
+    # Substrate Plots Tab Module
+    substrateServer("substrate", simres = current_sim)
     
     # Envelope Plots Tab
     output$env_plot <- shiny::renderPlot({
