@@ -159,8 +159,8 @@ ewing_substrate <- function( community,
       tibble::tibble(xy), 
       stage = organism["stage",],
       substrate = substrates[organism["sub.stage",]],
-      pchar = factor(as.character( future$pch[.data$stage] ), levels = unique(as.character(future$pch))),
-      color = as.character( future$color[.data$stage] ),
+      pchar = factor(as.character( future$pch[.data$stage + 1] ), levels = unique(as.character(future$pch))),
+      color = as.character( future$color[.data$stage + 1] ),
       species = species),
     .data$substrate %in% show_sub)
   

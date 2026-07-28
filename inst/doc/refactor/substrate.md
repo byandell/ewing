@@ -18,8 +18,8 @@ The primary goal of this refactoring pipeline is to utilize **`substrateApp`** (
 - **Composable App Launcher**: Re-architected `hexmoveApp()` to compose its sidebar and main panel directly from `hexmoveAppInput`, `hexmoveAppOutput`, and `hexmoveAppServer`, cleanly delegating spatial grid stepping and plotting to `substrateServer`.
 
 ### 3. Shinylive WebAssembly Demos (`demos/`)
-- **`demos/sysetholApp.qmd`**: Expanded `inc_files` to include `R/ewing_substrate.R`, `R/substrate_triangle.R`, and `R/substrateApp.R` alongside `R/inputApp.R` and `R/sysetholApp.R` so client-side WebAssembly execution in Shinylive has complete access to substrate geometry rendering functions.
-- **`demos/hexmoveApp.qmd`**: Confirmed standalone Shinylive code generation utilizing `hexmoveAppInput` and `hexmoveAppOutput`.
+- **WebAssembly Script Dependencies (`inc_files`)**: Expanded `inc_files` in both `demos/sysetholApp.qmd` and `demos/hexmoveApp.qmd` to include `R/triangle.R`, `R/community.R`, `R/Org.R`, `R/substrate_triangle.R`, `R/ewing_substrate.R`, `R/substrateApp.R`, and `R/sysetholApp.R` / `R/hexmoveApp.R`.
+- **`get.species` & `Org` Fallbacks**: Updated `get.species` in `R/community.R` and `getOrgFuture`, `getOrgFeature`, `getOrgInteract` in `R/Org.R` with safe fallbacks for webR adapter objects (where `community$pop[[species]]$org` is present), resolving the Shinylive WebAssembly `'could not find function "get.species"'` runtime error.
 
 ---
 

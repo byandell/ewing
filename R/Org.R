@@ -6,26 +6,36 @@
 getOrgFeature <- function( community, species, feature = names( OrgFeature ))
 {
   OrgFeature <- getOrgInfo( community, "Feature" )
-  ## The global Organism$Feature contains static features of all organisms.
-  ## Return the feature as numeric if possible, or as character.
-  ## Missing value (NA) indicates no such feature is possible for that organism.
-  if( missing( species ))
-    return( row.names( OrgFeature ))
-  f <- OrgFeature[ species, feature ]
-  if( length( feature ) == 1 ) {
-    if( any( is.na( f )))
-      return( NA )
-    f <- as.character( f )
+  if (!is.null(OrgFeature)) {
+    if( missing( species ))
+      return( row.names( OrgFeature ))
+    f <- OrgFeature[ species, feature ]
+    if( length( feature ) == 1 ) {
+      if( any( is.na( f )))
+        return( NA )
+      f <- as.character( f )
+    }
+    else {
+      f <- apply( f, 2, as.character )
+    }
+    f <- c( unlist( f ))
+    numf <- suppressWarnings(as.numeric( f ))
+    if( all( !is.na( numf )))
+      f <- numf
+    return(f)
   }
-  else {
-    f <- apply( f, 2, as.character )
+  
+  # Fallback for webR standalone adapter objects
+  if (missing(species)) return(c("host", "parasite"))
+  if (missing(feature) || is.null(feature)) return(c(substrate = "substrate", units = "units"))
+  if (length(feature) == 1) {
+    if (feature == "substrate") return("substrate")
+    if (feature == "units") return("units")
+    return(NA)
   }
-  f <- c( unlist( f ))
-  ## try to interpret f as numeric
-  numf <- suppressWarnings(as.numeric( f ))
-  if( all( !is.na( numf )))
-    f <- numf
-  f
+  res <- rep("substrate", length(feature))
+  names(res) <- feature
+  res
 }
 ##########################################################################################
 getOrgHosts <- function( community, species,
@@ -43,27 +53,38 @@ getOrgFuture <- function( community, species, feature, current,
                           future = OrgFuture[[species]] )
 {
   OrgFuture <- getOrgInfo( community, "Future" )
-  ## The global Organism$Future[[species]] contains future event information.
-  ## Return the information as numeric if possible, or as character.
-  ## Missing value (NA) indicates no such feature is possible for that organism.
-  if( missing( current )) {
-    if( missing( feature ))
-      return( future )
-    future <- future[,feature]
+  if (!is.null(OrgFuture) && !is.null(OrgFuture[[species]])) {
+    future <- OrgFuture[[species]]
+    if( missing( current )) {
+      if( missing( feature ))
+        return( future )
+      future <- future[,feature]
+    }
+    else {
+      if( !is.numeric( current ))
+        current <- match( current, future$current, nomatch = 0 )
+      if( missing( feature ))
+        future <- future[ current, ]
+      else
+        future <- future[ current, feature ]
+    }
+    if( is.null( future ))
+      return( NA )
+    if(is.character( future ))
+      future <- as.factor(future)
+    return(future)
   }
-  else {
-    if( !is.numeric( current ))
-      current <- match( current, future$current, nomatch = 0 )
-    if( missing( feature ))
-      future <- future[ current, ]
-    else
-      future <- future[ current, feature ]
+  
+  # Fallback for webR standalone adapter objects
+  if (!is.null(community$pop[[species]])) {
+    pch_vec <- community$pop[[species]]$pch
+    col_vec <- community$pop[[species]]$col
+    fut <- data.frame(pch = pch_vec, color = col_vec, stringsAsFactors = FALSE)
+    if (missing(feature)) return(fut)
+    if (length(feature) == 1) return(fut[[feature]])
+    return(fut[, feature, drop = FALSE])
   }
-  if( is.null( future ))
-    return( NA )
-  if(is.character( future ))
-    future <- as.factor(future)
-  future
+  NULL
 }
 ###########################################################################################
 get.interact <- function( community, species, host, avail, event )
@@ -79,17 +100,23 @@ getOrgInteract <- function( community,
                             org2name, event = NULL )
 {
   OrgInteract <- getOrgInfo( community, "Interact" )
-  ## The global org$Interact[[org1name]][[org2name]] contains interaction information.
-  tmp <- OrgInteract[[org1name]][[org2name]]
-  if( is.null( event ))
-    return( tmp )
-  event <- as.character( event )
-  inter <- tmp[,event]
-  if( length( event ) == 1 )
-    names( inter ) <- row.names( tmp )
-  if(is.character(inter))
-    inter <- factor(inter)
-  inter
+  if (!is.null(OrgInteract) && !is.null(OrgInteract[[org1name]][[org2name]])) {
+    tmp <- OrgInteract[[org1name]][[org2name]]
+    if( is.null( event ))
+      return( tmp )
+    event <- as.character( event )
+    inter <- tmp[,event]
+    if( length( event ) == 1 )
+      names( inter ) <- row.names( tmp )
+    if(is.character(inter))
+      inter <- factor(inter)
+    return(inter)
+  }
+  
+  # Fallback for webR standalone adapter objects
+  sub_names <- if (!is.null(community$sub_names)) community$sub_names else c("fr1", "fr2", "fr3", "fr4", "twig", "lftop", "lfbot")
+  mat <- matrix(1, nrow = length(sub_names), ncol = 1, dimnames = list(sub_names, "substrate"))
+  as.data.frame(mat)
 }
 ###########################################################################################
 getOrgMeanValue <- function( community, species )

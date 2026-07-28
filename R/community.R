@@ -21,9 +21,24 @@ get.organisms <- function(datafile = "") {
 ###########################################################################################
 get.species <- function( community, species ) {
   if( missing( species ))
-    names( community$pop )
-  else
-    community$pop[[species]]
+    return( names( community$pop ))
+  if( is.numeric( species ))
+    species <- names( community$pop )[species]
+  if( is.null( species ) || !species %in% names( community$pop ))
+    return( NULL )
+  
+  ans <- community$pop[[species]]
+  if (is.list(ans) && !is.matrix(ans) && !is.data.frame(ans) && !is.null(ans$org)) {
+    ans <- ans$org
+  }
+  if (is.matrix(ans) || is.data.frame(ans)) {
+    if (!"up" %in% rownames(ans) && (is.null(colnames(ans)) || colnames(ans)[1] != "dummy")) {
+      dummy <- ans[, 1, drop = FALSE]
+      colnames(dummy) <- "dummy"
+      return(cbind(dummy, ans))
+    }
+  }
+  ans
 }
 ###########################################################################################
 get.species.element <- function( community, species, rows, cols )

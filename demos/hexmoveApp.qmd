@@ -15,7 +15,7 @@ format:
 The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). You can interactively step through simulation events (+1, +10, +100 steps), toggle species visibility (`Host`, `Parasite`), switch between **Overlay (1 Map)** and **Separate (Adjacent Maps)** view modes, and inspect organism positions on hexagonal substrate overlays.
 
 ```{r, echo=FALSE, results='asis'}
-inc_files <- c("R/inputApp.R", "R/substrateApp.R", "R/ewing_substrate.R", "R/substrate_triangle.R", "R/hexmoveApp.R")
+inc_files <- c("R/triangle.R", "R/community.R", "R/Org.R", "R/inputApp.R", "R/substrate_triangle.R", "R/ewing_substrate.R", "R/substrateApp.R", "R/hexmoveApp.R")
 
 cat("```{shinylive-r}\n")
 cat("#| standalone: true\n")
