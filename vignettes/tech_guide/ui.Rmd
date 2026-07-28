@@ -1,13 +1,20 @@
 ---
-title: "Systems Ethology Shiny UI Architecture"
+title: "UI Architecture"
 author: "Brian S. Yandell"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Systems Ethology Shiny UI Architecture}
+  %\VignetteIndexEntry{UI Architecture}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
+This document details the user interface architecture for the Systems Ethology platform (`sysetholApp`, `ewingApp`), sidebar scoping with `conditionalPanel`, log-scale geometric step sliders, multi-species overlay views, `downloadApp` integration, and AI prompt engineering history.
+
+---
+
+## 1. Systems Ethology Shiny UI Architecture
+
 
 
 - [Prompt](#prompt)
@@ -309,3 +316,21 @@ cat("```\n")
 | **`demos/hexmoveApp.qmd`** | `R/substrate_triangle.R`, `R/hexmoveApp.R` |
 
 Whenever any R function, UI layout, slider parser, or state calculation in `R/` is modified, running `quarto render demos` automatically pulls all updated code across all gallery applications with zero manual copy-pasting required.
+
+---
+
+## 2. Engineering Prompt History
+
+
+
+## [CRAFT Prompt](https://tyson-swetnam.github.io/intro-gpt/prompts/#the-craft-framework)
+
+Context: I'm refactoring a package for predator-prey simulation modeling
+
+Role: Act as an experienced R package developer and simulation modeler
+
+Action: Review my draft code in this repo and suggest improvements
+
+Format: Provide feedback as tracked changes with explanations
+
+Tone: Professional, constructive, and encouraging

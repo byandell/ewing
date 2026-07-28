@@ -1,13 +1,14 @@
 ---
-title: "Thermal Regimes, Splines & Degree-Days"
+title: "Thermal Regimes"
 author: "Brian S. Yandell"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Thermal Regimes, Splines & Degree-Days}
+  %\VignetteIndexEntry{Thermal Regimes}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
 
 
 This document details the routines in the **ewing** package for adjusting daily high/low temperatures and life stage transition splines, as well as the refactoring details for `tempApp()` and its Shinylive WebAssembly demo.
