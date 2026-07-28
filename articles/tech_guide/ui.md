@@ -441,37 +441,46 @@ ewingServer <- function(id) {
 }
 ```
 
-### Automated R Source Code Ingestion for Quarto Shinylive Demos (`inc_files`)
+### Automated R Source Code & Data Ingestion for Quarto Shinylive Demos
 
-To eliminate manual code duplication between R package source files in
-`R/` and the serverless WebAssembly Shinylive demo documents in
-`demos/*.qmd`, all `.qmd` demonstration applications use a dynamic
-`results='asis'` knitr code block.
+To eliminate manual code and data duplication between R package files
+(`R/`, `data/`) and the serverless WebAssembly Shinylive demo documents
+in `demos/*.qmd`, all `.qmd` demonstration applications use dynamic
+`results='asis'` knitr code blocks.
 
-During `quarto render`, knitr reads the specified R source files
-directly from `R/` via
+During `quarto render`: 1. **Source Code Ingestion (`inc_files`)**:
+knitr reads specified R source files directly from `R/` via
 [`readLines()`](https://rdrr.io/r/base/readLines.html) and dynamically
 injects them into the `shinylive-r` code block before Shinylive
-WebAssembly compilation:
+WebAssembly compilation. 2. **Package Data Ingestion (`data/*.txt`)**:
+knitr scans all default parameter tables in `data/*.txt`
+(`organism.features`, `future.host`, `future.parasite`,
+`substrate.host`, `substrate.parasite`, `substrate.substrate`,
+`host.parasite`, `temperature.base`, `temperature.par`, `redscale`),
+reads them via
+[`read.table()`](https://rdrr.io/r/utils/read.table.html), and
+serializes the complete dataset list via
+[`dput()`](https://rdrr.io/r/base/dput.html) into
+`sample_input_datasets`.
 
 ``` r
 ```
 
 #### Demo Ingestion Mapping
 
-| Quarto Demo Document | Dynamic `inc_files` Auto-Included Source Files |
-|:---|:---|
-| **`demos/sysetholApp.qmd`** | `R/inputApp.R`, `R/sysetholApp.R` |
-| **`demos/fivePlotApp.qmd`** | `R/spline.R`, `R/five.R`, `R/fiveShowApp.R`, `R/fivePlotApp.R` |
-| **`demos/fiveShowApp.qmd`** | `R/spline.R`, `R/five.R`, `R/fiveShowApp.R` |
-| **`demos/tempApp.qmd`** | `R/temp.R`, `R/tempApp.R` |
-| **`demos/triangleApp.qmd`** | `R/triangle.R`, `R/substrate_triangle.R`, `R/triangleApp.R` |
-| **`demos/hexmoveApp.qmd`** | `R/substrate_triangle.R`, `R/hexmoveApp.R` |
+| Quarto Demo Document | Dynamic `inc_files` Auto-Included Source Files | Automated Data Assets |
+|:---|:---|:---|
+| **`demos/sysetholApp.qmd`** | `R/inputApp.R`, `R/sysetholApp.R` | `data/*.txt` (`sample_input_datasets`) |
+| **`demos/fivePlotApp.qmd`** | `R/spline.R`, `R/five.R`, `R/fiveShowApp.R`, `R/fivePlotApp.R` | `data/*.txt` |
+| **`demos/fiveShowApp.qmd`** | `R/spline.R`, `R/five.R`, `R/fiveShowApp.R` | `data/*.txt` |
+| **`demos/tempApp.qmd`** | `R/temp.R`, `R/tempApp.R` | `data/*.txt` |
+| **`demos/triangleApp.qmd`** | `R/triangle.R`, `R/substrate_triangle.R`, `R/triangleApp.R` | `data/*.txt` |
+| **`demos/hexmoveApp.qmd`** | `R/substrate_triangle.R`, `R/hexmoveApp.R` | `data/*.txt` |
 
-Whenever any R function, UI layout, slider parser, or state calculation
-in `R/` is modified, running `quarto render demos` automatically pulls
-all updated code across all gallery applications with zero manual
-copy-pasting required.
+Whenever any R function, UI layout, slider parser, or default dataset
+table in `R/` or `data/` is modified, running `quarto render demos`
+automatically pulls all updated code and data across all gallery
+applications with zero manual copy-pasting required.
 
 ------------------------------------------------------------------------
 

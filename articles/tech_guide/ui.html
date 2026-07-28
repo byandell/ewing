@@ -605,18 +605,28 @@ graphic downloads:</p>
 <span><span class="op">}</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="automated-r-source-code-ingestion-for-quarto-shinylive-demos-inc_files">Automated R Source Code Ingestion for Quarto Shinylive Demos
-(<code>inc_files</code>)<a class="anchor" aria-label="anchor" href="#automated-r-source-code-ingestion-for-quarto-shinylive-demos-inc_files"></a>
+<h3 id="automated-r-source-code-data-ingestion-for-quarto-shinylive-demos">Automated R Source Code &amp; Data Ingestion for Quarto Shinylive
+Demos<a class="anchor" aria-label="anchor" href="#automated-r-source-code-data-ingestion-for-quarto-shinylive-demos"></a>
 </h3>
-<p>To eliminate manual code duplication between R package source files
-in <code>R/</code> and the serverless WebAssembly Shinylive demo
-documents in <code>demos/*.qmd</code>, all <code>.qmd</code>
-demonstration applications use a dynamic <code>results='asis'</code>
-knitr code block.</p>
-<p>During <code>quarto render</code>, knitr reads the specified R source
-files directly from <code>R/</code> via <code><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines()</a></code> and
+<p>To eliminate manual code and data duplication between R package files
+(<code>R/</code>, <code>data/</code>) and the serverless WebAssembly
+Shinylive demo documents in <code>demos/*.qmd</code>, all
+<code>.qmd</code> demonstration applications use dynamic
+<code>results='asis'</code> knitr code blocks.</p>
+<p>During <code>quarto render</code>: 1. <strong>Source Code Ingestion
+(<code>inc_files</code>)</strong>: knitr reads specified R source files
+directly from <code>R/</code> via <code><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines()</a></code> and
 dynamically injects them into the <code>shinylive-r</code> code block
-before Shinylive WebAssembly compilation:</p>
+before Shinylive WebAssembly compilation. 2. <strong>Package Data
+Ingestion (<code>data/*.txt</code>)</strong>: knitr scans all default
+parameter tables in <code>data/*.txt</code>
+(<code>organism.features</code>, <code>future.host</code>,
+<code>future.parasite</code>, <code>substrate.host</code>,
+<code>substrate.parasite</code>, <code>substrate.substrate</code>,
+<code>host.parasite</code>, <code>temperature.base</code>,
+<code>temperature.par</code>, <code>redscale</code>), reads them via
+<code><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.table()</a></code>, and serializes the complete dataset list via
+<code><a href="https://rdrr.io/r/base/dput.html" class="external-link">dput()</a></code> into <code>sample_input_datasets</code>.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"></code></pre></div>
 <div class="section level4">
@@ -624,13 +634,15 @@ before Shinylive WebAssembly compilation:</p>
 </h4>
 <table class="table">
 <colgroup>
-<col width="50%">
-<col width="50%">
+<col width="33%">
+<col width="33%">
+<col width="33%">
 </colgroup>
 <thead><tr class="header">
 <th align="left">Quarto Demo Document</th>
 <th align="left">Dynamic <code>inc_files</code> Auto-Included Source
 Files</th>
+<th align="left">Automated Data Assets</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
@@ -639,6 +651,9 @@ Files</th>
 <code>R/inputApp.R</code>,
 <code>R/sysetholApp.R</code>
 </td>
+<td align="left">
+<code>data/*.txt</code>
+(<code>sample_input_datasets</code>)</td>
 </tr>
 <tr class="even">
 <td align="left"><strong><code>demos/fivePlotApp.qmd</code></strong></td>
@@ -646,6 +661,7 @@ Files</th>
 <code>R/spline.R</code>, <code>R/five.R</code>,
 <code>R/fiveShowApp.R</code>, <code>R/fivePlotApp.R</code>
 </td>
+<td align="left"><code>data/*.txt</code></td>
 </tr>
 <tr class="odd">
 <td align="left"><strong><code>demos/fiveShowApp.qmd</code></strong></td>
@@ -653,12 +669,14 @@ Files</th>
 <code>R/spline.R</code>, <code>R/five.R</code>,
 <code>R/fiveShowApp.R</code>
 </td>
+<td align="left"><code>data/*.txt</code></td>
 </tr>
 <tr class="even">
 <td align="left"><strong><code>demos/tempApp.qmd</code></strong></td>
 <td align="left">
 <code>R/temp.R</code>, <code>R/tempApp.R</code>
 </td>
+<td align="left"><code>data/*.txt</code></td>
 </tr>
 <tr class="odd">
 <td align="left"><strong><code>demos/triangleApp.qmd</code></strong></td>
@@ -666,6 +684,7 @@ Files</th>
 <code>R/triangle.R</code>,
 <code>R/substrate_triangle.R</code>, <code>R/triangleApp.R</code>
 </td>
+<td align="left"><code>data/*.txt</code></td>
 </tr>
 <tr class="even">
 <td align="left"><strong><code>demos/hexmoveApp.qmd</code></strong></td>
@@ -673,13 +692,14 @@ Files</th>
 <code>R/substrate_triangle.R</code>,
 <code>R/hexmoveApp.R</code>
 </td>
+<td align="left"><code>data/*.txt</code></td>
 </tr>
 </tbody>
 </table>
-<p>Whenever any R function, UI layout, slider parser, or state
-calculation in <code>R/</code> is modified, running
+<p>Whenever any R function, UI layout, slider parser, or default dataset
+table in <code>R/</code> or <code>data/</code> is modified, running
 <code>quarto render demos</code> automatically pulls all updated code
-across all gallery applications with zero manual copy-pasting
+and data across all gallery applications with zero manual copy-pasting
 required.</p>
 <hr>
 </div>
