@@ -523,57 +523,19 @@ plot_envelope <- function(nsim = 10, confidence = TRUE) {
                   x = "Simulation Step", y = "Population Count")
 }
 
-sample_input_datasets <- list(
-  "organism.features" = data.frame(
-    species = c("host", "parasite"),
-    init.size = c(200, 100),
-    units = c("DD", "DD"),
-    reproduction = c("oviparous", "oviparous"),
-    parasitism = c("none", "solitary"),
-    stringsAsFactors = FALSE
-  ),
-  "future.host" = data.frame(
-    stage = 0:6,
-    label = c("Egg", "Larva1", "Larva2", "Larva3", "Pupa", "Adult", "Dead"),
-    pch = c("0", "1", "2", "3", "4", "5", "V"),
-    color = c("brown", "green", "turquoise", "blue", "violet", "purple", "magenta"),
-    stringsAsFactors = FALSE
-  ),
-  "future.parasite" = data.frame(
-    stage = 1:5,
-    label = c("Egg", "Larva", "Pupa", "Adult", "Female"),
-    pch = c("E", "L", "p", "P", "F"),
-    color = c("brown", "green", "turquoise", "blue", "orange"),
-    stringsAsFactors = FALSE
-  ),
-  "substrate.host" = data.frame(
-    substrate = c("fr1", "fr2", "fr3", "fr4", "twig", "lftop", "lfbot"),
-    weight = c(0.15, 0.1, 0.1, 0.1, 0.1, 0.4, 0.05),
-    stringsAsFactors = FALSE
-  ),
-  "substrate.parasite" = data.frame(
-    substrate = c("fr1", "fr2", "fr3", "fr4", "twig", "lftop", "lfbot"),
-    weight = c(0.1, 0.1, 0.1, 0.15, 0.1, 0.4, 0.05),
-    stringsAsFactors = FALSE
-  ),
-  "substrate.substrate" = data.frame(
-    from = c("lftop", "lftop", "twig", "fr1"),
-    to = c("lfbot", "twig", "fr1", "fr2"),
-    connectivity = c(0.8, 0.5, 0.6, 0.7),
-    stringsAsFactors = FALSE
-  ),
-  "temperature.base" = data.frame(
-    day = 1:5,
-    low = c(68, 70, 72, 71, 69),
-    high = c(85, 87, 88, 86, 84),
-    stringsAsFactors = FALSE
-  ),
-  "temperature.par" = data.frame(
-    parameter = c("base_temp", "opt_temp", "max_temp"),
-    value = c(50, 75, 95),
-    stringsAsFactors = FALSE
-  )
-)\n\n')
+}
+
+data_files <- list.files(file.path("..", "data"), pattern = "\\.txt$", full.names = TRUE)
+sample_datasets <- list()
+for (f in data_files) {
+  tbl_name <- sub("\\.txt$", "", basename(f))
+  sample_datasets[[tbl_name]] <- read.table(f, header = TRUE, check.names = FALSE, stringsAsFactors = FALSE)
+}
+
+cat("sample_input_datasets <- ")
+dput(sample_datasets)
+cat("\n\n")
+')
 
 # --- Dynamically Auto-Include Selected R/ Source Files ---
 for (f in inc_files) {
