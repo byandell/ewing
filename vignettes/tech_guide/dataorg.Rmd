@@ -1,4 +1,14 @@
-# Data Organization
+---
+title: "Community Simulation State & Data Matrices"
+author: "Brian S. Yandell"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Community Simulation State & Data Matrices}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
 
 This document details the critical data structures and primary execution pipelines used internally to drive the event-based simulation in Quantitative Population Ethology.
 

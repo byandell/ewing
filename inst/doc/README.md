@@ -1,11 +1,8 @@
-# Ewing Documentation Overview
+# Ewing Package Documentation
 
-This directory houses the foundational user-facing documentation and datasets for the `ewing` project.
+This directory houses the foundational user-facing documentation, datasets, and internal technical reference guides for the `ewing` project.
 
-- **[datasets.md](datasets.md)**: Outlines the Predator-Prey datasets injected as global parameter structures into the model.
-- **[refactor](refactor/)**: This sub-directory serves as a specialized, internal repository.
-It contains detailed architectural notes, structural development records,
-and deep legacy codebase refactoring logs.
-These technical documents have been compartmentalized there
-to streamline this main documentation hub for standard users and data analysts,
-whilst preserving deep engineering context for package maintainers.
+- **[datasets.md](datasets.md)**: Outlines the Predator-Prey datasets injected as global parameter structures into the simulation model.
+- **[github_actions.md](github_actions.md)**: CI/CD GitHub Actions workflow setup, automated pkgdown site builds, and Shinylive WebAssembly deployment pipelines.
+- **[guide.md](guide.md)**: Meta-documentation detailing the creation and vignette migration of the package Developer Guide.
+- **[Technical Guide](../../vignettes/tech_guide/index.Rmd)**: Internal technical reference manual containing deep architectural specifications, spatial dispersal mathematics, leftist-tree state engine mechanics, thermal degree-day integration, and GIS watershed overlay algorithms (rendered online at [articles/tech_guide/](https://byandell.github.io/ewing/articles/tech_guide/)).

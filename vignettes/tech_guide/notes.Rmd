@@ -1,0 +1,11 @@
+---
+title: "Technical Architectural Scratchpad"
+author: "Brian S. Yandell"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Technical Architectural Scratchpad}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+

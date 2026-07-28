@@ -1,4 +1,14 @@
-# Interactive Geographic Feature Search in R
+---
+title: "Interactive Leaflet Map Discovery"
+author: "Brian S. Yandell"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Interactive Leaflet Map Discovery}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
 
 To interactively look up and spatially identify geographic features (like Isle Royale, Yellowstone, or specific lakes) natively within R, you generally need to combine a **Geocoding Engine** (to translate text to coordinates) with an **Interactive Mapping Canvas**.
 

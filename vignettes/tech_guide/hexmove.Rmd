@@ -1,4 +1,14 @@
-# Organism Movement on Hex Grid (`hexmoveApp`)
+---
+title: "Rescaled Hexagonal Substrate Movement"
+author: "Brian S. Yandell"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Rescaled Hexagonal Substrate Movement}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
 
 ## Prompts
 
@@ -20,7 +30,7 @@ one step at a time or multiple steps.
 
 ## Architectural Rationale & Overview
 
-The `hexmoveApp` application visualizes host and parasite spatial positions mapped directly onto a unified hexagonal substrate network topology ([create_substrate](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/substrate_triangle.R#L66)).
+The `hexmoveApp` application visualizes host and parasite spatial positions mapped directly onto a unified hexagonal substrate network topology ([create_substrate](../../R/substrate_triangle.R#L66)).
 
 Instead of rendering substrate components (`fr1..fr4`, `tw1..tw2`, `lftop`, `lfbot`) in isolated rectangular panel facets (as done in the original `substrateApp()`), `hexmoveApp` places every organism on a continuous hexagonal substrate plane based on its native tridiagonal coordinates $(a, b, c)$ and its active substrate patch (`sub.stage`).
 
@@ -37,7 +47,7 @@ Each organism in an `ewing` simulation tracks its substrate position in `individ
 - `twig` / `tw1`, `tw2`: Twig component facets
 - `lftop`, `lfbot`: Leaf top and bottom surface facets
 
-[substrate_topology](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/substrate_triangle.R#L37) defines topological offsets $\mathbf{o} = (o_a, o_b, o_c)$ and component orientations (`dir = "up"` or `"down"`) for each substrate element. Substrate component names like `twig` are mapped to `tw1` to ensure every individual is placed precisely on its active substrate patch.
+[substrate_topology](../../R/substrate_triangle.R#L37) defines topological offsets $\mathbf{o} = (o_a, o_b, o_c)$ and component orientations (`dir = "up"` or `"down"`) for each substrate element. Substrate component names like `twig` are mapped to `tw1` to ensure every individual is placed precisely on its active substrate patch.
 
 ### 2. Per-Substrate Unit Triangle Rescaling
 
@@ -81,7 +91,7 @@ This guarantees that all organisms on substrate $S$ are displayed strictly insid
 
 ## Hexagonal Grid Overlay (`create_hex_overlay`)
 
-A discrete hexagonal grid overlay is generated over the substrate lattice points (`sub_obj$points`) using [create_hex_overlay()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/substrate_triangle.R#L175).
+A discrete hexagonal grid overlay is generated over the substrate lattice points (`sub_obj$points`) using [create_hex_overlay()](../../R/substrate_triangle.R#L175).
 
 For each lattice center $(x_0, y_0)$, a 6-sided polygon cell is computed:
 $$x_k = x_0 + r \cos\left(\frac{\pi}{6} + \frac{k\pi}{3}\right), \quad y_k = y_0 + r \sin\left(\frac{\pi}{6} + \frac{k\pi}{3}\right) \quad \text{for } k = 0, \dots, 5$$
@@ -91,7 +101,7 @@ where radius $r = \frac{step \cdot d}{\sqrt{3}}$ scales with grid spacing `step`
 
 ## Interactive Simulation Stepping
 
-The interactive controls in [substrateInput](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/substrateApp.R#L35) and [substrateServer](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/substrateApp.R#L80) provide:
+The interactive controls in [substrateInput](../../R/substrateApp.R#L35) and [substrateServer](../../R/substrateApp.R#L80) provide:
 - **Stepping Action Buttons**: `+1 Step`, `+10 Steps`, `+100 Steps`, and `Reset`. Clicking a step button executes `future.events(sim, nstep = n)` and reactively updates the substrate visualization.
 - **Species Filter & View Modes**: Checkboxes for selecting species (`host`, `parasite`) and radio buttons for `Overlay (1 Map)` vs `Separate (Adjacent Maps)`.
 - **Layout Switching**: Toggle between `"Hex Substrate Overlay"` (global hexagonal network) and `"Faceted Substrates"` (panel view faceted by substrate element `fr1..fr4`, `twig`, `lftop`, `lfbot`).
@@ -114,4 +124,4 @@ mysim <- future.events(mysim, nstep = 100)
 hexmoveApp(mysim)
 ```
 
-The app launcher script is located at [inst/scripts/hexmoveApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/scripts/hexmoveApp.R).
+The app launcher script is located at [inst/scripts/hexmoveApp.R](../../inst/scripts/hexmoveApp.R).

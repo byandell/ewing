@@ -1,4 +1,14 @@
-# Refactor package with AI
+---
+title: "S3 Object Model & Queue Architecture"
+author: "Brian S. Yandell"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{S3 Object Model & Queue Architecture}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
 
 ## Prompt
 

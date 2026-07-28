@@ -19,7 +19,7 @@ Again, document the process in `inst/doc/guide.md`.
 
 ## 2. Prototype History & References
 
-Prior to writing the full Developer Guide, several individual-module documentation prototypes and refactoring logs existed in [inst/doc/refactor/](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/doc/refactor/):
+Prior to writing the full Developer Guide, several individual-module documentation prototypes and refactoring logs existed in [inst/doc/refactor/](refactor/):
 
 - **`refactor/shineup.md`**: Explains modularizing `ewingApp.R` into submodules (`simApp.R`, `initParApp.R`, `distPlotApp.R`, `substrateApp.R`, `envPlotApp.R`, `downloadApp.R`) to resolve caching, datatable render bugs, and open PDF device locks.
 - **`refactor/dataorg.md`**: Outlines the core `community` state object and matrix layout mappings.
@@ -33,17 +33,17 @@ These design records served as the functional specifications and prototypes used
 ## 3. Steps Performed
 
 1. **Workspace Inspection**:
-   Analyzed all Shiny modules (`*App.R`) on the system and compared their structures to the legacy dashboard ([origEwingApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/origEwingApp.R) and [multApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/multApp.R)).
+   Analyzed all Shiny modules (`*App.R`) on the system and compared their structures to the legacy dashboard ([origEwingApp.R](../../R/origEwingApp.R) and [multApp.R](../../R/multApp.R)).
 2. **Directory Initialization**:
    Created the target folder `inst/doc/devel_guide/` to host the guides.
-3. **Index Creation ([README.md](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/doc/devel_guide/README.md))**:
+3. **Index Creation ([README.md](../../vignettes/devel_guide/index.Rmd))**:
    Formulated the entry point outlining folder organization, package datasets (`default.xlsx`), and a comprehensive index mapping every Shiny source file to its dashboard roles.
-4. **Architecture Documentation ([architecture.md](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/doc/devel_guide/architecture.md))**:
+4. **Architecture Documentation ([architecture.md](../../vignettes/devel_guide/architecture.Rmd))**:
    Created visual Mermaid charts tracing data flows through `ewingServer` and mapped the parameters exposed by each submodule.
 5. **Detailed Panel Sub-Guides**:
-    - Written [simulation.md](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/doc/devel_guide/simulation.md) mapping parameter worksheets loading to active step-wise runs.
-    - Written [visualization.md](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/doc/devel_guide/visualization.md) charting demographic distributions, spatial substrates, and envelopes.
-    - Written [utilities.md](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/doc/devel_guide/utilities.md) detailing download safety wrappers, Leaflet GIS explorer features, and developer inspection widgets.
+    - Written [simulation.md](../../vignettes/devel_guide/simulation.Rmd) mapping parameter worksheets loading to active step-wise runs.
+    - Written [visualization.md](../../vignettes/devel_guide/visualization.Rmd) charting demographic distributions, spatial substrates, and envelopes.
+    - Written [utilities.md](../../vignettes/devel_guide/utilities.Rmd) detailing download safety wrappers, Leaflet GIS explorer features, and developer inspection widgets.
 6. **Vignette Migration**:
    - Relocated files from the `inst/doc/devel_guide/` directory to the `vignettes/devel_guide/` directory to prevent them from being deleted during site builds.
    - Renamed developer guide files in `vignettes/devel_guide/` from `.md` to `.Rmd` and injected standard package vignette YAML headers. This enables `pkgdown` to automatically recognize and build them as articles.
@@ -57,7 +57,7 @@ These design records served as the functional specifications and prototypes used
    - Updated `.gitignore`: Added `docs` to ignore the local compiled website output directory.
    - Created `.github/workflows/pkgdown.yaml`: Set up the official `pkgdown` GitHub Action workflow to build the website and deploy it to the `gh-pages` branch on every push.
    - Ran `Rscript -e "pkgdown::build_site()"` locally and successfully built the site, checking references and page links.
-   - Resolved package dependency compilation bugs by appending missing packages (`DT`, `cowplot`, `leaflet`, `leaflet.extras`, `nhdplusTools`, and `bslib`) to the `Imports:` field in [DESCRIPTION](file:///Users/brianyandell/Documents/Research/ewing/ewing/DESCRIPTION). This ensures that standard installers (such as `pak` inside the GitHub Actions runner) download these dependencies before R CMD build builds the lazy-loaded databases.
+   - Resolved package dependency compilation bugs by appending missing packages (`DT`, `cowplot`, `leaflet`, `leaflet.extras`, `nhdplusTools`, and `bslib`) to the `Imports:` field in [DESCRIPTION](../../DESCRIPTION). This ensures that standard installers (such as `pak` inside the GitHub Actions runner) download these dependencies before R CMD build builds the lazy-loaded databases.
 
 ---
 

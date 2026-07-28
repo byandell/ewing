@@ -25,10 +25,10 @@ See also
   - [Systems Ethology--The Life and Work of Bland Ewing](https://byandell.github.io/pages/ewing/)
 - Tools and Data
   - [Predator-Prey Datasets](https://github.com/byandell/ewing/blob/master/inst/doc/datasets.md)
-  - [Ewing Package Documentation](https://github.com/byandell/ewing/blob/master/inst/doc/refactor/)
   - [Articles](https://byandell.github.io/ewing/articles/)
-    - [Developer Guide](https://byandell.github.io/ewing/articles/devel_guide/)
     - [Tutorial Vignette](https://byandell.github.io/ewing/articles/ewing.html)
+    - [Developer Guide](https://byandell.github.io/ewing/articles/devel_guide/)
+    - [Technical Guide](https://byandell.github.io/ewing/articles/tech_guide/)
   - [Demos](https://byandell.github.io/ewing/demos/)
   - [Systems Ethology App](https://connect.doit.wisc.edu/SystemsEthology)
 

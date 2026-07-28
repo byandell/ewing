@@ -16,7 +16,7 @@ navbar:
         - text: "Demos Gallery"
           href: demos/index.html
         - text: "-------"
-        - text: "Developer Guides"
+        - text: "Developer Guide"
         - text: "Developer Guide Overview"
           href: articles/devel_guide/index.html
         - text: "Module Architecture"
@@ -27,6 +27,18 @@ navbar:
           href: articles/devel_guide/visualization.html
         - text: "Utilities & Companion Apps"
           href: articles/devel_guide/utilities.html
+        - text: "-------"
+        - text: "Technical Guide"
+        - text: "Technical Guide Overview"
+          href: articles/tech_guide/index.html
+        - text: "Core Engine & Data Matrices"
+          href: articles/tech_guide/dataorg.html
+        - text: "Spatial Substrate Mathematics"
+          href: articles/tech_guide/triangle.html
+        - text: "Thermal Regimes & Degree-Days"
+          href: articles/tech_guide/time_temp.html
+        - text: "GIS Watershed Projections"
+          href: articles/tech_guide/watershed.html
 
 articles:
   - title: "User Documentation"
@@ -39,3 +51,19 @@ articles:
       - "devel_guide/simulation"
       - "devel_guide/visualization"
       - "devel_guide/utilities"
+  - title: "Technical Guide"
+    contents:
+      - "tech_guide/index"
+      - "tech_guide/dataorg"
+      - "tech_guide/refactor"
+      - "tech_guide/futures"
+      - "tech_guide/triangle"
+      - "tech_guide/substrate"
+      - "tech_guide/hexmove"
+      - "tech_guide/time_temp"
+      - "tech_guide/leaflet"
+      - "tech_guide/watershed"
+      - "tech_guide/connect"
+      - "tech_guide/shineup"
+      - "tech_guide/notes"
+      - "tech_guide/prompts"

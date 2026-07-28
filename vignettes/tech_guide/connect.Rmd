@@ -1,4 +1,14 @@
-# Quarto Demos & Publishing Deployment: GitHub Pages vs. Posit Connect
+---
+title: "Quarto Shinylive & Posit Connect Deployment"
+author: "Brian S. Yandell"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Quarto Shinylive & Posit Connect Deployment}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
 
 ## Prompt
 

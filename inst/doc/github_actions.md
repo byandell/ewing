@@ -20,12 +20,15 @@ When pushed to the repository's `main` branch, GitHub Actions builds and publish
 ## 2. User Prompts & Technical Diagnosis
 
 ### Initial Problem Statement
+>
 > *"demos/fivePlotApp.qmd and demos/fiveShowApp.qmd spin up but do not render properly. Where there should be the app, there is code. It begins with '| '!! shinylive warning !!': | #| shinylive does not work in self-contained HTML documents. #| Please set `embed-resources: false` in your metadata."*
 
 ### Concerns & Clarifications
+>
 > *"Challenge with plan is that I don't want to upload shinylive resources--I want that to be done server side. Is that what we are doing? Concerned about setting embed-resources to false."*
 
 ### Root Cause Diagnosis
+
 1. **Shinylive WASM Execution Requirements**: Shinylive uses browser WebAssembly (`webR`) and service workers (`shinylive-sw.js`). Modern browser security models block WebWorkers from executing inside self-contained data URIs (`embed-resources: true`).
 2. **Quarto Shinylive Lua Filter Warning**: When `quarto preview` or `quarto render` runs in self-contained HTML mode (or when `--embed-resources` is passed), the Shinylive Lua filter outputs a fallback code block starting with `#| '!! shinylive warning !!': |`.
 3. **Repository Cleanliness vs. CI/CD Build**:
@@ -38,7 +41,7 @@ When pushed to the repository's `main` branch, GitHub Actions builds and publish
 
 ## 3. Architecture & GitHub Actions Workflow
 
-The automated deployment pipeline is defined in [.github/workflows/pkgdown.yaml](file:///Users/brianyandell/Documents/Research/ewing/ewing/.github/workflows/pkgdown.yaml).
+The automated deployment pipeline is defined in [.github/workflows/pkgdown.yaml](../../.github/workflows/pkgdown.yaml).
 
 ```mermaid
 graph TD
@@ -111,7 +114,8 @@ jobs:
 
 ## 4. Configuration Reference
 
-### A. Quarto Site Metadata ([demos/_quarto.yml](file:///Users/brianyandell/Documents/Research/ewing/ewing/demos/_quarto.yml))
+### A. Quarto Site Metadata ([demos/_quarto.yml](../../demos/_quarto.yml))
+
 ```yaml
 project:
   type: website
@@ -145,7 +149,8 @@ filters:
   - quarto-ext/shinylive
 ```
 
-### B. Application Document Frontmatter ([demos/fivePlotApp.qmd](file:///Users/brianyandell/Documents/Research/ewing/ewing/demos/fivePlotApp.qmd))
+### B. Application Document Frontmatter ([demos/fivePlotApp.qmd](../../demos/fivePlotApp.qmd))
+
 ```yaml
 ---
 title: "fivePlotApp (Shinylive)"
@@ -159,7 +164,8 @@ format:
 ---
 ```
 
-### C. Pkgdown Navigation Link ([_pkgdown.yml](file:///Users/brianyandell/Documents/Research/ewing/ewing/_pkgdown.yml))
+### C. Pkgdown Navigation Link ([_pkgdown.yml](../../_pkgdown.yml))
+
 ```yaml
 navbar:
   components:
@@ -180,11 +186,15 @@ navbar:
 To build and preview the demos locally:
 
 1. Render the Quarto project:
+
    ```bash
    quarto render demos
    ```
+
 2. Serve the `docs/` output directory over HTTP (Shinylive WebWorkers require HTTP/HTTPS serving and cannot be opened via `file://` protocols):
+
    ```bash
    python3 -m http.server 8000 --directory docs
    ```
+
 3. Navigate to `http://localhost:8000/demos/index.html` in your browser.

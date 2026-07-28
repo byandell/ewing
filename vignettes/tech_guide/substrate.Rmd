@@ -1,4 +1,14 @@
-# Substrate Movement on Map (`substrateApp`)
+---
+title: "Substrate Organism Movement Module"
+author: "Brian S. Yandell"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Substrate Organism Movement Module}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
 
 ## Overview
 

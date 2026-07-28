@@ -3,7 +3,7 @@ title: "Ewing Individual-Based Modeling"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{ewing}
+  %\VignetteIndexEntry{Ewing Individual-Based Modeling}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

@@ -1,4 +1,14 @@
-# Modify Shiny App to Step Through Simulation
+---
+title: "Leftist-Tree Queue & Development Tracker"
+author: "Brian S. Yandell"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Leftist-Tree Queue & Development Tracker}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
 
 ## Prompt
 
@@ -151,18 +161,18 @@ The `interactive step-by-step` refactor is completely deployed and verified. The
 - **Organism Movement on Hex Grid (`hexmoveApp`)**:
   - Implemented per-substrate unit triangle coordinate rescaling ($[0, W_{sub\_S}]$) with a 15% inner padding buffer to keep organism symbols 100% inside their substrate polygon borders.
   - Created discrete 6-sided polygon tile overlay (`create_hex_overlay`) across plant substrate elements.
-  - Created `hexmoveApp` launcher script ([`inst/scripts/hexmoveApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/scripts/hexmoveApp.R)) and Quarto demo ([`demos/hexmoveApp.qmd`](file:///Users/brianyandell/Documents/Research/ewing/ewing/demos/hexmoveApp.qmd)).
+  - Created `hexmoveApp` launcher script ([`inst/scripts/hexmoveApp.R`](../../inst/scripts/hexmoveApp.R)) and Quarto demo ([`demos/hexmoveApp.qmd`](../../demos/hexmoveApp.qmd)).
 
 - **Systems Ethology Platform Refactor (`sysetholApp` & `ewingApp`)**:
-  - Exported [`R/sysetholApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/sysetholApp.R) (`sysetholApp`, `sysetholInput`, `sysetholOutput`, `sysetholServer`).
+  - Exported [`R/sysetholApp.R`](../../R/sysetholApp.R) (`sysetholApp`, `sysetholInput`, `sysetholOutput`, `sysetholServer`).
   - Added sidebar **`Run Engine`** and **`Reset`** action buttons to keep the main panel header clean.
   - Added conditional sidebar controls (`conditionalPanel`): `Steps per click` when `nsim == 1`, `Total Simulation steps` / `Confidence Band Envelope` when `nsim > 1`.
   - Added dynamic tab visibility in `sysetholOutput` (displaying **`Envelope Plots`** tab ONLY when `nsim > 1`).
-  - Simplified [`R/ewingApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ewingApp.R) to compose UI/server directly from `sysetholApp` components + `downloadApp`.
-  - Embedded serverless WebAssembly Shinylive block into [`demos/sysetholApp.qmd`](file:///Users/brianyandell/Documents/Research/ewing/ewing/demos/sysetholApp.qmd).
+  - Simplified [`R/ewingApp.R`](../../R/ewingApp.R) to compose UI/server directly from `sysetholApp` components + `downloadApp`.
+  - Embedded serverless WebAssembly Shinylive block into [`demos/sysetholApp.qmd`](../../demos/sysetholApp.qmd).
 
 - **Dist Plots Aesthetics & Continuous Stepping History**:
   - Renamed title to `"Age Distribution over Time"` with dynamic step formatting (`"Age Distribution over Time (<nstep> steps)"` or `"(<nstep> steps, nsim = <nsim>)"`).
   - Mapped species legends (`shape = .data$Species`) using distinct open symbol aesthetics (`scale_shape_manual(name = "Species", values = c(1, 2, 0, 5, 6, 3, 4))`) for open circles, triangles, squares, etc.
   - Preserved continuous step history across sequential simulation stepping (`future.events.R`, `initCount.R`, `fileCount.R`, `sim.R`), accumulating step indices (`start_step + istep`) so "Run Engine" stepping renders complete history starting from step 0.
-  - Fixed `setEvents()` in [`R/Events.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/Events.R) so empty life stage vectors do not truncate the `community` object.
+  - Fixed `setEvents()` in [`R/Events.R`](../../R/Events.R) so empty life stage vectors do not truncate the `community` object.

@@ -1,4 +1,14 @@
-# Shine Up App
+---
+title: "Systems Ethology Shiny UI Architecture"
+author: "Brian S. Yandell"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Systems Ethology Shiny UI Architecture}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
 
 - [Prompt](#prompt)
 - [Response](#response)
@@ -166,7 +176,7 @@ The `ewingApp.R` script was entirely refactored across several purpose-built mod
 
 ## Systems Ethology Platform Refactor (`sysetholApp`, `inputApp` & `ewingApp`)
 
-The Systems Ethology platform was further refactored to introduce **[`R/sysetholApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/sysetholApp.R)** (`sysetholApp`, `sysetholInput`, `sysetholOutput`, `sysetholServer`), export **[`R/inputApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/inputApp.R)** (`inputApp`, `inputAppInput`, `inputAppOutput`, `inputAppServer`), and streamline **[`R/ewingApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ewingApp.R)** as a composable wrapper.
+The Systems Ethology platform was further refactored to introduce **[`R/sysetholApp.R`](../../R/sysetholApp.R)** (`sysetholApp`, `sysetholInput`, `sysetholOutput`, `sysetholServer`), export **[`R/inputApp.R`](../../R/inputApp.R)** (`inputApp`, `inputAppInput`, `inputAppOutput`, `inputAppServer`), and streamline **[`R/ewingApp.R`](../../R/ewingApp.R)** as a composable wrapper.
 
 ### Geometric Log-Scale Step Size Slider
 
@@ -178,7 +188,7 @@ To provide intuitive logarithmic control over simulation step increments, the **
 
 ### Standalone `inputApp` Module Extraction
 
-The dataset table inspection tab was extracted into a reusable module export **[`R/inputApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/inputApp.R)**:
+The dataset table inspection tab was extracted into a reusable module export **[`R/inputApp.R`](../../R/inputApp.R)**:
 
 - **`inputAppInput()`**: Renders dataset selection (`organism.features`, `future.host`, `future.parasite`, `substrate.host`, `substrate.parasite`, `substrate.substrate`, `host.parasite`, `temperature.base`, `temperature.par`).
 - **`inputAppOutput()`**: Displays formatted table output (`tableOutput`).
@@ -225,7 +235,7 @@ To create a clean, modern user experience, controls in `sysetholInput` are condi
 
 ### Composition of `ewingApp.R` from `sysetholApp.R`
 
-[`R/ewingApp.R`](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ewingApp.R) was simplified to compose its UI and server directly from `sysetholApp` elements while preserving CSV data and PDF graphic downloads:
+[`R/ewingApp.R`](../../R/ewingApp.R) was simplified to compose its UI and server directly from `sysetholApp` elements while preserving CSV data and PDF graphic downloads:
 
 ```r
 ewingInput <- function(id) {
@@ -265,7 +275,7 @@ To eliminate manual code duplication between R package source files in `R/` and 
 During `quarto render`, knitr reads the specified R source files directly from `R/` via `readLines()` and dynamically injects them into the `shinylive-r` code block before Shinylive WebAssembly compilation:
 
 ```r
-```{r, echo=FALSE, results='asis'}
+```{r, eval=FALSE, echo=FALSE, results='asis'}
 inc_files <- c("R/inputApp.R", "R/sysetholApp.R")
 
 cat("```{shinylive-r}\n")

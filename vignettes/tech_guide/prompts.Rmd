@@ -1,4 +1,14 @@
-# Prompts
+---
+title: "Engineering Prompt History Log"
+author: "Brian S. Yandell"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Engineering Prompt History Log}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
 
 ## [CRAFT Prompt](https://tyson-swetnam.github.io/intro-gpt/prompts/#the-craft-framework)
 
