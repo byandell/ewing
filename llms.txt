@@ -24,14 +24,14 @@ executes this package. See also
     Ewing](https://byandell.github.io/pages/ewing/)
 - Tools and Data
   - [Predator-Prey
-    Datasets](https://byandell.github.io/ewing/inst/doc/datasets.md)
+    Datasets](https://github.com/byandell/ewing/blob/master/inst/doc/datasets.md)
   - [Ewing Package
-    Documentation](https://byandell.github.io/ewing/inst/doc/refactor)
+    Documentation](https://github.com/byandell/ewing/blob/master/inst/doc/refactor/)
   - [Articles](https://byandell.github.io/ewing/articles/)
     - [Developer
-      Guide](https://byandell.github.io/ewing/articles/devel_guide/index.md)
+      Guide](https://byandell.github.io/ewing/articles/devel_guide/)
     - [Tutorial
-      Vignette](https://byandell.github.io/ewing/articles/ewing.md)
+      Vignette](https://byandell.github.io/ewing/articles/ewing.html)
   - [Demos](https://byandell.github.io/ewing/demos/)
   - [Systems Ethology
     App](https://connect.doit.wisc.edu/SystemsEthology)

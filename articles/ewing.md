@@ -118,6 +118,8 @@ plot(simres, normalize = FALSE, substrate = FALSE)
 
 plot(simres, ageclass=FALSE)
 #> [[1]]
+#> Warning: Removed 1 row containing missing values or values outside the scale range
+#> (`geom_text()`).
 ```
 
 ![](ewing_files/figure-html/unnamed-chunk-8-1.png)
@@ -137,6 +139,8 @@ plot(simres, substrate = TRUE)
 
     #> 
     #> [[2]]
+    #> Warning: Removed 1 row containing missing values or values outside the scale range
+    #> (`geom_text()`).
 
 ![](ewing_files/figure-html/unnamed-chunk-9-2.png)
 
