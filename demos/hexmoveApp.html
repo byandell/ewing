@@ -1091,6 +1091,55 @@ create_hex_overlay &lt;- function(object, step = 1) {
 
 # --- Auto-Included from R/hexmoveApp.R ---
 
+#' Hexmove Input Module
+#' @param id Module ID string
+#' @export
+#' @rdname hexmoveApp
+hexmoveAppInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    initParInput(ns("init_par")),
+    shiny::hr(),
+    substrateInput(ns("substrate"))
+  )
+}
+
+#' Hexmove Output Module
+#' @param id Module ID string
+#' @export
+#' @rdname hexmoveApp
+hexmoveAppOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  bslib::navset_tab(
+    bslib::nav_panel("Hex Substrate Map", substrateOutput(ns("substrate"))),
+    bslib::nav_panel("Simulation Summary", initOutput(ns("init")))
+  )
+}
+
+#' Hexmove Server Module
+#' @param id Module ID string
+#' @param mysim Optional pre-initialized simulation
+#' @param width Substrate radius limit
+#' @param step Step density spacing interval
+#' @export
+#' @rdname hexmoveApp
+hexmoveAppServer &lt;- function(id, mysim = NULL, width = 10, step = 1) {
+  shiny::moduleServer(id, function(input, output, session) {
+    init_par &lt;- initParServer("init_par")
+    siminit &lt;- initServer("init", init_par)
+    
+    initial_state &lt;- shiny::reactive({
+      if (!is.null(mysim)) {
+        mysim
+      } else {
+        siminit()
+      }
+    })
+    
+    substrateServer("substrate", initial_state, width = width, step_density = step)
+  })
+}
+
 #' Interactive Hex Substrate Organism Movement Application
 #'
 #' Shiny application built on `initParServer`, `initServer`, and `substrateServer`
@@ -1102,38 +1151,22 @@ create_hex_overlay &lt;- function(object, step = 1) {
 #' @param step Numeric step density spacing interval (default: 1).
 #' @param title Application title string.
 #' @export
-#' @importFrom shiny shinyApp reactiveVal reactive observeEvent req HTML h4 tagList div span actionButton numericInput radioButtons checkboxGroupInput uiOutput renderUI hr
+#' @importFrom shiny shinyApp reactiveVal reactive observeEvent req HTML h4 tagList div span actionButton numericInput radioButtons checkboxGroupInput uiOutput renderUI hr NS
 #' @importFrom bslib page_sidebar sidebar card card_body card_header navset_tab nav_panel
+#' @rdname hexmoveApp
 hexmoveApp &lt;- function(mysim = NULL, width = 10, step = 1, title = "Organism Movement on Hex Grid") {
   
   ui &lt;- bslib::page_sidebar(
     title = title,
     sidebar = bslib::sidebar(
-      width = 320,
-      initParInput("init_par"),
-      shiny::hr(),
-      substrateInput("substrate")
+      width = 340,
+      hexmoveAppInput("hexmove")
     ),
-    bslib::navset_tab(
-      bslib::nav_panel("Hex Substrate Map", substrateOutput("substrate")),
-      bslib::nav_panel("Simulation Summary", initOutput("init"))
-    )
+    hexmoveAppOutput("hexmove")
   )
   
   server &lt;- function(input, output, session) {
-    init_par &lt;- initParServer("init_par")
-    siminit &lt;- initServer("init", init_par)
-    
-    # If pre-initialized simulation is passed in, run initial steps if requested, else use siminit
-    initial_state &lt;- shiny::reactive({
-      if (!is.null(mysim)) {
-        mysim
-      } else {
-        siminit()
-      }
-    })
-    
-    substrateServer("substrate", initial_state, width = width, step_density = step)
+    hexmoveAppServer("hexmove", mysim = mysim, width = width, step = step)
   }
   
   shiny::shinyApp(ui = ui, server = server)

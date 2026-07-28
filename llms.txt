@@ -196,8 +196,11 @@ Reference: B Ewing, BS Yandell, JF Barbieri, and RF Luck (2002)
   [`hexmapServer()`](https://byandell.github.io/ewing/reference/hexmapApp.md)
   [`hexmapApp()`](https://byandell.github.io/ewing/reference/hexmapApp.md)
   : Interactive Hexagonal Watershed Mapping UI (Input)
-- [`hexmoveApp()`](https://byandell.github.io/ewing/reference/hexmoveApp.md)
-  : Interactive Hex Substrate Organism Movement Application
+- [`hexmoveAppInput()`](https://byandell.github.io/ewing/reference/hexmoveApp.md)
+  [`hexmoveAppOutput()`](https://byandell.github.io/ewing/reference/hexmoveApp.md)
+  [`hexmoveAppServer()`](https://byandell.github.io/ewing/reference/hexmoveApp.md)
+  [`hexmoveApp()`](https://byandell.github.io/ewing/reference/hexmoveApp.md)
+  : Hexmove Input Module
 - [`host.parasite`](https://byandell.github.io/ewing/reference/host.parasite.md)
   [`host.comperiella`](https://byandell.github.io/ewing/reference/host.parasite.md)
   [`host.encarsia`](https://byandell.github.io/ewing/reference/host.parasite.md)

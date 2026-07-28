@@ -7,12 +7,12 @@
 ## Citation
 
 Yandell BS (2026). *ewing: Bland Ewing's Systems Ethology*. R package
-version 2.0.2, <http://www.stat.wisc.edu/~yandell/ewing>.
+version 2.0.3, <http://www.stat.wisc.edu/~yandell/ewing>.
 
     @Manual{,
       title = {ewing: Bland Ewing's Systems Ethology},
       author = {Brian S. Yandell},
       year = {2026},
-      note = {R package version 2.0.2},
+      note = {R package version 2.0.3},
       url = {http://www.stat.wisc.edu/~yandell/ewing},
     }

@@ -1,4 +1,4 @@
-# Interactive Hex Substrate Organism Movement Application
+# Hexmove Input Module
 
 Shiny application built on \`initParServer\`, \`initServer\`, and
 \`substrateServer\` that visualizes organism positions on a hexagonal
@@ -8,6 +8,12 @@ interactive stepping through simulation events (+1, +10, +100 steps).
 ## Usage
 
 ``` r
+hexmoveAppInput(id)
+
+hexmoveAppOutput(id)
+
+hexmoveAppServer(id, mysim = NULL, width = 10, step = 1)
+
 hexmoveApp(
   mysim = NULL,
   width = 10,
@@ -17,6 +23,10 @@ hexmoveApp(
 ```
 
 ## Arguments
+
+- id:
+
+  Module ID string
 
 - mysim:
 
