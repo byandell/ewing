@@ -3,26 +3,18 @@ pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   devel_guide/architecture: devel_guide/architecture.html
-  tech_guide/connect: tech_guide/connect.html
-  tech_guide/dataorg: tech_guide/dataorg.html
+  tech_guide/engine: tech_guide/engine.html
   ewing: ewing.html
-  tech_guide/futures: tech_guide/futures.html
-  tech_guide/hexmove: tech_guide/hexmove.html
+  tech_guide/geometry: tech_guide/geometry.html
+  tech_guide/gis: tech_guide/gis.html
   devel_guide/index: devel_guide/index.html
   tech_guide/index: tech_guide/index.html
-  tech_guide/leaflet: tech_guide/leaflet.html
-  tech_guide/notes: tech_guide/notes.html
-  tech_guide/prompts: tech_guide/prompts.html
-  tech_guide/refactor: tech_guide/refactor.html
-  tech_guide/shineup: tech_guide/shineup.html
   devel_guide/simulation: devel_guide/simulation.html
-  tech_guide/substrate: tech_guide/substrate.html
-  tech_guide/time_temp: tech_guide/time_temp.html
-  tech_guide/triangle: tech_guide/triangle.html
+  tech_guide/thermal: tech_guide/thermal.html
+  tech_guide/ui: tech_guide/ui.html
   devel_guide/utilities: devel_guide/utilities.html
   devel_guide/visualization: devel_guide/visualization.html
-  tech_guide/watershed: tech_guide/watershed.html
-last_built: 2026-07-28T19:28Z
+last_built: 2026-07-28T19:52Z
 urls:
   reference: https://byandell.github.io/ewing/reference
   article: https://byandell.github.io/ewing/articles

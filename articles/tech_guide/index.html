@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../../index.html">ewing</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.0.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,19 +38,8 @@
     <li><a class="dropdown-item" href="../../articles/ewing.html">Tutorial Vignette</a></li>
     <li><a class="dropdown-item" href="../../demos/index.html">Demos Gallery</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Developer Guide</h6></li>
-    <li><a class="dropdown-item" href="../../articles/devel_guide/index.html">Developer Guide Overview</a></li>
-    <li><a class="dropdown-item" href="../../articles/devel_guide/architecture.html">Module Architecture</a></li>
-    <li><a class="dropdown-item" href="../../articles/devel_guide/simulation.html">Simulation &amp; Parameters</a></li>
-    <li><a class="dropdown-item" href="../../articles/devel_guide/visualization.html">Visualizations</a></li>
-    <li><a class="dropdown-item" href="../../articles/devel_guide/utilities.html">Utilities &amp; Companion Apps</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Technical Guide</h6></li>
-    <li><a class="dropdown-item" href="../../articles/tech_guide/index.html">Technical Guide Overview</a></li>
-    <li><a class="dropdown-item" href="../../articles/tech_guide/dataorg.html">Core Engine &amp; Data Matrices</a></li>
-    <li><a class="dropdown-item" href="../../articles/tech_guide/triangle.html">Spatial Substrate Mathematics</a></li>
-    <li><a class="dropdown-item" href="../../articles/tech_guide/time_temp.html">Thermal Regimes &amp; Degree-Days</a></li>
-    <li><a class="dropdown-item" href="../../articles/tech_guide/watershed.html">GIS Watershed Projections</a></li>
+    <li><a class="dropdown-item" href="../../articles/devel_guide/index.html">Developer Guide</a></li>
+    <li><a class="dropdown-item" href="../../articles/tech_guide/index.html">Technical Guide</a></li>
   </ul>
 </li>
       </ul>
@@ -92,102 +81,45 @@ physics, spatial geometry, thermal spline integration, and GIS watershed
 overlay algorithms governing the package.</p>
 <hr>
 <div class="section level2">
-<h2 id="guide-structure-technical-index">Guide Structure &amp; Technical Index<a class="anchor" aria-label="anchor" href="#guide-structure-technical-index"></a>
+<h2 id="technical-domain-sections">Technical Domain Sections<a class="anchor" aria-label="anchor" href="#technical-domain-sections"></a>
 </h2>
-<div class="section level3">
-<h3 id="i--core-simulation-engine-state-representation">I. Core Simulation Engine &amp; State Representation<a class="anchor" aria-label="anchor" href="#i--core-simulation-engine-state-representation"></a>
-</h3>
 <ul>
 <li>
-<strong><a href="dataorg.html">dataorg.md</a></strong>: Explains the
-central <code>community</code> simulation state object, organism feature
-matrices, population state arrays, and operational execution loops.</li>
+<strong><a href="engine.html">I. Simulation Engine</a></strong>:
+Explains the central <code>community</code> simulation state object,
+organism feature matrices, leftist-tree event queue scheduling,
+competing risk stage transitions, and operational execution loops.</li>
 <li>
-<strong><a href="refactor.html">refactor.md</a></strong>: Details
-legacy S3 object model refactoring, event queue data structures, and
-functional evaluation routines.</li>
-<li>
-<strong><a href="futures.html">futures.md</a></strong>: Leftist-tree
-event queue scheduling, competing risk stage transitions, active status
-tracking, and structural development timelines.</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="ii--spatial-substrate-geometry-dispersal-mathematics">II. Spatial Substrate Geometry &amp; Dispersal Mathematics<a class="anchor" aria-label="anchor" href="#ii--spatial-substrate-geometry-dispersal-mathematics"></a>
-</h3>
-<ul>
-<li>
-<strong><a href="triangle.html">triangle.md</a></strong>: Technical
-specification of the tridiagonal coordinate system
+<strong><a href="geometry.html">II. Substrate Geometry</a></strong>:
+Technical specification of the tridiagonal coordinate system
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo>,</mo><mi>c</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(a, b, c)</annotation></semantics></math>,
-substrate connectivity, topology definitions
-(<code>substrate_topology</code>), and triangular coordinate conversion
-(<code>tri2car</code>).</li>
+plant substrate topology (<code>substrate_topology</code>), unit
+coordinate rescaling
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mn>0</mn><mo>,</mo><msub><mi>W</mi><mrow><mi>s</mi><mi>u</mi><mi>b</mi></mrow></msub><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[0, W_{sub}]</annotation></semantics></math>),
+6-sided hexagonal polygon tile overlays
+(<code>create_hex_overlay</code>), and <code>substrateApp</code> module
+architecture.</li>
 <li>
-<strong><a href="substrate.html">substrate.md</a></strong>:
-Standardizing <code>substrateApp</code> (<code>substrateInput</code>,
-<code>substrateOutput</code>, <code>substrateServer</code>) across
-<code>sysetholApp</code> and <code>hexmoveApp</code>, and the strategic
-roadmap for spatial organism movement.</li>
-<li>
-<strong><a href="hexmove.html">hexmove.md</a></strong>: Details
-organism spatial movement on hexagonal substrate grid overlays
-(<code>hexmoveApp</code>), per-substrate unit coordinate rescaling
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mn>0</mn><mo>,</mo><msub><mi>W</mi><mrow><mi>s</mi><mi>u</mi><mi>b</mi><mi>_</mi><mi>S</mi></mrow></msub><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[0, W_{sub\_S}]</annotation></semantics></math>),
-and 6-sided polygon tile overlay generation
-(<code>create_hex_overlay</code>).</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="iii--thermal-regimes-splines-degree-day-integration">III. Thermal Regimes, Splines &amp; Degree-Day Integration<a class="anchor" aria-label="anchor" href="#iii--thermal-regimes-splines-degree-day-integration"></a>
-</h3>
-<ul>
-<li>
-<strong><a href="time_temp.html">time_temp.md</a></strong>:
+<strong><a href="thermal.html">III. Thermal Regimes</a></strong>:
 Interactive temperature-time spline design (<code>temp.design</code>,
 <code>tempApp</code>), degree-day integration (<code>activeTemp</code>),
 5-parameter mean value sensitivity (<code>fivePlotApp</code>,
 <code>fiveShowApp</code>), and Shinylive WebAssembly demos.</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="iv--gis-watershed-geographic-projections">IV. GIS Watershed &amp; Geographic Projections<a class="anchor" aria-label="anchor" href="#iv--gis-watershed-geographic-projections"></a>
-</h3>
-<ul>
 <li>
-<strong><a href="leaflet.html">leaflet.md</a></strong>: Interactive
-geographic feature search and watershed discovery utilities
-(<code>leafletApp</code>, <code>hexmapApp</code>,
-<code>build_base_map</code>, <code>get_huc_from_point</code>,
-<code>add_watershed_hex_overlay</code>).</li>
-<li>
-<strong><a href="watershed.html">watershed.md</a></strong>: Spatial
-projection of simulation grids onto USGS HUC12 subwatershed boundaries,
-polygon clipping, and Leaflet/ggplot watershed overlays
-(<code>watershed_overlay</code>).</li>
-<li>
-<strong><a href="connect.html">connect.md</a></strong>:
-Architectural guide for Quarto demo publishing, comparing GitHub Pages
-static hosting, WebAssembly Shinylive, and Posit Connect live R server
+<strong><a href="gis.html">IV. GIS Watersheds</a></strong>:
+Interactive geographic feature search and watershed discovery utilities
+(<code>leafletApp</code>, <code>hexmapApp</code>), spatial projection of
+simulation grids onto USGS HUC12 subwatershed boundaries
+(<code>watershed_overlay</code>), and Shinylive WASM / Posit Connect
 deployment.</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="v--application-ui-architecture-engineering-notes">V. Application UI Architecture &amp; Engineering Notes<a class="anchor" aria-label="anchor" href="#v--application-ui-architecture-engineering-notes"></a>
-</h3>
-<ul>
 <li>
-<strong><a href="shineup.html">shineup.md</a></strong>: Design notes
-and implementation details for upgrading the Systems Ethology continuous
-interactive graphical interface (<code>sysetholApp</code>,
-<code>ewingApp</code>), sidebar de-cluttering with
-<code>conditionalPanel</code>, multi-species hex overlay layouts, and
-<code>downloadApp</code> integration.</li>
-<li>
-<strong><a href="notes.html">notes.md</a></strong> &amp; <strong><a href="prompts.html">prompts.md</a></strong>: Architectural scratchpads
-and AI prompt history used during system refactoring.</li>
+<strong><a href="ui.html">V. UI Architecture</a></strong>:
+Architecture for upgrading the Systems Ethology continuous interactive
+graphical interface (<code>sysetholApp</code>, <code>ewingApp</code>),
+sidebar de-cluttering with <code>conditionalPanel</code>, multi-species
+hex overlay layouts, <code>downloadApp</code> integration, and
+engineering prompt history.</li>
 </ul>
-</div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
