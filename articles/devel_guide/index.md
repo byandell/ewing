@@ -9,7 +9,7 @@ mathematical coordinate mappings.
 This developer guide is structured similarly to the [qtl2shiny Developer
 Guide](https://byandell-sysgen.github.io/qtl2shiny/articles/devel_guide/).
 See
-[guide.md](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/doc/guide.md)
+[devel_guide.md](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/doc/devel_guide.md)
 for the process and design prompts used to build this documentation.
 
 ## Table of Contents
