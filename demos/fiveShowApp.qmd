@@ -1,6 +1,6 @@
 ---
 title: "fiveShowApp (Shinylive)"
-description: "An interactive binary search tool demonstrating how five.show() finds parameter values matching target mean response values."
+description: "A serverless WebAssembly-powered target relative mean search explorer using five.show()."
 author: "Brian S. Yandell"
 engine: knitr
 toc: false
@@ -19,29 +19,28 @@ inc_files <- c("R/spline.R", "R/five.R", "R/fiveShowApp.R")
 
 cat("```{shinylive-r}\n")
 cat("#| standalone: true\n")
-cat("#| viewerHeight: 800\n")
+cat("#| viewerHeight: 650\n")
 cat("#| components: [viewer]\n\n")
 
 cat("library(shiny)\n")
 cat("library(bslib)\n")
 cat("library(splines)\n")
 cat("library(stats)\n")
-cat("library(graphics)\n")
-cat("library(utils)\n")
-cat("library(grDevices)\n\n")
+cat("library(graphics)\n\n")
 
 for (f in inc_files) {
-  src <- readLines(file.path("..", f), warn = FALSE)
-  cat(paste0("# --- Auto-Included from ", f, " ---\n\n"))
-  cat(paste(src, collapse = "\n"))
-  cat("\n\n")
+  fp <- file.path("..", f)
+  if (file.exists(fp)) {
+    lines <- readLines(fp, warn = FALSE)
+    lines <- lines[!grep("^\\s*#'", lines)]
+    cat(paste0("# --- Auto-Included from ", f, " ---\n\n"))
+    cat(paste(lines, collapse = "\n"))
+    cat("\n\n")
+  }
 }
 
 cat("# --- Launch Application ---\n\n")
-cat("app_theme <- bslib::bs_theme(version = 5, bg = '#ffffff', fg = '#212529', primary = '#7209b7')\n")
-cat("ui <- bslib::page_sidebar(title = 'spline.meanvalue Sensitivity Explorer (fiveShowApp)', theme = app_theme, sidebar = bslib::sidebar(width = 340, fiveShowAppInput('show')), fiveShowAppOutput('show'))\n")
-cat("server <- function(input, output, session) { fiveShowAppServer('show') }\n")
-cat("shiny::shinyApp(ui = ui, server = server)\n")
+cat("fiveShowApp()\n")
 cat("```\n")
 ```
 

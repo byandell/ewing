@@ -15,7 +15,12 @@ format:
 The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). You can click directly on the temperature spline plot on the left to move individual high or low temperature knot coordinates.
 
 ```{r, echo=FALSE, results='asis'}
-inc_files <- c("R/temp.R", "R/tempApp.R")
+inc_files <- c(
+  "R/triangle.R", "R/community.R", "R/Org.R", "R/event.R", "R/event.future.R",
+  "R/organism.features.R", "R/host.parasite.R", "R/init.simulation.R", "R/init.population.R",
+  "R/future.host.R", "R/future.events.R", "R/future.R",
+  "R/substrate.host.R", "R/spline.R", "R/temp.R", "R/tempApp.R"
+)
 
 cat("```{shinylive-r}\n")
 cat("#| standalone: true\n")
@@ -29,17 +34,18 @@ cat("library(stats)\n")
 cat("library(graphics)\n\n")
 
 for (f in inc_files) {
-    src <- readLines(file.path("..", f), warn = FALSE)
+  fp <- file.path("..", f)
+  if (file.exists(fp)) {
+    lines <- readLines(fp, warn = FALSE)
+    lines <- lines[!grep("^\\s*#'", lines)]
     cat(paste0("# --- Auto-Included from ", f, " ---\n\n"))
-    cat(paste(src, collapse = "\n"))
+    cat(paste(lines, collapse = "\n"))
     cat("\n\n")
+  }
 }
 
 cat("# --- Launch Application ---\n\n")
-cat("app_theme <- bslib::bs_theme(version = 5, bg = '#ffffff', fg = '#212529', primary = '#e63946')\n")
-cat("ui <- bslib::page_sidebar(title = 'Temperature Regime Explorer (tempApp)', theme = app_theme, sidebar = bslib::sidebar(width = 340, tempAppInput('temp')), tempAppOutput('temp'))\n")
-cat("server <- function(input, output, session) { tempAppServer('temp') }\n")
-cat("shiny::shinyApp(ui = ui, server = server)\n")
+cat("tempApp()\n")
 cat("```\n")
 ```
 

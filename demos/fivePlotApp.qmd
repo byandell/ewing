@@ -29,17 +29,18 @@ cat("library(stats)\n")
 cat("library(graphics)\n\n")
 
 for (f in inc_files) {
-  src <- readLines(file.path("..", f), warn = FALSE)
-  cat(paste0("# --- Auto-Included from ", f, " ---\n\n"))
-  cat(paste(src, collapse = "\n"))
-  cat("\n\n")
+  fp <- file.path("..", f)
+  if (file.exists(fp)) {
+    lines <- readLines(fp, warn = FALSE)
+    lines <- lines[!grep("^\\s*#'", lines)]
+    cat(paste0("# --- Auto-Included from ", f, " ---\n\n"))
+    cat(paste(lines, collapse = "\n"))
+    cat("\n\n")
+  }
 }
 
 cat("# --- Launch Application ---\n\n")
-cat("app_theme <- bslib::bs_theme(version = 5, bg = '#ffffff', fg = '#212529', primary = '#1a73e8')\n")
-cat("ui <- bslib::page_sidebar(title = 'spline.meanvalue Sensitivity Explorer (fivePlotApp)', theme = app_theme, sidebar = bslib::sidebar(width = 320, fivePlotAppInput('plot')), fivePlotAppOutput('plot'))\n")
-cat("server <- function(input, output, session) { fivePlotAppServer('plot') }\n")
-cat("shiny::shinyApp(ui = ui, server = server)\n")
+cat("fivePlotApp()\n")
 cat("```\n")
 ```
 

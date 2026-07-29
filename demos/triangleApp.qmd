@@ -1,6 +1,6 @@
 ---
 title: "triangleApp (Shinylive)"
-description: "A spatial geometric network visualizer rendering triangular substrates, hexagonal cell overlays, and connectivity topologies."
+description: "An interactive spatial substrate network explorer for tridiagonal coordinate systems and plant module layouts."
 author: "Brian S. Yandell"
 engine: knitr
 toc: false
@@ -28,17 +28,18 @@ cat("library(ggplot2)\n")
 cat("library(stats)\n\n")
 
 for (f in inc_files) {
-  src <- readLines(file.path("..", f), warn = FALSE)
-  cat(paste0("# --- Auto-Included from ", f, " ---\n\n"))
-  cat(paste(src, collapse = "\n"))
-  cat("\n\n")
+  fp <- file.path("..", f)
+  if (file.exists(fp)) {
+    lines <- readLines(fp, warn = FALSE)
+    lines <- lines[!grep("^\\s*#'", lines)]
+    cat(paste0("# --- Auto-Included from ", f, " ---\n\n"))
+    cat(paste(lines, collapse = "\n"))
+    cat("\n\n")
+  }
 }
 
 cat("# --- Launch Application ---\n\n")
-cat("app_theme <- bslib::bs_theme(version = 5, bg = '#ffffff', fg = '#212529', primary = '#2a9d8f')\n")
-cat("ui <- bslib::page_sidebar(title = 'Triangular Substrate Explorer (triangleApp)', theme = app_theme, sidebar = bslib::sidebar(width = 320, triangleAppInput('tri')), triangleAppOutput('tri'))\n")
-cat("server <- function(input, output, session) { triangleAppServer('tri') }\n")
-cat("shiny::shinyApp(ui = ui, server = server)\n")
+cat("triangleApp()\n")
 cat("```\n")
 ```
 
