@@ -10,10 +10,10 @@ This document records the prompts, architectural decisions, and steps taken to b
 [qtl2shiny Developer Guide](https://byandell-sysgen.github.io/qtl2shiny/articles/devel_guide/)
 following the prompts in
 [Create Developer’s Guide to qtl2shiny](https://byandell.github.io/Documentation/prompts/devel_guide.html).
-Document the process in `inst/doc/guide.md`.
+Document the process in `inst/doc/devel_guide.md`.
 - Migrate this Developer Guide to `vignettes` and set up `pkgdown` following the steps in
 [Use pkgdown to Auto-Build GitHub Website](https://byandell.github.io/Documentation/github/pkgdown.html).
-Again, document the process in `inst/doc/guide.md`.
+Again, document the process in `inst/doc/devel_guide.md`.
 
 ---
 

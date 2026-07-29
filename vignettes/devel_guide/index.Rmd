@@ -11,7 +11,7 @@ vignette: >
 
 This document is the main Developer Guide for the [ewing](https://github.com/byandell/ewing) package. It serves as a comprehensive developer onboarding resource detailing the package architecture, internal state structures, Shiny module systems, and mathematical coordinate mappings.
 
-This developer guide is structured similarly to the [qtl2shiny Developer Guide](https://byandell-sysgen.github.io/qtl2shiny/articles/devel_guide/). See [guide.md](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/doc/guide.md) for the process and design prompts used to build this documentation.
+This developer guide is structured similarly to the [qtl2shiny Developer Guide](https://byandell-sysgen.github.io/qtl2shiny/articles/devel_guide/). See [devel_guide.md](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/doc/devel_guide.md) for the process and design prompts used to build this documentation.
 
 ## Table of Contents
 

@@ -8,8 +8,10 @@ website:
   title: "ewing Demos"
   navbar:
     left:
-      - href: index.qmd
+      - href: https://byandell.github.io/ewing/index.html
         text: Home
+      - href: index.qmd
+        text: Gallery
       - href: sysetholApp.qmd
         text: sysetholApp
       - href: fivePlotApp.qmd
@@ -25,8 +27,6 @@ website:
       - href: hexmoveApp.qmd
         text: hexmoveApp
     right:
-      - text: "Main Site"
-        href: ../index.html
       - icon: github
         href: https://github.com/byandell/ewing
 
