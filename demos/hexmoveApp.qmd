@@ -38,7 +38,7 @@ for (f in inc_files) {
   fp <- file.path("..", f)
   if (file.exists(fp)) {
     lines <- readLines(fp, warn = FALSE)
-    lines <- lines[!grep("^\\s*#'", lines)]
+    lines <- lines[!grepl("^\\s*#'", lines)]
     cat(paste0("# --- Auto-Included from ", f, " ---\n\n"))
     cat(paste(lines, collapse = "\n"))
     cat("\n\n")
