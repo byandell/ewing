@@ -12,6 +12,12 @@ render_standalone_app <- function(app_name, height = 800) {
   if (app_name %in% c("triangleApp", "hexmoveApp", "sysetholApp")) {
     cat("library(ggplot2)\n")
   }
+  if (app_name %in% c("hexmoveApp", "sysetholApp", "tempApp")) {
+    cat("library(dplyr)\n")
+    cat("library(tidyr)\n")
+    cat("library(tibble)\n")
+    cat("library(rlang)\n")
+  }
   if (app_name %in% c("fivePlotApp", "fiveShowApp", "tempApp", "sysetholApp")) {
     cat("library(splines)\n")
   }

@@ -55,7 +55,7 @@ ewing_ageclass <- function(community, substrate = TRUE, total = TRUE,
   }
   out <- list()
   for(i in species) {
-    out[[i]] <- mutate(
+    out[[i]] <- dplyr::mutate(
       tidyr::pivot_longer(
         tibble::tibble(
           as.data.frame(count[[i]])),

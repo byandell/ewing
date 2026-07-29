@@ -46,7 +46,7 @@ tempApp <- function(community = NULL, title = "Daily Temperature Design Explorer
   
   init_high <- get_spline_coords(community, "High")
   init_low  <- get_spline_coords(community, "Low")
-  init_min  <- getTemp(community, "Min")
+  init_min  <- as.numeric(getTemp(community, "Min"))[1]
   if (is.null(init_min) || is.na(init_min)) init_min <- 50
   
   ui <- bslib::page_sidebar(
@@ -196,7 +196,7 @@ tempApp <- function(community = NULL, title = "Daily Temperature Design Explorer
       state$high_y <- init_high$y
       state$low_x  <- init_low$x
       state$low_y  <- init_low$y
-      shiny::updateNumericInput(session, "min_temp", value = init_min)
+      shiny::updateNumericInput(session, "min_temp", value = as.numeric(init_min)[1])
       sync_text_inputs()
     })
     
@@ -279,7 +279,7 @@ tempApp <- function(community = NULL, title = "Daily Temperature Design Explorer
         comm <- community
         comm <- setTemp(comm, "High", sp_high)
         comm <- setTemp(comm, "Low",  sp_low)
-        comm <- setTemp(comm, "Min",  input$min_temp)
+        comm <- setTemp(comm, "Min",  as.numeric(input$min_temp)[1])
         
         # Calculate active temperature degree-day integration
         comm <- activeTemp(comm, messages = FALSE)
