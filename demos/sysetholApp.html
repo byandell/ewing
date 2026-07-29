@@ -1518,6 +1518,228 @@ autoplot.ewing_ageclass &lt;- function(object, ...)
   ggplot_ewing_ageclass(object, ...)
 
 
+# --- Source: ewing_envelope.R ---
+ewing_envelope &lt;- function(object, species, item, ordinate = "time", increment = 0.5) {
+  # Pull out `ordinate` and `item` for each run 
+  pulled &lt;-  
+    tidyr::fill(
+      dplyr::arrange(
+        tidyr::pivot_wider(
+          dplyr::bind_rows(
+            purrr::map(
+              object,
+              function(x) {
+                dplyr::distinct(
+                  as.data.frame(x[[species]][,c(ordinate, item)]),
+                  .data[[ordinate]],
+                  .keep_all = TRUE)
+              }),
+            .id = "run"),
+          names_from = "run",
+          values_from = item),
+        .data[[ordinate]]),
+      -dplyr::matches(ordinate))
+  
+  out &lt;- GET::create_curve_set(list(r = as.matrix(pulled)[,1], 
+                                    obs = as.matrix(pulled[,-1])))
+  class(out) &lt;- c("ewing_envelope", class(out))
+  attr(out, "count") &lt;- attr(object, "count")
+  attr(out, "nstep") &lt;- attr(object, "nstep")
+  attr(out, "nsim") &lt;- attr(object, "nsim")
+  
+  attr(out, "species") &lt;- species
+  attr(out, "item") &lt;- item
+  attr(out, "ordinate") &lt;- ordinate
+  out
+}
+ewing_envelopes &lt;- function(object) {
+  species &lt;- attr(object, "species")
+  items &lt;- attr(object, "items")
+  ordinate &lt;- attr(object, "ordinate")
+  nstep &lt;- attr(object, "nstep")
+  count &lt;- attr(object, "count")
+  nsim &lt;- attr(object, "nsim")
+  confidence &lt;- (nsim &gt; 2)
+  
+  envs &lt;- as.list(species)
+  names(envs) &lt;- species
+  if(confidence) {
+    confs &lt;- envs
+  } else {
+    confs &lt;- NULL
+  }
+  for(specy in species) {
+    env1 &lt;- as.list(items[[specy]])
+    if(confidence) {
+      conf1 &lt;- env1
+    }
+    for(item in items[[specy]]) {
+      env1[[item]] &lt;- ewing_envelope(object, specy, item, ordinate)
+      if(confidence) {
+        conf1[[item]] &lt;- GET::fBoxplot(env1[[item]], type = 'area')
+      }
+    }
+    envs[[specy]] &lt;- env1
+    if(confidence) {
+      confs[[specy]] &lt;- conf1
+    }
+  }
+  
+  object &lt;- list(env = envs, conf = confs)
+  class(object) &lt;- c("ewing_envelopes", class(object))
+  attr(object, "species") &lt;- species
+  attr(object, "items") &lt;- items
+  attr(object, "ordinate") &lt;- ordinate
+  attr(object, "nstep") &lt;- nstep
+  attr(object, "count") &lt;- count
+  attr(object, "nsim") &lt;- nsim
+  attr(object, "confidence") &lt;- confidence
+  object
+}
+summary.ewing_envelopes &lt;- function(object, species = NULL, verbose = TRUE, ...) {
+  # object$conf[[specy]][[item]] is time by 6-num boxplot summary
+  if(verbose) {
+    nstep &lt;- attr(object, "nstep")
+    count &lt;- attr(object, "count")
+    nsim &lt;- attr(object, "nsim")
+    cat(nsim, "Runs of ",
+        nstep, "Steps for", 
+        paste(names(count), count, sep = "=", collapse = ", "), "\n")
+  }
+  out &lt;- print(object, species, ...)
+  if(!is.null(out)) {
+    out &lt;- dplyr::ungroup(
+      dplyr::filter(
+        dplyr::group_by(
+          out,
+          .data$species, .data$item),
+        (.data$r == 0) | (.data$r == max(.data$r))))
+  }
+  out
+}
+print.ewing_envelopes &lt;- function(x, species = NULL, ...) {
+  # x$conf[[specy]][[item]] is time by 6-num boxplot summary
+  if(is.null(x$conf)) {
+    return(NULL)
+  }
+  out &lt;- dplyr::bind_rows(
+    purrr::map(
+      x$conf,
+      function(x) {
+        # somehow get summary across species and items using as.data.frame
+        x &lt;- x[names(x) != ""]
+        dplyr::bind_rows(
+          purrr::map(
+            x,
+            as.data.frame),
+          .id = "item")
+      }),
+    .id = "species")
+  if(!is.null(species)) {
+    if(species %in% unique(out$species)) {
+      sp &lt;- species
+      out &lt;- dplyr::filter(out, species == sp)
+    }
+  }
+  dplyr::mutate(out, dplyr::across(where(is.numeric), function(x) pmax(x,0)))
+  out
+}
+ggplot_ewing_envelopes &lt;- function(object, confidence = FALSE, main = "", ...) {
+  if(inherits(object, "ewing_discrete")) {
+    object &lt;- ewing_envelopes(object)
+  }
+  species &lt;- attr(object, "species")
+  items &lt;- attr(object, "items")
+  ordinate &lt;- attr(object, "ordinate")
+  nstep &lt;- attr(object, "nstep")
+  count &lt;- attr(object, "count")
+  nsim &lt;- attr(object, "nsim")
+  confidence &lt;- confidence &amp; attr(object, "confidence")
+  
+  patch &lt;- list()
+  for(specy in species) {
+    p &lt;- list()
+    for(item in items[[specy]]) {
+      if(confidence) {
+        p[[item]] &lt;- plot(object$conf[[specy]][[item]], main = main) + 
+          ggplot2::labs(x = "time", y = item) +
+          ggplot2::ggtitle(main) +
+          ggplot2::ylim(0, NA)
+        
+      } else {
+        p[[item]] &lt;- ggplot_ewing_envelope(object$env[[specy]][[item]])
+      }
+    }
+    patch[[specy]] &lt;- cowplot::plot_grid(plotlist = p, nrow = length(p))
+  }
+  
+  # NEED TO get attribute count and nstep in here
+  patch &lt;- cowplot::plot_grid(plotlist = patch, ncol = length(patch)) 
+  # Add a title. &lt;https://wilkelab.org/cowplot/articles/plot_grid.html&gt;
+  title &lt;- cowplot::ggdraw() + 
+    cowplot::draw_label(
+      paste(nsim, "Runs of ", nstep, "Steps for", 
+            paste(species, count, sep = "=", collapse = ", ")),
+      x = 0, hjust = 0
+    ) +
+    ggplot2::theme(
+      # add margin on the left of the drawing canvas,
+      # so title is aligned with left edge of first plot
+      plot.margin = ggplot2::margin(0, 0, 0, 7)
+    )
+  cowplot::plot_grid(title, patch, ncol = 1, rel_heights = c(0.1, 1))
+}
+
+ggplot_ewing_envelope &lt;- function(object, cols = c("#21908CFF", "#440154FF", "#5DC863FF"), 
+                                  main = "", ...) {
+  # Kludge. GET::forder needs at least 3 points; cols can be at most length(object).
+  lcols &lt;- length(cols)
+  nsim &lt;- ncol(object$funcs)
+  if(nsim &gt;= min(3, lcols)) {
+    A &lt;- GET::forder(object, measure = 'area')
+    lcols &lt;- min(lcols, length(object))
+    idx &lt;- order(A)[seq_len(lcols)]
+    cols &lt;- cols[seq_len(lcols)]
+  } else {
+    lcols &lt;- nsim
+    idx &lt;- seq_len(lcols)
+    cols &lt;- cols[seq_len(lcols)]
+  }
+  
+  item &lt;- attr(object, "item")
+  species &lt;- attr(object, "species")
+  ordinate &lt;- attr(object, "ordinate")
+  
+  if(length(object) &gt;= 50) {
+    p &lt;- plot(object, idx = idx, col_idx = cols, main = main)
+  } else {
+    p &lt;- plot(object)
+  }
+  p + 
+    ggplot2::labs(x = ordinate, y = item) +
+    ggplot2::ggtitle(paste(species, item))
+}
+autoplot.ewing_envelope &lt;- function(object, ...) {
+  ggplot_ewing_envelope(object, ...)
+}
+
+# --- Source: ewing_snapshot.R ---
+ewing_snapshot &lt;- function(object, step = 0, ...)
+{
+  out &lt;- list(step = step,
+              ageclass = ewing_ageclass(object, ...))
+
+  species &lt;- get.species(object)
+  subs &lt;- list()
+  for(j in species) {
+    subs[[j]] &lt;- ewing_substrate(object, j, step = step, ...)
+  }
+  out$substrate &lt;- subs
+  
+  class(out) &lt;- c("ewing_snapshot", "ewing", "list")
+  out
+}
+
 # --- Source: temp.R ---
 ## $Id: temp.R,v 1.0 2002/12/09 yandell@stat.wisc.edu Exp $
 ##
@@ -2770,6 +2992,239 @@ init.simulation &lt;- function( package = "ewing",
   community
 }
 
+# --- Source: init.population.R ---
+init.population &lt;- function( community, species, n = 200, width = 100,
+                             units = getOrgFeature( community, species, "units" ),
+                             timeit = FALSE,
+                             reject = Inf,
+                             position = rtri( n, width ),
+                             colnames = c(leftistnames,paramnames,posnames,eventnames),
+                             init.stage = istage,
+                             init.weight = getOrgFuture( community, species, "init" ),
+                             messages = TRUE,
+                             ...)
+{
+  leftistnames &lt;- c("dist","left","right","up")
+  paramnames &lt;- c("dispersion","location","intensity","truncation","rejection")
+  posnames &lt;- paste("pos",letters[1:3], sep = ".")
+  eventnames &lt;- c("time","stage","future","offspring","sex","sub.stage","sub.future")
+  
+  organism &lt;- matrix( 0, length( colnames ), n+1,
+                      dimnames = list( colnames, NULL ))
+  organism["time",1] &lt;- Inf
+  
+  ## 5-parameter initialization
+  organism[c("dispersion","intensity"),-1] &lt;- 1
+  organism["rejection",-1] &lt;- if( reject == Inf )
+    rep( Inf, n )
+  else
+    reject * stats::rexp( n )
+  
+  ## triangular coordinates
+  organism[posnames,-1] &lt;- position
+  
+  ## substrate
+  substrate.name &lt;- getOrgFeature( community, species, "substrate" )
+  if( !is.na( substrate.name )) {
+    substrate &lt;- getOrgInteract( community, substrate.name, species, "init" )
+    organism["sub.stage",-1] &lt;- organism["sub.future",-1] &lt;- sample( length( substrate ),
+                                                                     n, replace = TRUE, prob = substrate / sum( substrate ))
+  }
+  ## randomly generate events proportional to future time units
+  nstage &lt;- length( init.weight )
+  istage &lt;- sample( nstage, n, replace = TRUE, prob = init.weight / sum( init.weight ))
+  init.stage &lt;- array( init.stage, n )
+  organism["stage",-1] &lt;- init.stage
+  
+  ## schedule future events
+  if( timeit )
+    proctime &lt;- proc.time()
+  organism[,-1] &lt;- get.future( community, species, organism[,-1] )
+  if( timeit ) {
+    tmp &lt;- proc.time() - proctime
+    cat( "future time: user=", tmp[1], "system=", tmp[2], "total=", tmp[3], "\n" )
+  }
+  ## create leftist tree
+  if( timeit )
+    proctime &lt;- proc.time()
+  community &lt;- put.species( community, species, leftist.create( organism ))
+  if( timeit ) {
+    tmp &lt;- proc.time() - proctime
+    cat( "leftist time: user=", tmp[1], "system=", tmp[2], "total=", tmp[3], "\n" )
+  }
+  ## mean number of offspring
+  if( timeit )
+    proctime &lt;- proc.time()
+  #***This is where parasite is crashing--no offspring?**
+  community &lt;- initOffspring( community, species )
+  if( timeit ) {
+    tmp &lt;- proc.time() - proctime
+    cat( "offspring time: user=", tmp[1], "system=", tmp[2], "total=", tmp[3], "\n" )
+  }
+  
+  if(messages) {
+    cat( "Initializing events for", species, "with", ncol( organism ) - 1, "individuals\n" )
+  }
+  community
+}
+
+# --- Source: init.timing.R ---
+###########################################################################################
+### Timing of simulation run
+###########################################################################################
+init.timing &lt;- function( community )
+{
+  ## initialize timing
+  events &lt;- NULL
+  for( species in get.species( community ))
+    events &lt;- c( events, levels( getOrgFuture( community, species, "event" )))
+  events &lt;- sort( unique( events ))
+  tmp &lt;- c("total",events,"refresh","other")
+  cpu &lt;- matrix( 0, 3, length( tmp ),
+                 dimnames = list( c("user","system","total"), tmp ))
+  community$cpu &lt;- cpu
+  community &lt;- set.timing( community, "total" )
+  community
+}
+###########################################################################################
+set.timing &lt;- function( community, string, flag = -1 ) {
+  if( !is.null( community$cpu ))
+    community$cpu[,string] &lt;- community$cpu[,string] + flag * proc.time()[1:3]
+  community
+}
+###########################################################################################
+fini.timing &lt;- function( community )
+{
+  if( !is.null( community$cpu )) {
+    community &lt;- set.timing( community, "total", 1 )
+    community$cpu[,"other"] &lt;- community$cpu[,"total"] - apply( community$cpu[,-1], 1, sum )
+  }
+  community
+}
+
+# --- Source: initCount.R ---
+###########################################################################################
+### Simulation count object administration
+###########################################################################################
+initCount &lt;- function( community, species, debugit = FALSE, file = NULL, append = FALSE,
+                       messages = TRUE, ... )
+{
+  if(messages) {
+    cat( "initial" )
+    for( i in species)
+      cat( ":", i, sum( apply( get.species( community, i ), 2,
+                               function(x) !all(x[c("dist","left","right","up")]==1))) - 1 )
+    cat( "\n" )
+  }
+  
+  old_counts &lt;- if (append) getCount( community, , "counts" ) else NULL
+  old_step &lt;- if (append) getCount( community, , "step" ) else 0
+
+  count &lt;- list()
+  ## leftist tree counters
+  count$mintime &lt;- numeric( length( species ))
+  count$base &lt;- numeric( length( species ))
+  names( count$base ) &lt;- names( count$mintime ) &lt;- species
+  count$free &lt;- list()
+  
+  ## initialize lists to keep track of events
+  count$events &lt;- count$countage &lt;- count$countsub &lt;- count$nameage &lt;- count$namesub &lt;- list()
+  
+  ## Set up hour to degreeday spline based on range of hours if any
+  simmin &lt;- c(hr=Inf,DD=Inf)
+  for( i in species ) {
+    if( is.null( get.species( community, i )))
+      stop( paste( "Missing species", i ))
+    count$free[[i]] &lt;- 1
+    count$base[i] &lt;- get.base( community, i )
+    units &lt;- getOrgFeature( community, i, "units" )
+    tmp &lt;- get.individual( community, i )["time"]
+    if( tmp &lt; simmin[units] )
+      simmin[units]&lt;- tmp
+  }
+  if( max( simmin ) &lt; Inf ) {
+    community &lt;- activeTemp( community, simmin["hr"], , simmin["DD"], messages = messages )
+  }
+  esums &lt;- c("initial","during","final")
+  tmpfn &lt;- function( counter )
+  {
+    rownames &lt;- levels( counter )
+    array( 0, length( rownames ), dimnames = list( rownames ))
+  }
+  subclass &lt;- getOrgFeature( community, species, "subclass" )
+  names( subclass ) &lt;- species
+  for( i in species ) {
+    species.time &lt;- get.individual( community, i )["time"]
+    count$mintime[i] &lt;- getTime( community, i, species.time )
+    future &lt;- getOrgFuture( community, i )
+    ## possible future events
+    count$events[[i]] &lt;- matrix( 0, nrow( future ), length( esums ),
+                                 dimnames = list( as.character( future$current ), esums ))
+    ## current record of future events
+    count$countage[[i]] &lt;- tmpfn( getOrgFuture( community, i, "ageclass" ))
+    count$countsub[[i]] &lt;- tmpfn( getOrgInteract( community,, i, "substrate" ))
+    
+    if( species.time &lt; Inf ) {
+      ## count by age groups
+      stage &lt;- getOrgAlive( community, i, "stage" )
+      if( length( stage )) {
+        classes &lt;- getOrgAgeClass( community, i, stage )
+        tmp &lt;- table( classes )
+        count$countage[[i]][ names( tmp ) ] &lt;- tmp
+      }
+      ## count by substrate
+      substage &lt;- getOrgAlive( community, i, "sub.stage" )
+      ## only for individuals of class = subclass[i]
+      substage &lt;- substage[ subclass[i] == getOrgAgeClass( community, i, stage ) ]
+      if( length( substage )) {
+        classes &lt;- getOrgInteract( community,, i, "substrate" )
+        tmp &lt;- table( classes[substage] )
+        count$countsub[[i]][ names( tmp ) ] &lt;- tmp
+      }
+    }
+  }
+  count$debug &lt;- debugit
+  
+  # If file is NULL, then don't write to file; keep counts internal
+  count$file &lt;- file
+  if (append &amp;&amp; !is.null(old_counts)) {
+    count$counts &lt;- old_counts
+    count$step &lt;- old_step
+  }
+  
+  community$count &lt;- count
+  
+  ## Put counts in file
+  community &lt;- putCount( community, append )
+  
+  ## tally events at start of simulation
+  setEvents( community, "initial" )
+}
+###########################################################################################
+getCount &lt;- function( community, species, element )
+{
+  count &lt;- community$count[[element]]
+  if( !missing( species ))
+    count &lt;- count[[species]]
+  count
+}
+###########################################################################################
+set.step &lt;- function( community, step )
+  setCount( community,, list( step = step ))
+###########################################################################################
+setCount &lt;- function( community, species, elements )
+{
+  count &lt;- community$count
+  for( i in names( elements )) {
+    if( missing( species ))
+      count[[i]] &lt;- elements[[i]]
+    else
+      count[[i]][[species]] &lt;- elements[[i]]
+  }
+  community$count &lt;- count
+  community
+}
+
 # --- Source: future.events.R ---
 future.events &lt;- function( community,
                            nstep = 4000,
@@ -2930,6 +3385,1237 @@ future.events &lt;- function( community,
   community
 }
 
+# --- Source: event.R ---
+## $Id: event.R,v 1.0 2002/12/11 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###############################################################################
+##
+## event.birth( community, species )
+## event.attack( community, species )
+##
+## Issues to resolve:
+## 2. search strategy for predator/parasite/parasitoid
+## 3. generic calls to do.x
+###############################################################################
+event.birth &lt;- function( community, species )
+{
+  ## now only one offspring at a time,
+  ## but could depend on individual
+  offspring &lt;- get.offspring( community, species)
+  ## update parent based on anticipated offspring
+  community &lt;- parent.birth( community, species, offspring )
+  if( offspring ) {
+    ## get new births
+    newbirths &lt;- get.birth( community, species, offspring )
+    ## merge births into community
+    community &lt;- set.birth( community, species, newbirths )
+  }
+  community
+}
+###############################################################################
+parent.birth &lt;- function( community, species, offspring )
+{
+  ## get individual record
+  individual &lt;- get.individual( community, species )
+  individual["offspring"] &lt;- individual["offspring"] - offspring
+  ## female starves when egg load depleted (less than or equal to 0)
+  if( individual["offspring"] &lt;= 0 )
+    individual["stage"] &lt;- set.future( community, species, "starved" )
+  community &lt;- put.individual( community, species, individual )
+}
+###############################################################################
+get.birth &lt;- function( community, species, offspring )
+{
+  ## get individual record
+  individual &lt;- get.individual( community, species )
+  ## matrix of new offspring for community
+  newbirths &lt;- matrix( individual, length( individual ), offspring )
+  dimnames( newbirths ) &lt;- list( names( individual ), NULL )
+  if( offspring ) {
+    ## assumes newborn is stage 1, and next stage is 2
+    newbirths["stage",] &lt;- 1
+    newbirths["future",] &lt;- 2
+    ## set up as unlinked node for leftist tree
+    newbirths[c("dist","left","right","up"),] &lt;- 1
+    ## disperse offspring across substrate types
+    newbirths &lt;- event.move( community, species, newbirths )
+  }
+  if( getCount( community,, "debug" ))
+    cat( round( individual["time"] ),
+        getOrgFeature( community, species, "units" ),
+        ":", species, "offspring", individual["offspring"], "\n" )
+  if( offspring ) {
+    ## get future events for new organisms
+    get.future( community, species, newbirths)
+  }
+  else
+    community
+}
+###############################################################################
+get.deplete &lt;- function( community, species )
+{
+  ## get individual record of attacker
+  individual &lt;- get.individual( community, species )
+  ## Deplete reserves based on time spent searching for host.
+  individual["offspring"] &lt;- individual["offspring"] - 
+    ( individual["time"] - individual["location"] ) /
+      getOrgFeature( community, species, "deplete" )
+  community &lt;- put.individual( community, species, individual )
+}
+###############################################################################
+set.future &lt;- function( community, species, stage )
+{
+  current &lt;- getOrgFuture( community, species, "current" )
+  seq( length( current ))[ current == stage ]
+}
+###############################################################################
+### Interaction Events (only attack for now)
+###############################################################################
+event.attack &lt;- function( community, species )
+{
+  ## dyadic event: attack of host by adult parasitoid
+  
+  ## deplete individual based on time spent searching for host
+  community &lt;- get.deplete( community, species )
+  ## get individual record of attacker
+  individual &lt;- get.individual( community, species )
+
+  ## find a host if parasite has offspring reserve left
+  if( individual["offspring"] &gt; 0 ) {
+    ## get name of host for attacker
+    host &lt;- getOrgFeature( community, species, "attack" )
+    ## get attack parasite and event types
+    attack &lt;- get.attack( community, species, individual )
+    ## find host located on the same substrate
+    found &lt;- event.find( community, species, host, attack["event"] )
+    if( length( found )) {
+      ## host-parasite interaction
+      event.parsed &lt;- get( paste( "event", attack["event"], sep="." ))
+      community &lt;- event.parsed( community, species, host, found )
+      event.parsed &lt;- get( paste( "host", attack["parasite"], sep="." ))
+      community &lt;- event.parsed( community, species, host, found )
+      individual &lt;- get.individual( community, species )
+    }
+  }
+  if( individual["offspring"] &gt; 0 ) {
+    ## parasite moves along substrate
+    individual &lt;- event.move( community, species, individual )
+  }
+  else {
+    ## parasite dies if it does not feed enough
+    individual["stage"] &lt;- set.future( community, species, "starved" )
+  }
+  ## put updated individual back in community
+  community &lt;- put.individual( community, species, individual )
+}
+###############################################################################
+get.attack &lt;- function( community, species, individual )
+{
+  ## get parasite type ("ecto" or "endo") and current event ("feed" or "ovip")
+  parasite &lt;- getOrgFeature( community, species, "parasite" )
+  event &lt;- getOrgFuture( community, species, "current", individual["future"] )
+  event &lt;- as.character( event )
+  if( parasite=="endo" )
+    event &lt;- "ovip"
+  else if( individual["offspring"] &lt; 1 ) {
+    ## must feed if depleted
+    event &lt;- "feed"
+  }
+  c( event = event, parasite = parasite )
+}
+###############################################################################
+host.ecto &lt;- function( community, species, host, dead )
+{
+  ## ectoparasites effectively kill their host
+
+  ## get individual doing the attack
+  individual &lt;- get.individual( community, species )
+  ## get host individual that is attacked
+  hostindiv &lt;- get.individual( community, host, dead )
+  ## set host time to now, which may involve hr-DD translation
+  hostindiv["time"] &lt;- transTime( community, species, host, individual["time"] )
+  ## schedule immediate death of host
+  hostindiv["future"] &lt;- set.future( community, host, "death" )
+  ## update host record in community
+  community &lt;- put.individual( community, host, hostindiv, dead )
+  ## update leftist tree and mintime
+  community &lt;- put.species( community, host,
+                           leftist.update( get.species( community, host ), dead ))
+  update_mintime( community, host )
+}
+###############################################################################
+host.endo &lt;- function( community, species, host, dead, harm )
+{
+  ## endoparasites reduces capacity of host (assumed by half here)
+  
+  ## get host individual that is attacked
+  hostindiv &lt;- get.individual( community, host, harm )
+  ## schedule harm for hosts (reduce egg capacity by half)
+  hostindiv["offspring"] &lt;- floor( hostindiv["offspring"] / 2 )
+  if( hostindiv["offspring"] == 0 ) {
+    ## get individual doing the attack
+    individual &lt;- get.individual( community, species )
+    ## set host time to now, which may involve hr-DD translation
+    hostindiv["time"] &lt;- transTime( community, species, host, individual["time"] )
+    ## schedule immediate death of host
+    hostindiv["future"] &lt;- set.future( community, host, "death" )
+  }
+  ## update host record in community
+  community &lt;- put.individual( community, host, hostindiv, harm )
+  if( hostindiv["offspring"] == 0 ) {
+    ## update leftist tree and mintime
+    community &lt;- put.species( community, host,
+                             leftist.update( get.species( community, host ), dead ))
+    community &lt;- update_mintime( community, host )
+  }
+  community
+}
+###############################################################################
+event.feed &lt;- function( community, species, host, dead )
+{
+  ## feed: adult parasite feeds on host
+
+  interact &lt;- get.interact( community, species, host, dead, "feed" )
+  ## host-parasite interaction: feeding
+  if( interact ) {
+    individual &lt;- get.individual( community, species )
+    individual["offspring"] &lt;- individual["offspring"] + interact
+    community &lt;- put.individual( community, species, individual )
+  }
+  community
+}
+###############################################################################
+event.ovip &lt;- function( community, species, host, dead, gender=TRUE )
+{
+  ## ovip: adult lays egg in the host to emerge later as adult
+  offspring &lt;- get.offspring( community, species )
+
+  interact &lt;- get.interact( community, species, host, dead, "ovip" )
+  ## host-parasite interaction: feeding
+  if( interact ) {
+    ## update parent individual, depleting energy after egg laying
+    community &lt;- parent.birth( community, species, offspring )
+
+    ## get new births
+    newbirths &lt;- get.birth( community, species, offspring )
+    ## gender preference for offspring
+    if( get.interact( community, species, host, dead, "male" ) &lt; stats::runif( 1 ) |
+      !gender ){
+      ## set offspring for female eggs based on dead host
+      newbirths["offspring", ] &lt;- set.offspring( community, species, host, dead )
+    }
+    else {
+      ## produce male and put on queue for immediate death
+      newbirths &lt;- set.male( community, species, host, newbirths )
+    }
+    community &lt;- set.birth( community, species, newbirths )
+  }
+  community
+}
+###############################################################################
+set.male &lt;- function( community, species, host, newbirths )
+{
+  ## produce male offspring, which is queued for immediate death
+  newbirths["future",1] &lt;- set.future( community, species, "male" )
+  newbirths["time",1] &lt;- get.individual( community, species )["time"]
+  newbirths
+}
+
+# --- Source: event.future.R ---
+event.future &lt;- function( community, species )
+{
+  ## schedule future event based on current stage
+  individual &lt;- get.future( community, species )
+  ## move if appropriate
+  individual &lt;- event.move( community, species, individual )
+  ## update time translation if needed
+  community &lt;- checkTime( community, individual["time"],
+                          getCount( community, species, "mintime"),
+                          getOrgFeature( community, species, "units" ))
+  ## put updated individual back in community
+  community &lt;- put.individual( community, species, individual )
+  
+  ## reprioritize the leftist tree if time has changed
+  if( individual["time"] &gt; individual["location"] ) {
+    ## and time is longer than next scheduled time
+    if( individual["time"] &gt;
+        min( get.species.element( community, species, "time",
+                                  individual[c("left","right")] ))) {
+      ## remove individual from leftist tree
+      community &lt;- put.species( community, species,
+                                leftist.update( get.species( community, species )))
+    }
+    community &lt;- update_mintime( community, species )
+  }
+  community
+}
+
+# --- Source: Events.R ---
+###########################################################################################
+updateEvents &lt;- function( community, species, event, increment = 1 )
+{
+  community$count$events[[species]][event,"during"] &lt;-
+    community$count$events[[species]][event,"during"] + increment
+  community
+}
+###########################################################################################
+setEvents &lt;- function( community, period )
+{
+  count &lt;- community$count
+  for( species in get.species( community )) {
+    current &lt;- getOrgFuture( community, species, "current" )
+    events &lt;- rep( 0, length( current ))
+    names( events ) &lt;- as.character( current )
+    
+    stage &lt;- getOrgAlive( community, species, "stage" )
+    if( length( stage )) {
+      tmp &lt;- tapply( stage, current[stage], length )
+      tmp[ is.na( tmp ) ] &lt;- 0
+      events[ names( tmp ) ] &lt;- tmp
+    }
+    
+    count$events[[species]][,period] &lt;- events
+  }
+  community$count &lt;- count
+  community
+}
+
+# --- Source: leftist.R ---
+## $Id: leftist.R,v 1.0 2002/12/11 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###########################################################################################
+## This version has list structure for individuals.
+## In addition it will keep species separate.
+###########################################################################################
+## Triply linked leftist trees
+###########################################################################################
+leftist.tree &lt;- function( x,
+  tree = data.frame( root = empty ),
+  key = "time",
+  empty = c( time = NA, dist = 1, left = 1, right = 1, up = 1 ))
+{
+  node &lt;- empty
+  node[key] &lt;- Inf
+  node[c("right","left")] &lt;- 2
+  node["dist"] &lt;- 0
+  if( missing( tree ))
+    names( tree ) &lt;- NULL
+
+  node &lt;- empty
+  node[key] &lt;- x[1]
+  base &lt;- 2
+  tree[[base]] &lt;- node
+
+  for( i in 1 + seq( 2, length( x ))) {
+    node &lt;- empty
+    node[key] &lt;- x[i-1]
+    if( node[key] &lt;= tree[[base]][key] ) {
+      ## insert at root
+      node["left"] &lt;- base
+      tree[[base]]["up"] &lt;- i
+      base &lt;- i
+      tree[[base]] &lt;- node
+    }
+    else {
+      tree[[i]] &lt;- node
+      ## insert in tree (e.g. merge two trees)
+      tree &lt;- as.data.frame( leftist.merge( as.matrix( tree ), i, base ))
+      base &lt;- tree["up",1]
+    }
+  }
+  tree[[1]][c("right","left","up")] &lt;- base
+  tree
+}
+###########################################################################################
+leftist.create &lt;- function( tree, key = "time" )
+{
+  ## assume 1st element of tree is for base
+  ## and keys are in place already
+  base &lt;- 2
+  tree[c("right","left","up"),] &lt;- 1
+  tree["dist",-1] &lt;- 1
+  ntree &lt;- ncol( tree )
+
+  for( i in seq( 3, ntree )) {
+    if( tree[key,i] &lt;= tree[key,base] ) {
+      ## insert at root
+      tree["left",i] &lt;- base
+      tree["up",base] &lt;- i
+      base &lt;- i
+    }
+    else {
+      ## insert in tree (e.g. merge two trees)
+      tree &lt;- leftist.merge( tree, i, base )
+      base &lt;- tree["up",1]
+    }
+  }
+  ## set 1st element to point to base
+  tree[c("right","left","up"),1] &lt;- base
+  tree
+}
+###########################################################################################
+leftist.merge &lt;- function( tree, P = 1, Q = 1, R = 1, key = "time" )
+{
+  while( TRUE ) {
+    if( P == 1 ) {
+      P &lt;- Q
+      Q &lt;- 1
+    }
+    if( Q == 1 ) {
+      D &lt;- tree["dist",P]
+      while( R &gt; 1 ) {
+        Q &lt;- tree["right",R]
+        temp &lt;- tree["left",R]
+        if( tree["dist",temp] &lt; D ) {
+          D &lt;- tree["dist",temp] + 1
+          tree["right",R] &lt;- tree["left",R]
+          tree["left",R] &lt;- P
+        }
+        else {
+          D &lt;- D + 1
+          tree["right",R] &lt;- P
+        }
+        tree["up",P] &lt;- R
+        tree["dist",R] &lt;- D
+        P &lt;- R
+        R &lt;- Q
+      }
+      tree["up",P] &lt;- 1
+      tree[c("left","right","up"),1] &lt;- P
+      return( tree )
+    }
+    ## merge two right lists
+    if( tree[key,P] &lt;= tree[key,Q] ) {
+      temp &lt;- tree["right",P]
+      tree["right",P] &lt;- R
+      tree["up",R] &lt;- P
+      R &lt;- P
+      P &lt;- temp
+    }
+    else {
+      temp &lt;- tree["right",Q]
+      tree["right",Q] &lt;- R
+      tree["up",R] &lt;- Q
+      R &lt;- Q
+      Q &lt;- temp
+    }
+  }
+  tree["up",1] &lt;- P
+  tree[c("left","right","up"),P] &lt;- 1
+  tree
+}
+###########################################################################################
+leftist.remove &lt;- function( tree, P )
+{
+  oldbase &lt;- tree["up",1]
+  up &lt;- tree["up",P]
+
+  ## merge the subtrees below P
+  tree &lt;- leftist.merge( tree, tree["left",P], tree["right",P] )
+
+  ## reset node to empty
+  tree[c("up","left","right","dist"),P] &lt;- 1
+
+  ## return if base node removed
+  if( oldbase == P )
+    return( tree )
+
+  ## make up node leftist
+  if( tree["left",up] == P )
+    tree["left",up] &lt;- tree["right",up]
+  tree["right",up] &lt;- 1
+  tree["dist",up] &lt;- 1
+
+  ## traverse back up the tree to make sure it is leftist to base
+  upup &lt;- tree["up",up]
+  left &lt;- tree["left",upup]
+  right &lt;- tree["right",upup]
+  while( tree["dist",left] &lt; tree["dist",right] ) {
+    tree["dist",upup] &lt;- tree["dist",left] + 1
+    tree["left",upup] &lt;- right
+    tree["right",upup] &lt;- left
+    upup &lt;- tree["up",upup]
+    left &lt;- tree["left",upup]
+    right &lt;- tree["right",upup]
+  }
+  ## merge down and up trees
+  leftist.merge( tree, oldbase, tree["up",1] )
+}
+###########################################################################################
+leftist.birth &lt;- function( organism, neworg, free )
+{
+  newbase &lt;- organism["up",1]
+  norganism &lt;- ncol( neworg )
+  j &lt;- norganism
+  nfree &lt;- free[1]
+  while( j &gt; 0 &amp; nfree &gt; 1 ) {
+    newbabe &lt;- free[nfree]
+    organism[,newbabe] &lt;- neworg[,j]
+    organism &lt;- leftist.merge( organism, newbase, newbabe )
+    newbase &lt;- organism["up",1]
+    nfree &lt;- nfree - 1
+    free[1] &lt;- nfree
+    j &lt;- j - 1
+  }
+  if( j &gt; 0 ) {
+    norganism &lt;- ncol( organism )
+    js &lt;- 1:j
+    organism &lt;- cbind( organism, neworg[,js] )
+    for( i in norganism + js ) {
+      organism &lt;- leftist.merge( organism, newbase, i )
+      newbase &lt;- organism["up",1]
+    }
+  }
+  list( tree = organism, base = newbase, free = free )
+}
+###########################################################################################
+leftist.free &lt;- function( free, id )
+{
+  free[1] &lt;- tmp &lt;- free[1] + 1
+  free[tmp] &lt;- id
+  free
+}
+###########################################################################################
+leftist.update &lt;- function( tree, P = tree["up",1] )
+{
+  tree &lt;- leftist.remove( tree, P )
+  leftist.merge( tree, tree["up",1], P )
+}
+
+# --- Source: community.R ---
+get.organisms &lt;- function(datafile = "") {
+  org &lt;- list(species = c("host", "parasite"), substrates = "substrate")
+  if(datafile != "") {
+    if(tools::file_ext(datafile) %in% c("xls","xlsx")){
+      sheets &lt;- readxl::excel_sheets(datafile)
+      species &lt;- stringr::str_remove(
+        sheets[stringr::str_detect(sheets, "future\\.")],
+        "future\\.")
+      substrates &lt;- unique(stringr::str_remove(
+        sheets[stringr::str_detect(sheets, paste("\\.", species, sep = "", collapse = "|")) &amp;
+        !stringr::str_detect(sheets, paste(c("future", species), "\\.", sep = "", collapse = "|"))],
+        "\\..*"))
+      org &lt;- list(species = species, substrates = substrates)
+    }
+  }
+  org
+}
+###########################################################################################
+get.species &lt;- function( community, species ) {
+  if( missing( species ))
+    return( names( community$pop ))
+  if( is.numeric( species ))
+    species &lt;- names( community$pop )[species]
+  if( is.null( species ) || !species %in% names( community$pop ))
+    return( NULL )
+  
+  ans &lt;- community$pop[[species]]
+  if (is.list(ans) &amp;&amp; !is.matrix(ans) &amp;&amp; !is.data.frame(ans) &amp;&amp; !is.null(ans$org)) {
+    ans &lt;- ans$org
+  }
+  if (is.matrix(ans) || is.data.frame(ans)) {
+    if (!"up" %in% rownames(ans) &amp;&amp; (is.null(colnames(ans)) || colnames(ans)[1] != "dummy")) {
+      dummy &lt;- ans[, 1, drop = FALSE]
+      colnames(dummy) &lt;- "dummy"
+      return(cbind(dummy, ans))
+    }
+  }
+  ans
+}
+###########################################################################################
+get.species.element &lt;- function( community, species, rows, cols )
+  community$pop[[species]][rows,cols]
+###########################################################################################
+put.species &lt;- function( community, species, value )
+{
+  community$pop[[species]] &lt;- value
+  community
+}
+###############################################################################
+put.individual &lt;- function( community, species, individual,
+                           id = get.base( community, species ))
+{
+  community$pop[[species]][,id] &lt;- individual
+  community
+}  
+###############################################################################
+get.individual &lt;- function( community, species,
+                           id = get.base( community, species ))
+  community$pop[[species]][,id]
+###############################################################################
+get.base &lt;- function( community, species )
+  community$pop[[species]]["up",1]
+
+# --- Source: c.ewing.R ---
+c.ewing &lt;- function(...) {
+  communities &lt;- list(...)
+  if(length(communities) &lt; 2) {
+    if(length(communities) == 1)
+      return(communities[[1]])
+    return(NULL)
+  }
+
+  community &lt;- communities[[1]]
+  
+  # *** need to verify that all communities have save structure
+  # Elements org, temp should be identical
+  
+  for(comi in seq(2, length(communities))) {
+    # Element pop
+    for(species in names(community$pop)) {
+      community$pop[[species]] &lt;-
+        cbind(community$pop[[species]], communities[[comi]]$pop[[species]])
+    }
+    # Element cpu
+    community$cpu &lt;- community$cpu + communities[[comi]]$cpu
+  }
+  # Element plot is more complicated as it contains items for plots
+  # Probably want some form of appendX functions
+}
+
+# --- Source: move.R ---
+## $Id: move.R,v 1.0 2002/12/09 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###############################################################################
+event.move &lt;- function( community, species, individual )
+{
+  individual &lt;- as.matrix( individual )
+  ## move only if individual is in stage that moves
+  if( all( is.move( community, species, individual ))) {
+    ## move among substrates?
+    individual["sub.future",] &lt;-
+      sampleOrgSubstrate( community, species, individual["sub.stage",] )
+    ## move to new position in substrate
+    position &lt;- paste( "pos", letters[1:3], sep = "." )
+    individual[position,] &lt;- rtri( ncol( individual ), 10, individual[position,] )
+  }
+  if( ncol( individual ) == 1 )
+    individual &lt;- individual[,1]
+  individual
+}
+###############################################################################
+is.move &lt;- function( community, species, individual )
+{
+  !is.na( match( getOrgFeature( community, species, "move" ), 
+                getOrgFuture( community, species, "current" )[ individual["stage",] ] ))
+}
+###############################################################################
+event.find &lt;- function( community, species, host, event )
+{
+  individual &lt;- get.individual( community, species )
+  substrate &lt;- individual["sub.stage"]
+  ## pending event: need to find available hosts on substrate
+  avail &lt;- get.alive( community, host, substrate )
+  navail &lt;- length( avail )
+  if( !navail )
+    return( avail )
+  
+  ## preferences based on schedule
+  interact &lt;- get.interact( community, species, host, avail, event )
+  if( length( event ) &gt; 1 )
+    interact &lt;- apply( interact, 1, sum )
+  sinteract &lt;- sum( interact )
+  if( sinteract ) {
+    if( navail &gt; 1 ) {
+      found &lt;- sample( avail, 1, prob = interact / sinteract )
+    }
+    else
+      found &lt;- avail
+    found
+  }
+  else
+    numeric(0)
+}
+
+# --- Source: offspring.R ---
+## $Id: init.R,v 1.0 2002/12/09 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## Offspring Information
+##########################################################################################
+getOffspring &lt;- function( community, species,
+                         offspring = getOrgFeature( community, species, "offspring" ))
+{
+  if( is.na( offspring ))
+    return( 0 )
+  if( is.numeric( offspring ))
+    return( offspring )
+  getOrgInteract( community, offspring, species, "offspring" )
+}
+##########################################################################################
+initOffspring &lt;- function( community, species )
+{
+  hostname &lt;- getOrgFeature( community, species, "offspring" )
+
+  ## find if there is offspring load based on host
+  orgoffspring &lt;- getOffspring( community, species, hostname )
+
+  norganism &lt;- sum( getOrgAlive( community, species ))
+
+  if( length( orgoffspring ) == 1 ) {
+    ## mean offspring does not depend on any host
+    offspring &lt;- stats::rpois( norganism, orgoffspring )
+  }
+  else {
+    orgoffspring &lt;- orgoffspring[ orgoffspring &gt; 0 ]
+    
+    if(!length(orgoffspring))
+      return(community)
+  
+    ## figure out initial offspring load based on host distribution
+
+    ## mean offspring depends on host stages and events
+    host &lt;- get.species( community, hostname )
+    if( is.null( host ))
+      stop( paste( "Host", hostname, "not initiated yet" ))
+
+    ## get weights of host stages in terms of future event times
+    host &lt;- host[ , getOrgAlive( community, hostname ) ]
+
+    ## find host stages that are preferred by parasite
+    ## need to take subset of current that are actually in host
+    hoststages &lt;- match( names( orgoffspring ), getOrgFuture( community, hostname )$current,
+                        nomatch = 0 )
+    host &lt;- as.matrix( host[ , !is.na( match( host["stage",], hoststages )) ] )
+    if( ncol( host ) == 0 )
+      return( community )
+
+    tmp &lt;- !is.na( match( hoststages, host["stage",] ))
+    hoststages &lt;- hoststages[tmp]
+    orgoffspring &lt;- orgoffspring[tmp]
+
+    if(!length(orgoffspring))
+      return(community)
+    
+    dd &lt;- tapply( host["time",], host["stage",], sum )
+    dd[ as.character( hoststages[
+      is.na( match( hoststages, names( dd ))) ] ) ] &lt;- 0
+    dd[ is.na( dd ) ] &lt;- 0
+    sdd &lt;- sum( dd )
+    if( length( dd ) &gt; 1 &amp; sdd &gt; 0)
+      offspring &lt;- as.vector( sample( orgoffspring, norganism, replace = TRUE,
+        prob = dd / sdd ))
+    else
+      offspring &lt;- rep( ( sdd &gt; 0 ) * orgoffspring[1], norganism )
+    offspring[ is.na( offspring ) ] &lt;- 0
+  }
+  organism &lt;- get.species( community, species )
+  organism["offspring",-1] &lt;- offspring
+  put.species( community, species, organism )
+}
+###############################################################################
+get.offspring &lt;- function( community, species )
+{
+  individual &lt;- get.individual( community, species )
+  if( individual["offspring"] &gt; 0 )
+    1
+  else
+    0
+}
+###########################################################################################
+set.offspring &lt;- function( community, species, host, dead )
+{
+  stage &lt;- get.species.element( community, host, "stage", dead )
+  current &lt;- getOrgFuture( community, host, "current", stage )
+  offspring &lt;- getOrgInteract( community, host, species, "offspring")
+  offspring &lt;- as.vector( offspring[ as.character( current ) ] )
+  offspring[ is.na( offspring ) ] &lt;- 0
+  offspring
+}
+
+# --- Source: sim.R ---
+## $Id: sim.R,v 0.9 2002/12/09 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+### migrate count$count* to writeCount and then retrieve with readCount
+###########################################################################################
+updateCount &lt;- function(community, species, individual, is.death = FALSE, step) {
+  community &lt;- updateEvents(community, species, individual["future"])
+  if (!missing(step)) {
+    community &lt;- setCount(community, elements = list(step = step))
+  }
+
+  ## move individual through age classes or drop if it dies
+  countage &lt;- getCount( community, species, "countage" )
+  ageclass &lt;- getOrgAgeClass( community, species, individual["stage"] )
+  if( !is.na( ageclass )) {
+    ageclass &lt;- as.character( ageclass )
+    countage[ageclass] &lt;- max(countage[ageclass] - 1, 0)
+  }
+  ageclass &lt;- getOrgAgeClass( community, species, individual["future"] )
+  if( !is.na( ageclass )) {
+    ageclass &lt;- as.character( ageclass )
+    countage[ageclass] &lt;- countage[ageclass] + 1
+  }
+  ## move individual across substrate elements or drop if it dies
+  countsub &lt;- getCount( community, species, "countsub" )
+  substrate &lt;- getOrgFeature( community, species, "substrate" )
+  elements &lt;- getOrgInteract( community, substrate, species, "substrate" )
+  element &lt;- elements[ individual["sub.stage"] ]
+  subclass &lt;- getOrgFeature( community, species, "subclass" )
+  include &lt;- subclass == getOrgAgeClass( community, species, individual[c("stage","future")] )
+  # need 2 values; if only one, replicate it.
+  include &lt;- rep_len(include, 2)
+  ## leave old substrate
+  if (!is.na(element) &amp;&amp; include[1]) {
+    element &lt;- as.character( element )
+    countsub[element] &lt;- max(countsub[element] - 1, 0)
+  }
+  if (!is.death &amp;&amp; include[2]) {
+    ## move to new substrate
+    newsub &lt;- individual["sub.future"]
+    if( !is.na( newsub )) {
+      element &lt;- elements[newsub]
+      if( !is.na( element )) {
+        element &lt;- as.character( element )
+        countsub[element] &lt;- countsub[element] + 1
+      }
+    }
+  }
+  ## record counts
+  community &lt;- setCount( community, species,
+                        list( countage = countage, countsub = countsub ))
+  community &lt;- writeCount( community, species, individual["time"], individual["future"],
+               countage, countsub )
+}
+###########################################################################################
+updateCounts &lt;- function( community, species, newbirths )
+{
+  community &lt;- updateEvents( community, species, 1, newbirths )
+  
+  countage &lt;- getCount( community, species, "countage" )
+  countsub &lt;- getCount( community, species, "countsub" )
+  subclass &lt;- getOrgFeature( community, species, "subclass" )
+  ageclass &lt;- getOrgAgeClass( community, species, 1 )
+  individual &lt;- get.individual( community, species )
+  if( !is.na( ageclass[1] )) {
+    ageclass &lt;- as.character( ageclass )
+    countage[ageclass] &lt;- newbirths + countage[ageclass]
+    if( subclass == ageclass ) {
+      substrate &lt;- getOrgSubstrate( community, species, individual["sub.stage"] )
+      if( !is.na( substrate[1] )) {
+        substrate &lt;- as.character( substrate )
+        countsub[substrate] &lt;- newbirths + countsub[substrate]
+      }
+    }
+  }
+  community &lt;- setCount( community, species,
+                        list( countage = countage, countsub = countsub ))
+  community &lt;- writeCount( community, species, individual["time"], 1, countage, countsub )
+}
+###########################################################################################
+put.base &lt;- function( community, species, id,
+                     free = getCount( community, species, "free" ))
+{
+  base &lt;- get.base( community, species )
+  if( !missing( id ))
+    free &lt;- leftist.free( free, id )
+  mintime &lt;- max( getCount( community, species, "mintime" ),
+                 getTime( community, species,
+                         get.species.element( community, species, "time", base )))
+  setCount( community, species, list( base = base, free = free, mintime = mintime ))
+}
+
+# --- Source: simple.R ---
+simpleServer &lt;- function(id) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+    
+  })
+}
+simpleInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    shiny::h4("Simulation Settings"),
+    shiny::sliderInput(ns("steps"),
+                       label = "Simulation steps:",
+                       min = 1000,
+                       max = 10000,
+                       value = 1000,
+                       step = 500),
+    shiny::radioButtons(ns("nsim"),
+                        "Number of Simulations",
+                        c(1,10,20,50,100,200),
+                        1, inline = TRUE),
+    shiny::actionButton(ns("go"), "Start Simulation"),
+    
+    shiny::HTML("&lt;hr style='height:1px;border:none;color:#333;background-color:#333;' /&gt;"),
+    shiny::h4("Save Files"),
+    shiny::uiOutput(ns("version"))
+  )
+}
+simpleOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    shiny::radioButtons(ns("button"), "", c("Plots", "Input Data"),
+                        "Plots", inline = TRUE),
+  )
+}
+simpleApp &lt;- function(title = "Population Ethology") {
+  ui &lt;- shiny::fluidPage(
+    shiny::titlePanel(title),
+    shiny::sidebarLayout(
+      shiny::sidebarPanel(
+        simpleInput("simple")
+      ),
+      shiny::mainPanel(
+        simpleOutput("simple")
+    )))
+  
+  server &lt;- function(input, output, server) {
+    simpleServer("simple")
+  }
+  
+  shiny::shinyApp(ui = ui, server = server)
+}
+
+# --- Source: ring.R ---
+## $Id: ring.R,v 1.0 2002/12/09 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###########################################################################################
+## Doubly linked rings
+###########################################################################################
+ring.add &lt;- function( ring = data.frame( root = c( key = NA, left = 1 + nx, right = 2 )),
+  x )
+{
+  nx &lt;- length( x )
+  n1 &lt;- ring["left","root"]
+  ring[[ as.character( n1 + 1 ) ]] &lt;- c(
+    key = x[1],
+    left = suppressWarnings(as.numeric( ring["left","root"] )),
+    right = 1 )
+  
+  if( nx &gt; 1 ) for( i in seq( 2, nx ))
+  {
+    ring[[ as.character( n1 + i ) ]] &lt;- c(
+      key = x[i],
+      left = n1+i-1,
+      right = 1 )
+    ring[ "right", as.character( n1 + i - 1 ) ] &lt;- n1+i
+  }
+  ring["left","root"] &lt;- n1 + nx
+  ring
+}
+###########################################################################################
+ring.remove &lt;- function( ring, P )
+{
+  aP &lt;- as.character( P )
+  if( is.na( match( aP, names( ring ))))
+  {
+    cat( paste( "Warning:", aP, "not found in ring\n" ))
+    return( ring )
+  }
+  left &lt;- ring["left",aP]
+  right &lt;- ring["right",aP]
+  ring[ "right", as.character( left ) ] &lt;- right
+  ring[ "left", as.character( right ) ] &lt;- left
+  ring[[aP]] &lt;- NULL
+  ring
+}
+
+# --- Source: fileCount.R ---
+putCount &lt;- function( community, append = FALSE )
+{
+  species &lt;- get.species( community )
+  
+  countage &lt;- getCount( community,, "countage")
+  countsub &lt;- getCount( community,, "countsub")
+  countbase &lt;- getCount( community,, "base")
+  step_now &lt;- if (append) (getCount( community,, "step" ) %||% 0) else 0
+  
+  cnames &lt;- c("step", "time", "future",
+              paste( "count", 
+                     seq( max( unlist( lapply( countage, length )) +
+                                 unlist( lapply( countsub, length )))),
+                     sep = "" ))
+
+  cnums &lt;- list()
+  for( i in species ) {
+    cnums[[i]] &lt;- c(
+      step_now,
+      get.species.element( community, i, c("time","stage"), countbase[i] ),
+      countage[[i]],
+      countsub[[i]])
+  }
+
+  file &lt;- getCount( community,, "file" )
+  if(!is.null(file) &amp;&amp; is.character(file) &amp;&amp; length(file) &gt; 0) {
+    if( !( file.exists( file ) &amp; append ))
+      cat( "species", cnames, "\n", file = file )
+    for( i in species ) {
+      cat( i, cnums[[i]], "\n", file = file, append = TRUE )
+    }
+    community
+  } else {
+    if(append) {
+      counts &lt;- getCount( community,, "counts")
+    } else {
+      counts &lt;- NULL
+    }
+    newcounts &lt;- matrix(NA, length(species), length(cnames),
+                       dimnames = list(species, cnames)) 
+    for(i in species) {
+      newcounts[i, seq_along(cnums[[i]])] &lt;- cnums[[i]]
+    }
+    newcounts &lt;- tibble::tibble(
+      data.frame(
+        species = species,
+        newcounts))
+    counts &lt;- dplyr::bind_rows(
+      counts,
+      newcounts)
+    
+    setCount( community,, list(counts = counts))
+  }
+}
+###########################################################################################
+writeCount &lt;- function( community, species, time, future, countage, countsub)
+{
+  nstep &lt;- getCount( community,, "step" )
+  
+  cnums &lt;- c(nstep, time, future, countage, countsub)
+  
+  file &lt;- getCount( community,, "file" )
+  if(!is.null(file) &amp;&amp; is.character(file) &amp;&amp; length(file) &gt; 0) {
+    cat( species, cnums, "\n", file = file, append = TRUE )
+    
+    community
+  } else {
+    counts &lt;- getCount( community,, "counts")
+    cnames &lt;- names(counts)[-1]
+    
+    newcounts &lt;- matrix(NA, 1, length(cnames),
+                          dimnames = list(species, cnames)) 
+    newcounts[1, seq_along(cnums)] &lt;- cnums
+    
+    newcounts &lt;- tibble::tibble(
+      data.frame(
+        species = species,
+        newcounts))
+    counts &lt;- dplyr::bind_rows(
+      counts,
+      newcounts)
+    
+    setCount( community,, list(counts = counts))
+  }
+}
+###########################################################################################
+readCount &lt;- function( community, species = unique(counts$species) )
+{
+  file &lt;- getCount( community,, "file" )
+  if(!is.null(file)) {
+    counts &lt;- utils::read.table( file, header = TRUE, fill = TRUE )
+  } else {
+    counts &lt;- getCount( community,, "counts")
+  }
+  
+  count &lt;- list()
+  for( i in species ) {
+    colnames &lt;- c( levels( getOrgFuture( community, i, "ageclass" )),
+                   levels( getOrgInteract( community,, i, "substrate" )))
+    count[[i]] &lt;- as.matrix( counts[ counts$species == i, seq( 2, 4 + length( colnames )) ] )
+    dimnames( count[[i]] ) &lt;- list( count[[i]][,"step"],
+                                    c( "step", "time", "future", colnames ))
+  }
+  count
+}
+
+
+# --- Source: count.join.R ---
+count.join &lt;- function( ... )
+{
+  x &lt;- list( ... )
+  numnum &lt;- list()
+  for( i in seq( length( x ))) {
+    for( j in names( x[[i]] )) {
+      if( is.null( numnum[[j]] ))
+        numnum[[j]] &lt;- x[[i]][[j]]
+      else
+        numnum[[j]] &lt;- cbind( numnum[[j]], x[[i]][[j]] )
+    }
+  }
+  numnum
+}
+
+# --- Source: summary.ewing.R ---
+summary.ewing &lt;- function(object, ...) {
+  out &lt;- list()
+  out$package &lt;- object$org$package
+  out$species &lt;- names(object$org$Future)
+  out$interact &lt;- names(object$org$Interact)
+  out$meanvalue &lt;- list()
+  for(i in out$species) {
+    out$meanvalue &lt;- names(object$org$MeanValue[[i]])
+  }
+  if(length(object$pop)) {
+    out$stage &lt;- list()
+    for(i in out$species)
+      out$stage[[i]] &lt;- 
+        table(object$org$Future[[i]]$current[getOrgAlive(object, i, "stage")])
+  }
+  if(!is.null(object$count)) {
+    out$events &lt;- object$count$events
+    
+    for( i in seq( length(out$events)))
+      out$events[[i]] &lt;- apply(out$events[[i]], 2, function(x) {
+        tmp &lt;- sum(x, na.rm = TRUE)
+        if(tmp &gt; 0)
+          c(round(100 * x / tmp, 1), total = tmp)
+        else
+          c(x, total = 0)
+      })
+  }
+  out$cpu &lt;- signif(object$cpu, 4)
+  class(out) &lt;- c("summary.ewing", class(out))
+  out
+}
+print.summary.ewing &lt;- function(x, ...) {
+  cat("Data initialization package:", x$package, "\n")
+  cat("Community species:", paste(x$species, collapse = ", " ), "\n")
+  cat("Community hosts:", paste(x$interact, collapse = ", "), "\n")
+  cat("Mean Value curves by species:")
+  mv &lt;- FALSE
+  for(i in x$species) {
+    meanvalue &lt;- x$meanvalue[[i]]
+    mv &lt;- mv | !is.null(meanvalue)
+    if( !is.null(meanvalue)) {
+      cat("\n  ", i, ":", paste( meanvalue, collapse = ", " ), "\n")
+    }
+  }
+  if(!mv)
+    cat(" none\n")
+  
+  if(!is.null(x$stage)) {
+    cat("\nSimulation community has following counts:\n",
+        paste(x$species, lapply(x$stage, sum), sep = "=", collapse = ", "),
+        "\n")
+    print(x$stage)
+  }
+  if( !is.null( x$temp )) {
+    # ** later
+  }
+  if(!is.null(x$events)) {
+    print(x$events)
+  }
+  if(!is.null(x$cpu)) {
+    cat( "CPU timing by event in simulation\n" )
+    print(x$cpu)
+  }
+}
+
+# --- Source: summary_simobj.R ---
+summary_simobj &lt;- function(object) {
+  out &lt;- sapply(object, function(x) {
+    if(is.list(x)) {
+      x &lt;- names(x)
+    }
+    paste(x, collapse=",")
+  })
+  paste(paste(names(out), out, sep = ": "), collapse = "&lt;br&gt;")
+}
+
 # --- Source: ewing_discrete.R ---
 ewing_discrete &lt;- function(nsim, verbose = FALSE, ...) {
   sims &lt;- seq_len(nsim)
@@ -2980,6 +4666,20 @@ ewing_discrete1 &lt;- function(siminit = init.simulation(interact = FALSE,
 }
 summary.ewing_discrete &lt;- function(object, ...) {
   summary(ewing_envelopes(object), ...)
+}
+
+# --- Source: make_ewing_discrete.R ---
+make_ewing_discrete &lt;- function(object) {  
+  nsim &lt;- length(object)
+  class(object) &lt;- c("ewing_discrete", class(object))
+  
+  attr(object, "species") &lt;- species &lt;- names(object[[1]])
+  attr(object, "ordinate") &lt;- "time"
+  attr(object, "count") &lt;- attr(object[[1]], "count")
+  attr(object, "nstep") &lt;- attr(object[[1]], "nstep")
+  attr(object, "items") &lt;- attr(object[[1]], "items")
+  attr(object, "nsim") &lt;- nsim
+  object
 }
 
 # --- Source: ggplot_ewing.R ---
@@ -3057,6 +4757,301 @@ ggplot_current &lt;- function( x,
     p &lt;- p + ggplot2::facet_wrap(~substrate)
   }
   p
+}
+
+# --- Source: initParApp.R ---
+initParApp &lt;- function(title = "Population Ethology") {
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      initParInput("init_par")),
+    initParUI("init_par"),
+    initParOutput("init_par")
+  )
+  server &lt;- function(input, output, server) {
+    init_par &lt;- initParServer("init_par")
+  }
+  shiny::shinyApp(ui = ui, server = server)
+}
+initParServer &lt;- function(id, simres = shiny::reactiveVal(NULL), datafile = shiny::reactiveVal("")) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+    
+    species &lt;- shiny::reactive({
+      get.organisms()$species
+    })
+    output$sppsize &lt;- shiny::renderUI({
+      shiny::req(species()) # "host", "parasite"
+      lapply(species(), function(x) {
+        shiny::sliderInput(ns(x),
+                           label = paste0("Number of ", x, "s:"),
+                           min = 0,
+                           max = 500,
+                           value = 100,
+                           step = 20)
+      })
+    })
+
+    datanames &lt;- shiny::reactive({
+      getOrgNames()
+    })
+    output$inputfiles &lt;- shiny::renderUI({
+      shiny::tagList(
+        shiny::selectInput(ns("dataname"), "", datanames(), "organism.features"),
+        DT::dataTableOutput(ns("org_table")))
+    })
+    
+    output$org_table &lt;- DT::renderDataTable({
+      getOrgDataSimple(simres(), shiny::req(input$dataname), datafile())
+    }, escape = FALSE, options = list(scrollX = TRUE, pageLength = 10))
+    
+    # Show parameters
+    output$show_par &lt;- shiny::renderUI({
+      nlist &lt;- names(input)
+      # Remove any internal inputs, which have numbers.
+      glist &lt;- grep("[0-9]", names(input))
+      if(length(glist))
+        nlist &lt;- nlist[-glist]
+      # Construct output string.
+      out &lt;- paste0("inputs: ", paste(nlist, collapse = ", "))
+      for(i in nlist) {
+        out &lt;- paste(out, "&lt;br&gt;",
+                     paste(i, input[[i]], sep = " = "))
+      }
+      shiny::HTML(out)
+    })
+    
+    # Return.
+    input
+  })
+}
+initParInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::uiOutput(ns("sppsize"))
+}
+initParUI &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::uiOutput(ns("show_par"))
+}
+initParOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::uiOutput(ns("inputfiles"))
+}
+
+# --- Source: initApp.R ---
+initApp &lt;- function(title = "Population Ethology") {
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      initParInput("init_par")),
+    initOutput("init"),
+    substrateOutput("substrate")
+  )
+  server &lt;- function(input, output, server) {
+    init_par &lt;- initParServer("init_par")
+    siminit &lt;- initServer("init", init_par)
+    substrateServer("substrate", siminit)
+  }
+  shiny::shinyApp(ui = ui, server = server)
+}
+initServer &lt;- function(id, init_par) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+    
+    siminit &lt;- shiny::reactive({
+      init.simulation(count = as.numeric(c(shiny::req(init_par$host),
+                                           shiny::req(init_par$parasite))))
+    })
+    
+    output$init &lt;- shiny::renderUI({
+      out &lt;- summary_simobj(shiny::req(siminit()))
+      shiny::HTML(out)
+    })
+
+    # Return.
+    siminit
+  })
+}
+initOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::uiOutput(ns("init"))
+}
+
+# --- Source: substrateApp.R ---
+substrateApp &lt;- function(title = "Substrate Organism Movement Explorer") {
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      initParInput("init_par"),
+      shiny::hr(),
+      substrateInput("substrate")),
+    substrateOutput("substrate")
+  )
+  server &lt;- function(input, output, server) {
+    init_par &lt;- initParServer("init_par")
+    siminit &lt;- initServer("init", init_par)
+    substrateServer("substrate", siminit)
+  }
+  
+  shiny::shinyApp(ui = ui, server = server)
+}
+
+substrateInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    shiny::div(
+      style = "font-size: 0.85rem;",
+      shiny::h4("Substrate Display &amp; Stepping", style = "font-size: 1rem; font-weight: 600; margin-bottom: 8px;"),
+      shiny::checkboxGroupInput(ns("show_species"), "Species to Display:",
+                                choices = c("Host" = "host", "Parasite" = "parasite"),
+                                selected = c("host", "parasite"),
+                                inline = TRUE),
+      shiny::radioButtons(ns("species_mode"), "Species Mode:",
+                          choices = c("Overlay (1 Map)" = "overlay", "Separate (Adjacent Maps)" = "separate"),
+                          selected = "overlay", inline = TRUE),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::radioButtons(ns("layout"), "Layout View:",
+                          choices = c("Hex Substrate Overlay" = "hex", "Faceted Substrates" = "facet"),
+                          selected = "hex", inline = TRUE),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::span("Simulation Stepping:", style = "font-weight: 600; color: #1a73e8; display: block; margin-bottom: 4px;"),
+      shiny::div(
+        style = "display: flex; gap: 4px; margin-bottom: 8px;",
+        shiny::actionButton(ns("step1"), "+1 Step", class = "btn-sm btn-outline-primary flex-fill"),
+        shiny::actionButton(ns("step10"), "+10 Steps", class = "btn-sm btn-outline-primary flex-fill"),
+        shiny::actionButton(ns("step100"), "+100 Steps", class = "btn-sm btn-outline-primary flex-fill"),
+        shiny::actionButton(ns("reset_sim"), "Reset", class = "btn-sm btn-outline-secondary")
+      ),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::checkboxGroupInput(ns("layers"), "Display Layers:",
+                                choices = c("Substrate Boundaries" = "poly",
+                                            "Hex Grid Overlay" = "hex",
+                                            "Organisms" = "organisms",
+                                            "Substrate Names" = "centers",
+                                            "Side Numbers" = "labels"),
+                                selected = c("poly", "hex", "organisms", "centers", "labels")),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::div(
+        style = "display: flex; gap: 8px;",
+        shiny::numericInput(ns("width"), "Radius:", value = 10, min = 2, max = 30, step = 1),
+        shiny::numericInput(ns("step_density"), "Step Density:", value = 1, min = 0.5, max = 5, step = 0.5)
+      )
+    )
+  )
+}
+
+substrateServer &lt;- function(id, simres, width = 10, step_density = 1) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+    
+    current_sim &lt;- shiny::reactiveVal(NULL)
+    
+    shiny::observeEvent(simres(), {
+      current_sim(simres())
+    })
+    
+    shiny::observeEvent(input$step1, {
+      sim &lt;- current_sim()
+      if (!is.null(sim)) {
+        res &lt;- future.events(sim, nstep = 1, plotit = FALSE)
+        current_sim(res)
+      }
+    })
+    
+    shiny::observeEvent(input$step10, {
+      sim &lt;- current_sim()
+      if (!is.null(sim)) {
+        res &lt;- future.events(sim, nstep = 10, plotit = FALSE)
+        current_sim(res)
+      }
+    })
+    
+    shiny::observeEvent(input$step100, {
+      sim &lt;- current_sim()
+      if (!is.null(sim)) {
+        res &lt;- future.events(sim, nstep = 100, plotit = FALSE)
+        current_sim(res)
+      }
+    })
+    
+    shiny::observeEvent(input$reset_sim, {
+      current_sim(simres())
+    })
+    
+    available_species &lt;- shiny::reactive({
+      sim &lt;- current_sim()
+      if (!is.null(sim) &amp;&amp; !is.null(sim$pop)) names(sim$pop) else NULL
+    })
+    
+    selected_species &lt;- shiny::reactive({
+      avail &lt;- available_species()
+      if (is.null(avail)) return(NULL)
+      sel &lt;- input$show_species
+      if (is.null(sel) || length(sel) == 0) avail else intersect(sel, avail)
+    })
+    
+    sppplot &lt;- shiny::reactive({
+      spp &lt;- selected_species()
+      shiny::req(spp)
+      sim &lt;- current_sim()
+      shiny::req(sim)
+      
+      layout_val &lt;- if (!is.null(input$layout)) input$layout else "hex"
+      mode_val &lt;- if (!is.null(input$species_mode)) input$species_mode else "overlay"
+      w_val &lt;- if (!is.null(input$width)) input$width else width
+      sd_val &lt;- if (!is.null(input$step_density)) input$step_density else step_density
+      layers_val &lt;- if (!is.null(input$layers)) input$layers else c("poly", "hex", "organisms", "centers", "labels")
+      
+      sim_single &lt;- if (inherits(sim, "ewing_discrete") &amp;&amp; is.list(sim) &amp;&amp; length(sim) &gt; 0) sim[[1]] else sim
+      if (inherits(sim_single, "ewing")) {
+        if (mode_val == "overlay" &amp;&amp; layout_val == "hex") {
+          sub_data &lt;- ewing_substrate(sim_single, spp, layout = layout_val, width = w_val, step_density = sd_val)
+          if (!is.null(sub_data)) {
+            p_obj &lt;- ggplot_ewing_substrate(sub_data, layout = layout_val, width = w_val, step_density = sd_val, layers = layers_val)
+            list(p_obj)
+          } else {
+            list()
+          }
+        } else {
+          p &lt;- lapply(spp, function(x) {
+            sub_data &lt;- ewing_substrate(sim_single, x, layout = layout_val, width = w_val, step_density = sd_val)
+            if (!is.null(sub_data)) {
+              p_obj &lt;- ggplot_ewing_substrate(sub_data, layout = layout_val, width = w_val, step_density = sd_val, layers = layers_val)
+              p_obj
+            } else {
+              NULL
+            }
+          })
+          p[!sapply(p, is.null)]
+        }
+      } else {
+        list()
+      }
+    })
+    
+    output$sppPlot &lt;- shiny::renderPlot({
+      plots &lt;- sppplot()
+      if (!is.null(plots) &amp;&amp; length(plots) &gt; 0) {
+        cowplot::plot_grid(plotlist = plots, ncol = length(plots), align = "h")
+      } else {
+        ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No active species selected to plot")
+      }
+    })
+    
+    output$substrate_plot &lt;- shiny::renderUI({
+      plots &lt;- sppplot()
+      h_in &lt;- 5.0
+      shiny::plotOutput(ns("sppPlot"), height = paste0(h_in, "in"))
+    })
+    
+    # Return current simulation state for downstream composition
+    current_sim
+  })
+}
+
+substrateOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::uiOutput(ns("substrate_plot"))
 }
 
 # --- Source: distPlotApp.R ---
@@ -3743,6 +5738,318 @@ origEwingOutput &lt;- function(id) {
                         "Plots", inline = TRUE),
     shiny::uiOutput(ns("outs"))
   )
+}
+
+# --- Source: envPlotApp.R ---
+envPlotApp &lt;- function(title = "Envelope Plots") {
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      envPlotInput("env_plot")
+    ),
+    envPlotOutput("env_plot")
+  )
+  server &lt;- function(input, output, server) {
+    # Dummy mock context
+  }
+  shiny::shinyApp(ui = ui, server = server)
+}
+
+envPlotServer &lt;- function(id, simres, nsim) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+    
+    envdata &lt;- shiny::reactive({
+      res &lt;- shiny::req(simres())
+      if(inherits(res, "ewing_discrete")) {
+        ewing_envelopes(res)
+      } else {
+        NULL
+      }
+    })
+    
+    envelopePlot &lt;- shiny::reactive({
+      shiny::req(envdata())
+      sims &lt;- shiny::req(nsim())
+      conf &lt;- (sims &gt;= 10) &amp; input$conf 
+      if(inherits(simres(), "ewing_discrete")) {
+        ggplot_ewing_envelopes(envdata(), conf)
+      } else {
+        NULL
+      }
+    })
+    
+    output$envPlot &lt;- shiny::renderPlot({
+      envelopePlot()
+    })
+    
+    # Return outputs for download hooks
+    list(
+      envdata = envdata,
+      envelopePlot = envelopePlot
+    )
+  })
+}
+
+envPlotInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::checkboxInput(ns("conf"), "Confidence band", FALSE)
+}
+
+envPlotOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::plotOutput(ns("envPlot"))
+}
+
+# --- Source: downloadApp.R ---
+downloadApp &lt;- function(title = "Download Options") {
+  # Stub for testing downloadApp independently
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      downloadInput("download")
+    ),
+    "Test Server Hook"
+  )
+  server &lt;- function(input, output, server) { }
+  shiny::shinyApp(ui = ui, server = server)
+}
+
+downloadServer &lt;- function(id, sim_data, distplot = shiny::reactive(NULL), sppplot = shiny::reactive(NULL), envplot = shiny::reactive(NULL)) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+    
+    # Internal parameters string extraction
+    params &lt;- shiny::reactive({
+      nsim &lt;- shiny::req(sim_data$nsim)
+      inps &lt;- shiny::req(sim_data$input)
+      paste(inps$steps, nsim(), sep = "_") # Modified bounds logic since we dynamically extract
+    })
+    
+    # CSV Data Generator extraction mapping exactly to original ewingApp
+    data &lt;- shiny::reactive({
+      nsim &lt;- as.integer(shiny::req(sim_data$nsim()))
+      sp &lt;- shiny::req(input$species)
+      res &lt;- shiny::req(sim_data$simres())
+      if(nsim == 1) {
+        readCount(res)[[sp]]
+      } else {
+        # For discrete states, evaluate envdata
+        env_d &lt;- shiny::req(envplot$envdata())
+        print(env_d, species = sp)
+      }
+    })
+    
+    output$downloadRun &lt;- shiny::downloadHandler(
+      filename = function() {
+        paste0(paste(shiny::req(input$outfile), shiny::req(input$species), params(), sep = "_"), ".csv") 
+      },
+      content = function(file) {
+        utils::write.csv(data(), file, row.names = FALSE)
+      }
+    )
+    
+    output$downloadPlot &lt;- shiny::downloadHandler(
+      filename = function() {
+        paste0(paste(shiny::req(input$plotfile), params(), sep = "_"), ".pdf") 
+      },
+      content = function(file) {
+        grDevices::pdf(file, width = 9)
+        on.exit(grDevices::dev.off(), add = TRUE)
+        nsim &lt;- as.integer(shiny::req(sim_data$nsim()))
+        
+        if(nsim == 1) {
+          # Handle discrete plot captures natively
+          print(shiny::req(distplot()))
+          sp_lists &lt;- shiny::req(sppplot())
+          if (!is.null(sp_lists)) {
+            for(p in sp_lists) {
+              if(!is.null(p)) print(p)
+            }
+          }
+        } else {
+          print(shiny::req(envplot$envelopePlot()))
+        }
+      }
+    )
+  })
+}
+
+downloadInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    shiny::h4("Save Files"),
+    shiny::fluidRow(
+      shiny::column(6, shiny::textInput(ns("outfile"), "Species Table", "mysim")),
+      shiny::column(3, shiny::selectInput(ns("species"), "", c("host", "parasite"), "host")),
+      shiny::column(3, shiny::downloadButton(ns("downloadRun"), "Table"))),
+    shiny::fluidRow(
+      shiny::column(9, shiny::textInput(ns("plotfile"), "Plot File", "myplot")),
+      shiny::column(3, shiny::downloadButton(ns("downloadPlot"), "Plots")))
+  )
+}
+
+# --- Source: simApp.R ---
+simApp &lt;- function(title = "Population Ethology Simulation") {
+  # Stub for testing simApp individually if desired
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      initParInput("init_par"),
+      simInput("sim")
+    ),
+    simUI("sim"),
+    initParOutput("init_par")
+  )
+  server &lt;- function(input, output, server) {
+    init_par &lt;- initParServer("init_par")
+    simServer("sim", init_par)
+  }
+  shiny::shinyApp(ui = ui, server = server)
+}
+
+simServer &lt;- function(id, init_par, datafile = shiny::reactiveVal("")) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+    
+    active_sim &lt;- shiny::reactiveVal(NULL)
+
+    shiny::observeEvent(input$go_init, {
+      nsim &lt;- as.integer(input$nsim)
+      if(nsim == 1) {
+        siminit &lt;- init.simulation(count = as.numeric(c(shiny::req(init_par$host), shiny::req(init_par$parasite))),
+                                   datafile = datafile())
+        # automatically advance by step_size to avoid step 0 blank plots
+        new_state &lt;- future.events(siminit, nstep = input$step_size, plotit = FALSE)
+        active_sim(new_state)
+      } else {
+        shiny::withProgress(message = paste('Ewing Discrete', nsim, 'Simulations ...'),
+                            value = 0,
+                            {
+                              out &lt;- as.list(seq_len(nsim))
+                              inc &lt;- 1 / nsim
+                              for(i in seq_len(nsim)) {
+                                shiny::incProgress(inc)
+                                out[[i]] &lt;- ewing_discrete1(
+                                  count = as.numeric(c(shiny::req(init_par$host), shiny::req(init_par$parasite))),
+                                  nstep = input$steps) # Does ewing_discrete1 accept datafile? Original didn't pass it.
+                              }
+                              active_sim(make_ewing_discrete(out))
+                            })
+      }
+    })
+
+    shiny::observeEvent(input$go_step, {
+      nsim &lt;- as.integer(input$nsim)
+      if(nsim == 1) {
+        shiny::req(active_sim())
+        new_state &lt;- future.events(active_sim(), nstep = input$step_size, plotit = FALSE)
+        active_sim(new_state)
+      }
+    })
+
+    simres &lt;- shiny::reactive({ active_sim() })
+    
+    # Return both the active reactive and the input bindings natively
+    list(
+      simres = simres,
+      nsim = shiny::reactive({ as.integer(input$nsim) }),
+      input = input
+    )
+  })
+}
+
+simInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    shiny::sliderInput(ns("steps"),
+                       label = "Simulation steps:",
+                       min = 1000,
+                       max = 10000,
+                       value = 1000,
+                       step = 500),
+    shiny::radioButtons(ns("nsim"),
+                        "Number of Simulations",
+                        c(1,10,20,50,100,200),
+                        1, inline = TRUE),
+    shiny::sliderInput(ns("step_size"),
+                       label = "Steps per click (for nsim=1):",
+                       min = 10,
+                       max = 500,
+                       value = 50,
+                       step = 10)
+  )
+}
+
+simUI &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    shiny::fluidRow(
+      shiny::column(6, shiny::actionButton(ns("go_init"), "Init / Run")),
+      shiny::conditionalPanel(
+        condition = sprintf("input['%s'] &gt; 0 &amp;&amp; input['%s'] == '1'", ns("go_init"), ns("nsim")),
+        shiny::column(6, shiny::actionButton(ns("go_step"), "Step Forward"))
+      )
+    )
+  )
+}
+
+# --- Source: futureApp.R ---
+futureApp &lt;- function(title = "Population Ethology") {
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      initParInput("init_par"),
+      distPlotInput("dist_plot"),
+      futureInput("future")),
+    bslib::navset_tab(
+      bslib::nav_panel("Dist", distPlotOutput("dist_plot")),
+      bslib::nav_panel("Substrate",
+        bslib::card(substrateOutput("substrate_init")),
+        bslib::card(substrateOutput("substrate"))),
+      bslib::nav_panel("Params", futureOutput("future")))
+  )
+  server &lt;- function(input, output, server) {
+    init_par &lt;- initParServer("init_par")
+    siminit &lt;- initServer("init", init_par)
+    simres &lt;- futureServer("future", siminit)
+    distPlotServer("dist_plot", simres)
+    substrateServer("substrate_init", siminit)
+    substrateServer("substrate", simres)
+  }
+  
+  shiny::shinyApp(ui = ui, server = server)
+}
+futureServer &lt;- function(id, siminit) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+    
+    simres &lt;- shiny::reactive({
+      future.events(shiny::req(siminit()), nstep = shiny::req(input$steps),
+                    plotit = FALSE) # simulate future events
+    })
+
+    output$summary &lt;- shiny::renderUI({
+      out &lt;- summary_simobj(summary(shiny::req(simres())))
+      shiny::HTML(out)
+    })
+    
+    # Result.
+    simres
+  })
+}
+futureInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::sliderInput(ns("steps"),
+                     label = "Simulation steps:",
+                     min = 1000,
+                     max = 10000,
+                     value = 1000,
+                     step = 500)
+}
+futureOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::uiOutput(ns("summary"))
 }
 
 # --- Source: sysetholApp.R ---
