@@ -7,4 +7,8 @@ This directory houses the foundational user-facing documentation, datasets, and 
 - **[devel_guide.md](devel_guide.md)**: Meta-documentation detailing the creation and vignette migration of the package Developer Guide.
 - **[demo_guide.md](demo_guide.md)**: Meta-documentation detailing the architecture, build pipeline, Jekyll 404 troubleshooting, and navbar navigation for the Shinylive Demos Gallery.
 - **[tech_guide.md](tech_guide.md)**: Meta-documentation detailing prompts, architectural decisions, and results for creating the Technical Guide.
+- **[agents.md](agents.md)**: AI agent command governance, execution policies, and relationship between project AGENTS.md and global ~/.gemini/config/.
+- **[global_agents_template.md](global_agents_template.md)**: Universal global AGENTS.md template spanning R, Python, Quarto documentation, and general technical writing.
 - **[Technical Guide](../../vignettes/tech_guide/index.Rmd)**: Internal technical reference manual containing deep architectural specifications, spatial dispersal mathematics, leftist-tree state engine mechanics, thermal degree-day integration, and GIS watershed overlay algorithms (rendered online at [articles/tech_guide/](https://byandell.github.io/ewing/articles/tech_guide/)).
+
+

@@ -110,6 +110,7 @@ Key packages: `dplyr`, `tidyr`, `ggplot2`, `tibble`, `rlang`, `purrr`, `readxl`,
 
 ## Shinylive & Development Guidelines
 
+- **No Automatic Git Commit/Push:** Prepare file edits and run local verifications (`quarto render`, etc.), but DO NOT execute `git commit` or `git push`. Leave all staging, committing, and pushing for the user to execute manually.
 - **Standard Helper Pattern:** All Quarto Shinylive `.qmd` demos in `demos/` should use `source("include_ewing.R")` and `render_shinylive_app("appFunction()", height = ...)` to dynamically load package R source files cleanly without code duplication.
 - **R Vector Subsetting Rule:** When filtering vectors in R, ALWAYS use `grepl("^\\s*#'", lines)` with `!grepl(...)` or `grep(..., invert = TRUE)`. NEVER use `!grep(...)` (which evaluates `!2` -> `FALSE` in R and wipes out the entire vector to `character(0)`).
 - **Roxygen Comment Stripping:** Inlining R code into `{shinylive-r}` WebAssembly blocks requires stripping roxygen comments (`^#'`) to prevent Pandoc JSON string serialization errors.
