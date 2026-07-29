@@ -14,9 +14,15 @@ format:
 
 The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). You can click directly on the baseline spline plot on the left to move individual nodes, and adjust the target relative mean slider on the right to trigger the binary search.
 
-```{r, echo=FALSE, results='asis'}
-source("include_ewing.R")
-render_shinylive_app("fiveShowApp()", height = 650)
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 650
+#| components: [viewer]
+
+webr::install("byandell/ewing")
+library(ewing)
+
+fiveShowApp()
 ```
 
 ---

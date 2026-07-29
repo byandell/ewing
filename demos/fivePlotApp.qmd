@@ -14,9 +14,15 @@ format:
 
 The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). You can click directly on the baseline spline plot on the left to move individual nodes.
 
-```{r, echo=FALSE, results='asis'}
-source("include_ewing.R")
-render_shinylive_app("fivePlotApp()", height = 650)
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 650
+#| components: [viewer]
+
+webr::install("byandell/ewing")
+library(ewing)
+
+fivePlotApp()
 ```
 
 ---
