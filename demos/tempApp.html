@@ -235,6 +235,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 library(shiny)
 library(bslib)
+library(dplyr)
+library(tidyr)
+library(tibble)
+library(rlang)
 library(splines)
 library(stats)
 library(graphics)
@@ -1429,7 +1433,7 @@ ewing_ageclass &lt;- function(community, substrate = TRUE, total = TRUE,
   }
   out &lt;- list()
   for(i in species) {
-    out[[i]] &lt;- mutate(
+    out[[i]] &lt;- dplyr::mutate(
       tidyr::pivot_longer(
         tibble::tibble(
           as.data.frame(count[[i]])),
@@ -5203,7 +5207,7 @@ tempApp &lt;- function(community = NULL, title = "Daily Temperature Design Explo
   
   init_high &lt;- get_spline_coords(community, "High")
   init_low  &lt;- get_spline_coords(community, "Low")
-  init_min  &lt;- getTemp(community, "Min")
+  init_min  &lt;- as.numeric(getTemp(community, "Min"))[1]
   if (is.null(init_min) || is.na(init_min)) init_min &lt;- 50
   
   ui &lt;- bslib::page_sidebar(
@@ -5353,7 +5357,7 @@ tempApp &lt;- function(community = NULL, title = "Daily Temperature Design Explo
       state$high_y &lt;- init_high$y
       state$low_x  &lt;- init_low$x
       state$low_y  &lt;- init_low$y
-      shiny::updateNumericInput(session, "min_temp", value = init_min)
+      shiny::updateNumericInput(session, "min_temp", value = as.numeric(init_min)[1])
       sync_text_inputs()
     })
     
@@ -5436,7 +5440,7 @@ tempApp &lt;- function(community = NULL, title = "Daily Temperature Design Explo
         comm &lt;- community
         comm &lt;- setTemp(comm, "High", sp_high)
         comm &lt;- setTemp(comm, "Low",  sp_low)
-        comm &lt;- setTemp(comm, "Min",  input$min_temp)
+        comm &lt;- setTemp(comm, "Min",  as.numeric(input$min_temp)[1])
         
         # Calculate active temperature degree-day integration
         comm &lt;- activeTemp(comm, messages = FALSE)

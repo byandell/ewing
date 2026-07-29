@@ -236,6 +236,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 library(shiny)
 library(bslib)
 library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(tibble)
+library(rlang)
 library(splines)
 library(stats)
 library(graphics)
@@ -1430,7 +1434,7 @@ ewing_ageclass &lt;- function(community, substrate = TRUE, total = TRUE,
   }
   out &lt;- list()
   for(i in species) {
-    out[[i]] &lt;- mutate(
+    out[[i]] &lt;- dplyr::mutate(
       tidyr::pivot_longer(
         tibble::tibble(
           as.data.frame(count[[i]])),
