@@ -4,17 +4,18 @@ template:
 
 navbar:
   structure:
-    left:  [intro, reference, articles, news]
+    left:  [intro, reference, demos, articles, news]
     right: [search, github]
   components:
+    demos:
+      text: Demos
+      href: demos/index.html
     articles:
       text: Guides
       menu:
         - text: "User Guides"
         - text: "Tutorial Vignette"
           href: articles/ewing.html
-        - text: "Demos Gallery"
-          href: demos/index.html
         - text: "-------"
         - text: "Developer Guide"
           href: articles/devel_guide/index.html

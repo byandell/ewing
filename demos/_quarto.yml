@@ -25,6 +25,8 @@ website:
       - href: hexmoveApp.qmd
         text: hexmoveApp
     right:
+      - text: "Main Site"
+        href: ../index.html
       - icon: github
         href: https://github.com/byandell/ewing
 

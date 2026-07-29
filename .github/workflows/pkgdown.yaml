@@ -43,9 +43,14 @@ jobs:
 
       - name: Render Quarto Demos
         run: |
+          mkdir -p docs/demos
           cd demos
           quarto add quarto-ext/shinylive --no-prompt
           quarto render
+        shell: bash
+
+      - name: Disable Jekyll for GitHub Pages
+        run: touch docs/.nojekyll
         shell: bash
 
       - name: Deploy to GitHub pages 🚀
