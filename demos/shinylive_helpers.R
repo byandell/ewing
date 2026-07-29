@@ -42,13 +42,14 @@ render_standalone_app <- function(app_name, height = 800) {
     "spline.R", "triangle.R", "substrate_triangle.R", "ewing_substrate.R",
     "ewing_ageclass.R", "ewing_envelope.R", "ewing_snapshot.R", "temp.R",
     "initTemp.R", "temp.design.R", "temp.plot.R", "my.R", "Org.R",
-    "organism.features.R", "future.host.R", "substrate.host.R", "host.parasite.R",
-    "simdata.R", "redscale.R", "init.simulation.R", "init.population.R",
-    "init.timing.R", "initCount.R", "future.events.R", "event.R", "event.future.R",
-    "Events.R", "leftist.R", "community.R", "c.ewing.R", "move.R", "offspring.R",
-    "sim.R", "simple.R", "ring.R", "fileCount.R", "count.join.R", "summary.ewing.R",
-    "summary_simobj.R", "ewing_discrete.R", "make_ewing_discrete.R", "ggplot_ewing.R",
-    "ggplot_current.R"
+    "organism.features.R", "future.R", "future.host.R", "future.meanvalue.R",
+    "substrate.host.R", "host.parasite.R", "simdata.R", "redscale.R",
+    "init.simulation.R", "init.population.R", "init.timing.R", "initCount.R",
+    "future.events.R", "event.R", "event.future.R", "Events.R", "leftist.R",
+    "community.R", "c.ewing.R", "move.R", "offspring.R", "sim.R", "simple.R",
+    "ring.R", "sierpinski.R", "fileCount.R", "count.join.R", "summary.ewing.R",
+    "summary_simobj.R", "ewing_discrete.R", "make_ewing_discrete.R",
+    "ggplot_ewing.R", "ggplot_current.R", "plot_null.R"
   )
   
   # Map apps to their required lightweight R source files

@@ -73,5 +73,5 @@ distPlotInput <- function(id) {
 #' @rdname distPlotApp
 distPlotOutput <- function(id) {
   ns <- shiny::NS(id)
-  shiny::plotOutput(ns("dist_plot"), height = "4in")
+  shiny::plotOutput(ns("dist_plot"), height = "400px")
 }

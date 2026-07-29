@@ -186,8 +186,8 @@ substrateServer <- function(id, simres, width = 10, step_density = 1) {
     
     output$substrate_plot <- shiny::renderUI({
       plots <- sppplot()
-      h_in <- 5.0
-      shiny::plotOutput(ns("sppPlot"), height = paste0(h_in, "in"))
+      h_px <- 500
+      shiny::plotOutput(ns("sppPlot"), height = paste0(h_px, "px"))
     })
     
     # Return current simulation state for downstream composition

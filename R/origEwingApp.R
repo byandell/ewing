@@ -151,8 +151,8 @@ origEwingServer <- function(id) {
       if(nsim == 1) {
         shiny::req(species())
         shiny::tagList(
-          shiny::plotOutput(ns("distPlot"), height = "4in"),
-          shiny::plotOutput(ns("sppPlot"), height = paste0(2 * length(species()), "in")))
+          shiny::plotOutput(ns("distPlot"), height = "400px"),
+          shiny::plotOutput(ns("sppPlot"), height = paste0(200 * length(species()), "px")))
       } else {
         shiny::plotOutput(ns("envPlot"))
       }
