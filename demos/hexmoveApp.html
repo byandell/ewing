@@ -2918,8 +2918,385 @@ setOrgMeanValue &lt;- function( community, species, stage, mvalue )
 # --- Source: organism.features.R ---
 NULL
 
+# --- Source: future.R ---
+## $Id: future.R,v 1.0 2002/12/11 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###############################################################################
+##
+## future.events( community )
+##
+###############################################################################
+
+
+
+
+###############################################################################
+### Get birth and future event
+###############################################################################
+get.future &lt;- function (community, species,
+                        individuals = get.individual(community, species, id),
+                        id = get.base(community, species))
+{
+  ## NOTE: This is the slow routine. For every event, it has to check if there
+  ## is a mean value function and then call rspline.
+
+  ## the structure future.species is set up to handle competing risks!
+  future &lt;- getOrgFuture(community, species, c("current", "future", "time"))
+  future$fid &lt;- match(future$future, future$current)
+  individuals &lt;- as.matrix(individuals)
+
+  rownames &lt;- dimnames(individuals)[[1]]
+  for (i in seq(ncol(individuals))) {
+    individual &lt;- individuals[,i]
+    current &lt;- individual["stage"]
+    individual["location"] &lt;- individual["time"]
+
+    ## competing risks based on potential future event times
+    futures &lt;- future$current == future$current[current]
+    times &lt;- rep( individual["time"], sum( futures ))
+    cur &lt;- seq(nrow(future))[futures]
+    for( j in seq( sum( futures ))) {
+      meantime &lt;- future[cur[j], "time"]
+      if( meantime &gt; 0 ) {
+        for.stage &lt;- as.character(future$current[future$fid[ cur[j] ]])
+        times[j] &lt;- rspline( meantime, individual,
+                              getOrgMeanValue(community, species)[[for.stage]])
+      }
+    }
+    individual["time"] &lt;- min( times )
+    current &lt;- cur[ times == individual["time"] ][1]
+    individual["future"] &lt;- future$fid[current]
+    if (individual["time"] == individual["rejection"])
+        individual["future"] &lt;- future$fid[future$current == "death"]
+    individuals[,i] &lt;- individual
+  }
+  individuals
+}
+###############################################################################
+event.death &lt;- function( community, species,
+                        id = get.base( community, species ))
+{
+  ## remove dead individual from leftist tree
+  community &lt;- put.species( community, species,
+                           leftist.remove( get.species( community, species ), id ))
+  ## free up individual for reuse
+  community &lt;- put.base( community, species, id )
+  community
+}
+###############################################################################
+update_mintime &lt;- function( object, species, ... )
+{
+  base &lt;- get.base( object, species )
+  mintime &lt;- max( getCount( object, species, "mintime" ),
+                 getTime( object, species,
+                         get.species.element( object, species, "time", base )))
+  setCount( object, species, list( base = base, mintime = mintime ))
+}
+###############################################################################
+set.birth &lt;- function( community, species, neworg )
+{
+  ## merge immediate new births (if any)
+  newbirths &lt;- ncol( neworg )
+  if( newbirths &gt; 0 ) {
+    neworg[c("dist","left","right","up"),] &lt;- 1
+    community &lt;- checkTime( community, neworg["time",],
+              getCount( community, species, "mintime" ),
+              getOrgFeature( community, species, "units" ))
+    oldbase &lt;- getCount( community, species, "base" )
+    tmp &lt;- leftist.birth( get.species( community, species ), neworg,
+                         getCount( community, species, "free" ))
+    
+    community &lt;- put.species( community, species, tmp$tree )
+    community &lt;- put.base( community, species, free = tmp$free )
+    community &lt;- updateCounts( community, species, newbirths )
+  }
+  community
+}
+
+
+
 # --- Source: future.host.R ---
 NULL
+
+# --- Source: future.meanvalue.R ---
+###########################################################################################
+## init.meanvalue( organism, stage )
+## spline.meanvalue( x, y )
+## spline.meanvalue( data = data )
+##
+## five.show( )
+## five.plot( )
+##
+###########################################################################################
+# Curve Designing routines -- under development
+###########################################################################################
+future.meanvalue &lt;- function( community, species, event = future$current[1],
+                              data )
+{
+  future &lt;- getOrgFuture( community, species )
+  mvalue &lt;- getOrgMeanValue( community, species )[[event]]
+  if( missing( data )) {
+    if( !is.null( mvalue )) {
+      mvalue &lt;- stats::predict( mvalue$meanvalue, mvalue$meanvalue$knots )
+      mvalue &lt;- spline.meanvalue( mvalue$x, mvalue$y )$fit
+    }
+    else
+      mvalue &lt;- spline.meanvalue( )$fit
+  }
+  else
+    mvalue &lt;- spline.meanvalue( data = data )$fit
+  setOrgMeanValue( community, species, event, mvalue )
+}
+###########################################################################################
+spline.meanvalue &lt;- function( x = xinit, y = yinit, data, nspline = 8,
+                              xy = data.frame( x = x, y = y ),
+                              tol = 1e-5, n = 1 )
+{
+  is.data &lt;- !missing( data )
+  if( !is.data ) {
+    tmp &lt;- - log( 1 - seq( 0, 1 - exp( -5 ), length = nspline ))
+    if( missing( x ))
+      xinit &lt;- tmp
+    else
+      xinit &lt;- x
+    if( missing( y ))
+      yinit &lt;- tmp
+    else
+      yinit &lt;- y
+    data &lt;- NULL
+  }
+  else {
+    xinit &lt;- sort( data )
+    ndata &lt;- length( data )
+    yinit &lt;- seq( ndata ) / ( 1 + ndata )
+    choose &lt;- round( seq( 1, ndata, length = nspline ))
+    xinit &lt;- xinit[choose]
+    yinit &lt;- - log( 1 - yinit[choose] )
+  }
+  fs &lt;- list( probability = function( x ) { - log( 1 - x ) } )
+  finvs &lt;- list( probability = function( x ) { 1 - exp( - x ) } )
+  for( i in c("mean value","rate","density") )
+    fs[[i]] &lt;- finvs[[i]] &lt;- function( x ) x
+  
+  ## plot curve and surrounding axes
+  graphics::par( mfrow = c(1,1), mar = rep(4.1,4))
+  plotit &lt;- function( xy, fig = "mean value", fit = splines::interpSpline( xy$x, xy$y ))
+  {
+    switch( fig, {
+      y &lt;- xy$y
+      ylim &lt;- range(c(0,y))
+    },
+    probability = {
+      y &lt;- 1 - exp( - xy$y )
+      ylim &lt;- range(c(0,y))
+    },
+    rate = {
+      y &lt;- spline.rate( fit, xy$x )$y
+      tmp &lt;- spline.rate( fit )
+      ylim &lt;- range(c(0,tmp$y))
+    },
+    density = {
+      y &lt;- spline.rate( fit, xy$x )$y * exp( - stats::predict( fit, xy$x )$y )
+      tmp &lt;- spline.rate( fit )
+      tmp$y &lt;- tmp$y * exp( - stats::predict( fit )$y )
+      ylim &lt;- range(c(0,tmp$y))
+    }
+    )
+    plot(xy$x,y,xlim=1.25*range(c(0,xy$x)), ylim = ylim,
+         type="n", xlab = "", ylab = "" )
+    graphics::points( xy$x, y, lwd = 4 )
+    graphics::title( fig )
+    graphics::mtext( "time", 1, 2 )
+    graphics::mtext( fig, 2, 2 )
+    graphics::abline( v = max( xy$x ), lty = 2 )
+    
+    switch( fig, {
+      if( fig == "probability" ) {
+        tmp &lt;- c(.1,.2,.5,1:10)
+        ltmp &lt;- 1-exp(-tmp)
+        graphics::mtext( "mean value", 4, 2 )
+      }
+      else {  
+        tmp &lt;- c(seq(0,.9,,by=.1),.95,.98,.99,.999)
+        ltmp &lt;- -log(1-tmp)
+        graphics::mtext( "probability", 4, 2 )
+      }
+      usr &lt;- graphics::par("usr")
+      s &lt;- ltmp &lt;= usr[4] &amp; ltmp &gt;= usr[3]  
+      tmpar &lt;- graphics::par( cex = .75 )
+      graphics::axis(4,ltmp[s],tmp[s])
+      graphics::par( tmpar )
+      summaryshow( xy, fit, "white" )
+      tmp &lt;- curve.plot( xy, n = n, action = "refresh", fit = fit,
+                         f = fs[[fig]], finv = finvs[[fig]] )
+      summaryshow( xy, tmp$fit )
+    },
+    rate =, density = {
+      graphics::lines( tmp$x, tmp$y )
+      summaryshow( xy, fit )
+    }
+    )
+  }
+  ## place commands along right strip of plot, highlighting current command
+  plotcmd &lt;- function( ans, fig, cmds, cmdlocs, usr, col = "green", rest = "black",
+                       data = FALSE )
+  {
+    ans &lt;- c( ans, fig )
+    if( data )
+      ans &lt;- c( ans, "data" )
+    tmp &lt;- is.na( match( cmds, ans ))
+    if( any( tmp ))
+      graphics::text( rep(usr[2],sum(tmp)), cmdlocs[tmp], cmds[tmp], col = rest, adj = 1 )
+    if( any( !tmp ))
+      graphics::text( rep(usr[2],sum(!tmp)), cmdlocs[!tmp], cmds[!tmp], col = col, adj = 1 )
+  }
+  
+  fig &lt;- "mean value"
+  newans &lt;- ans &lt;- "replace"
+  
+  graphics::par( mar = c(4.1,4.1,3.1,4.1),omi=rep(.25,4))
+  fit &lt;- splines::interpSpline( xy$x, xy$y )
+  sums &lt;- plotit( xy, fig, fit )
+  
+  cmds &lt;- c("refresh","add","delete","replace","rescale","shrink to 1","finish","restart",
+            "","data","mean value","probability","rate","density")
+  newlocs &lt;- function( cmds, data = FALSE, usr )
+  {
+    if( !data )
+      cmds &lt;- cmds[ cmds != "data" ]
+    n &lt;- length( cmds )
+    blank &lt;- seq( n )[ cmds == "" ]
+    tmp &lt;- diff(usr[3:4]) / 20
+    tmp &lt;- c( usr[4] - tmp * seq( blank - 1 ), mean( usr[3:4] ),
+              usr[3] + tmp * seq( n - blank ))
+    names( tmp ) &lt;- cmds
+    tmp
+  }
+  usr &lt;- graphics::par("usr")
+  cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+  cmds &lt;- names( cmdlocs )
+  use.data &lt;- FALSE
+  plotcmd( ans, fig, cmds, cmdlocs, usr )
+  rescale.data &lt;- 1
+  repeat {
+    ## get command from plot using cursor
+    z &lt;- graphics::locator(1,"n")
+    if( z$x &gt; max( xy$x )) {
+      z &lt;- abs(z$y - cmdlocs )
+      newans &lt;- cmds[z==min(z)][1]
+      switch( newans,
+              finish =, refresh = {
+                sums &lt;- plotit( xy, fig, fit )
+              },
+              data = {
+                use.data &lt;- is.data &amp; !use.data
+                if( is.data &amp; !use.data &amp; match( fig, c("mean value","probability"),
+                                                 nomatch = 0 ))
+                  sums &lt;- plotit( xy, fig, fit )
+              },
+              "mean value" =, probability =, rate =, density = {
+                fig &lt;- newans
+                sums &lt;- plotit( xy, fig, fit )
+                usr &lt;- graphics::par("usr")
+                cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+              },
+              "shrink to 1" = {
+                while( abs( sums[1] - 1 ) &gt; tol ) {
+                  xy$y &lt;- xy$y * sums[1]
+                  if( is.data )
+                    rescale.data &lt;- rescale.data * sums[1]
+                  fit &lt;- splines::interpSpline( xy$x, xy$y )
+                  sums &lt;- splinesum( xy, fit, tol )
+                }
+                sums &lt;- plotit( xy, fig, fit )
+                usr &lt;- graphics::par("usr")
+                cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+              },
+              rescale = {
+                cat( "enter new values followed by RETURN key\n" )
+                tmpy &lt;- readline( paste( "maximum mean value(",
+                                         round( max( xy$y ), 2 ), "):", sep = "" ))
+                if( tmpy != "" ) {
+                  tmpy &lt;- as.numeric( tmpy ) / max( xy$y )
+                  xy$y &lt;- tmpy * xy$y
+                  if( is.data )
+                    rescale.data &lt;- rescale.data * tmpy
+                }
+                tmpx &lt;- readline( paste( "maximum time(", 
+                                         round( max( xy$x ), 2 ), "):", sep = "" ))
+                if( tmpx != "" ) {
+                  tmpx &lt;- as.numeric( tmpx ) / max( xy$x )
+                  xy$x &lt;- tmpx * xy$x
+                  if( is.data )
+                    data &lt;- data * tmpx
+                }
+                fit &lt;- splines::interpSpline( xy$x, xy$y )
+                sums &lt;- plotit( xy, fig, fit )
+                usr &lt;- graphics::par("usr")
+                cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+              },
+              restart = {
+                if( is.data )
+                  rescale.data &lt;- 1
+                xy &lt;- data.frame( x = xinit, y = yinit )
+                fit &lt;- splines::interpSpline( xy$x, xy$y )
+                sums &lt;- plotit( xy, fig, fit )
+                usr &lt;- graphics::par("usr")
+                cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+              },
+              add =, delete =, replace = {
+                ans &lt;- newans
+              }
+      )
+      if( use.data &amp; match( fig, c("mean value","probability"), nomatch = 0 ))
+        cdf.lines( data, fig, rescale = rescale.data )
+      plotcmd( ans, fig, cmds, cmdlocs, usr, data = use.data )
+    }
+    else {
+      if( is.na( match( fig, c("rate","density") ))) {
+        summaryshow( xy, fit, "white", sums )
+        fit &lt;- curve.plot( xy, n = n, action = ans, z = z, fit = fit,
+                           f = fs[[fig]], finv = finvs[[fig]] )
+        xy &lt;- fit$xy
+        fit &lt;- fit$fit
+        sums &lt;- summaryshow( xy, fit )
+        ans &lt;- "replace"
+        plotcmd( ans, fig, cmds, cmdlocs, usr, data = use.data )
+      }
+    }
+    if( newans == "finish" )
+      break
+  }
+  plotcmd( newans, fig, cmds, cmdlocs, "red", data = use.data )
+  summaryshow( xy, fit, "white", sums )
+  tmp &lt;- curve.plot( xy, n = n, action = "refresh",
+                     f = fs[[fig]], finv = finvs[[fig]] )
+  tmp$meanvalue &lt;- tmp$fit
+  tmp$fit &lt;- NULL
+  tmp$invmvalue &lt;- splines::backSpline( tmp$meanvalue )
+  sums &lt;- summaryshow( xy, tmp$meanvalue )
+  tmp$mean &lt;- sums[1]
+  tmp$median &lt;- sums[2]
+  tmp
+}
 
 # --- Source: substrate.host.R ---
 NULL
@@ -4414,6 +4791,30 @@ ring.remove &lt;- function( ring, P )
   ring
 }
 
+# --- Source: sierpinski.R ---
+sierpinski &lt;- function( stage = 5, reset = TRUE )
+{
+  if( reset )
+    tmpar &lt;- graphics::par( pty = "s", bty = "n", xaxt = "n", yaxt = "n", omi = rep(0,4),
+                            mar = rep(0,4) )
+  aa &lt;- 0:1
+  bb &lt;- - aa
+  for( i in seq( stage )) {
+    tmp &lt;- gasket( aa, bb )
+    aa &lt;- tmp$aa
+    bb &lt;- tmp$bb
+    tri &lt;- tri2car.default( aa, bb )
+    r &lt;- range( unlist( tri ))
+    plot( r, r, type = "n", xlab = "", ylab = "" )
+    graphics::lines(tri )
+    graphics::mtext( paste( "(", letters[1+i], ") Gasket of Order ", i, sep = "" ), 3, -2 )
+    #    graphics::mtext( paste( "Gasket of order", i ), 3, -2 )
+  }
+  if( reset )
+    graphics::par( tmpar )
+  invisible( tri )
+}
+
 # --- Source: fileCount.R ---
 putCount &lt;- function( community, append = FALSE )
 {
@@ -4758,6 +5159,14 @@ ggplot_current &lt;- function( x,
   p
 }
 
+# --- Source: plot_null.R ---
+plot_null &lt;- function(msg = "no data") {
+  ggplot2::ggplot(data.frame(x = 1, y = 1), 
+                  ggplot2::aes(.data$x, .data$y, label = msg)) +
+    ggplot2::geom_text(size = 10) + 
+    ggplot2::theme_void()
+}
+
 # --- Source: initParApp.R ---
 initParApp &lt;- function(title = "Population Ethology") {
   ui &lt;- bslib::page_sidebar(
@@ -5039,8 +5448,8 @@ substrateServer &lt;- function(id, simres, width = 10, step_density = 1) {
     
     output$substrate_plot &lt;- shiny::renderUI({
       plots &lt;- sppplot()
-      h_in &lt;- 5.0
-      shiny::plotOutput(ns("sppPlot"), height = paste0(h_in, "in"))
+      h_px &lt;- 500
+      shiny::plotOutput(ns("sppPlot"), height = paste0(h_px, "px"))
     })
     
     # Return current simulation state for downstream composition
