@@ -62,6 +62,12 @@ render_standalone_app("sysetholApp", height = 880)
 4. **Auto-Embed Default Datasets**:
    Serialize required configuration tables (`data/*.txt`) via `dput()` directly into `.GlobalEnv` so simulation routines (`init.simulation()`, `mydata()`) execute offline seamlessly.
 
+5. **Pixel Specifications for Graphic Outputs**:
+   Use standard CSS pixel strings (`height = "400px"`, `height = "500px"`) in `shiny::plotOutput()` rather than inch strings (e.g. `"4in"`) to prevent webR graphic device initialization errors (`invalid 'width' argument`).
+
+6. **Un-name Numeric Input Values**:
+   Cast named numeric vectors using `as.numeric(...)[1]` when setting reactive states or calling `updateNumericInput()` to prevent `jsonlite` from serializing named vectors as JSON objects (`[object Object]`).
+
 ---
 
 ## 3. Navigation Design
