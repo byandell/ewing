@@ -15,7 +15,18 @@ Server logic utilizing Shiny module composition by calling `leafletServer("map")
 to handle interactive map discovery and HUC identification.
 Launches an interactive Shiny application combining Leaflet spatial feature identification
 (via `leafletApp` module composition), USGS HUC12 subwatershed boundary lookup, feature area restriction,
-and hexagonal substrate grid overlays.'></head><body>
+and hexagonal substrate grid overlays.'><script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script><style>
+  pre.mermaid {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    text-align: center;
+  }
+</style><script>
+  document.addEventListener("DOMContentLoaded", function() {
+    mermaid.initialize({ startOnLoad: true });
+  });
+</script></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
