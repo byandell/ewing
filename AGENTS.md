@@ -123,3 +123,28 @@ connectivity - `temperature.base`, `temperature.par` — thermal regime
 Key packages: `dplyr`, `tidyr`, `ggplot2`, `tibble`, `rlang`, `purrr`,
 `readxl`, `shiny`, `bslib`, `patchwork`, `leaflet`, `GET`, `sf`,
 `splines`, `DT`
+
+## Shinylive & Development Guidelines
+
+- **Standard Helper Pattern:** All Quarto Shinylive `.qmd` demos in
+  `demos/` should use `source("include_ewing.R")` and
+  `render_shinylive_app("appFunction()", height = ...)` to dynamically
+  load package R source files cleanly without code duplication.
+- **R Vector Subsetting Rule:** When filtering vectors in R, ALWAYS use
+  `grepl("^\\s*#'", lines)` with `!grepl(...)` or
+  `grep(..., invert = TRUE)`. NEVER use `!grep(...)` (which evaluates
+  `!2` -\> `FALSE` in R and wipes out the entire vector to
+  `character(0)`).
+- **Roxygen Comment Stripping:** Inlining R code into `{shinylive-r}`
+  WebAssembly blocks requires stripping roxygen comments (`^#'`) to
+  prevent Pandoc JSON string serialization errors.
+- **Git Hygiene:** Local Quarto build folders (`demos/site_libs/`,
+  `demos/_extensions/`, `demos/.quarto/`) must be listed in `.gitignore`
+  and never committed.
+- **GitHub Pages Deployment:** Always include `touch docs/.nojekyll` and
+  `mkdir -p docs/demos` in `.github/workflows/pkgdown.yaml` before
+  deploying to `gh-pages` so GitHub Pages serves WebAssembly static
+  assets properly.
+- **Navbar Structure:** Main `_pkgdown.yml` site structure puts `demos`
+  before `articles` (Guides). `demos/_quarto.yml` `Home` tab points to
+  `../index.html` (the pkgdown homepage).
