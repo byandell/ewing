@@ -441,46 +441,51 @@ ewingServer <- function(id) {
 }
 ```
 
-### Automated R Source Code & Data Ingestion for Quarto Shinylive Demos
+### Serverless WebAssembly Integration for Quarto Shinylive Demos
 
-To eliminate manual code and data duplication between R package files
-(`R/`, `data/`) and the serverless WebAssembly Shinylive demo documents
-in `demos/*.qmd`, all `.qmd` demonstration applications use dynamic
-`results='asis'` knitr code blocks.
+To provide a clean, robust, and zero-maintenance architecture between R
+package files (`R/`, `data/`) and the serverless WebAssembly Shinylive
+demo documents in `demos/*.qmd`, all `.qmd` demonstration applications
+use the standard **`webr::install()`** WebAssembly package installer.
 
-During `quarto render`: 1. **Source Code Ingestion (`inc_files`)**:
-knitr reads specified R source files directly from `R/` via
-[`readLines()`](https://rdrr.io/r/base/readLines.html) and dynamically
-injects them into the `shinylive-r` code block before Shinylive
-WebAssembly compilation. 2. **Package Data Ingestion (`data/*.txt`)**:
-knitr scans all default parameter tables in `data/*.txt`
-(`organism.features`, `future.host`, `future.parasite`,
-`substrate.host`, `substrate.parasite`, `substrate.substrate`,
-`host.parasite`, `temperature.base`, `temperature.par`, `redscale`),
-reads them via
-[`read.table()`](https://rdrr.io/r/utils/read.table.html), and
-serializes the complete dataset list via
-[`dput()`](https://rdrr.io/r/base/dput.html) into
-`sample_input_datasets`.
+During client-side execution in the browser: 1. **WebAssembly Package
+Loading (`webr::install`)**: Shinylive uses browser `webR` to load the R
+package directly via `webr::install("byandell/ewing")`. 2. **Native
+Package Namespace
+([`library(ewing)`](http://www.stat.wisc.edu/~yandell/ewing))**: Once
+installed in the browser’s R WebAssembly session, calling
+[`library(ewing)`](http://www.stat.wisc.edu/~yandell/ewing) exposes all
+exported Shiny functions, dataset structures, and simulation methods
+natively.
 
 ``` r
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 880
+#| components: [viewer]
+
+webr::install("byandell/ewing")
+library(ewing)
+
+sysetholApp()
 ```
 
-#### Demo Ingestion Mapping
+\`\`\`
 
-| Quarto Demo Document | Dynamic `inc_files` Auto-Included Source Files | Automated Data Assets |
+#### Demo Application Launcher Mapping
+
+| Quarto Demo Document | Executed Package Function | WebAssembly Namespace Scope |
 |:---|:---|:---|
-| **`demos/sysetholApp.qmd`** | `R/inputApp.R`, `R/sysetholApp.R` | `data/*.txt` (`sample_input_datasets`) |
-| **`demos/fivePlotApp.qmd`** | `R/spline.R`, `R/five.R`, `R/fiveShowApp.R`, `R/fivePlotApp.R` | `data/*.txt` |
-| **`demos/fiveShowApp.qmd`** | `R/spline.R`, `R/five.R`, `R/fiveShowApp.R` | `data/*.txt` |
-| **`demos/tempApp.qmd`** | `R/temp.R`, `R/tempApp.R` | `data/*.txt` |
-| **`demos/triangleApp.qmd`** | `R/triangle.R`, `R/substrate_triangle.R`, `R/triangleApp.R` | `data/*.txt` |
-| **`demos/hexmoveApp.qmd`** | `R/substrate_triangle.R`, `R/hexmoveApp.R` | `data/*.txt` |
+| **`demos/sysetholApp.qmd`** | [`sysetholApp()`](https://byandell.github.io/ewing/reference/sysetholApp.md) | [`ewing::sysetholApp()`](https://byandell.github.io/ewing/reference/sysetholApp.md) |
+| **`demos/fivePlotApp.qmd`** | [`fivePlotApp()`](https://byandell.github.io/ewing/reference/fivePlotApp.md) | [`ewing::fivePlotApp()`](https://byandell.github.io/ewing/reference/fivePlotApp.md) |
+| **`demos/fiveShowApp.qmd`** | [`fiveShowApp()`](https://byandell.github.io/ewing/reference/fiveShowApp.md) | [`ewing::fiveShowApp()`](https://byandell.github.io/ewing/reference/fiveShowApp.md) |
+| **`demos/tempApp.qmd`** | [`tempApp()`](https://byandell.github.io/ewing/reference/tempApp.md) | [`ewing::tempApp()`](https://byandell.github.io/ewing/reference/tempApp.md) |
+| **`demos/triangleApp.qmd`** | [`triangleApp()`](https://byandell.github.io/ewing/reference/triangleApp.md) | [`ewing::triangleApp()`](https://byandell.github.io/ewing/reference/triangleApp.md) |
+| **`demos/hexmoveApp.qmd`** | [`hexmoveApp()`](https://byandell.github.io/ewing/reference/hexmoveApp.md) | [`ewing::hexmoveApp()`](https://byandell.github.io/ewing/reference/hexmoveApp.md) |
 
-Whenever any R function, UI layout, slider parser, or default dataset
-table in `R/` or `data/` is modified, running `quarto render demos`
-automatically pulls all updated code and data across all gallery
-applications with zero manual copy-pasting required.
+This standard architecture eliminates build-time string concatenation
+hacks, prevents roxygen parsing conflicts, and guarantees 100% parity
+between the R package codebase and browser WebAssembly applications.
 
 ------------------------------------------------------------------------
 

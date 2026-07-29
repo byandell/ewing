@@ -605,32 +605,34 @@ graphic downloads:</p>
 <span><span class="op">}</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="automated-r-source-code-data-ingestion-for-quarto-shinylive-demos">Automated R Source Code &amp; Data Ingestion for Quarto Shinylive
-Demos<a class="anchor" aria-label="anchor" href="#automated-r-source-code-data-ingestion-for-quarto-shinylive-demos"></a>
+<h3 id="serverless-webassembly-integration-for-quarto-shinylive-demos">Serverless WebAssembly Integration for Quarto Shinylive Demos<a class="anchor" aria-label="anchor" href="#serverless-webassembly-integration-for-quarto-shinylive-demos"></a>
 </h3>
-<p>To eliminate manual code and data duplication between R package files
-(<code>R/</code>, <code>data/</code>) and the serverless WebAssembly
-Shinylive demo documents in <code>demos/*.qmd</code>, all
-<code>.qmd</code> demonstration applications use dynamic
-<code>results='asis'</code> knitr code blocks.</p>
-<p>During <code>quarto render</code>: 1. <strong>Source Code Ingestion
-(<code>inc_files</code>)</strong>: knitr reads specified R source files
-directly from <code>R/</code> via <code><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines()</a></code> and
-dynamically injects them into the <code>shinylive-r</code> code block
-before Shinylive WebAssembly compilation. 2. <strong>Package Data
-Ingestion (<code>data/*.txt</code>)</strong>: knitr scans all default
-parameter tables in <code>data/*.txt</code>
-(<code>organism.features</code>, <code>future.host</code>,
-<code>future.parasite</code>, <code>substrate.host</code>,
-<code>substrate.parasite</code>, <code>substrate.substrate</code>,
-<code>host.parasite</code>, <code>temperature.base</code>,
-<code>temperature.par</code>, <code>redscale</code>), reads them via
-<code><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.table()</a></code>, and serializes the complete dataset list via
-<code><a href="https://rdrr.io/r/base/dput.html" class="external-link">dput()</a></code> into <code>sample_input_datasets</code>.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"></code></pre></div>
+<p>To provide a clean, robust, and zero-maintenance architecture between
+R package files (<code>R/</code>, <code>data/</code>) and the serverless
+WebAssembly Shinylive demo documents in <code>demos/*.qmd</code>, all
+<code>.qmd</code> demonstration applications use the standard
+<strong><code>webr::install()</code></strong> WebAssembly package
+installer.</p>
+<p>During client-side execution in the browser: 1. <strong>WebAssembly
+Package Loading (<code>webr::install</code>)</strong>: Shinylive uses
+browser <code>webR</code> to load the R package directly via
+<code>webr::install("byandell/ewing")</code>. 2. <strong>Native Package
+Namespace (<code><a href="http://www.stat.wisc.edu/~yandell/ewing" class="external-link">library(ewing)</a></code>)</strong>: Once installed in the
+browser’s R WebAssembly session, calling <code><a href="http://www.stat.wisc.edu/~yandell/ewing" class="external-link">library(ewing)</a></code>
+exposes all exported Shiny functions, dataset structures, and simulation
+methods natively.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="st">```</span><span class="at">{shinylive-r}</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="at">#| standalone: true</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="at">#| viewerHeight: 880</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="at">#| components: [viewer]</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="at">webr::install("byandell/ewing")</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="at">library(ewing)</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="at">sysetholApp()</span></span></code></pre></div>
+<p>```</p>
 <div class="section level4">
-<h4 id="demo-ingestion-mapping">Demo Ingestion Mapping<a class="anchor" aria-label="anchor" href="#demo-ingestion-mapping"></a>
+<h4 id="demo-application-launcher-mapping">Demo Application Launcher Mapping<a class="anchor" aria-label="anchor" href="#demo-application-launcher-mapping"></a>
 </h4>
 <table class="table">
 <colgroup>
@@ -640,67 +642,45 @@ parameter tables in <code>data/*.txt</code>
 </colgroup>
 <thead><tr class="header">
 <th align="left">Quarto Demo Document</th>
-<th align="left">Dynamic <code>inc_files</code> Auto-Included Source
-Files</th>
-<th align="left">Automated Data Assets</th>
+<th align="left">Executed Package Function</th>
+<th align="left">WebAssembly Namespace Scope</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td align="left"><strong><code>demos/sysetholApp.qmd</code></strong></td>
-<td align="left">
-<code>R/inputApp.R</code>,
-<code>R/sysetholApp.R</code>
-</td>
-<td align="left">
-<code>data/*.txt</code>
-(<code>sample_input_datasets</code>)</td>
+<td align="left"><code><a href="../../reference/sysetholApp.html">sysetholApp()</a></code></td>
+<td align="left"><code><a href="../../reference/sysetholApp.html">ewing::sysetholApp()</a></code></td>
 </tr>
 <tr class="even">
 <td align="left"><strong><code>demos/fivePlotApp.qmd</code></strong></td>
-<td align="left">
-<code>R/spline.R</code>, <code>R/five.R</code>,
-<code>R/fiveShowApp.R</code>, <code>R/fivePlotApp.R</code>
-</td>
-<td align="left"><code>data/*.txt</code></td>
+<td align="left"><code><a href="../../reference/fivePlotApp.html">fivePlotApp()</a></code></td>
+<td align="left"><code><a href="../../reference/fivePlotApp.html">ewing::fivePlotApp()</a></code></td>
 </tr>
 <tr class="odd">
 <td align="left"><strong><code>demos/fiveShowApp.qmd</code></strong></td>
-<td align="left">
-<code>R/spline.R</code>, <code>R/five.R</code>,
-<code>R/fiveShowApp.R</code>
-</td>
-<td align="left"><code>data/*.txt</code></td>
+<td align="left"><code><a href="../../reference/fiveShowApp.html">fiveShowApp()</a></code></td>
+<td align="left"><code><a href="../../reference/fiveShowApp.html">ewing::fiveShowApp()</a></code></td>
 </tr>
 <tr class="even">
 <td align="left"><strong><code>demos/tempApp.qmd</code></strong></td>
-<td align="left">
-<code>R/temp.R</code>, <code>R/tempApp.R</code>
-</td>
-<td align="left"><code>data/*.txt</code></td>
+<td align="left"><code><a href="../../reference/tempApp.html">tempApp()</a></code></td>
+<td align="left"><code><a href="../../reference/tempApp.html">ewing::tempApp()</a></code></td>
 </tr>
 <tr class="odd">
 <td align="left"><strong><code>demos/triangleApp.qmd</code></strong></td>
-<td align="left">
-<code>R/triangle.R</code>,
-<code>R/substrate_triangle.R</code>, <code>R/triangleApp.R</code>
-</td>
-<td align="left"><code>data/*.txt</code></td>
+<td align="left"><code><a href="../../reference/triangleApp.html">triangleApp()</a></code></td>
+<td align="left"><code><a href="../../reference/triangleApp.html">ewing::triangleApp()</a></code></td>
 </tr>
 <tr class="even">
 <td align="left"><strong><code>demos/hexmoveApp.qmd</code></strong></td>
-<td align="left">
-<code>R/substrate_triangle.R</code>,
-<code>R/hexmoveApp.R</code>
-</td>
-<td align="left"><code>data/*.txt</code></td>
+<td align="left"><code><a href="../../reference/hexmoveApp.html">hexmoveApp()</a></code></td>
+<td align="left"><code><a href="../../reference/hexmoveApp.html">ewing::hexmoveApp()</a></code></td>
 </tr>
 </tbody>
 </table>
-<p>Whenever any R function, UI layout, slider parser, or default dataset
-table in <code>R/</code> or <code>data/</code> is modified, running
-<code>quarto render demos</code> automatically pulls all updated code
-and data across all gallery applications with zero manual copy-pasting
-required.</p>
+<p>This standard architecture eliminates build-time string concatenation
+hacks, prevents roxygen parsing conflicts, and guarantees 100% parity
+between the R package codebase and browser WebAssembly applications.</p>
 <hr>
 </div>
 </div>
