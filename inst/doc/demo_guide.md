@@ -1,21 +1,19 @@
-# Building & Publishing Shinylive Demos for Ewing Package
+# Shinylive Demos Guide for ewing Package
 
-This document records the architecture, design patterns, build processes, publishing challenges, and navigation solutions for building and deploying the interactive **Quarto Shinylive Demos Gallery** for the **ewing** R package.
+This document records the structure, WebAssembly patterns, and navigation integration for the interactive **Quarto Shinylive Demos Gallery** in the **ewing** package.
+
+For detailed deployment workflows and general engineering patterns, refer to [Deploy with GitHub Actions](https://byandell.github.io/Documentation/github/actions.html) and [Use pkgdown to Auto-Build GitHub Website](https://byandell.github.io/Documentation/github/pkgdown.html).
 
 ---
 
-## 1. Demos Gallery Overview & Architecture
-
-The **ewing** Demos Gallery hosts serverless interactive applications running completely client-side in the user's web browser using **Shinylive** (WebAssembly / `webR`). This allows users and reviewers to explore full simulation models, spatial substrate networks, thermal splines, and parameter search utilities without requiring a backend R server or Posit Connect deployment.
-
-### File & Directory Structure
+## 1. Directory Structure
 
 ```
 ewing/
-├── _pkgdown.yml              # Main pkgdown site navbar & article layout
+├── _pkgdown.yml              # Main pkgdown navbar & article layout
 ├── demos/                    # Quarto Shinylive source project directory
-│   ├── _quarto.yml           # Quarto website configuration (output-dir: ../docs/demos)
-│   ├── index.qmd             # Gallery landing page with interactive grid listing
+│   ├── _quarto.yml           # Quarto website config (output-dir: ../docs/demos)
+│   ├── index.qmd             # Gallery landing page
 │   ├── sysetholApp.qmd       # Systems Ethology platform launcher
 │   ├── fivePlotApp.qmd       # 5-parameter spline curve sensitivity explorer
 │   ├── fiveShowApp.qmd       # Target relative mean binary search utility
@@ -28,16 +26,14 @@ ewing/
     ├── index.html            # Main pkgdown site homepage
     └── demos/                # Compiled Quarto Shinylive static site
         ├── index.html        # Demos gallery landing page
-        ├── site_libs/        # Shinylive & Bootstrap WebAssembly JS/CSS assets
         └── *.html            # Compiled application pages
 ```
 
 ---
 
-## 2. Key Design Patterns & Engineering Solutions
+## 2. WebAssembly Design Pattern (`webr::install`)
 
-### A. Standard WebAssembly Package Installation (`webr::install`)
-To eliminate code and data duplication between package source files (`R/`, `data/`) and the serverless WebAssembly Shinylive demo documents in `demos/*.qmd`, all `.qmd` demonstration applications use the standard **`webr::install()`** WebAssembly package installer.
+All `.qmd` demonstration applications in `demos/` use `webr::install()` to load the package namespace directly in browser WebAssembly (`webR`):
 
 ```r
 ```{shinylive-r}
@@ -52,130 +48,13 @@ sysetholApp()
 ```
 ```
 
-This standard 5-line architecture lets browser `webR` load the installed `ewing` package namespace directly, ensuring 100% code parity without requiring build-time string splicing or file concatenation.
-
-### B. Non-Self-Contained WebAssembly Output (`embed-resources: false`)
-Shinylive applications execute browser WebAssembly (`webR`) workers and service workers (`shinylive-sw.js`). Modern browser security models block WebWorkers when embedded inside standalone data URIs. Setting `embed-resources: false` in `demos/_quarto.yml` ensures Quarto emits modular static web files (`.html`, `.js`, `.css`) compatible with browser security requirements.
+This ensures 100% code parity between package functions and browser applications without code duplication.
 
 ---
 
-## 3. Publishing Challenges & Jekyll 404 Resolution
+## 3. Navigation Design
 
-### Problem Statement
-When navigating to `https://byandell.github.io/ewing/demos/` on GitHub Pages, users received a 404 error:
-> **Page not found (404)**
-> Content not found. Please use links in the navbar.
+- **Main Site Navbar (`_pkgdown.yml`)**: Displays **Demos** prominently (`href: demos/index.html`).
+- **Demos Return Navigation (`demos/_quarto.yml`)**: Points **Home** back to `../index.html` for seamless navigation back to the main `pkgdown` portal.
 
-### Root Cause Diagnosis
-1. **Default Jekyll Processing**: By default, GitHub Pages processes all deployed repositories using the Jekyll site generator.
-2. **Ignored Directories**: Jekyll ignores directories and files starting with `_` (such as Quarto's `demos/_quarto.yml`, `demos/_extensions/`, `docs/demos/_metadata.yml`, and `site_libs/`).
-3. **Liquid Template Errors**: Jekyll attempts to parse compiled WebAssembly JavaScript and HTML files as Liquid templates, causing build failures.
-4. **Fallback Behavior**: When Jekyll fails or omits `demos/`, GitHub Pages returns pkgdown's custom `404.html` page.
-
-### Solution: CI/CD Jekyll Disablement
-Update the GitHub Actions deployment workflow ([.github/workflows/pkgdown.yaml](../../.github/workflows/pkgdown.yaml)) to explicitly create `docs/.nojekyll` prior to deploying to the `gh-pages` branch:
-
-```yaml
-      - name: Render Quarto Demos
-        run: |
-          mkdir -p docs/demos
-          cd demos
-          quarto add quarto-ext/shinylive --no-prompt
-          quarto render
-        shell: bash
-
-      - name: Disable Jekyll for GitHub Pages
-        run: touch docs/.nojekyll
-        shell: bash
-
-      - name: Deploy to GitHub pages 🚀
-        if: github.event_name != 'pull_request'
-        uses: JamesIves/github-pages-deploy-action@v4.8.0
-        with:
-          clean: false
-          branch: gh-pages
-          folder: docs
-```
-
----
-
-## 4. Navigation Design & Cross-Site Links
-
-### A. Main Site Navbar Prominence ([_pkgdown.yml](../../_pkgdown.yml))
-To make the Demos Gallery easily discoverable, **Demos** is placed directly on the top navbar of the main package website before **Guides**:
-
-```yaml
-navbar:
-  structure:
-    left:  [intro, reference, demos, articles, news]
-    right: [search, github]
-  components:
-    demos:
-      text: Demos
-      href: demos/index.html
-    articles:
-      text: Guides
-      menu:
-        - text: "User Guides"
-        - text: "Tutorial Vignette"
-          href: articles/ewing.html
-        - text: "-------"
-        - text: "Developer Guide"
-          href: articles/devel_guide/index.html
-        - text: "Technical Guide"
-          href: articles/tech_guide/index.html
-```
-
-### B. Demos Site Return Navigation ([demos/_quarto.yml](../../demos/_quarto.yml))
-To allow users viewing any demo to seamlessly navigate back to the main pkgdown site homepage, the **Home** link in Quarto's navbar points directly to `../index.html`:
-
-```yaml
-website:
-  title: "ewing Demos"
-  navbar:
-    left:
-      - href: ../index.html
-        text: Home
-      - href: sysetholApp.qmd
-        text: sysetholApp
-      - href: fivePlotApp.qmd
-        text: fivePlotApp
-      - href: fiveShowApp.qmd
-        text: fiveShowApp
-      - href: tempApp.qmd
-        text: tempApp
-      - href: triangleApp.qmd
-        text: triangleApp
-      - href: hexmapApp.qmd
-        text: hexmapApp
-      - href: hexmoveApp.qmd
-        text: hexmoveApp
-    right:
-      - icon: github
-        href: https://github.com/byandell/ewing
-```
-
----
-
-## 5. Local Build & Verification Workflow
-
-To test both the pkgdown package documentation and Quarto Shinylive demos locally before pushing:
-
-```bash
-# 1. Build pkgdown documentation site
-Rscript -e "pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)"
-
-# 2. Render Quarto Shinylive demos into docs/demos
-mkdir -p docs/demos
-cd demos
-quarto render
-cd ..
-
-# 3. Create .nojekyll file
-touch docs/.nojekyll
-
-# 4. Preview locally using a local HTTP server
-python3 -m http.server 8000 --directory docs
-```
-
-Navigating to `http://localhost:8000/` displays the main pkgdown site with the **Demos** tab, and clicking **Demos** smoothly loads the WebAssembly gallery with **Main Site** return navigation.
+For publishing troubleshooting (such as Jekyll 404 resolutions and `.nojekyll` setup), see [pkgdown Guide](https://byandell.github.io/Documentation/github/pkgdown.html).
