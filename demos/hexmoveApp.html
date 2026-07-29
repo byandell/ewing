@@ -241,91 +241,2219 @@ library(stats)
 
 # --- Auto-Included from R/triangle.R ---
 
+## $Id: triangle.R,v 0.9 2002/12/09 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###########################################################################################
+## rtri( n, width )
+##
+## plot.current( x, species )
+## text.current( x, species )
+##
+###########################################################################################
+###########################################################################################
+### Tridiagonal Coordinate System S3 Classes &amp; Algebra
+###########################################################################################
+tricoord &lt;- function(a, b = NULL, c = NULL) {
+  if (is.data.frame(a) &amp;&amp; all(c("a", "b", "c") %in% names(a))) {
+    res &lt;- a
+  } else if (is.matrix(a) &amp;&amp; ncol(a) == 3) {
+    res &lt;- as.data.frame(a)
+    names(res) &lt;- c("a", "b", "c")
+  } else if (!is.null(b) &amp;&amp; !is.null(c)) {
+    res &lt;- data.frame(a = a, b = b, c = c)
+  } else if (is.numeric(a) &amp;&amp; length(a) == 3) {
+    res &lt;- data.frame(a = a[1], b = a[2], c = a[3])
+  } else {
+    stop("Invalid tricoord input format")
+  }
+  class(res) &lt;- c("tricoord", "data.frame")
+  res
+}
 
+`+.tricoord` &lt;- function(e1, e2) {
+  # Handle vector offsets cleanly
+  if (is.numeric(e2) &amp;&amp; length(e2) == 3) {
+    tricoord(e1$a + e2[1], e1$b + e2[2], e1$c + e2[3])
+  } else if (inherits(e2, "tricoord")) {
+    tricoord(e1$a + e2$a, e1$b + e2$b, e1$c + e2$c)
+  } else {
+    stop("Invalid right hand operand for tricoord addition")
+  }
+}
+
+`-.tricoord` &lt;- function(e1, e2) {
+  if (is.numeric(e2) &amp;&amp; length(e2) == 3) {
+    tricoord(e1$a - e2[1], e1$b - e2[2], e1$c - e2[3])
+  } else if (inherits(e2, "tricoord")) {
+    tricoord(e1$a - e2$a, e1$b - e2$b, e1$c - e2$c)
+  } else {
+    stop("Invalid right hand operand for tricoord subtraction")
+  }
+}
+
+###########################################################################################
+rtri &lt;- function( n, width, tri = matrix(0,3,n), roundoff = TRUE )
+{
+  tri &lt;- as.matrix( tri )
+  if( n == 1 ) {
+    xy &lt;- stats::runif( 2, 0, width )
+    if( roundoff )
+      xy &lt;- round( xy )
+
+    i &lt;- sample( 3, 1  )
+    i1 &lt;- 1 + i%%3
+    i2 &lt;- 1 + (i+1)%%3
+    tri[i1,] &lt;- tri[i1,] + xy[1]
+    tri[i2,] &lt;- tri[i2,] - xy[2]
+    tri[i,] &lt;- - ( tri[i1,] + tri[i2,] )
+    return( tri )
+  }
+  else {
+    xy &lt;- data.frame( x = stats::runif( n, 0, width ),
+      y = - stats::runif( n, 0, width ))
+    if( roundoff )
+      xy &lt;- round( xy )
+
+    out &lt;- sample( 3, n, replace = TRUE )
+    for( i in 1:3 ) {
+      outi &lt;- out == i
+      if( any( outi )) {
+        i1 &lt;- 1 + i%%3
+        i2 &lt;- 1 + (i+1)%%3
+        tri[i1,outi] &lt;- tri[i1,outi] + xy$x[outi]
+        tri[i2,outi] &lt;- tri[i2,outi] + xy$y[outi]
+        tri[i,outi] &lt;- - ( tri[i1,outi] + tri[i2,outi] )
+      }
+    }
+  }
+  tri
+}
+###########################################################################################
+car2tri.default &lt;- function(x,y)
+  car2tri( cbind( x, y ))
+car2tri &lt;- function( xy, xmult = ( 2 + sq3 ) / 4, ymult = ( 3 + 2 * sq3 ) / 12,
+  sq3 = sqrt( 3 ))
+{
+#  if( !is.matrix( xy ))
+#    xy &lt;- t( as.matrix( xy ))
+  aa &lt;- xmult * xy[,1] - ymult * xy[,2]
+  bb &lt;- - xmult * xy[,1] - ymult * xy[,2]
+  cc &lt;- -( aa + bb )
+  rbind( a = aa, b = bb, c = cc )
+}
+###########################################################################################
+tri2car.default &lt;- function(aa,bb,cc=-(aa+bb))
+  tri2car( rbind( aa, bb, cc ))
+tri2car &lt;- function(tri, xmult = 2 / ( 2 + sq3 ), ymult = 6 / ( 3 + 2 * sq3 ),
+  sq3 = sqrt( 3 ))
+{
+  if( inherits(tri, "tricoord") ) {
+    # If the user passes our S3 tricoord dataframe, map it correctly natively.
+    x &lt;- ( tri$a - tri$b ) * xmult
+    y &lt;- - ( tri$a + tri$b ) * ymult
+  } else {
+    if( !is.matrix( tri ))
+      tri &lt;- as.matrix( tri )
+    x &lt;- ( tri[1,] - tri[2,] ) * xmult
+    y &lt;- - ( tri[1,] + tri[2,] ) * ymult
+  }
+  data.frame( x = x, y = y )
+}
+###########################################################################################
+cardist &lt;- function( xy )
+  sqrt( xy[,1]^2 + xy[,2]^2 )
+###########################################################################################
+tridist &lt;- function( tri )
+  apply( tri, 1, max )
+###########################################################################################
+gasket &lt;- function( aa, bb )
+{
+  n &lt;- length( aa )
+  pp &lt;- c(-1,1,0,1)
+  dda &lt;- diff( aa )
+  ddb &lt;- diff( bb )
+  ss &lt;- sign( sign( dda ) - sign( ddb ))
+  dda &lt;- 2 - abs( dda )
+  ddb &lt;- 2 - abs( ddb )
+  aa &lt;- 2 * aa
+  aa &lt;- c( aa[1], rbind( aa[-n] + pp[dda+1+ss], aa[-1] + pp[dda+1-ss], aa[-1] ))
+  bb &lt;- 2 * bb
+  bb &lt;- c( bb[1], rbind( bb[-n] + pp[ddb+1-ss], bb[-1] + pp[ddb+1+ss], bb[-1] ))
+  data.frame( aa = aa, bb = bb )
+}
 
 # --- Auto-Included from R/community.R ---
 
-
+get.organisms &lt;- function(datafile = "") {
+  org &lt;- list(species = c("host", "parasite"), substrates = "substrate")
+  if(datafile != "") {
+    if(tools::file_ext(datafile) %in% c("xls","xlsx")){
+      sheets &lt;- readxl::excel_sheets(datafile)
+      species &lt;- stringr::str_remove(
+        sheets[stringr::str_detect(sheets, "future\\.")],
+        "future\\.")
+      substrates &lt;- unique(stringr::str_remove(
+        sheets[stringr::str_detect(sheets, paste("\\.", species, sep = "", collapse = "|")) &amp;
+        !stringr::str_detect(sheets, paste(c("future", species), "\\.", sep = "", collapse = "|"))],
+        "\\..*"))
+      org &lt;- list(species = species, substrates = substrates)
+    }
+  }
+  org
+}
+###########################################################################################
+get.species &lt;- function( community, species ) {
+  if( missing( species ))
+    return( names( community$pop ))
+  if( is.numeric( species ))
+    species &lt;- names( community$pop )[species]
+  if( is.null( species ) || !species %in% names( community$pop ))
+    return( NULL )
+  
+  ans &lt;- community$pop[[species]]
+  if (is.list(ans) &amp;&amp; !is.matrix(ans) &amp;&amp; !is.data.frame(ans) &amp;&amp; !is.null(ans$org)) {
+    ans &lt;- ans$org
+  }
+  if (is.matrix(ans) || is.data.frame(ans)) {
+    if (!"up" %in% rownames(ans) &amp;&amp; (is.null(colnames(ans)) || colnames(ans)[1] != "dummy")) {
+      dummy &lt;- ans[, 1, drop = FALSE]
+      colnames(dummy) &lt;- "dummy"
+      return(cbind(dummy, ans))
+    }
+  }
+  ans
+}
+###########################################################################################
+get.species.element &lt;- function( community, species, rows, cols )
+  community$pop[[species]][rows,cols]
+###########################################################################################
+put.species &lt;- function( community, species, value )
+{
+  community$pop[[species]] &lt;- value
+  community
+}
+###############################################################################
+put.individual &lt;- function( community, species, individual,
+                           id = get.base( community, species ))
+{
+  community$pop[[species]][,id] &lt;- individual
+  community
+}  
+###############################################################################
+get.individual &lt;- function( community, species,
+                           id = get.base( community, species ))
+  community$pop[[species]][,id]
+###############################################################################
+get.base &lt;- function( community, species )
+  community$pop[[species]]["up",1]
 
 # --- Auto-Included from R/Org.R ---
 
-
+###########################################################################################
+### Organism Features
+###########################################################################################
+getOrgFeature &lt;- function( community, species, feature = names( OrgFeature ))
+{
+  OrgFeature &lt;- getOrgInfo( community, "Feature" )
+  if (!is.null(OrgFeature)) {
+    if( missing( species ))
+      return( row.names( OrgFeature ))
+    f &lt;- OrgFeature[ species, feature ]
+    if( length( feature ) == 1 ) {
+      if( any( is.na( f )))
+        return( NA )
+      f &lt;- as.character( f )
+    }
+    else {
+      f &lt;- apply( f, 2, as.character )
+    }
+    f &lt;- c( unlist( f ))
+    numf &lt;- suppressWarnings(as.numeric( f ))
+    if( all( !is.na( numf )))
+      f &lt;- numf
+    return(f)
+  }
+  
+  # Fallback for webR standalone adapter objects
+  if (missing(species)) return(c("host", "parasite"))
+  if (missing(feature) || is.null(feature)) return(c(substrate = "substrate", units = "units"))
+  if (length(feature) == 1) {
+    if (feature == "substrate") return("substrate")
+    if (feature == "units") return("units")
+    return(NA)
+  }
+  res &lt;- rep("substrate", length(feature))
+  names(res) &lt;- feature
+  res
+}
+##########################################################################################
+getOrgHosts &lt;- function( community, species,
+                         feature = c("offspring","attack","substrate") ###HOST SPECIFIC###
+)
+{
+  # This seems overly complicated and adds substrate; maybe function name is wrong
+  f &lt;- unique( getOrgFeature( community, species, feature ))
+  # f[match(species, f, nomatch = 0)] # this would only get species
+  o &lt;- getOrgFeature( community )
+  o[ match( f, o, nomatch = 0 ) ]
+}
+###########################################################################################
+getOrgFuture &lt;- function( community, species, feature, current,
+                          future = OrgFuture[[species]] )
+{
+  OrgFuture &lt;- getOrgInfo( community, "Future" )
+  if (!is.null(OrgFuture) &amp;&amp; !is.null(OrgFuture[[species]])) {
+    future &lt;- OrgFuture[[species]]
+    if( missing( current )) {
+      if( missing( feature ))
+        return( future )
+      future &lt;- future[,feature]
+    }
+    else {
+      if( !is.numeric( current ))
+        current &lt;- match( current, future$current, nomatch = 0 )
+      if( missing( feature ))
+        future &lt;- future[ current, ]
+      else
+        future &lt;- future[ current, feature ]
+    }
+    if( is.null( future ))
+      return( NA )
+    if(is.character( future ))
+      future &lt;- as.factor(future)
+    return(future)
+  }
+  
+  # Fallback for webR standalone adapter objects
+  if (!is.null(community$pop[[species]])) {
+    pch_vec &lt;- community$pop[[species]]$pch
+    col_vec &lt;- community$pop[[species]]$col
+    fut &lt;- data.frame(pch = pch_vec, color = col_vec, stringsAsFactors = FALSE)
+    if (missing(feature)) return(fut)
+    if (length(feature) == 1) return(fut[[feature]])
+    return(fut[, feature, drop = FALSE])
+  }
+  NULL
+}
+###########################################################################################
+get.interact &lt;- function( community, species, host, avail, event )
+{
+  id &lt;- get.species.element( community, host, "stage", avail )
+  interact &lt;- getOrgInteract( community, host, species, event )[id]
+  interact[ is.na( interact ) ] &lt;- 0
+  interact
+}
+###########################################################################################
+getOrgInteract &lt;- function( community,
+                            org1name = getOrgFeature( community, org2name, "substrate" ),
+                            org2name, event = NULL )
+{
+  OrgInteract &lt;- getOrgInfo( community, "Interact" )
+  if (!is.null(OrgInteract) &amp;&amp; !is.null(OrgInteract[[org1name]][[org2name]])) {
+    tmp &lt;- OrgInteract[[org1name]][[org2name]]
+    if( is.null( event ))
+      return( tmp )
+    event &lt;- as.character( event )
+    inter &lt;- tmp[,event]
+    if( length( event ) == 1 )
+      names( inter ) &lt;- row.names( tmp )
+    if(is.character(inter))
+      inter &lt;- factor(inter)
+    return(inter)
+  }
+  
+  # Fallback for webR standalone adapter objects
+  sub_names &lt;- if (!is.null(community$sub_names)) community$sub_names else c("fr1", "fr2", "fr3", "fr4", "twig", "lftop", "lfbot")
+  mat &lt;- matrix(1, nrow = length(sub_names), ncol = 1, dimnames = list(sub_names, "substrate"))
+  as.data.frame(mat)
+}
+###########################################################################################
+getOrgMeanValue &lt;- function( community, species )
+{
+  OrgMeanValue &lt;- getOrgInfo( community, "MeanValue" )
+  ## The global org$MeanValue[[species]] contains mean value information.
+  OrgMeanValue[[species]]
+}
+###########################################################################################
+copyOrgInfo &lt;- function( fromname, toname )
+{
+  out &lt;- list()
+  for( i in c("sim")) {
+    from &lt;- paste( fromname, i, sep = "." )
+    if( exists( from )) {
+      toto &lt;- paste( toname, i, sep = "." )
+      out[[toto]] &lt;- get( from )
+      cat( "copied", from, "to", toto, "into list\n" )
+    }
+  }
+  return(out)
+}
+###########################################################################################
+get.alive &lt;- function( community, species, substrate )
+{
+  alive &lt;- getOrgAlive( community, species )
+  alive &lt;- seq_along( alive )[alive]
+  alive[ substrate == get.species.element( community, species, "sub.stage", alive ) ]
+}
+###########################################################################################
+getOrgAlive &lt;- function( community, species, element )
+{
+  organism &lt;- get.species( community, species )
+  ## identify dead organisms (free nodes for leftist tree)
+  tmp &lt;- c( FALSE, apply( organism[c("dist","up","left","right"),-1], 2,
+                          function( x ) any( x &gt; 1 )))
+  if( !any( tmp )) {
+    tmpp &lt;- organism["up",1]
+    if( tmpp &gt; 1 )
+      tmp[tmpp] &lt;- TRUE
+  }
+  if( !missing( element ))
+    tmp &lt;- organism[ element, tmp ]
+  tmp
+}
+###########################################################################################
+getOrgAgeClass &lt;- function( community, species, stage = seq_len( nrow( future )),
+                            future = getOrgFuture( community, species ))
+{
+  ageclass &lt;- future$ageclass[stage]
+  tmp &lt;- !is.na( ageclass )
+  if( any( tmp ))
+    ageclass[ !is.na( ageclass ) ]
+  else
+    NA
+}
+###########################################################################################
+getOrgSubstrate &lt;- function( community, species, elements = seq_len( nrow( inter )),
+                             substrate = getOrgFeature( community, species, "substrate" ),
+                             inter = getOrgInteract( community, substrate, species ))
+{
+  sites &lt;- inter$substrate[elements]
+  tmp &lt;- !is.na( sites )
+  if( any( tmp ))
+    sites[ !is.na( sites ) ]
+  else
+    NA
+}
+###########################################################################################
+sampleOrgSubstrate &lt;- function( community, species, elements = seq_len( nrow( inter )),
+                                substrate.name = getOrgFeature( community, species, "substrate" ),
+                                inter = getOrgInteract( community, substrate.name, species ))
+{
+  if( is.na( substrate.name ))
+    return( elements )
+  newsub &lt;- as.matrix( cbind( elements, inter[ elements, levels( factor(inter$substrate) ) ] ))
+  apply( newsub, 1, function( x, is ) {
+    ns &lt;- sample( levels( factor(is) ), 1, prob = x[-1] / sum( x[-1] ))
+    sub &lt;- seq_len( nrow( inter ))[ ns == is ]
+    if( length( sub ) &gt; 1 ) {
+      newsub &lt;- getOrgInteract( community, substrate.name, substrate.name )[x[1],sub]
+      sample( sub, 1, prob = newsub / sum( newsub ))
+    }
+    else
+      sub
+  }, inter$substrate )
+} 
+##########################################################################################
+### simulation organism administration
+##########################################################################################
+initOrgInfo &lt;- function( package, messages = TRUE, datafile = "", ... )
+{
+  community &lt;- list( pop = list( ))
+  community$org &lt;- list( )
+  community$org$package &lt;- package
+  ## Get data
+  community$org$Feature &lt;- getOrgData(community, "organism", "features",
+                                      messages, datafile)
+  
+  community$pop &lt;- list()
+  community
+}
+##########################################################################################
+setOrgInfo &lt;- function( community, species, hosts, package, messages = TRUE,
+                        datafile = "", ... )
+{
+  Organism &lt;- community$org
+  
+  if( is.null( Organism$Future ))
+    Organism$Future &lt;- list( )
+  if( is.null( Organism$Interact ))
+    Organism$Interact &lt;- list( )
+  
+  for( j in hosts )
+    if( is.null( Organism$Interact[[j]] ))
+      Organism$Interact[[j]] &lt;- list( )
+  
+  ## Do not reset MeanValue as it may have important spline fits!
+  if( is.null( Organism$MeanValue ))
+    Organism$MeanValue &lt;- list( )
+  
+  for( i in species ) {
+    future &lt;- getOrgData(community, "future", i,
+                         messages, datafile)
+    
+    # Check that future agrees with organism.feature information
+    subclass &lt;- Organism$Feature[i,"subclass"]
+    if(!(subclass %in% unique(future$ageclass))) {
+      stop(paste("Future table", paste("future", i, sep = "."),
+                 "does not include", subclass))
+    }
+    
+    level.ageclass &lt;- unique( future$ageclass )
+    level.ageclass &lt;- as.character( level.ageclass[ !is.na( level.ageclass ) ] )
+    future$ageclass &lt;- ordered( future$ageclass, level.ageclass )
+    Organism$Future[[i]] &lt;- future
+    for( j in hosts )
+      if( i != j ) {
+        Organism$Interact[[j]][[i]] &lt;- getOrgData(community, j, i,
+                                                  messages, datafile)
+        
+        # Check that interaction agrees with host current stage information
+        # This is messy!
+        if(j %in% species) {
+          if(!all(row.names(Organism$Interact[[j]][[i]]) %in%
+                  c(as.character(Organism$Future[[j]]$current), i))) {
+            stop(paste("Interaction table", paste(j, i, sep = "."),
+                       "does not match", j, "current stages"))
+          }
+        }
+      }
+    if( is.null( Organism$MeanValue[[i]] ))
+      Organism$MeanValue[[i]] &lt;- list( )
+    else
+      cat( "Keeping Mean Value information for", i, "if any\n" )
+  }
+  for( i in unique( getOrgFeature( community, species, "substrate" ))) {
+    Organism$Interact[[i]][[i]] &lt;- getOrgData(community, i, i,
+                                              messages, datafile)
+  }
+  community$org &lt;- Organism
+  community
+}
+###########################################################################################
+getOrgData &lt;- function(community, left, right,
+                       messages = TRUE, datafile = "")
+{
+  # Get Organism Data from
+  #     package data
+  #     global data supplied by user
+  #     external data file supplied by user
+  sheet &lt;- paste( left, right, sep = "." )
+  data_exists &lt;- FALSE
+  if (is.character(datafile) &amp;&amp; length(datafile) == 1 &amp;&amp; nzchar(datafile)) {
+    if (dir.exists(datafile)) {
+      extensions &lt;- c(".txt", ".tsv", ".csv", ".xls", ".xlsx")
+      datafile_paths &lt;- file.path(datafile, paste0(sheet, extensions))
+      exist_idx &lt;- file.exists(datafile_paths)
+      if (any(exist_idx)) {
+        datafile &lt;- datafile_paths[exist_idx][1]
+        data_exists &lt;- TRUE
+      } else {
+        data_exists &lt;- FALSE
+      }
+      sheet &lt;- ""
+    } else if (file.exists(datafile)) {
+      data_exists &lt;- TRUE
+    }
+  }
+  if(!data_exists) {
+    # Load package data or get user-provided global data.
+    mydata( sheet, getOrgInfo( community, "package" ), messages = messages)
+    my.eval( sheet )
+  } else {
+    # Read data file from user if provided.
+    if(sheet == "")
+      my.read(datafile)
+    else {
+      out &lt;- as.data.frame(readxl::read_excel(datafile, sheet = sheet, .name_repair = "none"))
+      if(names(out)[1] == "") { # first column is actual row names
+        rownames(out) &lt;- out[[1]]
+        out[[1]] &lt;- NULL
+      }
+      out
+    }
+  }
+}
+###########################################################################################
+getOrgNames &lt;- function(datafile = "") {
+  if(datafile == "") {
+    c("organism.features", "future.host", "future.parasite",
+      "substrate.host", "substrate.parasite", "substrate.substrate",
+      "temperature.base", "temperature.par")
+  } else {
+    readxl::excel_sheets(datafile)
+  }
+}
+###########################################################################################
+getOrgDataSimple &lt;- function(community, dataname, datafile = ""){
+  out &lt;- getOrgData(
+    community,
+    left = stringr::str_remove(dataname, "\\..*"),
+    right = stringr::str_remove(dataname, ".*\\."),
+    messages = FALSE, datafile = datafile)
+  # Kludge to reinstate rownames as a column
+  if(!identical(rownames(out), as.character(seq_len(nrow(out))))) {
+    out &lt;- data.frame(rownames = rownames(out), out)
+  }
+  out
+}
+###########################################################################################
+getOrgInfo &lt;- function( community, element )
+{
+  community$org[[element]]
+}
+###########################################################################################
+setOrgMeanValue &lt;- function( community, species, stage, mvalue )
+{
+  ## The global Organism$MeanValue[[species]] contains mean value information.
+  community$org$MeanValue[[species]][[stage]] &lt;- mvalue
+  community
+}
 
 # --- Auto-Included from R/event.R ---
 
+## $Id: event.R,v 1.0 2002/12/11 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###############################################################################
+##
+## event.birth( community, species )
+## event.attack( community, species )
+##
+## Issues to resolve:
+## 2. search strategy for predator/parasite/parasitoid
+## 3. generic calls to do.x
+###############################################################################
+event.birth &lt;- function( community, species )
+{
+  ## now only one offspring at a time,
+  ## but could depend on individual
+  offspring &lt;- get.offspring( community, species)
+  ## update parent based on anticipated offspring
+  community &lt;- parent.birth( community, species, offspring )
+  if( offspring ) {
+    ## get new births
+    newbirths &lt;- get.birth( community, species, offspring )
+    ## merge births into community
+    community &lt;- set.birth( community, species, newbirths )
+  }
+  community
+}
+###############################################################################
+parent.birth &lt;- function( community, species, offspring )
+{
+  ## get individual record
+  individual &lt;- get.individual( community, species )
+  individual["offspring"] &lt;- individual["offspring"] - offspring
+  ## female starves when egg load depleted (less than or equal to 0)
+  if( individual["offspring"] &lt;= 0 )
+    individual["stage"] &lt;- set.future( community, species, "starved" )
+  community &lt;- put.individual( community, species, individual )
+}
+###############################################################################
+get.birth &lt;- function( community, species, offspring )
+{
+  ## get individual record
+  individual &lt;- get.individual( community, species )
+  ## matrix of new offspring for community
+  newbirths &lt;- matrix( individual, length( individual ), offspring )
+  dimnames( newbirths ) &lt;- list( names( individual ), NULL )
+  if( offspring ) {
+    ## assumes newborn is stage 1, and next stage is 2
+    newbirths["stage",] &lt;- 1
+    newbirths["future",] &lt;- 2
+    ## set up as unlinked node for leftist tree
+    newbirths[c("dist","left","right","up"),] &lt;- 1
+    ## disperse offspring across substrate types
+    newbirths &lt;- event.move( community, species, newbirths )
+  }
+  if( getCount( community,, "debug" ))
+    cat( round( individual["time"] ),
+        getOrgFeature( community, species, "units" ),
+        ":", species, "offspring", individual["offspring"], "\n" )
+  if( offspring ) {
+    ## get future events for new organisms
+    get.future( community, species, newbirths)
+  }
+  else
+    community
+}
+###############################################################################
+get.deplete &lt;- function( community, species )
+{
+  ## get individual record of attacker
+  individual &lt;- get.individual( community, species )
+  ## Deplete reserves based on time spent searching for host.
+  individual["offspring"] &lt;- individual["offspring"] - 
+    ( individual["time"] - individual["location"] ) /
+      getOrgFeature( community, species, "deplete" )
+  community &lt;- put.individual( community, species, individual )
+}
+###############################################################################
+set.future &lt;- function( community, species, stage )
+{
+  current &lt;- getOrgFuture( community, species, "current" )
+  seq( length( current ))[ current == stage ]
+}
+###############################################################################
+### Interaction Events (only attack for now)
+###############################################################################
+event.attack &lt;- function( community, species )
+{
+  ## dyadic event: attack of host by adult parasitoid
+  
+  ## deplete individual based on time spent searching for host
+  community &lt;- get.deplete( community, species )
+  ## get individual record of attacker
+  individual &lt;- get.individual( community, species )
 
+  ## find a host if parasite has offspring reserve left
+  if( individual["offspring"] &gt; 0 ) {
+    ## get name of host for attacker
+    host &lt;- getOrgFeature( community, species, "attack" )
+    ## get attack parasite and event types
+    attack &lt;- get.attack( community, species, individual )
+    ## find host located on the same substrate
+    found &lt;- event.find( community, species, host, attack["event"] )
+    if( length( found )) {
+      ## host-parasite interaction
+      event.parsed &lt;- get( paste( "event", attack["event"], sep="." ))
+      community &lt;- event.parsed( community, species, host, found )
+      event.parsed &lt;- get( paste( "host", attack["parasite"], sep="." ))
+      community &lt;- event.parsed( community, species, host, found )
+      individual &lt;- get.individual( community, species )
+    }
+  }
+  if( individual["offspring"] &gt; 0 ) {
+    ## parasite moves along substrate
+    individual &lt;- event.move( community, species, individual )
+  }
+  else {
+    ## parasite dies if it does not feed enough
+    individual["stage"] &lt;- set.future( community, species, "starved" )
+  }
+  ## put updated individual back in community
+  community &lt;- put.individual( community, species, individual )
+}
+###############################################################################
+get.attack &lt;- function( community, species, individual )
+{
+  ## get parasite type ("ecto" or "endo") and current event ("feed" or "ovip")
+  parasite &lt;- getOrgFeature( community, species, "parasite" )
+  event &lt;- getOrgFuture( community, species, "current", individual["future"] )
+  event &lt;- as.character( event )
+  if( parasite=="endo" )
+    event &lt;- "ovip"
+  else if( individual["offspring"] &lt; 1 ) {
+    ## must feed if depleted
+    event &lt;- "feed"
+  }
+  c( event = event, parasite = parasite )
+}
+###############################################################################
+host.ecto &lt;- function( community, species, host, dead )
+{
+  ## ectoparasites effectively kill their host
+
+  ## get individual doing the attack
+  individual &lt;- get.individual( community, species )
+  ## get host individual that is attacked
+  hostindiv &lt;- get.individual( community, host, dead )
+  ## set host time to now, which may involve hr-DD translation
+  hostindiv["time"] &lt;- transTime( community, species, host, individual["time"] )
+  ## schedule immediate death of host
+  hostindiv["future"] &lt;- set.future( community, host, "death" )
+  ## update host record in community
+  community &lt;- put.individual( community, host, hostindiv, dead )
+  ## update leftist tree and mintime
+  community &lt;- put.species( community, host,
+                           leftist.update( get.species( community, host ), dead ))
+  update_mintime( community, host )
+}
+###############################################################################
+host.endo &lt;- function( community, species, host, dead, harm )
+{
+  ## endoparasites reduces capacity of host (assumed by half here)
+  
+  ## get host individual that is attacked
+  hostindiv &lt;- get.individual( community, host, harm )
+  ## schedule harm for hosts (reduce egg capacity by half)
+  hostindiv["offspring"] &lt;- floor( hostindiv["offspring"] / 2 )
+  if( hostindiv["offspring"] == 0 ) {
+    ## get individual doing the attack
+    individual &lt;- get.individual( community, species )
+    ## set host time to now, which may involve hr-DD translation
+    hostindiv["time"] &lt;- transTime( community, species, host, individual["time"] )
+    ## schedule immediate death of host
+    hostindiv["future"] &lt;- set.future( community, host, "death" )
+  }
+  ## update host record in community
+  community &lt;- put.individual( community, host, hostindiv, harm )
+  if( hostindiv["offspring"] == 0 ) {
+    ## update leftist tree and mintime
+    community &lt;- put.species( community, host,
+                             leftist.update( get.species( community, host ), dead ))
+    community &lt;- update_mintime( community, host )
+  }
+  community
+}
+###############################################################################
+event.feed &lt;- function( community, species, host, dead )
+{
+  ## feed: adult parasite feeds on host
+
+  interact &lt;- get.interact( community, species, host, dead, "feed" )
+  ## host-parasite interaction: feeding
+  if( interact ) {
+    individual &lt;- get.individual( community, species )
+    individual["offspring"] &lt;- individual["offspring"] + interact
+    community &lt;- put.individual( community, species, individual )
+  }
+  community
+}
+###############################################################################
+event.ovip &lt;- function( community, species, host, dead, gender=TRUE )
+{
+  ## ovip: adult lays egg in the host to emerge later as adult
+  offspring &lt;- get.offspring( community, species )
+
+  interact &lt;- get.interact( community, species, host, dead, "ovip" )
+  ## host-parasite interaction: feeding
+  if( interact ) {
+    ## update parent individual, depleting energy after egg laying
+    community &lt;- parent.birth( community, species, offspring )
+
+    ## get new births
+    newbirths &lt;- get.birth( community, species, offspring )
+    ## gender preference for offspring
+    if( get.interact( community, species, host, dead, "male" ) &lt; stats::runif( 1 ) |
+      !gender ){
+      ## set offspring for female eggs based on dead host
+      newbirths["offspring", ] &lt;- set.offspring( community, species, host, dead )
+    }
+    else {
+      ## produce male and put on queue for immediate death
+      newbirths &lt;- set.male( community, species, host, newbirths )
+    }
+    community &lt;- set.birth( community, species, newbirths )
+  }
+  community
+}
+###############################################################################
+set.male &lt;- function( community, species, host, newbirths )
+{
+  ## produce male offspring, which is queued for immediate death
+  newbirths["future",1] &lt;- set.future( community, species, "male" )
+  newbirths["time",1] &lt;- get.individual( community, species )["time"]
+  newbirths
+}
 
 # --- Auto-Included from R/event.future.R ---
 
-
+event.future &lt;- function( community, species )
+{
+  ## schedule future event based on current stage
+  individual &lt;- get.future( community, species )
+  ## move if appropriate
+  individual &lt;- event.move( community, species, individual )
+  ## update time translation if needed
+  community &lt;- checkTime( community, individual["time"],
+                          getCount( community, species, "mintime"),
+                          getOrgFeature( community, species, "units" ))
+  ## put updated individual back in community
+  community &lt;- put.individual( community, species, individual )
+  
+  ## reprioritize the leftist tree if time has changed
+  if( individual["time"] &gt; individual["location"] ) {
+    ## and time is longer than next scheduled time
+    if( individual["time"] &gt;
+        min( get.species.element( community, species, "time",
+                                  individual[c("left","right")] ))) {
+      ## remove individual from leftist tree
+      community &lt;- put.species( community, species,
+                                leftist.update( get.species( community, species )))
+    }
+    community &lt;- update_mintime( community, species )
+  }
+  community
+}
 
 # --- Auto-Included from R/organism.features.R ---
 
-
+NULL
 
 # --- Auto-Included from R/host.parasite.R ---
 
-
+NULL
 
 # --- Auto-Included from R/init.simulation.R ---
 
-
+init.simulation &lt;- function( package = "ewing", 
+                             count = 200,
+                             interact = FALSE,
+                             messages = TRUE,
+                             ...)
+{
+  community &lt;- initOrgInfo( package, messages = messages, ... )
+  community &lt;- initTemp( community, messages = messages, ... )
+  
+  species &lt;- getOrgFeature( community )[1:2]
+  hosts &lt;- getOrgHosts( community, species )
+  
+  if(messages) {
+    cat( "Creating simulation organism set using species:\n",
+         paste( species, collapse = ", " ), "\n\n" )
+  }
+  
+  community &lt;- setOrgInfo( community, species, hosts, package,
+                           messages = messages, ... )
+  
+  if(messages) {
+    cat( "\n" )
+  }
+  species &lt;- unique( species )
+  num &lt;- numeric( length( species ))
+  names( num ) &lt;- species
+  
+  count &lt;- rep_len(count, length(species))
+  names(count) &lt;- species
+  
+  for( i in species ) {
+    num[i] &lt;- reuse &lt;- count[i]
+    
+    if(messages | (interact &amp; interactive())) {
+      cat( paste( "Initialize ", i, " at size ", reuse, sep = "" ))
+    }
+    if(interact &amp; interactive()) {
+      cat(" :")
+      r &lt;- readline( )
+      if( r != "" &amp; is.na( pmatch( substring( r, 1, 1 ), c("y","Y") )))
+        reuse &lt;- suppressWarnings(as.numeric( r ))
+      if( is.na( reuse ))
+        reuse &lt;- count[i]
+    }
+    if( reuse ) {
+      if(messages) {
+        cat( "...\n" )
+      }
+      community &lt;- init.population( community, i, n = reuse, messages = messages, ... )
+      num[i] &lt;- reuse
+    }
+  }
+  class( community ) &lt;- c("ewing", "list")
+  attr(community, "count") &lt;- count
+  community
+}
 
 # --- Auto-Included from R/init.population.R ---
 
-
+init.population &lt;- function( community, species, n = 200, width = 100,
+                             units = getOrgFeature( community, species, "units" ),
+                             timeit = FALSE,
+                             reject = Inf,
+                             position = rtri( n, width ),
+                             colnames = c(leftistnames,paramnames,posnames,eventnames),
+                             init.stage = istage,
+                             init.weight = getOrgFuture( community, species, "init" ),
+                             messages = TRUE,
+                             ...)
+{
+  leftistnames &lt;- c("dist","left","right","up")
+  paramnames &lt;- c("dispersion","location","intensity","truncation","rejection")
+  posnames &lt;- paste("pos",letters[1:3], sep = ".")
+  eventnames &lt;- c("time","stage","future","offspring","sex","sub.stage","sub.future")
+  
+  organism &lt;- matrix( 0, length( colnames ), n+1,
+                      dimnames = list( colnames, NULL ))
+  organism["time",1] &lt;- Inf
+  
+  ## 5-parameter initialization
+  organism[c("dispersion","intensity"),-1] &lt;- 1
+  organism["rejection",-1] &lt;- if( reject == Inf )
+    rep( Inf, n )
+  else
+    reject * stats::rexp( n )
+  
+  ## triangular coordinates
+  organism[posnames,-1] &lt;- position
+  
+  ## substrate
+  substrate.name &lt;- getOrgFeature( community, species, "substrate" )
+  if( !is.na( substrate.name )) {
+    substrate &lt;- getOrgInteract( community, substrate.name, species, "init" )
+    organism["sub.stage",-1] &lt;- organism["sub.future",-1] &lt;- sample( length( substrate ),
+                                                                     n, replace = TRUE, prob = substrate / sum( substrate ))
+  }
+  ## randomly generate events proportional to future time units
+  nstage &lt;- length( init.weight )
+  istage &lt;- sample( nstage, n, replace = TRUE, prob = init.weight / sum( init.weight ))
+  init.stage &lt;- array( init.stage, n )
+  organism["stage",-1] &lt;- init.stage
+  
+  ## schedule future events
+  if( timeit )
+    proctime &lt;- proc.time()
+  organism[,-1] &lt;- get.future( community, species, organism[,-1] )
+  if( timeit ) {
+    tmp &lt;- proc.time() - proctime
+    cat( "future time: user=", tmp[1], "system=", tmp[2], "total=", tmp[3], "\n" )
+  }
+  ## create leftist tree
+  if( timeit )
+    proctime &lt;- proc.time()
+  community &lt;- put.species( community, species, leftist.create( organism ))
+  if( timeit ) {
+    tmp &lt;- proc.time() - proctime
+    cat( "leftist time: user=", tmp[1], "system=", tmp[2], "total=", tmp[3], "\n" )
+  }
+  ## mean number of offspring
+  if( timeit )
+    proctime &lt;- proc.time()
+  #***This is where parasite is crashing--no offspring?**
+  community &lt;- initOffspring( community, species )
+  if( timeit ) {
+    tmp &lt;- proc.time() - proctime
+    cat( "offspring time: user=", tmp[1], "system=", tmp[2], "total=", tmp[3], "\n" )
+  }
+  
+  if(messages) {
+    cat( "Initializing events for", species, "with", ncol( organism ) - 1, "individuals\n" )
+  }
+  community
+}
 
 # --- Auto-Included from R/future.host.R ---
 
-
+NULL
 
 # --- Auto-Included from R/future.events.R ---
 
-
+future.events &lt;- function( community,
+                           nstep = 4000,
+                           species = get.species( community ),
+                           
+                           refresh = nstep / 20, cex = 0.5,
+                           substrate.plot = TRUE, extinct = TRUE,
+                           timeit = TRUE, debugit = FALSE,
+                           messages = TRUE, append = NULL, ... )
+  
+{
+  ## Integrity check of dataset, and initialization of tallies.
+  if( missing( community ))
+    stop( "Must specify a community." )
+  
+  if (is.null(append)) {
+    append &lt;- !is.null(community$count$counts) &amp;&amp; nrow(community$count$counts) &gt; 0
+  }
+  
+  if( debugit ) cat( "initialization\n" )
+  community &lt;- initCount( community, species, debugit = debugit, file = NULL,
+                           append = append, messages = messages )
+  if( timeit )
+    community &lt;- init.timing( community )
+  
+  mintime &lt;- getCount( community, , "mintime" )
+  species.now &lt;- species[ mintime == min( mintime ) ][1]
+  future &lt;- getOrgFuture( community, species.now )
+  
+  # Set up list for plot information.
+  p &lt;- list()
+  pstep &lt;- 0
+  if (!is.null(community$plot)) {
+    p &lt;- community$plot
+    pstep &lt;- length(p)
+  }
+  
+  start_step &lt;- if (append &amp;&amp; !is.null(community$count$step)) community$count$step else 0
+  
+  ## for nstep steps schedule future events and process immediate events
+  for( istep in seq( nstep )) {
+    ## stop if any extinct and extinct flag on, or all extinct
+    omintime &lt;- mintime
+    mintime &lt;- getCount( community, , "mintime" )
+    if( debugit ) print( mintime )
+    if( min( mintime ) &lt; min( omintime )) {
+      cat( "time reversal!\n" ) # should not happen
+      browser()
+    }
+    tmp &lt;- mintime == Inf
+    if( any( tmp )) {
+      if( extinct | all( tmp )) {
+        for( i in names( mintime )[tmp] )
+          cat( "***", i, "is extinct ***\n" )
+        if( plotit )
+          plot.ewing( community, substrate = substrate.plot, cex = cex, ...)
+        break
+      }
+    }
+    ## each species is always sorted so 1st element is next future event
+    species.prev &lt;- species.now
+    species.now &lt;- species[ mintime == min( mintime ) ][1]
+    individual &lt;- get.individual( community, species.now )
+    if( is.na( individual["time"] ) | individual["time"] == Inf ) {
+      cat( "No more finite future events. End of simulation.\n" )
+      break
+    }
+    if( all( individual[c("dist","left","right","up")] == 1 )) {
+      cat( individual["time"], ": last", species.now, "alive",
+           getCount( community, species.now, "base" ), "\n" )
+    }
+    if( species.now != species.prev )
+      future &lt;- getOrgFuture( community, species.now )
+    ## make future event the current stage
+    current &lt;- individual["stage"]
+    stage &lt;- as.character( future$current[current] )
+    if(!length(stage))
+      stop(paste("no stage", current))
+    community &lt;- updateCount( community, species.now, individual, stage == "death",
+                              start_step + istep )
+    individual["stage"] &lt;- current
+    individual["sub.stage"] &lt;- individual["sub.future"]
+    community &lt;- put.individual( community, species.now, individual )
+    
+    if( debugit ) {
+      cat( species.now, istep, "base",
+           getCount( community, species.now, "base" ), "\n" )
+      print( c( step = istep, 
+                countage = sum( getCount( community, species.now, "countage" )),
+                countsub = sum( getCount( community, species.now, "countsub" )),
+                round( individual["time"], 2 ), current, stage ))
+    }
+    
+    ## processing of immediate, pending and future events
+    ## this is the main show--all the rest is setup
+    event.type &lt;- as.character( future[ current, "event" ] )
+    if( debugit ) cat( "do", event.type, istep, stage,
+                       as.character( future$current[ individual["future"] ] ),
+                       individual["time"], "\n" )
+    community &lt;- set.timing( community, event.type )
+    if( event.type == "death" )
+      community &lt;- event.death( community, species.now )
+    else {
+      if( event.type != "future" ) {
+        ## this routine could be user supplied
+        ## generic routines are event.birth, event.attack
+        event.parsed &lt;- get( paste( "event", event.type, sep = "." ))
+        community &lt;- event.parsed( community, species.now )
+      }
+      community &lt;- event.future( community, species.now )
+    }
+    community &lt;- set.timing( community, event.type, 1 )
+    
+    ## refresh plot
+    if( refresh &amp; ! ( istep %% refresh )) {
+      community &lt;- set.timing( community, "refresh" )
+      # Save the ewing_ageclass and ewing_substrate objects.
+      pstep &lt;- pstep + 1
+      p[[pstep]] &lt;- ewing_snapshot(community, start_step + istep, ...)
+      
+      if(messages) {
+        cat( "refresh", istep )
+        for( j in get.species( community ))
+          cat( ":", j, sum( getCount( community, j, "countage" ), na.rm = TRUE ))
+        cat( "\n" )
+      }
+      community &lt;- set.timing( community, "refresh", 1 )
+    }
+    ## periodic browser if in debug mode
+    if( debugit ) {
+      cat( "done", istep, "\n" )    
+      if( refresh &amp; !( istep %% refresh )) {
+        cat( "Type \"c\" to continue or \"Q\" to quit.\n" )
+        browser()
+      }
+    }
+  }
+  community &lt;- set.timing( community, "refresh" )
+  ## end of main loop on future events
+  if( debugit ) cat("done\n")
+  
+  if( sum( getOrgAlive( community, species.now )) &gt; 1 ) {
+    ## tally events at end of simulation
+    community &lt;- setEvents( community, "final" )
+  }
+  community &lt;- set.timing( community, "refresh", 1 )
+  
+  community &lt;- fini.timing( community )
+  community$step &lt;- start_step + nstep
+  attr(community, "nstep") &lt;- start_step + nstep
+  
+  if( !refresh | (nstep%%refresh)) {
+    pstep &lt;- pstep + 1
+    p[[pstep]] &lt;- ewing_snapshot(community, start_step + istep, ...)
+  }
+  community$plot &lt;- p
+  
+  community
+}
 
 # --- Auto-Included from R/future.R ---
+
+## $Id: future.R,v 1.0 2002/12/11 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###############################################################################
+##
+## future.events( community )
+##
+###############################################################################
+
+
+
+
+###############################################################################
+### Get birth and future event
+###############################################################################
+get.future &lt;- function (community, species,
+                        individuals = get.individual(community, species, id),
+                        id = get.base(community, species))
+{
+  ## NOTE: This is the slow routine. For every event, it has to check if there
+  ## is a mean value function and then call rspline.
+
+  ## the structure future.species is set up to handle competing risks!
+  future &lt;- getOrgFuture(community, species, c("current", "future", "time"))
+  future$fid &lt;- match(future$future, future$current)
+  individuals &lt;- as.matrix(individuals)
+
+  rownames &lt;- dimnames(individuals)[[1]]
+  for (i in seq(ncol(individuals))) {
+    individual &lt;- individuals[,i]
+    current &lt;- individual["stage"]
+    individual["location"] &lt;- individual["time"]
+
+    ## competing risks based on potential future event times
+    futures &lt;- future$current == future$current[current]
+    times &lt;- rep( individual["time"], sum( futures ))
+    cur &lt;- seq(nrow(future))[futures]
+    for( j in seq( sum( futures ))) {
+      meantime &lt;- future[cur[j], "time"]
+      if( meantime &gt; 0 ) {
+        for.stage &lt;- as.character(future$current[future$fid[ cur[j] ]])
+        times[j] &lt;- rspline( meantime, individual,
+                              getOrgMeanValue(community, species)[[for.stage]])
+      }
+    }
+    individual["time"] &lt;- min( times )
+    current &lt;- cur[ times == individual["time"] ][1]
+    individual["future"] &lt;- future$fid[current]
+    if (individual["time"] == individual["rejection"])
+        individual["future"] &lt;- future$fid[future$current == "death"]
+    individuals[,i] &lt;- individual
+  }
+  individuals
+}
+###############################################################################
+event.death &lt;- function( community, species,
+                        id = get.base( community, species ))
+{
+  ## remove dead individual from leftist tree
+  community &lt;- put.species( community, species,
+                           leftist.remove( get.species( community, species ), id ))
+  ## free up individual for reuse
+  community &lt;- put.base( community, species, id )
+  community
+}
+###############################################################################
+update_mintime &lt;- function( object, species, ... )
+{
+  base &lt;- get.base( object, species )
+  mintime &lt;- max( getCount( object, species, "mintime" ),
+                 getTime( object, species,
+                         get.species.element( object, species, "time", base )))
+  setCount( object, species, list( base = base, mintime = mintime ))
+}
+###############################################################################
+set.birth &lt;- function( community, species, neworg )
+{
+  ## merge immediate new births (if any)
+  newbirths &lt;- ncol( neworg )
+  if( newbirths &gt; 0 ) {
+    neworg[c("dist","left","right","up"),] &lt;- 1
+    community &lt;- checkTime( community, neworg["time",],
+              getCount( community, species, "mintime" ),
+              getOrgFeature( community, species, "units" ))
+    oldbase &lt;- getCount( community, species, "base" )
+    tmp &lt;- leftist.birth( get.species( community, species ), neworg,
+                         getCount( community, species, "free" ))
+    
+    community &lt;- put.species( community, species, tmp$tree )
+    community &lt;- put.base( community, species, free = tmp$free )
+    community &lt;- updateCounts( community, species, newbirths )
+  }
+  community
+}
 
 
 
 # --- Auto-Included from R/substrate.host.R ---
 
-
+NULL
 
 # --- Auto-Included from R/substrate_triangle.R ---
 
+get_substrate_grid &lt;- function(width, step = 1, orientation = "up") {
+  pts &lt;- expand.grid(a = seq(0, width - step, by = step), 
+                     b = seq(0, width - step, by = step))
+  
+  if (orientation == "up") {
+    pts &lt;- subset(pts, a + b &lt;= width - step)
+    pts$c &lt;- -(pts$a + pts$b)
+  } else {
+    pts &lt;- subset(pts, a + b &lt;= width - step)
+    pts$a &lt;- -pts$a
+    pts$b &lt;- -pts$b
+    pts$c &lt;- -(pts$a + pts$b)
+  }
+  return(pts)
+}
+
+substrate_topology &lt;- function(width = 10, step = 1) {
+  W &lt;- width - step
+  
+  # Topology adjacency offsets
+  list(
+    fr2   = list(offset = c(0, 0, 0), dir = "down"),
+    fr1   = list(offset = c(-W, -W, 2*W), dir = "up"),
+    fr3   = list(offset = c(-W, 0, W), dir = "up"),
+    fr4   = list(offset = c(0, -W, W), dir = "up"),
+    tw1   = list(offset = c(-W, 0, W), dir = "down"),
+    twig  = list(offset = c(-W, 0, W), dir = "down"),
+    tw2   = list(offset = c(-2*W, 0, 2*W), dir = "up"),
+    lftop = list(offset = c(-2*W, W, W), dir = "down"),
+    lfbot = list(offset = c(-3*W, W, 2*W), dir = "up")
+  )
+}
+
+create_substrate &lt;- function(topology, width = 10, step = 1) {
+  W &lt;- width - step
+  all_points &lt;- data.frame()
+  labels_df &lt;- data.frame()
+  poly_df &lt;- data.frame()
+  
+  for (sub in names(topology)) {
+    cfg &lt;- topology[[sub]]
+    grid &lt;- get_substrate_grid(width, step, cfg$dir)
+    
+    o_a &lt;- cfg$offset[1]
+    o_b &lt;- cfg$offset[2]
+    o_c &lt;- cfg$offset[3]
+
+    # Needs tricoord and tri2car which are presumably exported/available from R/triangle.R
+    grid_tri &lt;- tricoord(grid$a, grid$b, grid$c)
+    grid_tri &lt;- grid_tri + cfg$offset
+    
+    car_pts &lt;- tri2car(grid_tri)
+    car_pts$substrate &lt;- sub
+    all_points &lt;- rbind(all_points, car_pts)
+    
+    # Determine bounds and midpoints for side labels 1,2,3
+    if (cfg$dir == "up") {
+      v_top &lt;- c(o_a, o_b, o_c)
+      v_br  &lt;- c(o_a + W, o_b, o_c - W)
+      v_bl  &lt;- c(o_a, o_b + W, o_c - W)
+      
+      m1 &lt;- (v_top + v_bl) / 2
+      m2 &lt;- (v_top + v_br) / 2
+      m3 &lt;- (v_bl + v_br)  / 2
+      centroid &lt;- (v_top + v_br + v_bl) / 3
+      p_mat &lt;- cbind(v_top, v_br, v_bl)
+    } else {
+      v_bot &lt;- c(o_a, o_b, o_c)
+      v_tr  &lt;- c(o_a, o_b - W, o_c + W)
+      v_tl  &lt;- c(o_a - W, o_b, o_c + W)
+      
+      m1 &lt;- (v_bot + v_tr) / 2
+      m2 &lt;- (v_bot + v_tl) / 2
+      m3 &lt;- (v_tl + v_tr)  / 2
+      centroid &lt;- (v_bot + v_tr + v_tl) / 3
+      p_mat &lt;- cbind(v_bot, v_tr, v_tl)
+    }
+    
+    # Interpolate slightly towards the centroid to put text "just inside" the edges
+    w_in &lt;- 0.25 # weight towards centroid
+    l1 &lt;- m1 * (1 - w_in) + centroid * w_in
+    l2 &lt;- m2 * (1 - w_in) + centroid * w_in
+    l3 &lt;- m3 * (1 - w_in) + centroid * w_in
+    
+    mat_l &lt;- cbind(l1, l2, l3)
+    car_l &lt;- tri2car(mat_l)
+    car_l$label &lt;- c("1", "2", "3")
+    car_l$substrate &lt;- sub
+    labels_df &lt;- rbind(labels_df, car_l)
+    
+    car_p &lt;- tri2car(p_mat)
+    car_p$substrate &lt;- sub
+    poly_df &lt;- rbind(poly_df, car_p)
+  }
+  
+  centers &lt;- stats::aggregate(cbind(x,y) ~ substrate, data=all_points, mean)
+  
+  obj &lt;- list(
+    points = all_points, 
+    labels = labels_df, 
+    poly = poly_df, 
+    centers = centers,
+    topology = topology
+  )
+  class(obj) &lt;- "substrate"
+  return(obj)
+}
+
+autoplot.substrate &lt;- function(object, ...) {
+  ggplot2::ggplot() +
+    # Draw the black boundary lines outlining the substrates exactly over outer dots
+    ggplot2::geom_polygon(data=object$poly, ggplot2::aes(x=x, y=y, group=substrate), fill=NA, color="black", linewidth=0.7) +
+    # Plot grid dots
+    ggplot2::geom_point(data=object$points, ggplot2::aes(x=x, y=y, color=substrate), size=1.5) +
+    # Plot Substrate Labels (Centers)
+    ggplot2::geom_text(data=object$centers, ggplot2::aes(x=x, y=y, label=substrate), color="black", fontface="bold", size=5) +
+    # Axis side numbers
+    ggplot2::geom_text(data=object$labels, ggplot2::aes(x=x, y=y, label=label), color="darkred", fontface="bold", size=4) +
+    ggplot2::theme_void() +
+    ggplot2::coord_fixed() +
+    ggplot2::ggtitle("Ewing Tridiagonal Substrate Network Mapping")
+}
+
+create_hex_overlay &lt;- function(object, step = 1) {
+  pts &lt;- if (inherits(object, "substrate")) object$points else object
+  if (is.null(pts) || nrow(pts) == 0) return(data.frame())
+  
+  xmult &lt;- 2 / (2 + sqrt(3))
+  ymult &lt;- 6 / (3 + 2 * sqrt(3))
+  d &lt;- step * sqrt(xmult^2 + ymult^2)
+  r &lt;- d / sqrt(3)
+  
+  angles &lt;- (seq(0, 5) * 60 + 30) * pi / 180
+  dx &lt;- r * cos(angles)
+  dy &lt;- r * sin(angles)
+  
+  n_pts &lt;- nrow(pts)
+  hex_list &lt;- vector("list", n_pts)
+  
+  for (i in seq_len(n_pts)) {
+    px &lt;- pts$x[i] + dx
+    py &lt;- pts$y[i] + dy
+    sub &lt;- pts$substrate[i]
+    hex_list[[i]] &lt;- data.frame(
+      x = px,
+      y = py,
+      cell_id = i,
+      substrate = sub,
+      stringsAsFactors = FALSE
+    )
+  }
+  
+  do.call(rbind, hex_list)
+}
 
 
 # --- Auto-Included from R/ewing_substrate.R ---
 
+ewing_substrate &lt;- function( community,
+                             species,
+                             headstuff = c( 0, "start", sum( to.plot )),
+                             units = getOrgFeature( community, species[1], "units" ),
+                             right = species[1], adj = c(0,.5,1),
+                             show_sub = NULL,
+                             step = 0,
+                             layout = c("facet", "hex"),
+                             width = 10,
+                             step_density = 1,
+                             rescale = TRUE,
+                             ...)
+{
+  layout &lt;- match.arg(layout)
+  
+  if (length(species) &gt; 1) {
+    res_list &lt;- lapply(species, function(sp) {
+      df &lt;- ewing_substrate(community = community, species = sp, headstuff = headstuff,
+                            units = units, right = right, adj = adj, show_sub = show_sub,
+                            step = step, layout = layout, width = width, step_density = step_density,
+                            rescale = rescale, ...)
+      if (!is.null(df) &amp;&amp; nrow(df) &gt; 0) {
+        df$species &lt;- sp
+      }
+      df
+    })
+    res_list &lt;- res_list[!sapply(res_list, is.null)]
+    if (length(res_list) == 0) return(NULL)
+    combined &lt;- do.call(rbind, res_list)
+    attr(combined, "species") &lt;- paste(species, collapse = " &amp; ")
+    step_val &lt;- if (!is.null(community$step)) community$step else if (!is.null(community$count$step)) community$count$step else if (!is.null(attr(community, "nstep"))) attr(community, "nstep") else step
+    attr(combined, "step") &lt;- step_val
+    attr(combined, "layout") &lt;- layout
+    attr(combined, "width") &lt;- width
+    attr(combined, "step_density") &lt;- step_density
+    class(combined) &lt;- c("ewing_substrate", class(combined))
+    return(combined)
+  }
+  
+  ## plot current stages for species (except random parasites)
+  organism &lt;- get.species( community, species )[,-1]
+  if(is.null(organism)) # species is not in community
+    return(NULL)
+  
+  future &lt;- getOrgFuture( community, species, c("color","pch") )
+  
+  # Substrate names mapping (e.g. fr1, fr2, fr3, fr4, twig, lftop, lfbot)
+  substrate_feat &lt;- getOrgFeature( community, species, "substrate")
+  sub_interact &lt;- getOrgInteract(community, substrate_feat, species)
+  substrates &lt;- rownames(sub_interact)
+  if (is.null(substrates) || length(substrates) == 0) {
+    substrates &lt;- names(getOrgInteract(community, substrate_feat, substrate_feat))
+  }
+  if (is.null(show_sub)) show_sub &lt;- substrates
+  
+  position &lt;- paste( "pos", letters[1:3], sep = "." )
+  
+  if (layout == "hex") {
+    topo &lt;- substrate_topology(width = width, step = step_density)
+    n_org &lt;- ncol(organism)
+    gx &lt;- numeric(n_org)
+    gy &lt;- numeric(n_org)
+    
+    sub_indices &lt;- organism["sub.stage", ]
+    org_sub_names &lt;- substrates[sub_indices]
+    
+    # Process organisms per substrate patch to rescale local coordinates into substrate surface triangle
+    unique_subs &lt;- unique(org_sub_names)
+    
+    for (sub in unique_subs) {
+      idx &lt;- which(org_sub_names == sub)
+      
+      target_name &lt;- sub
+      if (!target_name %in% names(topo)) {
+        if (target_name == "twig") target_name &lt;- "tw1"
+        if (target_name == "tw1") target_name &lt;- "twig"
+      }
+      
+      cfg &lt;- topo[[target_name]]
+      
+      pa &lt;- organism["pos.a", idx]
+      pb &lt;- organism["pos.b", idx]
+      pc &lt;- organism["pos.c", idx]
+      
+      if (!is.null(cfg)) {
+        # Determine substrate surface width (allows substrates of different sizes in future)
+        W_sub &lt;- if (!is.null(cfg$width)) (cfg$width - step_density) else (width - step_density)
+        
+        if (rescale) {
+          amin &lt;- min(pa); amax &lt;- max(pa)
+          bmin &lt;- min(pb); bmax &lt;- max(pb)
+          
+          u &lt;- if (amax &gt; amin) (pa - amin) / (amax - amin) else rep(0.5, length(idx))
+          v &lt;- if (bmax &gt; bmin) (pb - bmin) / (bmax - bmin) else rep(0.5, length(idx))
+          
+          # 15% inner padding to ensure symbols sit comfortably inside substrate polygon borders
+          u_m &lt;- 0.15 + 0.70 * u
+          v_m &lt;- 0.15 + 0.70 * v
+          
+          a_p &lt;- u_m * W_sub
+          b_p &lt;- v_m * (W_sub - a_p)
+          c_p &lt;- -(a_p + b_p)
+        } else {
+          a_p &lt;- pa
+          b_p &lt;- pb
+          c_p &lt;- pc
+        }
+        
+        off &lt;- cfg$offset
+        if (cfg$dir == "up") {
+          ga &lt;- a_p + off[1]
+          gb &lt;- b_p + off[2]
+          gc &lt;- c_p + off[3]
+        } else {
+          ga &lt;- -a_p + off[1]
+          gb &lt;- -b_p + off[2]
+          gc &lt;- -c_p + off[3]
+        }
+        car &lt;- tri2car(tricoord(ga, gb, gc))
+        gx[idx] &lt;- car$x
+        gy[idx] &lt;- car$y
+      } else {
+        car &lt;- tri2car(organism[position, idx, drop = FALSE])
+        gx[idx] &lt;- car$x
+        gy[idx] &lt;- car$y
+      }
+    }
+    
+    xy &lt;- data.frame(x = gx, y = gy)
+  } else {
+    xy &lt;- tri2car( organism[position,] )
+  }
+  
+  dat &lt;- dplyr::filter(
+    dplyr::mutate(
+      tibble::tibble(xy), 
+      stage = organism["stage",],
+      substrate = substrates[organism["sub.stage",]],
+      pchar = factor(as.character( future$pch[.data$stage + 1] ), levels = unique(as.character(future$pch))),
+      color = as.character( future$color[.data$stage + 1] ),
+      species = species),
+    .data$substrate %in% show_sub)
+  
+  attr(dat, "species") &lt;- species
+  step_val &lt;- if (!is.null(community$step)) community$step else if (!is.null(community$count$step)) community$count$step else if (!is.null(attr(community, "nstep"))) attr(community, "nstep") else step
+  attr(dat, "step") &lt;- step_val
+  attr(dat, "layout") &lt;- layout
+  attr(dat, "width") &lt;- width
+  attr(dat, "step_density") &lt;- step_density
+  class(dat) &lt;- c("ewing_substrate", class(dat))
+  dat
+}
 
+ggplot_ewing_substrate &lt;- function(object,
+                                   xlab = "horizontal", ylab = "vertical",
+                                   layout = attr(object, "layout"),
+                                   width = attr(object, "width"),
+                                   step_density = attr(object, "step_density"),
+                                   layers = c("poly", "hex", "organisms", "centers", "labels"),
+                                   ...)
+{     
+  if (is.null(layout)) layout &lt;- "facet"
+  if (is.null(width)) width &lt;- 10
+  if (is.null(step_density)) step_density &lt;- 1
+  
+  species &lt;- attr(object, "species")
+  step &lt;- attr(object, "step")
+  
+  # Allows same color for different pchar, but only one color per pchar.
+  tmp &lt;- dplyr::arrange(
+    dplyr::distinct(
+      dplyr::distinct(object, .data$pchar, .data$color),
+      .data$pchar, .keep_all = TRUE),
+    .data$pchar)
+  col.palate &lt;- tmp$color
+  names(col.palate) &lt;- as.character(tmp$pchar)
+  
+  if (layout == "hex") {
+    topo &lt;- substrate_topology(width = width, step = step_density)
+    sub_obj &lt;- create_substrate(topo, width = width, step = step_density)
+    hex_overlay &lt;- create_hex_overlay(sub_obj, step = step_density)
+    
+    p &lt;- ggplot2::ggplot()
+    if ("poly" %in% layers &amp;&amp; nrow(sub_obj$poly) &gt; 0) {
+      p &lt;- p + ggplot2::geom_polygon(data = sub_obj$poly, ggplot2::aes(x = x, y = y, group = substrate), 
+                                     fill = NA, color = "black", linewidth = 0.7)
+    }
+    if ("hex" %in% layers &amp;&amp; nrow(hex_overlay) &gt; 0) {
+      p &lt;- p + ggplot2::geom_polygon(data = hex_overlay, ggplot2::aes(x = x, y = y, group = cell_id), 
+                                     fill = NA, color = "gray75", linewidth = 0.3)
+    }
+    if ("organisms" %in% layers &amp;&amp; nrow(object) &gt; 0) {
+      p &lt;- p + ggplot2::geom_text(data = object, ggplot2::aes(x = x, y = y, label = pchar, color = pchar), 
+                                  fontface = "bold", size = 4) +
+        ggplot2::scale_color_manual(name = "Stage", values = col.palate) +
+        ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(label = names(col.palate))))
+    }
+    if ("centers" %in% layers &amp;&amp; nrow(sub_obj$centers) &gt; 0) {
+      p &lt;- p + ggplot2::geom_text(data = sub_obj$centers, ggplot2::aes(x = x, y = y, label = substrate), 
+                                  color = "black", fontface = "bold", size = 4.5)
+    }
+    if ("labels" %in% layers &amp;&amp; nrow(sub_obj$labels) &gt; 0) {
+      p &lt;- p + ggplot2::geom_text(data = sub_obj$labels, ggplot2::aes(x = x, y = y, label = label), 
+                                  color = "darkred", fontface = "bold", size = 3.5)
+    }
+    
+    return(p + ggplot2::theme_void() + 
+             ggplot2::theme(plot.margin = ggplot2::margin(2, 2, 2, 2, "pt")) +
+             ggplot2::coord_fixed() + 
+             ggplot2::ggtitle(paste(species, "on Hex Substrate Grid at", step, "steps")))
+  }
+  
+  # Default Facet View by Substrate Component
+  ggplot2::ggplot(object) +
+    ggplot2::aes(.data$x, .data$y, label = .data$pchar, col = .data$pchar) +
+    ggplot2::geom_text() +
+    ggplot2::facet_wrap(~ substrate) +
+    ggplot2::xlab(xlab) +
+    ggplot2::ylab(ylab) +
+    ggplot2::scale_color_manual(name = "Stage", values = col.palate) + 
+    ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(label = names(col.palate)))) +
+    ggplot2::ggtitle(paste(species, "on substrate at", step, "steps"))
+}
+autoplot.ewing_substrate &lt;- function(object, ...)
+  ggplot_ewing_substrate(object, ...)
 
 # --- Auto-Included from R/ggplot_ewing.R ---
 
-
+ggplot_ewing &lt;- function(object, step = 0, ageclass = TRUE,
+                         substrate = !ageclass, ...)
+{
+  if(!inherits(object, "ewing_snapshot")) {
+    object &lt;- ewing_snapshot(object, step, ...)
+  }
+  step &lt;- object$step
+  
+  p &lt;- list()
+  i &lt;- 0
+  if(ageclass) {
+    i &lt;- i + 1
+    p[[i]] &lt;- ggplot2::autoplot(object$ageclass, ...)
+  }
+  if(substrate) {
+    species &lt;- names(object$substrate)
+    for(j in species) {
+      i &lt;- i + 1
+      p[[i]] &lt;- ggplot2::autoplot(object$substrate[[j]], ...)
+    }
+  }
+  if(length(p) == 1) p &lt;- p[[1]]
+  p
+}
+autoplot.ewing &lt;- function(object, ...) {
+  ggplot_ewing(object, ...)
+}
+plot.ewing &lt;- function(x, ...) {
+  ggplot_ewing(x, ...)
+}
 
 # --- Auto-Included from R/ggplot_current.R ---
 
+ggplot_current &lt;- function( x,
+                          species,
+                          col = as.character( future$color[stage] ),
+                          headstuff = c( 0, "start"),
+                          units = getOrgFeature( x, species, "units" ),
+                          right = species, adj = c(0,.5,1),
+                          position = paste( "pos", letters[1:3], sep = "." ),
+                          pch = as.character( future$pch[stage] ), cex = 0.5,
+                          stage = organism["stage",],
+                          xlab = "horizontal", ylab = "vertical",
+                          future = getOrgFuture( x, species, c("color","pch") ),
+                          facet = TRUE, ...)
+{
+  ## plot current stages for species (except random parasites)
+  organism &lt;- get.species( x, species )[,-1]
+  if(is.null(organism))
+    return(NULL)
+  
+  tri_coord &lt;- tri2car( organism[position,] )
+  tri_coord$col &lt;- NA
+  tri_coord$label &lt;- pch
+  values &lt;- future$color
+  names(values) &lt;- future$pch
+  values &lt;- unique(values)
 
+  # Facet by Substrate.
+  # This needs to use generic function to get substrate names.
+  tmp &lt;- names(x$org$Interact$substrate$substrate)
+  tri_coord$substrate &lt;- tmp[organism["sub.stage",]]
+  
+  p &lt;- ggplot2::ggplot(tri_coord) +
+    ggplot2::aes(x, y, col = label, label = label) +
+    ggplot2::geom_text(size=3) +
+    ggplot2::xlab(xlab) +
+    ggplot2::ylab(ylab) +
+    ggplot2::ggtitle(paste(units, "future event", right),
+      subtitle = paste(headstuff, collapse = " ")) +
+    ggplot2::scale_color_manual(values = values)
+  if(facet) {
+    p &lt;- p + ggplot2::facet_wrap(~substrate)
+  }
+  p
+}
 
 # --- Auto-Included from R/inputApp.R ---
 
+inputApp &lt;- function(title = "Input Data Explorer") {
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      inputAppInput("input_app")
+    ),
+    bslib::card(
+      inputAppOutput("input_app")
+    )
+  )
+  server &lt;- function(input, output, session) {
+    inputAppServer("input_app")
+  }
+  shiny::shinyApp(ui = ui, server = server)
+}
 
+inputAppInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    shiny::selectInput(ns("dataname"), "Select Dataset Table:",
+      choices = c(
+        "organism.features", "future.host", "future.parasite",
+        "substrate.host", "substrate.parasite", "substrate.substrate",
+        "host.parasite", "temperature.base", "temperature.par"
+      ),
+      selected = "organism.features"
+    )
+  )
+}
+
+inputAppOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tableOutput(ns("org_table"))
+}
+
+inputAppServer &lt;- function(id, simres = shiny::reactiveVal(NULL), datafile = shiny::reactiveVal("")) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+
+    output$org_table &lt;- shiny::renderTable(
+      {
+        name &lt;- input$dataname %||% "organism.features"
+        sim &lt;- if (is.reactive(simres)) simres() else simres
+        dfile &lt;- if (is.reactive(datafile)) datafile() else datafile
+
+        if (is.null(sim)) sim &lt;- tryCatch(init.simulation(datafile = dfile), error = function(e) NULL)
+        sim_single &lt;- if (inherits(sim, "ewing_discrete")) sim[[1]] else sim
+
+        res &lt;- NULL
+
+        # 1. Check if dataset is stored in sim$datasets (e.g. injected in webR demo)
+        if (!is.null(sim_single$datasets) &amp;&amp; !is.null(sim_single$datasets[[name]])) {
+          res &lt;- sim_single$datasets[[name]]
+        }
+
+        # 2. Extract dynamically via getOrgDataSimple or getOrg* package routines
+        if (is.null(res)) {
+          res &lt;- tryCatch({
+            getOrgDataSimple(sim_single, name, datafile = dfile)
+          }, error = function(e) NULL)
+        }
+
+        # 3. Dynamic fallback to extracting from sim_single$org state structures
+        if (is.null(res) || !is.data.frame(res) || nrow(res) == 0) {
+          res &lt;- tryCatch({
+            left &lt;- stringr::str_remove(name, "\\..*")
+            right &lt;- stringr::str_remove(name, ".*\\.")
+
+            if (left == "organism" &amp;&amp; right == "features") {
+              if (!is.null(sim_single$org$Feature)) as.data.frame(sim_single$org$Feature) else NULL
+            } else if (left == "future") {
+              if (!is.null(sim_single$org$Future[[right]])) sim_single$org$Future[[right]] else getOrgFuture(sim_single, right)
+            } else if (!is.null(sim_single$org$Interact[[left]][[right]])) {
+              sim_single$org$Interact[[left]][[right]]
+            } else if (!is.null(sim_single$org[[left]][[right]])) {
+              sim_single$org[[left]][[right]]
+            } else {
+              NULL
+            }
+          }, error = function(e) NULL)
+        }
+
+        if (is.null(res) || !is.data.frame(res) || nrow(res) == 0) {
+          res &lt;- data.frame(Info = paste("Dataset", name, "is not available in current simulation instance."))
+        }
+
+        res
+      },
+      striped = TRUE,
+      hover = TRUE,
+      bordered = TRUE
+    )
+  })
+}
 
 # --- Auto-Included from R/initParApp.R ---
 
+initParApp &lt;- function(title = "Population Ethology") {
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      initParInput("init_par")),
+    initParUI("init_par"),
+    initParOutput("init_par")
+  )
+  server &lt;- function(input, output, server) {
+    init_par &lt;- initParServer("init_par")
+  }
+  shiny::shinyApp(ui = ui, server = server)
+}
+initParServer &lt;- function(id, simres = shiny::reactiveVal(NULL), datafile = shiny::reactiveVal("")) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+    
+    species &lt;- shiny::reactive({
+      get.organisms()$species
+    })
+    output$sppsize &lt;- shiny::renderUI({
+      shiny::req(species()) # "host", "parasite"
+      lapply(species(), function(x) {
+        shiny::sliderInput(ns(x),
+                           label = paste0("Number of ", x, "s:"),
+                           min = 0,
+                           max = 500,
+                           value = 100,
+                           step = 20)
+      })
+    })
 
+    datanames &lt;- shiny::reactive({
+      getOrgNames()
+    })
+    output$inputfiles &lt;- shiny::renderUI({
+      shiny::tagList(
+        shiny::selectInput(ns("dataname"), "", datanames(), "organism.features"),
+        DT::dataTableOutput(ns("org_table")))
+    })
+    
+    output$org_table &lt;- DT::renderDataTable({
+      getOrgDataSimple(simres(), shiny::req(input$dataname), datafile())
+    }, escape = FALSE, options = list(scrollX = TRUE, pageLength = 10))
+    
+    # Show parameters
+    output$show_par &lt;- shiny::renderUI({
+      nlist &lt;- names(input)
+      # Remove any internal inputs, which have numbers.
+      glist &lt;- grep("[0-9]", names(input))
+      if(length(glist))
+        nlist &lt;- nlist[-glist]
+      # Construct output string.
+      out &lt;- paste0("inputs: ", paste(nlist, collapse = ", "))
+      for(i in nlist) {
+        out &lt;- paste(out, "&lt;br&gt;",
+                     paste(i, input[[i]], sep = " = "))
+      }
+      shiny::HTML(out)
+    })
+    
+    # Return.
+    input
+  })
+}
+initParInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::uiOutput(ns("sppsize"))
+}
+initParUI &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::uiOutput(ns("show_par"))
+}
+initParOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::uiOutput(ns("inputfiles"))
+}
 
 # --- Auto-Included from R/initApp.R ---
 
+initApp &lt;- function(title = "Population Ethology") {
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      initParInput("init_par")),
+    initOutput("init"),
+    substrateOutput("substrate")
+  )
+  server &lt;- function(input, output, server) {
+    init_par &lt;- initParServer("init_par")
+    siminit &lt;- initServer("init", init_par)
+    substrateServer("substrate", siminit)
+  }
+  shiny::shinyApp(ui = ui, server = server)
+}
+initServer &lt;- function(id, init_par) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+    
+    siminit &lt;- shiny::reactive({
+      init.simulation(count = as.numeric(c(shiny::req(init_par$host),
+                                           shiny::req(init_par$parasite))))
+    })
+    
+    output$init &lt;- shiny::renderUI({
+      out &lt;- summary_simobj(shiny::req(siminit()))
+      shiny::HTML(out)
+    })
 
+    # Return.
+    siminit
+  })
+}
+initOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::uiOutput(ns("init"))
+}
 
 # --- Auto-Included from R/substrateApp.R ---
 
+substrateApp &lt;- function(title = "Substrate Organism Movement Explorer") {
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      initParInput("init_par"),
+      shiny::hr(),
+      substrateInput("substrate")),
+    substrateOutput("substrate")
+  )
+  server &lt;- function(input, output, server) {
+    init_par &lt;- initParServer("init_par")
+    siminit &lt;- initServer("init", init_par)
+    substrateServer("substrate", siminit)
+  }
+  
+  shiny::shinyApp(ui = ui, server = server)
+}
 
+substrateInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    shiny::div(
+      style = "font-size: 0.85rem;",
+      shiny::h4("Substrate Display &amp; Stepping", style = "font-size: 1rem; font-weight: 600; margin-bottom: 8px;"),
+      shiny::checkboxGroupInput(ns("show_species"), "Species to Display:",
+                                choices = c("Host" = "host", "Parasite" = "parasite"),
+                                selected = c("host", "parasite"),
+                                inline = TRUE),
+      shiny::radioButtons(ns("species_mode"), "Species Mode:",
+                          choices = c("Overlay (1 Map)" = "overlay", "Separate (Adjacent Maps)" = "separate"),
+                          selected = "overlay", inline = TRUE),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::radioButtons(ns("layout"), "Layout View:",
+                          choices = c("Hex Substrate Overlay" = "hex", "Faceted Substrates" = "facet"),
+                          selected = "hex", inline = TRUE),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::span("Simulation Stepping:", style = "font-weight: 600; color: #1a73e8; display: block; margin-bottom: 4px;"),
+      shiny::div(
+        style = "display: flex; gap: 4px; margin-bottom: 8px;",
+        shiny::actionButton(ns("step1"), "+1 Step", class = "btn-sm btn-outline-primary flex-fill"),
+        shiny::actionButton(ns("step10"), "+10 Steps", class = "btn-sm btn-outline-primary flex-fill"),
+        shiny::actionButton(ns("step100"), "+100 Steps", class = "btn-sm btn-outline-primary flex-fill"),
+        shiny::actionButton(ns("reset_sim"), "Reset", class = "btn-sm btn-outline-secondary")
+      ),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::checkboxGroupInput(ns("layers"), "Display Layers:",
+                                choices = c("Substrate Boundaries" = "poly",
+                                            "Hex Grid Overlay" = "hex",
+                                            "Organisms" = "organisms",
+                                            "Substrate Names" = "centers",
+                                            "Side Numbers" = "labels"),
+                                selected = c("poly", "hex", "organisms", "centers", "labels")),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::div(
+        style = "display: flex; gap: 8px;",
+        shiny::numericInput(ns("width"), "Radius:", value = 10, min = 2, max = 30, step = 1),
+        shiny::numericInput(ns("step_density"), "Step Density:", value = 1, min = 0.5, max = 5, step = 0.5)
+      )
+    )
+  )
+}
+
+substrateServer &lt;- function(id, simres, width = 10, step_density = 1) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+    
+    current_sim &lt;- shiny::reactiveVal(NULL)
+    
+    shiny::observeEvent(simres(), {
+      current_sim(simres())
+    })
+    
+    shiny::observeEvent(input$step1, {
+      sim &lt;- current_sim()
+      if (!is.null(sim)) {
+        res &lt;- future.events(sim, nstep = 1, plotit = FALSE)
+        current_sim(res)
+      }
+    })
+    
+    shiny::observeEvent(input$step10, {
+      sim &lt;- current_sim()
+      if (!is.null(sim)) {
+        res &lt;- future.events(sim, nstep = 10, plotit = FALSE)
+        current_sim(res)
+      }
+    })
+    
+    shiny::observeEvent(input$step100, {
+      sim &lt;- current_sim()
+      if (!is.null(sim)) {
+        res &lt;- future.events(sim, nstep = 100, plotit = FALSE)
+        current_sim(res)
+      }
+    })
+    
+    shiny::observeEvent(input$reset_sim, {
+      current_sim(simres())
+    })
+    
+    available_species &lt;- shiny::reactive({
+      sim &lt;- current_sim()
+      if (!is.null(sim) &amp;&amp; !is.null(sim$pop)) names(sim$pop) else NULL
+    })
+    
+    selected_species &lt;- shiny::reactive({
+      avail &lt;- available_species()
+      if (is.null(avail)) return(NULL)
+      sel &lt;- input$show_species
+      if (is.null(sel) || length(sel) == 0) avail else intersect(sel, avail)
+    })
+    
+    sppplot &lt;- shiny::reactive({
+      spp &lt;- selected_species()
+      shiny::req(spp)
+      sim &lt;- current_sim()
+      shiny::req(sim)
+      
+      layout_val &lt;- if (!is.null(input$layout)) input$layout else "hex"
+      mode_val &lt;- if (!is.null(input$species_mode)) input$species_mode else "overlay"
+      w_val &lt;- if (!is.null(input$width)) input$width else width
+      sd_val &lt;- if (!is.null(input$step_density)) input$step_density else step_density
+      layers_val &lt;- if (!is.null(input$layers)) input$layers else c("poly", "hex", "organisms", "centers", "labels")
+      
+      sim_single &lt;- if (inherits(sim, "ewing_discrete") &amp;&amp; is.list(sim) &amp;&amp; length(sim) &gt; 0) sim[[1]] else sim
+      if (inherits(sim_single, "ewing")) {
+        if (mode_val == "overlay" &amp;&amp; layout_val == "hex") {
+          sub_data &lt;- ewing_substrate(sim_single, spp, layout = layout_val, width = w_val, step_density = sd_val)
+          if (!is.null(sub_data)) {
+            p_obj &lt;- ggplot_ewing_substrate(sub_data, layout = layout_val, width = w_val, step_density = sd_val, layers = layers_val)
+            list(p_obj)
+          } else {
+            list()
+          }
+        } else {
+          p &lt;- lapply(spp, function(x) {
+            sub_data &lt;- ewing_substrate(sim_single, x, layout = layout_val, width = w_val, step_density = sd_val)
+            if (!is.null(sub_data)) {
+              p_obj &lt;- ggplot_ewing_substrate(sub_data, layout = layout_val, width = w_val, step_density = sd_val, layers = layers_val)
+              p_obj
+            } else {
+              NULL
+            }
+          })
+          p[!sapply(p, is.null)]
+        }
+      } else {
+        list()
+      }
+    })
+    
+    output$sppPlot &lt;- shiny::renderPlot({
+      plots &lt;- sppplot()
+      if (!is.null(plots) &amp;&amp; length(plots) &gt; 0) {
+        cowplot::plot_grid(plotlist = plots, ncol = length(plots), align = "h")
+      } else {
+        ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No active species selected to plot")
+      }
+    })
+    
+    output$substrate_plot &lt;- shiny::renderUI({
+      plots &lt;- sppplot()
+      h_in &lt;- 5.0
+      shiny::plotOutput(ns("sppPlot"), height = paste0(h_in, "in"))
+    })
+    
+    # Return current simulation state for downstream composition
+    current_sim
+  })
+}
+
+substrateOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::uiOutput(ns("substrate_plot"))
+}
 
 # --- Auto-Included from R/hexmoveApp.R ---
 
+hexmoveAppInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    initParInput(ns("init_par")),
+    shiny::hr(),
+    substrateInput(ns("substrate"))
+  )
+}
 
+hexmoveAppOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  bslib::navset_tab(
+    bslib::nav_panel("Hex Substrate Map", substrateOutput(ns("substrate"))),
+    bslib::nav_panel("Simulation Summary", initOutput(ns("init")))
+  )
+}
+
+hexmoveAppServer &lt;- function(id, mysim = NULL, width = 10, step = 1) {
+  shiny::moduleServer(id, function(input, output, session) {
+    init_par &lt;- initParServer("init_par")
+    siminit &lt;- initServer("init", init_par)
+    
+    initial_state &lt;- shiny::reactive({
+      if (!is.null(mysim)) {
+        mysim
+      } else {
+        siminit()
+      }
+    })
+    
+    substrateServer("substrate", initial_state, width = width, step_density = step)
+  })
+}
+
+hexmoveApp &lt;- function(mysim = NULL, width = 10, step = 1, title = "Organism Movement on Hex Grid") {
+  
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      width = 340,
+      hexmoveAppInput("hexmove")
+    ),
+    hexmoveAppOutput("hexmove")
+  )
+  
+  server &lt;- function(input, output, session) {
+    hexmoveAppServer("hexmove", mysim = mysim, width = width, step = step)
+  }
+  
+  shiny::shinyApp(ui = ui, server = server)
+}
 
 # --- Launch Application ---
 

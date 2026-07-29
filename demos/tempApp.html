@@ -241,67 +241,2526 @@ library(graphics)
 
 # --- Auto-Included from R/triangle.R ---
 
+## $Id: triangle.R,v 0.9 2002/12/09 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###########################################################################################
+## rtri( n, width )
+##
+## plot.current( x, species )
+## text.current( x, species )
+##
+###########################################################################################
+###########################################################################################
+### Tridiagonal Coordinate System S3 Classes &amp; Algebra
+###########################################################################################
+tricoord &lt;- function(a, b = NULL, c = NULL) {
+  if (is.data.frame(a) &amp;&amp; all(c("a", "b", "c") %in% names(a))) {
+    res &lt;- a
+  } else if (is.matrix(a) &amp;&amp; ncol(a) == 3) {
+    res &lt;- as.data.frame(a)
+    names(res) &lt;- c("a", "b", "c")
+  } else if (!is.null(b) &amp;&amp; !is.null(c)) {
+    res &lt;- data.frame(a = a, b = b, c = c)
+  } else if (is.numeric(a) &amp;&amp; length(a) == 3) {
+    res &lt;- data.frame(a = a[1], b = a[2], c = a[3])
+  } else {
+    stop("Invalid tricoord input format")
+  }
+  class(res) &lt;- c("tricoord", "data.frame")
+  res
+}
 
+`+.tricoord` &lt;- function(e1, e2) {
+  # Handle vector offsets cleanly
+  if (is.numeric(e2) &amp;&amp; length(e2) == 3) {
+    tricoord(e1$a + e2[1], e1$b + e2[2], e1$c + e2[3])
+  } else if (inherits(e2, "tricoord")) {
+    tricoord(e1$a + e2$a, e1$b + e2$b, e1$c + e2$c)
+  } else {
+    stop("Invalid right hand operand for tricoord addition")
+  }
+}
+
+`-.tricoord` &lt;- function(e1, e2) {
+  if (is.numeric(e2) &amp;&amp; length(e2) == 3) {
+    tricoord(e1$a - e2[1], e1$b - e2[2], e1$c - e2[3])
+  } else if (inherits(e2, "tricoord")) {
+    tricoord(e1$a - e2$a, e1$b - e2$b, e1$c - e2$c)
+  } else {
+    stop("Invalid right hand operand for tricoord subtraction")
+  }
+}
+
+###########################################################################################
+rtri &lt;- function( n, width, tri = matrix(0,3,n), roundoff = TRUE )
+{
+  tri &lt;- as.matrix( tri )
+  if( n == 1 ) {
+    xy &lt;- stats::runif( 2, 0, width )
+    if( roundoff )
+      xy &lt;- round( xy )
+
+    i &lt;- sample( 3, 1  )
+    i1 &lt;- 1 + i%%3
+    i2 &lt;- 1 + (i+1)%%3
+    tri[i1,] &lt;- tri[i1,] + xy[1]
+    tri[i2,] &lt;- tri[i2,] - xy[2]
+    tri[i,] &lt;- - ( tri[i1,] + tri[i2,] )
+    return( tri )
+  }
+  else {
+    xy &lt;- data.frame( x = stats::runif( n, 0, width ),
+      y = - stats::runif( n, 0, width ))
+    if( roundoff )
+      xy &lt;- round( xy )
+
+    out &lt;- sample( 3, n, replace = TRUE )
+    for( i in 1:3 ) {
+      outi &lt;- out == i
+      if( any( outi )) {
+        i1 &lt;- 1 + i%%3
+        i2 &lt;- 1 + (i+1)%%3
+        tri[i1,outi] &lt;- tri[i1,outi] + xy$x[outi]
+        tri[i2,outi] &lt;- tri[i2,outi] + xy$y[outi]
+        tri[i,outi] &lt;- - ( tri[i1,outi] + tri[i2,outi] )
+      }
+    }
+  }
+  tri
+}
+###########################################################################################
+car2tri.default &lt;- function(x,y)
+  car2tri( cbind( x, y ))
+car2tri &lt;- function( xy, xmult = ( 2 + sq3 ) / 4, ymult = ( 3 + 2 * sq3 ) / 12,
+  sq3 = sqrt( 3 ))
+{
+#  if( !is.matrix( xy ))
+#    xy &lt;- t( as.matrix( xy ))
+  aa &lt;- xmult * xy[,1] - ymult * xy[,2]
+  bb &lt;- - xmult * xy[,1] - ymult * xy[,2]
+  cc &lt;- -( aa + bb )
+  rbind( a = aa, b = bb, c = cc )
+}
+###########################################################################################
+tri2car.default &lt;- function(aa,bb,cc=-(aa+bb))
+  tri2car( rbind( aa, bb, cc ))
+tri2car &lt;- function(tri, xmult = 2 / ( 2 + sq3 ), ymult = 6 / ( 3 + 2 * sq3 ),
+  sq3 = sqrt( 3 ))
+{
+  if( inherits(tri, "tricoord") ) {
+    # If the user passes our S3 tricoord dataframe, map it correctly natively.
+    x &lt;- ( tri$a - tri$b ) * xmult
+    y &lt;- - ( tri$a + tri$b ) * ymult
+  } else {
+    if( !is.matrix( tri ))
+      tri &lt;- as.matrix( tri )
+    x &lt;- ( tri[1,] - tri[2,] ) * xmult
+    y &lt;- - ( tri[1,] + tri[2,] ) * ymult
+  }
+  data.frame( x = x, y = y )
+}
+###########################################################################################
+cardist &lt;- function( xy )
+  sqrt( xy[,1]^2 + xy[,2]^2 )
+###########################################################################################
+tridist &lt;- function( tri )
+  apply( tri, 1, max )
+###########################################################################################
+gasket &lt;- function( aa, bb )
+{
+  n &lt;- length( aa )
+  pp &lt;- c(-1,1,0,1)
+  dda &lt;- diff( aa )
+  ddb &lt;- diff( bb )
+  ss &lt;- sign( sign( dda ) - sign( ddb ))
+  dda &lt;- 2 - abs( dda )
+  ddb &lt;- 2 - abs( ddb )
+  aa &lt;- 2 * aa
+  aa &lt;- c( aa[1], rbind( aa[-n] + pp[dda+1+ss], aa[-1] + pp[dda+1-ss], aa[-1] ))
+  bb &lt;- 2 * bb
+  bb &lt;- c( bb[1], rbind( bb[-n] + pp[ddb+1-ss], bb[-1] + pp[ddb+1+ss], bb[-1] ))
+  data.frame( aa = aa, bb = bb )
+}
 
 # --- Auto-Included from R/community.R ---
 
-
+get.organisms &lt;- function(datafile = "") {
+  org &lt;- list(species = c("host", "parasite"), substrates = "substrate")
+  if(datafile != "") {
+    if(tools::file_ext(datafile) %in% c("xls","xlsx")){
+      sheets &lt;- readxl::excel_sheets(datafile)
+      species &lt;- stringr::str_remove(
+        sheets[stringr::str_detect(sheets, "future\\.")],
+        "future\\.")
+      substrates &lt;- unique(stringr::str_remove(
+        sheets[stringr::str_detect(sheets, paste("\\.", species, sep = "", collapse = "|")) &amp;
+        !stringr::str_detect(sheets, paste(c("future", species), "\\.", sep = "", collapse = "|"))],
+        "\\..*"))
+      org &lt;- list(species = species, substrates = substrates)
+    }
+  }
+  org
+}
+###########################################################################################
+get.species &lt;- function( community, species ) {
+  if( missing( species ))
+    return( names( community$pop ))
+  if( is.numeric( species ))
+    species &lt;- names( community$pop )[species]
+  if( is.null( species ) || !species %in% names( community$pop ))
+    return( NULL )
+  
+  ans &lt;- community$pop[[species]]
+  if (is.list(ans) &amp;&amp; !is.matrix(ans) &amp;&amp; !is.data.frame(ans) &amp;&amp; !is.null(ans$org)) {
+    ans &lt;- ans$org
+  }
+  if (is.matrix(ans) || is.data.frame(ans)) {
+    if (!"up" %in% rownames(ans) &amp;&amp; (is.null(colnames(ans)) || colnames(ans)[1] != "dummy")) {
+      dummy &lt;- ans[, 1, drop = FALSE]
+      colnames(dummy) &lt;- "dummy"
+      return(cbind(dummy, ans))
+    }
+  }
+  ans
+}
+###########################################################################################
+get.species.element &lt;- function( community, species, rows, cols )
+  community$pop[[species]][rows,cols]
+###########################################################################################
+put.species &lt;- function( community, species, value )
+{
+  community$pop[[species]] &lt;- value
+  community
+}
+###############################################################################
+put.individual &lt;- function( community, species, individual,
+                           id = get.base( community, species ))
+{
+  community$pop[[species]][,id] &lt;- individual
+  community
+}  
+###############################################################################
+get.individual &lt;- function( community, species,
+                           id = get.base( community, species ))
+  community$pop[[species]][,id]
+###############################################################################
+get.base &lt;- function( community, species )
+  community$pop[[species]]["up",1]
 
 # --- Auto-Included from R/Org.R ---
 
-
+###########################################################################################
+### Organism Features
+###########################################################################################
+getOrgFeature &lt;- function( community, species, feature = names( OrgFeature ))
+{
+  OrgFeature &lt;- getOrgInfo( community, "Feature" )
+  if (!is.null(OrgFeature)) {
+    if( missing( species ))
+      return( row.names( OrgFeature ))
+    f &lt;- OrgFeature[ species, feature ]
+    if( length( feature ) == 1 ) {
+      if( any( is.na( f )))
+        return( NA )
+      f &lt;- as.character( f )
+    }
+    else {
+      f &lt;- apply( f, 2, as.character )
+    }
+    f &lt;- c( unlist( f ))
+    numf &lt;- suppressWarnings(as.numeric( f ))
+    if( all( !is.na( numf )))
+      f &lt;- numf
+    return(f)
+  }
+  
+  # Fallback for webR standalone adapter objects
+  if (missing(species)) return(c("host", "parasite"))
+  if (missing(feature) || is.null(feature)) return(c(substrate = "substrate", units = "units"))
+  if (length(feature) == 1) {
+    if (feature == "substrate") return("substrate")
+    if (feature == "units") return("units")
+    return(NA)
+  }
+  res &lt;- rep("substrate", length(feature))
+  names(res) &lt;- feature
+  res
+}
+##########################################################################################
+getOrgHosts &lt;- function( community, species,
+                         feature = c("offspring","attack","substrate") ###HOST SPECIFIC###
+)
+{
+  # This seems overly complicated and adds substrate; maybe function name is wrong
+  f &lt;- unique( getOrgFeature( community, species, feature ))
+  # f[match(species, f, nomatch = 0)] # this would only get species
+  o &lt;- getOrgFeature( community )
+  o[ match( f, o, nomatch = 0 ) ]
+}
+###########################################################################################
+getOrgFuture &lt;- function( community, species, feature, current,
+                          future = OrgFuture[[species]] )
+{
+  OrgFuture &lt;- getOrgInfo( community, "Future" )
+  if (!is.null(OrgFuture) &amp;&amp; !is.null(OrgFuture[[species]])) {
+    future &lt;- OrgFuture[[species]]
+    if( missing( current )) {
+      if( missing( feature ))
+        return( future )
+      future &lt;- future[,feature]
+    }
+    else {
+      if( !is.numeric( current ))
+        current &lt;- match( current, future$current, nomatch = 0 )
+      if( missing( feature ))
+        future &lt;- future[ current, ]
+      else
+        future &lt;- future[ current, feature ]
+    }
+    if( is.null( future ))
+      return( NA )
+    if(is.character( future ))
+      future &lt;- as.factor(future)
+    return(future)
+  }
+  
+  # Fallback for webR standalone adapter objects
+  if (!is.null(community$pop[[species]])) {
+    pch_vec &lt;- community$pop[[species]]$pch
+    col_vec &lt;- community$pop[[species]]$col
+    fut &lt;- data.frame(pch = pch_vec, color = col_vec, stringsAsFactors = FALSE)
+    if (missing(feature)) return(fut)
+    if (length(feature) == 1) return(fut[[feature]])
+    return(fut[, feature, drop = FALSE])
+  }
+  NULL
+}
+###########################################################################################
+get.interact &lt;- function( community, species, host, avail, event )
+{
+  id &lt;- get.species.element( community, host, "stage", avail )
+  interact &lt;- getOrgInteract( community, host, species, event )[id]
+  interact[ is.na( interact ) ] &lt;- 0
+  interact
+}
+###########################################################################################
+getOrgInteract &lt;- function( community,
+                            org1name = getOrgFeature( community, org2name, "substrate" ),
+                            org2name, event = NULL )
+{
+  OrgInteract &lt;- getOrgInfo( community, "Interact" )
+  if (!is.null(OrgInteract) &amp;&amp; !is.null(OrgInteract[[org1name]][[org2name]])) {
+    tmp &lt;- OrgInteract[[org1name]][[org2name]]
+    if( is.null( event ))
+      return( tmp )
+    event &lt;- as.character( event )
+    inter &lt;- tmp[,event]
+    if( length( event ) == 1 )
+      names( inter ) &lt;- row.names( tmp )
+    if(is.character(inter))
+      inter &lt;- factor(inter)
+    return(inter)
+  }
+  
+  # Fallback for webR standalone adapter objects
+  sub_names &lt;- if (!is.null(community$sub_names)) community$sub_names else c("fr1", "fr2", "fr3", "fr4", "twig", "lftop", "lfbot")
+  mat &lt;- matrix(1, nrow = length(sub_names), ncol = 1, dimnames = list(sub_names, "substrate"))
+  as.data.frame(mat)
+}
+###########################################################################################
+getOrgMeanValue &lt;- function( community, species )
+{
+  OrgMeanValue &lt;- getOrgInfo( community, "MeanValue" )
+  ## The global org$MeanValue[[species]] contains mean value information.
+  OrgMeanValue[[species]]
+}
+###########################################################################################
+copyOrgInfo &lt;- function( fromname, toname )
+{
+  out &lt;- list()
+  for( i in c("sim")) {
+    from &lt;- paste( fromname, i, sep = "." )
+    if( exists( from )) {
+      toto &lt;- paste( toname, i, sep = "." )
+      out[[toto]] &lt;- get( from )
+      cat( "copied", from, "to", toto, "into list\n" )
+    }
+  }
+  return(out)
+}
+###########################################################################################
+get.alive &lt;- function( community, species, substrate )
+{
+  alive &lt;- getOrgAlive( community, species )
+  alive &lt;- seq_along( alive )[alive]
+  alive[ substrate == get.species.element( community, species, "sub.stage", alive ) ]
+}
+###########################################################################################
+getOrgAlive &lt;- function( community, species, element )
+{
+  organism &lt;- get.species( community, species )
+  ## identify dead organisms (free nodes for leftist tree)
+  tmp &lt;- c( FALSE, apply( organism[c("dist","up","left","right"),-1], 2,
+                          function( x ) any( x &gt; 1 )))
+  if( !any( tmp )) {
+    tmpp &lt;- organism["up",1]
+    if( tmpp &gt; 1 )
+      tmp[tmpp] &lt;- TRUE
+  }
+  if( !missing( element ))
+    tmp &lt;- organism[ element, tmp ]
+  tmp
+}
+###########################################################################################
+getOrgAgeClass &lt;- function( community, species, stage = seq_len( nrow( future )),
+                            future = getOrgFuture( community, species ))
+{
+  ageclass &lt;- future$ageclass[stage]
+  tmp &lt;- !is.na( ageclass )
+  if( any( tmp ))
+    ageclass[ !is.na( ageclass ) ]
+  else
+    NA
+}
+###########################################################################################
+getOrgSubstrate &lt;- function( community, species, elements = seq_len( nrow( inter )),
+                             substrate = getOrgFeature( community, species, "substrate" ),
+                             inter = getOrgInteract( community, substrate, species ))
+{
+  sites &lt;- inter$substrate[elements]
+  tmp &lt;- !is.na( sites )
+  if( any( tmp ))
+    sites[ !is.na( sites ) ]
+  else
+    NA
+}
+###########################################################################################
+sampleOrgSubstrate &lt;- function( community, species, elements = seq_len( nrow( inter )),
+                                substrate.name = getOrgFeature( community, species, "substrate" ),
+                                inter = getOrgInteract( community, substrate.name, species ))
+{
+  if( is.na( substrate.name ))
+    return( elements )
+  newsub &lt;- as.matrix( cbind( elements, inter[ elements, levels( factor(inter$substrate) ) ] ))
+  apply( newsub, 1, function( x, is ) {
+    ns &lt;- sample( levels( factor(is) ), 1, prob = x[-1] / sum( x[-1] ))
+    sub &lt;- seq_len( nrow( inter ))[ ns == is ]
+    if( length( sub ) &gt; 1 ) {
+      newsub &lt;- getOrgInteract( community, substrate.name, substrate.name )[x[1],sub]
+      sample( sub, 1, prob = newsub / sum( newsub ))
+    }
+    else
+      sub
+  }, inter$substrate )
+} 
+##########################################################################################
+### simulation organism administration
+##########################################################################################
+initOrgInfo &lt;- function( package, messages = TRUE, datafile = "", ... )
+{
+  community &lt;- list( pop = list( ))
+  community$org &lt;- list( )
+  community$org$package &lt;- package
+  ## Get data
+  community$org$Feature &lt;- getOrgData(community, "organism", "features",
+                                      messages, datafile)
+  
+  community$pop &lt;- list()
+  community
+}
+##########################################################################################
+setOrgInfo &lt;- function( community, species, hosts, package, messages = TRUE,
+                        datafile = "", ... )
+{
+  Organism &lt;- community$org
+  
+  if( is.null( Organism$Future ))
+    Organism$Future &lt;- list( )
+  if( is.null( Organism$Interact ))
+    Organism$Interact &lt;- list( )
+  
+  for( j in hosts )
+    if( is.null( Organism$Interact[[j]] ))
+      Organism$Interact[[j]] &lt;- list( )
+  
+  ## Do not reset MeanValue as it may have important spline fits!
+  if( is.null( Organism$MeanValue ))
+    Organism$MeanValue &lt;- list( )
+  
+  for( i in species ) {
+    future &lt;- getOrgData(community, "future", i,
+                         messages, datafile)
+    
+    # Check that future agrees with organism.feature information
+    subclass &lt;- Organism$Feature[i,"subclass"]
+    if(!(subclass %in% unique(future$ageclass))) {
+      stop(paste("Future table", paste("future", i, sep = "."),
+                 "does not include", subclass))
+    }
+    
+    level.ageclass &lt;- unique( future$ageclass )
+    level.ageclass &lt;- as.character( level.ageclass[ !is.na( level.ageclass ) ] )
+    future$ageclass &lt;- ordered( future$ageclass, level.ageclass )
+    Organism$Future[[i]] &lt;- future
+    for( j in hosts )
+      if( i != j ) {
+        Organism$Interact[[j]][[i]] &lt;- getOrgData(community, j, i,
+                                                  messages, datafile)
+        
+        # Check that interaction agrees with host current stage information
+        # This is messy!
+        if(j %in% species) {
+          if(!all(row.names(Organism$Interact[[j]][[i]]) %in%
+                  c(as.character(Organism$Future[[j]]$current), i))) {
+            stop(paste("Interaction table", paste(j, i, sep = "."),
+                       "does not match", j, "current stages"))
+          }
+        }
+      }
+    if( is.null( Organism$MeanValue[[i]] ))
+      Organism$MeanValue[[i]] &lt;- list( )
+    else
+      cat( "Keeping Mean Value information for", i, "if any\n" )
+  }
+  for( i in unique( getOrgFeature( community, species, "substrate" ))) {
+    Organism$Interact[[i]][[i]] &lt;- getOrgData(community, i, i,
+                                              messages, datafile)
+  }
+  community$org &lt;- Organism
+  community
+}
+###########################################################################################
+getOrgData &lt;- function(community, left, right,
+                       messages = TRUE, datafile = "")
+{
+  # Get Organism Data from
+  #     package data
+  #     global data supplied by user
+  #     external data file supplied by user
+  sheet &lt;- paste( left, right, sep = "." )
+  data_exists &lt;- FALSE
+  if (is.character(datafile) &amp;&amp; length(datafile) == 1 &amp;&amp; nzchar(datafile)) {
+    if (dir.exists(datafile)) {
+      extensions &lt;- c(".txt", ".tsv", ".csv", ".xls", ".xlsx")
+      datafile_paths &lt;- file.path(datafile, paste0(sheet, extensions))
+      exist_idx &lt;- file.exists(datafile_paths)
+      if (any(exist_idx)) {
+        datafile &lt;- datafile_paths[exist_idx][1]
+        data_exists &lt;- TRUE
+      } else {
+        data_exists &lt;- FALSE
+      }
+      sheet &lt;- ""
+    } else if (file.exists(datafile)) {
+      data_exists &lt;- TRUE
+    }
+  }
+  if(!data_exists) {
+    # Load package data or get user-provided global data.
+    mydata( sheet, getOrgInfo( community, "package" ), messages = messages)
+    my.eval( sheet )
+  } else {
+    # Read data file from user if provided.
+    if(sheet == "")
+      my.read(datafile)
+    else {
+      out &lt;- as.data.frame(readxl::read_excel(datafile, sheet = sheet, .name_repair = "none"))
+      if(names(out)[1] == "") { # first column is actual row names
+        rownames(out) &lt;- out[[1]]
+        out[[1]] &lt;- NULL
+      }
+      out
+    }
+  }
+}
+###########################################################################################
+getOrgNames &lt;- function(datafile = "") {
+  if(datafile == "") {
+    c("organism.features", "future.host", "future.parasite",
+      "substrate.host", "substrate.parasite", "substrate.substrate",
+      "temperature.base", "temperature.par")
+  } else {
+    readxl::excel_sheets(datafile)
+  }
+}
+###########################################################################################
+getOrgDataSimple &lt;- function(community, dataname, datafile = ""){
+  out &lt;- getOrgData(
+    community,
+    left = stringr::str_remove(dataname, "\\..*"),
+    right = stringr::str_remove(dataname, ".*\\."),
+    messages = FALSE, datafile = datafile)
+  # Kludge to reinstate rownames as a column
+  if(!identical(rownames(out), as.character(seq_len(nrow(out))))) {
+    out &lt;- data.frame(rownames = rownames(out), out)
+  }
+  out
+}
+###########################################################################################
+getOrgInfo &lt;- function( community, element )
+{
+  community$org[[element]]
+}
+###########################################################################################
+setOrgMeanValue &lt;- function( community, species, stage, mvalue )
+{
+  ## The global Organism$MeanValue[[species]] contains mean value information.
+  community$org$MeanValue[[species]][[stage]] &lt;- mvalue
+  community
+}
 
 # --- Auto-Included from R/event.R ---
 
+## $Id: event.R,v 1.0 2002/12/11 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###############################################################################
+##
+## event.birth( community, species )
+## event.attack( community, species )
+##
+## Issues to resolve:
+## 2. search strategy for predator/parasite/parasitoid
+## 3. generic calls to do.x
+###############################################################################
+event.birth &lt;- function( community, species )
+{
+  ## now only one offspring at a time,
+  ## but could depend on individual
+  offspring &lt;- get.offspring( community, species)
+  ## update parent based on anticipated offspring
+  community &lt;- parent.birth( community, species, offspring )
+  if( offspring ) {
+    ## get new births
+    newbirths &lt;- get.birth( community, species, offspring )
+    ## merge births into community
+    community &lt;- set.birth( community, species, newbirths )
+  }
+  community
+}
+###############################################################################
+parent.birth &lt;- function( community, species, offspring )
+{
+  ## get individual record
+  individual &lt;- get.individual( community, species )
+  individual["offspring"] &lt;- individual["offspring"] - offspring
+  ## female starves when egg load depleted (less than or equal to 0)
+  if( individual["offspring"] &lt;= 0 )
+    individual["stage"] &lt;- set.future( community, species, "starved" )
+  community &lt;- put.individual( community, species, individual )
+}
+###############################################################################
+get.birth &lt;- function( community, species, offspring )
+{
+  ## get individual record
+  individual &lt;- get.individual( community, species )
+  ## matrix of new offspring for community
+  newbirths &lt;- matrix( individual, length( individual ), offspring )
+  dimnames( newbirths ) &lt;- list( names( individual ), NULL )
+  if( offspring ) {
+    ## assumes newborn is stage 1, and next stage is 2
+    newbirths["stage",] &lt;- 1
+    newbirths["future",] &lt;- 2
+    ## set up as unlinked node for leftist tree
+    newbirths[c("dist","left","right","up"),] &lt;- 1
+    ## disperse offspring across substrate types
+    newbirths &lt;- event.move( community, species, newbirths )
+  }
+  if( getCount( community,, "debug" ))
+    cat( round( individual["time"] ),
+        getOrgFeature( community, species, "units" ),
+        ":", species, "offspring", individual["offspring"], "\n" )
+  if( offspring ) {
+    ## get future events for new organisms
+    get.future( community, species, newbirths)
+  }
+  else
+    community
+}
+###############################################################################
+get.deplete &lt;- function( community, species )
+{
+  ## get individual record of attacker
+  individual &lt;- get.individual( community, species )
+  ## Deplete reserves based on time spent searching for host.
+  individual["offspring"] &lt;- individual["offspring"] - 
+    ( individual["time"] - individual["location"] ) /
+      getOrgFeature( community, species, "deplete" )
+  community &lt;- put.individual( community, species, individual )
+}
+###############################################################################
+set.future &lt;- function( community, species, stage )
+{
+  current &lt;- getOrgFuture( community, species, "current" )
+  seq( length( current ))[ current == stage ]
+}
+###############################################################################
+### Interaction Events (only attack for now)
+###############################################################################
+event.attack &lt;- function( community, species )
+{
+  ## dyadic event: attack of host by adult parasitoid
+  
+  ## deplete individual based on time spent searching for host
+  community &lt;- get.deplete( community, species )
+  ## get individual record of attacker
+  individual &lt;- get.individual( community, species )
 
+  ## find a host if parasite has offspring reserve left
+  if( individual["offspring"] &gt; 0 ) {
+    ## get name of host for attacker
+    host &lt;- getOrgFeature( community, species, "attack" )
+    ## get attack parasite and event types
+    attack &lt;- get.attack( community, species, individual )
+    ## find host located on the same substrate
+    found &lt;- event.find( community, species, host, attack["event"] )
+    if( length( found )) {
+      ## host-parasite interaction
+      event.parsed &lt;- get( paste( "event", attack["event"], sep="." ))
+      community &lt;- event.parsed( community, species, host, found )
+      event.parsed &lt;- get( paste( "host", attack["parasite"], sep="." ))
+      community &lt;- event.parsed( community, species, host, found )
+      individual &lt;- get.individual( community, species )
+    }
+  }
+  if( individual["offspring"] &gt; 0 ) {
+    ## parasite moves along substrate
+    individual &lt;- event.move( community, species, individual )
+  }
+  else {
+    ## parasite dies if it does not feed enough
+    individual["stage"] &lt;- set.future( community, species, "starved" )
+  }
+  ## put updated individual back in community
+  community &lt;- put.individual( community, species, individual )
+}
+###############################################################################
+get.attack &lt;- function( community, species, individual )
+{
+  ## get parasite type ("ecto" or "endo") and current event ("feed" or "ovip")
+  parasite &lt;- getOrgFeature( community, species, "parasite" )
+  event &lt;- getOrgFuture( community, species, "current", individual["future"] )
+  event &lt;- as.character( event )
+  if( parasite=="endo" )
+    event &lt;- "ovip"
+  else if( individual["offspring"] &lt; 1 ) {
+    ## must feed if depleted
+    event &lt;- "feed"
+  }
+  c( event = event, parasite = parasite )
+}
+###############################################################################
+host.ecto &lt;- function( community, species, host, dead )
+{
+  ## ectoparasites effectively kill their host
+
+  ## get individual doing the attack
+  individual &lt;- get.individual( community, species )
+  ## get host individual that is attacked
+  hostindiv &lt;- get.individual( community, host, dead )
+  ## set host time to now, which may involve hr-DD translation
+  hostindiv["time"] &lt;- transTime( community, species, host, individual["time"] )
+  ## schedule immediate death of host
+  hostindiv["future"] &lt;- set.future( community, host, "death" )
+  ## update host record in community
+  community &lt;- put.individual( community, host, hostindiv, dead )
+  ## update leftist tree and mintime
+  community &lt;- put.species( community, host,
+                           leftist.update( get.species( community, host ), dead ))
+  update_mintime( community, host )
+}
+###############################################################################
+host.endo &lt;- function( community, species, host, dead, harm )
+{
+  ## endoparasites reduces capacity of host (assumed by half here)
+  
+  ## get host individual that is attacked
+  hostindiv &lt;- get.individual( community, host, harm )
+  ## schedule harm for hosts (reduce egg capacity by half)
+  hostindiv["offspring"] &lt;- floor( hostindiv["offspring"] / 2 )
+  if( hostindiv["offspring"] == 0 ) {
+    ## get individual doing the attack
+    individual &lt;- get.individual( community, species )
+    ## set host time to now, which may involve hr-DD translation
+    hostindiv["time"] &lt;- transTime( community, species, host, individual["time"] )
+    ## schedule immediate death of host
+    hostindiv["future"] &lt;- set.future( community, host, "death" )
+  }
+  ## update host record in community
+  community &lt;- put.individual( community, host, hostindiv, harm )
+  if( hostindiv["offspring"] == 0 ) {
+    ## update leftist tree and mintime
+    community &lt;- put.species( community, host,
+                             leftist.update( get.species( community, host ), dead ))
+    community &lt;- update_mintime( community, host )
+  }
+  community
+}
+###############################################################################
+event.feed &lt;- function( community, species, host, dead )
+{
+  ## feed: adult parasite feeds on host
+
+  interact &lt;- get.interact( community, species, host, dead, "feed" )
+  ## host-parasite interaction: feeding
+  if( interact ) {
+    individual &lt;- get.individual( community, species )
+    individual["offspring"] &lt;- individual["offspring"] + interact
+    community &lt;- put.individual( community, species, individual )
+  }
+  community
+}
+###############################################################################
+event.ovip &lt;- function( community, species, host, dead, gender=TRUE )
+{
+  ## ovip: adult lays egg in the host to emerge later as adult
+  offspring &lt;- get.offspring( community, species )
+
+  interact &lt;- get.interact( community, species, host, dead, "ovip" )
+  ## host-parasite interaction: feeding
+  if( interact ) {
+    ## update parent individual, depleting energy after egg laying
+    community &lt;- parent.birth( community, species, offspring )
+
+    ## get new births
+    newbirths &lt;- get.birth( community, species, offspring )
+    ## gender preference for offspring
+    if( get.interact( community, species, host, dead, "male" ) &lt; stats::runif( 1 ) |
+      !gender ){
+      ## set offspring for female eggs based on dead host
+      newbirths["offspring", ] &lt;- set.offspring( community, species, host, dead )
+    }
+    else {
+      ## produce male and put on queue for immediate death
+      newbirths &lt;- set.male( community, species, host, newbirths )
+    }
+    community &lt;- set.birth( community, species, newbirths )
+  }
+  community
+}
+###############################################################################
+set.male &lt;- function( community, species, host, newbirths )
+{
+  ## produce male offspring, which is queued for immediate death
+  newbirths["future",1] &lt;- set.future( community, species, "male" )
+  newbirths["time",1] &lt;- get.individual( community, species )["time"]
+  newbirths
+}
 
 # --- Auto-Included from R/event.future.R ---
 
-
+event.future &lt;- function( community, species )
+{
+  ## schedule future event based on current stage
+  individual &lt;- get.future( community, species )
+  ## move if appropriate
+  individual &lt;- event.move( community, species, individual )
+  ## update time translation if needed
+  community &lt;- checkTime( community, individual["time"],
+                          getCount( community, species, "mintime"),
+                          getOrgFeature( community, species, "units" ))
+  ## put updated individual back in community
+  community &lt;- put.individual( community, species, individual )
+  
+  ## reprioritize the leftist tree if time has changed
+  if( individual["time"] &gt; individual["location"] ) {
+    ## and time is longer than next scheduled time
+    if( individual["time"] &gt;
+        min( get.species.element( community, species, "time",
+                                  individual[c("left","right")] ))) {
+      ## remove individual from leftist tree
+      community &lt;- put.species( community, species,
+                                leftist.update( get.species( community, species )))
+    }
+    community &lt;- update_mintime( community, species )
+  }
+  community
+}
 
 # --- Auto-Included from R/organism.features.R ---
 
-
+NULL
 
 # --- Auto-Included from R/host.parasite.R ---
 
-
+NULL
 
 # --- Auto-Included from R/init.simulation.R ---
 
-
+init.simulation &lt;- function( package = "ewing", 
+                             count = 200,
+                             interact = FALSE,
+                             messages = TRUE,
+                             ...)
+{
+  community &lt;- initOrgInfo( package, messages = messages, ... )
+  community &lt;- initTemp( community, messages = messages, ... )
+  
+  species &lt;- getOrgFeature( community )[1:2]
+  hosts &lt;- getOrgHosts( community, species )
+  
+  if(messages) {
+    cat( "Creating simulation organism set using species:\n",
+         paste( species, collapse = ", " ), "\n\n" )
+  }
+  
+  community &lt;- setOrgInfo( community, species, hosts, package,
+                           messages = messages, ... )
+  
+  if(messages) {
+    cat( "\n" )
+  }
+  species &lt;- unique( species )
+  num &lt;- numeric( length( species ))
+  names( num ) &lt;- species
+  
+  count &lt;- rep_len(count, length(species))
+  names(count) &lt;- species
+  
+  for( i in species ) {
+    num[i] &lt;- reuse &lt;- count[i]
+    
+    if(messages | (interact &amp; interactive())) {
+      cat( paste( "Initialize ", i, " at size ", reuse, sep = "" ))
+    }
+    if(interact &amp; interactive()) {
+      cat(" :")
+      r &lt;- readline( )
+      if( r != "" &amp; is.na( pmatch( substring( r, 1, 1 ), c("y","Y") )))
+        reuse &lt;- suppressWarnings(as.numeric( r ))
+      if( is.na( reuse ))
+        reuse &lt;- count[i]
+    }
+    if( reuse ) {
+      if(messages) {
+        cat( "...\n" )
+      }
+      community &lt;- init.population( community, i, n = reuse, messages = messages, ... )
+      num[i] &lt;- reuse
+    }
+  }
+  class( community ) &lt;- c("ewing", "list")
+  attr(community, "count") &lt;- count
+  community
+}
 
 # --- Auto-Included from R/init.population.R ---
 
-
+init.population &lt;- function( community, species, n = 200, width = 100,
+                             units = getOrgFeature( community, species, "units" ),
+                             timeit = FALSE,
+                             reject = Inf,
+                             position = rtri( n, width ),
+                             colnames = c(leftistnames,paramnames,posnames,eventnames),
+                             init.stage = istage,
+                             init.weight = getOrgFuture( community, species, "init" ),
+                             messages = TRUE,
+                             ...)
+{
+  leftistnames &lt;- c("dist","left","right","up")
+  paramnames &lt;- c("dispersion","location","intensity","truncation","rejection")
+  posnames &lt;- paste("pos",letters[1:3], sep = ".")
+  eventnames &lt;- c("time","stage","future","offspring","sex","sub.stage","sub.future")
+  
+  organism &lt;- matrix( 0, length( colnames ), n+1,
+                      dimnames = list( colnames, NULL ))
+  organism["time",1] &lt;- Inf
+  
+  ## 5-parameter initialization
+  organism[c("dispersion","intensity"),-1] &lt;- 1
+  organism["rejection",-1] &lt;- if( reject == Inf )
+    rep( Inf, n )
+  else
+    reject * stats::rexp( n )
+  
+  ## triangular coordinates
+  organism[posnames,-1] &lt;- position
+  
+  ## substrate
+  substrate.name &lt;- getOrgFeature( community, species, "substrate" )
+  if( !is.na( substrate.name )) {
+    substrate &lt;- getOrgInteract( community, substrate.name, species, "init" )
+    organism["sub.stage",-1] &lt;- organism["sub.future",-1] &lt;- sample( length( substrate ),
+                                                                     n, replace = TRUE, prob = substrate / sum( substrate ))
+  }
+  ## randomly generate events proportional to future time units
+  nstage &lt;- length( init.weight )
+  istage &lt;- sample( nstage, n, replace = TRUE, prob = init.weight / sum( init.weight ))
+  init.stage &lt;- array( init.stage, n )
+  organism["stage",-1] &lt;- init.stage
+  
+  ## schedule future events
+  if( timeit )
+    proctime &lt;- proc.time()
+  organism[,-1] &lt;- get.future( community, species, organism[,-1] )
+  if( timeit ) {
+    tmp &lt;- proc.time() - proctime
+    cat( "future time: user=", tmp[1], "system=", tmp[2], "total=", tmp[3], "\n" )
+  }
+  ## create leftist tree
+  if( timeit )
+    proctime &lt;- proc.time()
+  community &lt;- put.species( community, species, leftist.create( organism ))
+  if( timeit ) {
+    tmp &lt;- proc.time() - proctime
+    cat( "leftist time: user=", tmp[1], "system=", tmp[2], "total=", tmp[3], "\n" )
+  }
+  ## mean number of offspring
+  if( timeit )
+    proctime &lt;- proc.time()
+  #***This is where parasite is crashing--no offspring?**
+  community &lt;- initOffspring( community, species )
+  if( timeit ) {
+    tmp &lt;- proc.time() - proctime
+    cat( "offspring time: user=", tmp[1], "system=", tmp[2], "total=", tmp[3], "\n" )
+  }
+  
+  if(messages) {
+    cat( "Initializing events for", species, "with", ncol( organism ) - 1, "individuals\n" )
+  }
+  community
+}
 
 # --- Auto-Included from R/future.host.R ---
 
-
+NULL
 
 # --- Auto-Included from R/future.events.R ---
 
-
+future.events &lt;- function( community,
+                           nstep = 4000,
+                           species = get.species( community ),
+                           
+                           refresh = nstep / 20, cex = 0.5,
+                           substrate.plot = TRUE, extinct = TRUE,
+                           timeit = TRUE, debugit = FALSE,
+                           messages = TRUE, append = NULL, ... )
+  
+{
+  ## Integrity check of dataset, and initialization of tallies.
+  if( missing( community ))
+    stop( "Must specify a community." )
+  
+  if (is.null(append)) {
+    append &lt;- !is.null(community$count$counts) &amp;&amp; nrow(community$count$counts) &gt; 0
+  }
+  
+  if( debugit ) cat( "initialization\n" )
+  community &lt;- initCount( community, species, debugit = debugit, file = NULL,
+                           append = append, messages = messages )
+  if( timeit )
+    community &lt;- init.timing( community )
+  
+  mintime &lt;- getCount( community, , "mintime" )
+  species.now &lt;- species[ mintime == min( mintime ) ][1]
+  future &lt;- getOrgFuture( community, species.now )
+  
+  # Set up list for plot information.
+  p &lt;- list()
+  pstep &lt;- 0
+  if (!is.null(community$plot)) {
+    p &lt;- community$plot
+    pstep &lt;- length(p)
+  }
+  
+  start_step &lt;- if (append &amp;&amp; !is.null(community$count$step)) community$count$step else 0
+  
+  ## for nstep steps schedule future events and process immediate events
+  for( istep in seq( nstep )) {
+    ## stop if any extinct and extinct flag on, or all extinct
+    omintime &lt;- mintime
+    mintime &lt;- getCount( community, , "mintime" )
+    if( debugit ) print( mintime )
+    if( min( mintime ) &lt; min( omintime )) {
+      cat( "time reversal!\n" ) # should not happen
+      browser()
+    }
+    tmp &lt;- mintime == Inf
+    if( any( tmp )) {
+      if( extinct | all( tmp )) {
+        for( i in names( mintime )[tmp] )
+          cat( "***", i, "is extinct ***\n" )
+        if( plotit )
+          plot.ewing( community, substrate = substrate.plot, cex = cex, ...)
+        break
+      }
+    }
+    ## each species is always sorted so 1st element is next future event
+    species.prev &lt;- species.now
+    species.now &lt;- species[ mintime == min( mintime ) ][1]
+    individual &lt;- get.individual( community, species.now )
+    if( is.na( individual["time"] ) | individual["time"] == Inf ) {
+      cat( "No more finite future events. End of simulation.\n" )
+      break
+    }
+    if( all( individual[c("dist","left","right","up")] == 1 )) {
+      cat( individual["time"], ": last", species.now, "alive",
+           getCount( community, species.now, "base" ), "\n" )
+    }
+    if( species.now != species.prev )
+      future &lt;- getOrgFuture( community, species.now )
+    ## make future event the current stage
+    current &lt;- individual["stage"]
+    stage &lt;- as.character( future$current[current] )
+    if(!length(stage))
+      stop(paste("no stage", current))
+    community &lt;- updateCount( community, species.now, individual, stage == "death",
+                              start_step + istep )
+    individual["stage"] &lt;- current
+    individual["sub.stage"] &lt;- individual["sub.future"]
+    community &lt;- put.individual( community, species.now, individual )
+    
+    if( debugit ) {
+      cat( species.now, istep, "base",
+           getCount( community, species.now, "base" ), "\n" )
+      print( c( step = istep, 
+                countage = sum( getCount( community, species.now, "countage" )),
+                countsub = sum( getCount( community, species.now, "countsub" )),
+                round( individual["time"], 2 ), current, stage ))
+    }
+    
+    ## processing of immediate, pending and future events
+    ## this is the main show--all the rest is setup
+    event.type &lt;- as.character( future[ current, "event" ] )
+    if( debugit ) cat( "do", event.type, istep, stage,
+                       as.character( future$current[ individual["future"] ] ),
+                       individual["time"], "\n" )
+    community &lt;- set.timing( community, event.type )
+    if( event.type == "death" )
+      community &lt;- event.death( community, species.now )
+    else {
+      if( event.type != "future" ) {
+        ## this routine could be user supplied
+        ## generic routines are event.birth, event.attack
+        event.parsed &lt;- get( paste( "event", event.type, sep = "." ))
+        community &lt;- event.parsed( community, species.now )
+      }
+      community &lt;- event.future( community, species.now )
+    }
+    community &lt;- set.timing( community, event.type, 1 )
+    
+    ## refresh plot
+    if( refresh &amp; ! ( istep %% refresh )) {
+      community &lt;- set.timing( community, "refresh" )
+      # Save the ewing_ageclass and ewing_substrate objects.
+      pstep &lt;- pstep + 1
+      p[[pstep]] &lt;- ewing_snapshot(community, start_step + istep, ...)
+      
+      if(messages) {
+        cat( "refresh", istep )
+        for( j in get.species( community ))
+          cat( ":", j, sum( getCount( community, j, "countage" ), na.rm = TRUE ))
+        cat( "\n" )
+      }
+      community &lt;- set.timing( community, "refresh", 1 )
+    }
+    ## periodic browser if in debug mode
+    if( debugit ) {
+      cat( "done", istep, "\n" )    
+      if( refresh &amp; !( istep %% refresh )) {
+        cat( "Type \"c\" to continue or \"Q\" to quit.\n" )
+        browser()
+      }
+    }
+  }
+  community &lt;- set.timing( community, "refresh" )
+  ## end of main loop on future events
+  if( debugit ) cat("done\n")
+  
+  if( sum( getOrgAlive( community, species.now )) &gt; 1 ) {
+    ## tally events at end of simulation
+    community &lt;- setEvents( community, "final" )
+  }
+  community &lt;- set.timing( community, "refresh", 1 )
+  
+  community &lt;- fini.timing( community )
+  community$step &lt;- start_step + nstep
+  attr(community, "nstep") &lt;- start_step + nstep
+  
+  if( !refresh | (nstep%%refresh)) {
+    pstep &lt;- pstep + 1
+    p[[pstep]] &lt;- ewing_snapshot(community, start_step + istep, ...)
+  }
+  community$plot &lt;- p
+  
+  community
+}
 
 # --- Auto-Included from R/future.R ---
+
+## $Id: future.R,v 1.0 2002/12/11 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###############################################################################
+##
+## future.events( community )
+##
+###############################################################################
+
+
+
+
+###############################################################################
+### Get birth and future event
+###############################################################################
+get.future &lt;- function (community, species,
+                        individuals = get.individual(community, species, id),
+                        id = get.base(community, species))
+{
+  ## NOTE: This is the slow routine. For every event, it has to check if there
+  ## is a mean value function and then call rspline.
+
+  ## the structure future.species is set up to handle competing risks!
+  future &lt;- getOrgFuture(community, species, c("current", "future", "time"))
+  future$fid &lt;- match(future$future, future$current)
+  individuals &lt;- as.matrix(individuals)
+
+  rownames &lt;- dimnames(individuals)[[1]]
+  for (i in seq(ncol(individuals))) {
+    individual &lt;- individuals[,i]
+    current &lt;- individual["stage"]
+    individual["location"] &lt;- individual["time"]
+
+    ## competing risks based on potential future event times
+    futures &lt;- future$current == future$current[current]
+    times &lt;- rep( individual["time"], sum( futures ))
+    cur &lt;- seq(nrow(future))[futures]
+    for( j in seq( sum( futures ))) {
+      meantime &lt;- future[cur[j], "time"]
+      if( meantime &gt; 0 ) {
+        for.stage &lt;- as.character(future$current[future$fid[ cur[j] ]])
+        times[j] &lt;- rspline( meantime, individual,
+                              getOrgMeanValue(community, species)[[for.stage]])
+      }
+    }
+    individual["time"] &lt;- min( times )
+    current &lt;- cur[ times == individual["time"] ][1]
+    individual["future"] &lt;- future$fid[current]
+    if (individual["time"] == individual["rejection"])
+        individual["future"] &lt;- future$fid[future$current == "death"]
+    individuals[,i] &lt;- individual
+  }
+  individuals
+}
+###############################################################################
+event.death &lt;- function( community, species,
+                        id = get.base( community, species ))
+{
+  ## remove dead individual from leftist tree
+  community &lt;- put.species( community, species,
+                           leftist.remove( get.species( community, species ), id ))
+  ## free up individual for reuse
+  community &lt;- put.base( community, species, id )
+  community
+}
+###############################################################################
+update_mintime &lt;- function( object, species, ... )
+{
+  base &lt;- get.base( object, species )
+  mintime &lt;- max( getCount( object, species, "mintime" ),
+                 getTime( object, species,
+                         get.species.element( object, species, "time", base )))
+  setCount( object, species, list( base = base, mintime = mintime ))
+}
+###############################################################################
+set.birth &lt;- function( community, species, neworg )
+{
+  ## merge immediate new births (if any)
+  newbirths &lt;- ncol( neworg )
+  if( newbirths &gt; 0 ) {
+    neworg[c("dist","left","right","up"),] &lt;- 1
+    community &lt;- checkTime( community, neworg["time",],
+              getCount( community, species, "mintime" ),
+              getOrgFeature( community, species, "units" ))
+    oldbase &lt;- getCount( community, species, "base" )
+    tmp &lt;- leftist.birth( get.species( community, species ), neworg,
+                         getCount( community, species, "free" ))
+    
+    community &lt;- put.species( community, species, tmp$tree )
+    community &lt;- put.base( community, species, free = tmp$free )
+    community &lt;- updateCounts( community, species, newbirths )
+  }
+  community
+}
 
 
 
 # --- Auto-Included from R/substrate.host.R ---
 
-
+NULL
 
 # --- Auto-Included from R/spline.R ---
 
+## $Id: spline.R,v 1.0 2002/12/09 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###########################################################################################
+## Support routines for future.meanvalue
+###########################################################################################
+spline.rate &lt;- function( meanvalue, x )
+{
+  coeff &lt;- stats::coef( meanvalue )
+  for( i in 2:ncol( coeff ))
+    coeff[,i-1] &lt;- i * coeff[,i]
+  coeff[,ncol( coeff ) ] &lt;- 0
+  meanvalue$coefficients &lt;- coeff
+  if( missing( x ))
+    stats::predict( meanvalue )
+  else
+    stats::predict( meanvalue, x )
+}
+###########################################################################################
+spline.deriv &lt;- function( s )
+{
+  s$coefficients &lt;- s$coefficients[,-1]
+  for( i in seq( 2, ncol( s$coefficients )))
+    s$coefficients[,i] &lt;- s$coefficients[,i] * i
+  s
+}
+###########################################################################################
+splinesum &lt;- function( xy, fit = splines::interpSpline( xy$x, xy$y ),
+                       log2 = log( 2 ), tol = 1e-5 )
+{
+  n &lt;- nrow( xy )
+  ## mean time to future event (assume linear off end )
+  maxx &lt;- xy[n,"x"]
+  mean.y &lt;- maxx * mean( exp( - stats::predict( fit )$y )) + xy[1,"x"]
+  rate &lt;- spline.rate( fit, maxx )$y
+  if( rate &gt; tol )
+    mean.y &lt;- mean.y + exp( - xy[n,"y"] ) / rate
 
+  ## median time to future event
+  adiff &lt;- diff( stats::coef( fit )[,1] )
+  ## undefined if mean value function not monotone
+  if( !( all( adiff &lt; 0) || all( adiff &gt; 0 )))
+    median.y &lt;- NA
+  else {
+    invmvalue &lt;- splines::backSpline( fit )
+    median.y &lt;- stats::predict( invmvalue, log2 )$y
+    if( is.na( median.y ))
+      median.y &lt;- spline.extrapolate( fit, invmvalue, log2 )
+  }
+  c( mean = mean.y, median = median.y )
+}
+###########################################################################################
+summaryshow &lt;- function( xy, fit, col = "black", sums = splinesum( xy, fit ))
+{
+  tmpar &lt;- graphics::par( col = col )
+  graphics::mtext( paste( "mean =", round( sums[1], 2 )), 3, at = graphics::par("usr")[1], adj = 0 )
+  medianshow &lt;- if( is.na( sums[2] ))
+    "curve not monotone"
+  else
+    paste( "median =", round( sums[2], 2 ))
+  graphics::mtext( medianshow, 3, at = graphics::par("usr")[2] / 1.25, adj = 1 )
+  graphics::par( tmpar )
+  invisible( sums )
+}
+###########################################################################################
+curve.plot &lt;- function( xy = seq(0,1,by=.25), y = c(0,.1,.5,.9,1),
+  z = graphics::locator(1,"n"), n=5, action="add",
+  fit = splines::interpSpline( xy$x, xy$y ),
+  backfit = TRUE, save.ends = 3, col = c("blue","red"), lwd = 4,
+  f = function( x ) x, finv = function( x ) x )
+{
+  if( !is.list( xy )) {
+    xy &lt;- data.frame( x = xy )
+    xy$y &lt;- y
+  }
+  else
+    xy &lt;- as.data.frame( xy )
+  if( !match( action, c("refresh","finish"), nomatch = 0 )) {
+    z &lt;- as.data.frame(z)
+    tmp &lt;- z$x &gt; max( xy$x )
+    if( any( tmp )) {
+      if( all( tmp ))
+        return( xy )
+      z$x &lt;- z$x[!tmp]
+      z$y &lt;- z$y[!tmp]
+    }
+  }
+  remove.points &lt;- function( xy, finv, save.ends = TRUE ) {
+    ## find closest point after standardizing distances
+    usr &lt;- graphics::par( "usr" )
+    tmp &lt;- (( xy$x - z$x ) / diff( usr[1:2] )) ^ 2 +
+      (( xy$y - z$y ) / diff( usr[3:4] )) ^ 2
+    if( save.ends )
+      tmp &lt;- tmp[ - c( 1, nrow( xy )) ]
+    tmp &lt;- save.ends + min( seq( tmp )[ tmp == min( tmp ) ] )
+    tmpd &lt;- xy[tmp,"y"]
+    tmpd &lt;- finv( tmpd )
+    graphics::points( xy[tmp,"x"], tmpd, lwd = lwd, col = "white" ) 
+    tmp
+  }
+  for( i in 1:n) {
+    switch( action,
+      noaction =
+        return( xy )
+      ,
+      add = {
+        graphics::points(z$x,z$y, lwd = lwd )
+        z$y &lt;- f( z$y )
+        xy &lt;- rbind(xy,z)
+        xy &lt;- xy[order(xy$x),]
+        fit &lt;- splines::interpSpline( xy$x, xy$y )
+      },
+      replace = {
+        graphics::points(z$x,z$y, lwd = lwd )
+        z$y &lt;- f( z$y )
+        tmp &lt;- remove.points( xy, finv, save.ends == 3 )
+        tmpp &lt;- ( tmp &gt; 1 &amp; tmp &lt; length( xy$x ))
+        if( save.ends != 2 | tmpp )
+          xy$x[tmp] &lt;- z$x
+        if( save.ends != 1 | tmpp )
+          xy$y[tmp] &lt;- z$y
+        fit &lt;- splines::interpSpline( xy$x, xy$y )
+      },
+      delete = {
+        z$y &lt;- f( z$y )
+        tmp &lt;- remove.points( xy, finv, save.ends &gt; 0 )
+        xy &lt;- xy[-tmp,]
+        fit &lt;- splines::interpSpline( xy$x, xy$y )
+      },
+      refresh =, finish = {
+        xy
+      }
+    )
+    tmpp &lt;- stats::predict( fit )
+    graphics::lines( tmpp$x, finv( tmpp$y ), col = col[1], lwd = lwd )
+
+    adiff &lt;- diff( stats::coef( fit )[,1] )
+    if( backfit &amp; ( all( adiff &lt; 0) || all( adiff &gt; 0 ))) {
+      ## backspline (not quite a spline) fit to inverse
+      tmpback &lt;- stats::predict( splines::backSpline( fit ))
+      graphics::lines( tmpback$y, finv( tmpback$x ), col = col[2], lwd = lwd )
+    }
+  }
+  list( xy = xy[order(xy$x),], fit = fit )
+}
+###########################################################################################
+cdf.lines &lt;- function( data, fig = "mean value", nspline = 8,
+  conf = c(50,80,90,95), rescale = 1,
+  col = c("green","blue","red","orange") )
+{
+  rate &lt;- fig == "mean value"
+  n &lt;- length( data )
+  data &lt;- sort( data )
+  prob &lt;- seq( n ) / ( n + 1 )
+  f &lt;- - rescale * log( 1 - prob )
+  ylab &lt;- "prob"
+  if( rate )
+    ylab &lt;- "cum rate"
+  else
+    f &lt;- 1 - exp( -f )
+  graphics::lines( data, f, lwd = 2 )
+  conf &lt;- conf / 100
+  for( i in seq( length( conf ))) {
+    ## lower confidence
+    tmp &lt;- stats::qbinom( conf[i], n, prob, lower.tail = TRUE ) / ( n + 1 )
+    tmp &lt;- 1 - exp( rescale * log( 1 - tmp ))
+    tmpna &lt;- is.na( tmp )
+    if( any( tmpna ))
+      tmp[tmpna] &lt;- f[1]
+    if( rate )
+      tmp &lt;- - log( 1 - tmp )
+    graphics::lines( data, tmp, lty = 2, col = col[i] )
+    ## upper confidence
+    tmp &lt;- stats::qbinom( conf[i], n, prob, lower.tail = FALSE ) / ( n + 1 )
+    tmp &lt;- 1 - exp( rescale * log( 1 - tmp ))
+    tmpna &lt;- is.na( tmp )
+    if( any( tmpna ))
+      tmp[tmpna] &lt;- f[n]
+    if( rate )
+      tmp &lt;- - log( 1 - tmp )
+    graphics::lines( data, tmp, lty = 2, col = col[i] )
+  }
+}
+###########################################################################################
+rspline &lt;- function( meantime = 1,
+                    fivepar = c(dispersion = 1, location = 0, intensity = 1, truncation = 0,
+                      rejection = Inf ),
+                    fit = NULL,
+                    meanvalue = fit$meanvalue, invmvalue = fit$invmvalue,
+                    span = Inf )
+{
+  ## dispersion = a, location = b, intensity = c
+  ## truncation = -log(1-d), rejection = -log(1-e)
+
+  ## y = a M^-1( G(d)+cV ) + b  if 1 - exp( -cV ) &lt; G(e)
+  ## y = span        if 1 - exp( -cV ) &gt;= G(e)
+
+  ## this is not quite right for truncation, as we know event happened before b
+  ## if 1-exp(-cV) &lt; d, but I am not sure how to pass that information along yet
+
+  default &lt;- is.null( meanvalue )
+
+  ##          V ~ exp(1)
+  ## intensity:      V/c
+  ## truncation:      (G(d)+V)/c
+  rate &lt;- ( fivepar["truncation"] + rexp( 1 )) / fivepar["intensity"]
+
+  ## mean value inverse:    M^-1( G(d)+V/c )
+  if( default )
+    y &lt;- rate
+  else {
+    y &lt;- stats::predict( invmvalue, rate )$y
+    ## kludge to linearly extrapolate beyond cubic spline fit
+    if( is.na( y ))
+      y &lt;- spline.extrapolate( meanvalue, invmvalue, rate )
+  }
+
+  ## dispersion and location:  y = a M^-1( cV ) + b
+  y &lt;- meantime * fivepar["dispersion"] * y + fivepar["location"]
+
+  ## rejection:      y &gt;= e? then set y to span
+  if( y &gt; fivepar["rejection"] )
+    y &lt;- span
+
+  y
+}
+###########################################################################################
+spline.extrapolate &lt;- function( meanvalue, invmvalue, x )
+{
+  ## linear extrapolation of inverse spline beyond upper end
+  coeff &lt;- stats::coef( invmvalue )
+  nr &lt;- nrow( coeff ) - 1
+  xknot &lt;- splines::splineKnots( invmvalue )[nr+(0:1)]
+  yknot &lt;- splines::splineKnots( meanvalue )[nr+1]
+  tmpr &lt;- ( xknot[2] - xknot[1] )
+  slope &lt;- coeff[nr,2] + tmpr * ( 2 * coeff[nr,3] + tmpr * 3 * coeff[nr,4] )
+  yknot + slope * ( x - xknot[2] )
+}
+###########################################################################################
+### spline.design() is a prototype for designing spline curves
+### Ultimately, pieces of spline.design, spline.temp() and spline.meanvalue()
+### will be pulled out as subroutines to reduce code overlap
+###########################################################################################
+spline.design &lt;- function (y = yinit, x = xinit, nspline = 8, xy = data.frame(x = x, 
+    y = y), n = 1, horizontal = FALSE) 
+{
+    is.data &lt;- !missing(y)
+    if (is.data) {
+        data &lt;- y
+        if (missing(x)) 
+            x &lt;- as.numeric(names(y))
+        datax &lt;- x
+        ndata &lt;- length(data)
+        choose &lt;- round(seq(1, ndata, length = nspline))
+        xinit &lt;- x &lt;- x[choose]
+        yinit &lt;- y &lt;- y[choose]
+    }
+    else {
+        tmp &lt;- seq(0, nspline - 1)
+        if (missing(x)) 
+            xinit &lt;- tmp
+        else xinit &lt;- x
+        if (missing(y)) 
+            yinit &lt;- rep(50, nspline)
+        else yinit &lt;- y
+    }
+
+  ## plot curve and surrounding axes
+  graphics::par( mfrow = c(1,1), mar = rep(4.1,4))
+  plotit &lt;- function( xy, fig = "temp", fit = splines::interpSpline( xy$x, xy$y ),
+    horizontal = FALSE, strip = .25, margin = .1 )
+  {
+    switch( fig, {
+        y &lt;- xy$y
+        ylim &lt;- range(y)
+      }
+    )
+    xlim &lt;- range(xy$x)
+    xlim &lt;- xlim + c(-1,1) * margin * diff( xlim )
+    if( horizontal ) {
+      if( diff( ylim ) == 0 )
+        ylim &lt;- ylim * c(.75,1.25)
+      separator &lt;- ylim[2]
+      ylim[2] &lt;- ylim[2] + strip * diff( ylim )
+    }
+    else {
+      separator &lt;- xlim[2]
+      xlim[2] &lt;- xlim[2] + strip * diff( xlim )
+    }
+    axt &lt;- c("n","s")
+    tmpar &lt;- graphics::par( xaxt = axt[1+horizontal], yaxt = axt[2-horizontal] )
+    plot( xy$x, y, xlim = xlim, ylim = ylim, type="n", xlab = "", ylab = "" )
+    graphics::par( xaxt = "s", yaxt = "s" )
+    graphics::points( xy$x, y, lwd = 4 )
+    graphics::title( fig )
+    graphics::mtext( "time", 1, 2 )
+    graphics::mtext( fig, 2, 2 )
+    if( horizontal ) {
+      p &lt;- pretty( c(ylim[1],separator) )
+      graphics::axis( 2, p[ p &lt;= separator ] )
+      graphics::abline( h = separator, lty = 2 )
+    }
+    else {
+      p &lt;- pretty( c(xlim[1],separator) )
+      graphics::axis( 1, p[ p &lt;= separator ] )
+      graphics::abline( v = separator, lty = 2 )
+    }
+    curve.plot( xy, n = n, action = "refresh", fit = fit, backfit = FALSE,
+      save.ends = 0 )
+    separator
+  }
+  ## place commands along right strip of plot, highlighting current command
+  plotcmd &lt;- function( ans, fig, cmds, cmdlocs, usr, col = "green", rest = "black",
+    horizontal = TRUE )
+  {
+    ans &lt;- c( ans, fig )
+    tmp &lt;- is.na( match( cmds, ans ))
+    if( any( tmp )) for( i in unique( cmdlocs$adj )) {
+      tmpi &lt;- tmp &amp; i == cmdlocs$adj
+      if( any( tmpi ))
+        graphics::text( cmdlocs$x[tmpi], cmdlocs$y[tmpi], cmds[tmpi], col = rest, adj = i )
+    }
+    if( any( !tmp )) for( i in unique( cmdlocs$adj )) {
+      tmpi &lt;- !tmp &amp; i == cmdlocs$adj
+      if( any( tmpi ))
+        graphics::text( cmdlocs$x[tmpi], cmdlocs$y[tmpi], cmds[tmpi], col = col, adj = i )
+    }
+  }
+  cmds &lt;- c("add","delete","replace","","finish","restart","refresh","rescale",
+    "","data","temp")
+  newlocs &lt;- if( horizontal )
+    function( cmds, data = FALSE, usr )
+    {
+      if( !data )
+        cmds &lt;- cmds[ cmds != "data" ]
+      n &lt;- length( cmds )
+      blank &lt;- seq( n )[ cmds == "" | cmds == " " ]
+      tmp &lt;- diff(usr[3:4]) / 20
+      m &lt;- mean( usr[1:2] )
+      y &lt;- usr[4] + 0.5 * tmp - c( tmp * seq( blank[1] - 1 ), 0,
+        tmp * seq( blank[2] - blank[1] - 1 ), 0,
+        tmp * seq( n - blank[2] ))
+      x &lt;- c( rep( usr[1], blank[1] - 1 ), mean( m, usr[1] ),
+        rep( m, blank[2] - blank[1] - 1 ), mean( m, usr[2] ),
+        rep( usr[2], n - blank[2] ))
+      adj &lt;- c( rep( 0, blank[1] ),
+        rep( 0.5, blank[2] - blank[1] ),
+        rep( 1, n - blank[2] ))
+      tmp &lt;- data.frame( x = x, y = y, adj = adj )
+      cmds[blank[2]] &lt;- " "
+      row.names( tmp ) &lt;- cmds
+      tmp
+    }
+  else
+    function( cmds, data = FALSE, usr )
+    {
+      if( !data )
+        cmds &lt;- cmds[ cmds != "data" ]
+      n &lt;- length( cmds )
+      blank &lt;- seq( n )[ cmds == "" ]
+      tmp &lt;- diff(usr[3:4]) / 20
+      m &lt;- mean( usr[3:4] )
+      tmp &lt;- c( usr[4] - tmp * seq( blank[1] - 1 ),
+        mean( m, usr[4] ),
+        m + tmp * ( seq( blank[1] + 1, blank[2] - 1 ) - mean( blank )),
+        mean( m, usr[3] ),
+        usr[3] + tmp * seq( n - blank[2] ))
+      tmp &lt;- data.frame( x = rep( usr[2], n ), y = tmp, adj = rep( 1, n ))
+      cmds[blank[2]] &lt;- " "
+      row.names( tmp ) &lt;- cmds
+      tmp
+    }
+
+  fig &lt;- "temp"
+  newans &lt;- ans &lt;- "replace"
+
+  graphics::par( mar = c(4.1,4.1,3.1,4.1),omi=rep(.25,4))
+  fit &lt;- splines::interpSpline( xy$x, xy$y )
+  separator &lt;- plotit( xy, fig, fit, horizontal )
+
+  usr &lt;- graphics::par("usr")
+  cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+  cmds &lt;- row.names( cmdlocs )
+  plotcmd( ans, fig, cmds, cmdlocs, usr )
+  use.data &lt;- FALSE
+  rescale.data &lt;- 1
+  repeat {
+    ## get command from plot using cursor
+    z &lt;- graphics::locator(1,"n")
+    if(( !horizontal &amp; z$x &gt; separator ) | ( horizontal * z$y &gt; separator )) {
+      if( horizontal ) { # need to look at both z&amp;y 
+        x &lt;- abs( z$x - cmdlocs$x )
+        x &lt;- x == min( x )
+        newans &lt;- cmds[x]
+        z &lt;- abs( z$y - cmdlocs$y )[x]
+        newans &lt;- newans[ z == min( z ) ][1]
+      }
+      else {
+        z &lt;- abs(z$y - cmdlocs$y )
+        newans &lt;- cmds[ z == min( z ) ][1]
+      }
+      switch( newans,
+        finish =, refresh = {
+          separator &lt;- plotit( xy, fig, fit, horizontal )
+          usr &lt;- graphics::par("usr")
+          cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+        },
+        data = {
+          use.data &lt;- is.data &amp; !use.data
+          if( is.data &amp; !use.data )
+            plotit( xy, fig, fit, horizontal )
+        },
+        temp = {
+          fig &lt;- newans
+          separator &lt;- plotit( xy, fig, fit, horizontal )
+          usr &lt;- graphics::par("usr")
+          cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+        },
+        rescale = {
+          cat( "enter new values followed by RETURN key\n" )
+          tmpy &lt;- readline( paste( "maximum ", fig, "(",
+            round( max( xy$y ), 2 ), "):", sep = "" ))
+          if( tmpy != "" ) {
+            tmpy &lt;- suppressWarnings(as.numeric( tmpy )) / max( xy$y )
+            xy$y &lt;- tmpy * xy$y
+            if( is.data )
+              rescale.data &lt;- rescale.data * tmpy
+          }
+          tmpx &lt;- readline( paste( "maximum time(", 
+            round( max( xy$x ), 2 ), "):", sep = "" ))
+          if( tmpx != "" ) {
+            tmpx &lt;- suppressWarnings(as.numeric( tmpx )) / max( xy$x )
+            xy$x &lt;- tmpx * xy$x
+          }
+          fit &lt;- splines::interpSpline( xy$x, xy$y )
+          separator &lt;- plotit( xy, fig, fit, horizontal )
+          usr &lt;- graphics::par("usr")
+          cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+        },
+        restart = {
+          if( is.data )
+            rescale.data &lt;- 1
+          xy &lt;- data.frame( x = xinit, y = yinit )
+          fit &lt;- splines::interpSpline( xy$x, xy$y )
+          separator &lt;- plotit( xy, fig, fit, horizontal )
+          usr &lt;- graphics::par("usr")
+          cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+        },
+        add =, delete =, replace = {
+          ans &lt;- newans
+        }
+      )
+      if( use.data ) {
+        rx &lt;- range( xy$x )
+        dx &lt;- range( datax )        
+        graphics::lines( rx[1] + ( datax - dx[1] ) * diff( rx ) / diff( dx ), data * rescale.data )
+      }
+      plotcmd( ans, fig, cmds, cmdlocs, usr )
+    }
+    else {
+      fit &lt;- curve.plot( xy, n = n, action = ans, z = z, fit = fit, backfit = FALSE,
+        save.ends = 0 )
+      xy &lt;- fit$xy
+      fit &lt;- fit$fit
+      ans &lt;- "replace"
+      plotcmd( ans, fig, cmds, cmdlocs, usr )
+    }
+    if( newans == "finish" )
+      break
+  }
+  plotcmd( newans, fig, cmds, cmdlocs, "red" )
+  tmp &lt;- curve.plot( xy, n = n, action = "refresh", backfit = FALSE, save.ends = 0 )
+  tmp
+}
 
 # --- Auto-Included from R/temp.R ---
 
+## $Id: temp.R,v 1.0 2002/12/09 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###########################################################################################
+## initTemp( community, lo.hour, hi.hour )  ### creates Temperature object
+## activeTemp( community, lo.hour, hi.hour )    ### updates Temperature object
+## checkTime( ) # check if activeTemp needs updating to cover time interval
+##
+## temp.design( )
+## temp.plot( )
+###########################################################################################
+rescale.temp &lt;- function( low, high, newry = ry, newrx = rx,
+  ry = range( c( stats::predict( low, low$knots )$y, stats::predict( high, high$knots )$y )))
+{
+  if( max( abs( ry - newry )) &gt; 0 ) {
+    tmpy &lt;- diff( newry ) / diff( ry )
+    low$coefficients &lt;- low$coefficients * tmpy
+    high$coefficients &lt;- high$coefficients * tmpy
+    tmpy &lt;- newry[1] - ry[1] * tmpy
+    low$coefficients[,1] &lt;- tmpy + low$coefficients[,1]
+    high$coefficients[,1] &lt;- tmpy + high$coefficients[,1]
+  }
+  rx &lt;- range( low$knots, high$knots )
+  if( max( abs( rx - newrx )) &gt; 0 ) {
+    newx &lt;- diff( newrx ) / diff( rx )
+    low$knots &lt;- newrx[1] + newx * low$knots
+    high$knots &lt;- newrx[1] + newx * high$knots
+    tmp &lt;- 1
+    for( i in seq( 2, ncol( low$coefficients ))) {
+      tmp &lt;- tmp * newx
+      low$coefficients[,i] &lt;- low$coefficients[,i] / tmp
+      high$coefficients[,i] &lt;- high$coefficients[,i] / tmp
+    }
+  }
+  list( low = low, high = high )
+}
+###########################################################################################
+### Temperature data structure
+### Min minimum temperature for degree-day computations
+### Time    list of hours when temperature changes through a day
+### Base    list of temperature shifts through a day
+###     list names indicate first day Hour and Base applies
+### Low spline fit for daily low temperatures
+### High    spline fit for daily high temperatures
+### DegreeDay   spline fit (hour-&gt;DD) for currently active days
+### Hour        ramped backspline fit (DD-&gt;hour) for currently active days
+### Idea is that DegreeDay and Hour are updated whenever a future event is scheduled
+### past the latest future event already scheduled. At that time, the first
+### and last time of fit are both adjusted. This can be done without rebuilding
+### the whole spline fit by appropriate adjustment of knots and coefficents.
+### Steps:  (1) combine Hour, Low and High to get knots
+###     (2) build spline coefficients
+###########################################################################################
+temp.spline &lt;- function( community, hour, temp, start = 0,
+  mintemp = getTemp( community, "Min" ), cumulative = TRUE,
+  mult = getTemp( community, "Unit" ) )
+{
+  if( is.data.frame( hour ) &amp; missing( temp )) {
+    temp &lt;- hour$temp
+    hour &lt;- hour$hour
+  }
+  ## drop low value if ones on either side are low
+  low &lt;- temp &lt;= mintemp
+  toolow &lt;- low &amp; c(FALSE,low[-length(low)]) &amp; c(low[-1],FALSE)
+  hour &lt;- hour[!toolow]
+  temp &lt;- temp[!toolow]
+  lh &lt;- length( hour )
+  ## expand single low in middle to two
+  low &lt;- temp &lt;= mintemp
+  toolow &lt;- low &amp; c(FALSE,!low[-length(low)]) &amp; c(!low[-1],FALSE)
+  if( any( toolow )) {
+    hour &lt;- c(hour,hour[toolow])
+    temp &lt;- c(temp,temp[toolow])
+    temp &lt;- temp[ order( hour ) ]
+    hour &lt;- sort( hour )
+  }
+  ## truncate on left
+  low &lt;- temp &lt;= mintemp &amp; c(temp[-1] &gt; mintemp,FALSE)
+  low1 &lt;- c(FALSE,low[-lh])
+  if( any( low ))
+    hour[low] &lt;- hour[low] + ( hour[low1] - hour[low] ) * ( mintemp - temp[low] ) /
+      ( temp[low1] - temp[low] )
+  ## truncate on right
+  low &lt;- temp &lt;= mintemp &amp; c(FALSE,temp[-lh] &gt; mintemp)
+  low1 &lt;- c(low[-1],FALSE)
+  if( any( low ))
+    hour[low] &lt;- hour[low] + ( hour[low1] - hour[low] ) * ( mintemp - temp[low] ) /
+      ( temp[low1] - temp[low] )
+  temp[ temp &lt; mintemp ] &lt;- mintemp
+  temp &lt;- temp[ !duplicated( hour ) ]
+  hour &lt;- unique( hour )
 
+  ## linear interpolating spline for temp
+  lh &lt;- length( hour ) - 1
+  h0 &lt;- 1:lh
+  aa &lt;- ( temp[1+h0] - temp[h0] ) / ( hour[1+h0]-hour[h0] )
+  aa &lt;- c( aa, aa[lh] )
+  bb &lt;- temp - mintemp
+  s &lt;- list( knots = hour, coefficients = cbind( bb,aa,0,0) )
+  dimnames( s$coefficients ) &lt;- list( paste( floor( hour / mult ), round( hour %% mult ),
+    sep = "." ), c("const","linear","quad","cubic") )
+  attr(s,"formula") &lt;- temp ~ hour
+  class( s ) &lt;- c("npolySpline","polySpline","spline")
+  if( !cumulative )
+    return( s )
+
+  ## quadratic spline for cumulative temp
+  aa &lt;- s$coefficients[,3] &lt;- s$coefficients[,2] / 2 / mult / mult
+  lh &lt;- length( aa ) - 1
+  h0 &lt;- 1:lh
+  h1 &lt;- 1 + h0
+  hour &lt;- s$knots
+  bb &lt;- s$coefficients[,2] &lt;- s$coefficients[,1] / mult
+  cc &lt;- ( hour[h1] - hour[h0] ) * ( bb[h0] + aa[h0] *
+    ( hour[h1] - hour[h0] ))
+  s$coefficients[,1] &lt;- start + c( 0, cumsum( cc ))
+  s
+}
+###########################################################################################
+temp.repeat &lt;- function( community, period = range( days ))
+{
+  lodays &lt;- range( getTemp( community, "Low" )$knots )
+  hidays &lt;- range( getTemp( community, "High" )$knots )
+  days &lt;- c( max( lodays[1], hidays[1] ), min( lodays[2], hidays[2] ))
+  lodays &lt;- period[1] &gt;= days[1] &amp; period[1] &lt;= days[2]
+  if( lodays )
+    days[1] &lt;- period[1]
+  hidays &lt;- period[2] &lt;= days[2] &amp; period[2] &gt;= days[1]
+  if( hidays )
+    days[2] &lt;- period[2]
+  if( !( lodays &amp; hidays )) {
+    stop( paste( "\nSimulation period is outside of Temperature days:\n period =",
+      paste( round( period ), collapse = "," ), "; days =",
+      paste( round( days ), collapse = "," ), "\nNeed to run temp.design() and start over!" ))
+  }
+  period &lt;- days
+
+  days &lt;- seq( days[1], days[2] )
+  low &lt;- stats::predict( getTemp( community, "Low" ), days )$y
+  high &lt;- stats::predict( getTemp( community, "High" ), days )$y
+  periods &lt;- c( as.numeric( names( getTemp( community, "Time" ))), Inf )
+  temps &lt;- hours &lt;- numeric( )
+  period[2] &lt;- period[2] + 1
+  for( i in seq( length( periods ) - 1 )) {
+    day &lt;- max( period[1], periods[i] )
+    this.period &lt;- days &gt;= day &amp; days &lt; min( period[2], periods[i+1] )
+    n &lt;- sum( this.period )
+    if( n ) {
+      if( !is.null( getTemp( community, "Time", i ))) {
+        time &lt;- getTemp( community, "Time", i )
+        base &lt;- getTemp( community, "Base", i )
+      }
+      h &lt;- length( time )
+      lotemp &lt;- rep( low[this.period], rep(h,n) )
+      hitemp &lt;- rep( high[this.period], rep(h,n) )
+      temp &lt;- ( base - min( base )) / diff( range( base ))
+      temps &lt;- c( temps, rep( temp, n ) * ( hitemp - lotemp ) + lotemp )
+
+      hours &lt;- c( hours, rep( time, n ) + rep( getTemp( community, "Unit" ) *
+        seq( day, day + n - 1 ), rep(h,n) ))
+    }
+  }
+  day &lt;- days == period[2]
+  if( any( day )) {
+    temps &lt;- c( temps, low[day] + temp[1] * ( high[day] -
+      getTemp( community, "Low" )[day] ))
+    hours &lt;- c( hours, getTemp( community, "Unit" ) * period[2] )
+  }
+  data.frame( hour = hours, temp = temps )
+}
+##########################################################################################
+showTemp &lt;- function( community )
+{
+  cat( "Temperature set for days",
+      paste( range( getTemp( community, "Low" )$knots ), collapse = " to " ), "\n" )
+  cat( "Daily low temperature range:",
+      paste( round( range( stats::predict( getTemp( community, "Low" ))$y )),
+            collapse = " to " ), "\n" )
+  cat( "Daily high temperature range:",
+      paste( round( range( stats::predict( getTemp( community, "High" ))$y )),
+            collapse = " to " ), "\n" )
+  if( !is.null( getTemp( community, "DegreeDay" ) ))
+    cat( "Active temperature range:",
+        paste( round( range( getTemp( community, "DegreeDay", "knots" ) )),
+              collapse = " to " ), "\n" )
+  cat( "Run temp.design() to adjust temperature range\n" )
+}
+##########################################################################################
+activeTemp &lt;- function( community,
+                       lo.hour = min( getTemp( community, "DegreeDay", "knots" ) ),
+                       hi.hour = max( getTemp( community, "DegreeDay", "knots" ) ),
+                       degreeday, messages = TRUE )
+{
+  unit &lt;- getTemp( community, "Unit" )
+  if( missing( hi.hour )) {
+    hi.hour &lt;- if( length( lo.hour ) &gt; 1 )
+      lo.hour[2]
+    else
+      lo.hour + unit
+  }
+  ## period is in units of hours
+  period &lt;- c( floor( lo.hour[1] / unit ), ceiling( hi.hour / unit ))
+  if( missing( degreeday )) {
+    degreeday &lt;- if( is.null( getTemp( community, "DegreeDay" ) ))
+      0
+    else
+      getDegreeDay( community, lo.hour[1] )
+  }
+  if( is.na( degreeday ))
+    degreeday &lt;- 0
+  community &lt;- setTemp( community, "DegreeDay",
+                       temp.spline( community, temp.repeat( community, period ),
+                                   start = degreeday ))
+  community &lt;- setTemp( community, "Hour",
+                       break.backSpline( getTemp( community, "DegreeDay" )))
+
+  if(messages) {
+    tmp &lt;- period * unit
+    names( tmp ) &lt;- c("lo.hour","hi.hour")
+    print( tmp )
+  }
+  community
+}
+###########################################################################################
+updateTemp &lt;- function( community,
+                       period = range( getTemp( community, "DegreeDay", "knots" ) ))
+{
+  ## period is in units of hours
+  first &lt;- period[1]
+  last &lt;- period[2]
+
+  s &lt;- getTemp( community, "DegreeDay" )
+  knots &lt;- s$knots
+  ## drop earlier times that are now in the past
+  drop &lt;- sum( knots &lt; first ) - 1
+  nk &lt;- length( knots )
+  change &lt;- drop &gt; 0
+  if( change ) {
+    s$knots &lt;- knots[ - seq( drop ) ]
+    s$coefficients &lt;- s$coefficients[ - seq( drop ), ]
+  }
+  ## add new days to include last
+  period &lt;- ceiling( c( knots[nk], last ) / getTemp( community, "Unit" ) )
+  if( period[1] &lt;= period[2] ) {
+    change &lt;- TRUE
+    news &lt;- temp.spline( community, temp.repeat( community, period ),
+      start = getHour( getTemp( community, "Unit" ) * period[1] ))
+    nk &lt;- length( s$knots )
+    if( s$knots[nk] == news$knots[1] ) {
+      s$knots &lt;- s$knots[-nk]
+      s$coefficients &lt;- s$coefficients[-nk,]
+    }
+    else
+      s$coefficients[nk,] &lt;- news$coefficients[1,]
+    s$knots &lt;- c( s$knots, news$knots )
+    s$coefficients &lt;- rbind( s$coefficients, news$coefficients )    
+  }
+  if( change ) {
+    community &lt;- setTemp( community, "DegreeDay", s )
+    community &lt;- setTemp( community, "Hour", break.backSpline( s ))
+  }
+  community
+}
+###########################################################################################
+ramp.backSpline &lt;- function( s )
+{
+  ## ramped backspline is a trick to get backSpline when curve is flat in spots
+  ## if tmp &lt;- stats::predict( ramp.backSpline( s ))
+  ## then plot tmp$y versus tmp$x-tmp$y to "recover" original curve.
+  ## problem is that one cannot recover particular x this way!
+
+  s$coefficients[,1] &lt;- s$coefficients[,1] + s$knots
+  s$coefficients[,2] &lt;- s$coefficients[,2] + 1
+  splines::backSpline( s )
+}
+###########################################################################################
+break.backSpline &lt;- function( tmp )
+{
+  ## alternative to ramped backSpline that first removes flat regions (slope 0)
+  ## problem remains that leftover may still have slope 0 at a point
+  ## this can cause anomolous results!
+
+  ## find flat regions and cut out
+  tmpc &lt;- diff(tmp$coefficients[,1]) == 0 
+  tmpk &lt;- cumsum( diff(tmp$knots) * ( tmpc ))
+  tmpk &lt;- c(tmpk,tmpk[length(tmpk)])
+  tmp$knots &lt;- tmp$knots - tmpk
+  tmpc &lt;- c(!tmpc,TRUE)
+  tmp$knots &lt;- tmp$knots[tmpc]
+  tmp$coefficients &lt;- tmp$coefficients[tmpc,]
+  tmp$breaks
+  nb &lt;- dim( tmp$coefficients )
+
+  ## kludge for backspline: cannot handle slope of zero
+  tmpn &lt;- tmp$coefficients[,2] == 0
+  if( any( tmpn )) {
+    tmpn &lt;- seq( tmpn )[ tmpn ]
+    tmp$coefficients[ tmpn, 2:nb[2] ] &lt;-
+      ( tmp$coefficients[ pmin( nb[1], tmpn + 1 ), 2:nb[2] ] +
+       tmp$coefficients[ pmax(     1, tmpn - 1 ), 2:nb[2] ] ) / 2
+  }
+
+  ## back spline
+  tmpb &lt;- splines::backSpline(tmp )
+
+  if( any( tmpc )) {
+    ## shift back spline based on breaks
+    tmpb$coefficients[,1] &lt;- tmpb$coefficients[,1] + tmpk[tmpc]
+  }
+  tmpb
+}
+###########################################################################################
+getDegreeDay &lt;- function( community, hour )
+{
+  stats::predict( getTemp( community, "DegreeDay" ), hour )$y
+}
+###########################################################################################
+getHour &lt;- function( community, dd )
+{
+  stats::predict( getTemp( community, "Hour" ), dd )$y
+}
+###########################################################################################
+getTime &lt;- function( community, species, x )
+{
+  if( is.na(x)){
+    cat("getTime missing value\n")
+    browser()
+  }
+  switch( getOrgFeature( community, species, "units" ),
+    ## organisms on hour basis assumed to be active only 6am-6pm
+    hr = getDegreeDay( community,
+      ( getTemp( community, "Unit" ) / 2 + x + floor( x / getTemp( community, "Unit" ) )) / 2 ),
+    DD = x )
+}
+###########################################################################################
+checkTime &lt;- function( community, x, base, units )
+{
+## NOTE: Sometimes base can be negative!! (reset to 0)
+  if( units == "hr" ) {
+    x &lt;- max( x )
+#    print( c( base = base, x = x, knots = range( getTemp( community, "DegreeDay", "knots" ))))
+    if( x &gt; max( getTemp( community, "DegreeDay", "knots" )))
+      community &lt;- activeTemp( community, max( base, 0 ),
+                              x + getTemp( community, "Unit" ), messages = FALSE )
+  }
+  community
+}
+###########################################################################################
+transTime &lt;- function( community, org1name, org2name, x,
+                      unit1 = getOrgFeature( community, org1name, "units" ),
+                      unit2 = getOrgFeature( community, org2name, "units" ))
+{
+  if( is.na(x)){
+    cat("transTime missing value\n")
+    browser()
+  }
+  if( unit1 == unit2 )
+    return( x )
+  switch( unit1,
+    ## organisms on hour basis assumed to be active only 6am-6pm
+    hr = getDegreeDay( community,
+      ( getTemp( community, "Unit" ) / 2 + x + floor( x / getTemp( community, "Unit" ))) / 2 ),
+    DD = getHour( x ))
+}
+###########################################################################################
+### To do:
+### 1. interactive designer for hourly temp fluctation over one day
+### 2. interactive designer for daily lows and highs over season: temp.design() DONE
+### 3. check future event trees hour vs. DD
+### 4. schedule interaction events with hour-DD translation
+### 5. make aphytis dormant at night
+###########################################################################################
 
 # --- Auto-Included from R/tempApp.R ---
 
-
+tempApp &lt;- function(community = NULL, title = "Daily Temperature Design Explorer") {
+  
+  # Initialize baseline community simulation if not supplied
+  if (is.null(community)) {
+    community &lt;- init.simulation(messages = FALSE)
+  }
+  
+  # Curated modern light color scheme
+  app_theme &lt;- bslib::bs_theme(
+    version = 5,
+    bg = "#ffffff",
+    fg = "#212529",
+    primary = "#1a73e8",
+    secondary = "#7209b7",
+    success = "#2ec4b6"
+  )
+  
+  # Helper to extract knots and y-values from a spline object
+  get_spline_coords &lt;- function(comm, element = "High") {
+    sp &lt;- getTemp(comm, element)
+    if (is.null(sp)) {
+      tmp &lt;- seq(0, 60, length = 8)
+      sp &lt;- if (element == "Low") {
+        splines::interpSpline(tmp, 60 + 0.125 * tmp + sin(0.25 * tmp))
+      } else {
+        splines::interpSpline(tmp, 70 + 0.15 * tmp + sin((pi / 8) + 0.225 * tmp))
+      }
+    }
+    knots &lt;- sp$knots
+    yvals &lt;- stats::predict(sp, knots)$y
+    list(x = knots, y = yvals, spline = sp)
+  }
+  
+  init_high &lt;- get_spline_coords(community, "High")
+  init_low  &lt;- get_spline_coords(community, "Low")
+  init_min  &lt;- getTemp(community, "Min")
+  if (is.null(init_min) || is.na(init_min)) init_min &lt;- 50
+  
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    theme = app_theme,
+    
+    sidebar = bslib::sidebar(
+      width = 300,
+      shiny::div(
+        style = "font-size: 0.85rem; padding: 5px 0;",
+        shiny::div(
+          style = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;",
+          shiny::span("Active Curve:", style = "font-weight: bold; color: #1a73e8;"),
+          shiny::radioButtons(
+            "active_curve", NULL,
+            choices = c("High" = "High", "Low" = "Low"),
+            selected = "High",
+            inline = TRUE
+          )
+        ),
+        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+        shiny::div(
+          style = "margin-bottom: 6px;",
+          shiny::span("Day Knots (X):", style = "font-weight: 600; color: #7209b7; display: block; margin-bottom: 2px;"),
+          shiny::textInput("x_coords", NULL, value = paste(round(init_high$x, 1), collapse = ", "))
+        ),
+        shiny::div(
+          style = "margin-bottom: 6px;",
+          shiny::span("Temperatures °F (Y):", style = "font-weight: 600; color: #7209b7; display: block; margin-bottom: 2px;"),
+          shiny::textInput("y_coords", NULL, value = paste(round(init_high$y, 1), collapse = ", "))
+        ),
+        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+        shiny::div(
+          style = "display: flex; gap: 8px; align-items: flex-end; margin-top: 6px;",
+          shiny::div(
+            style = "flex: 1;",
+            shiny::span("Min Temp:", style = "font-weight: 600; color: #2ec4b6; display: block; margin-bottom: 2px;"),
+            shiny::numericInput("min_temp", NULL, value = init_min, min = 0, max = 120, step = 1)
+          ),
+          shiny::actionButton("reset_btn", "Reset", class = "btn-outline-secondary btn-sm", style = "height: 38px; margin-bottom: 0px;")
+        )
+      )
+    ),
+    
+    shiny::tags$head(
+      shiny::tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&amp;display=swap"),
+      shiny::tags$style(shiny::HTML("
+        body {
+          background-color: #f8f9fa;
+          font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .card {
+          background: #ffffff !important;
+          border: 1px solid rgba(0, 0, 0, 0.08) !important;
+          border-radius: 12px !important;
+          box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05);
+          transition: all 0.3s ease;
+          margin-bottom: 20px;
+        }
+        .card:hover {
+          border-color: rgba(26, 115, 232, 0.3) !important;
+        }
+        .card-header {
+          background: rgba(0, 0, 0, 0.02) !important;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+          font-weight: bold;
+        }
+        .sidebar {
+          background: #ffffff !important;
+          border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+        }
+      "))
+    ),
+    
+    shiny::fluidRow(
+      shiny::column(
+        width = 6,
+        bslib::card(
+          bslib::card_header("Daily High &amp; Low Temperature Splines (Click plot to move nodes)"),
+          bslib::card_body(
+            shiny::plotOutput("plot_temp", height = "500px", click = "temp_click")
+          )
+        )
+      ),
+      shiny::column(
+        width = 6,
+        bslib::card(
+          bslib::card_header("Degree-Day &amp; Temperature Dynamics: temp.plot()"),
+          bslib::card_body(
+            shiny::plotOutput("plot_degreeday", height = "500px")
+          )
+        )
+      )
+    ),
+    shiny::fluidRow(
+      shiny::column(
+        width = 12,
+        bslib::card(
+          bslib::card_header("Instructions &amp; Temperature Regime Overview"),
+          bslib::card_body(
+            shiny::HTML("
+              &lt;p&gt;&lt;strong&gt;Instructions:&lt;/strong&gt; Select the curve you wish to modify (&lt;em&gt;High Temperature&lt;/em&gt; or &lt;em&gt;Low Temperature&lt;/em&gt;) from the sidebar. Click directly on the &lt;em&gt;Daily High &amp; Low Temperature Splines&lt;/em&gt; plot to move individual knot coordinates. The coordinates will update in real time while maintaining strict day monotonicity.&lt;/p&gt;
+              &lt;p&gt;&lt;strong&gt;Background:&lt;/strong&gt; In the &lt;strong&gt;ewing&lt;/strong&gt; Quantitative Population Ethology framework, stage transitions and rate dynamics depend on degree-days (DD). Daily high and low temperature curves are modeled as cubic splines over time. Updating high/low temperatures dynamically recalculates degree-day accumulation via &lt;code&gt;activeTemp()&lt;/code&gt;.&lt;/p&gt;
+              &lt;ul style='padding-left: 20px; font-size: 0.9em;'&gt;
+                &lt;li&gt;&lt;strong style='color: #dc3545;'&gt;High Temperature (Red):&lt;/strong&gt; Peak temperature expected each day.&lt;/li&gt;
+                &lt;li&gt;&lt;strong style='color: #0d6efd;'&gt;Low Temperature (Blue):&lt;/strong&gt; Minimum temperature expected each day.&lt;/li&gt;
+                &lt;li&gt;&lt;strong&gt;Min Temp Threshold:&lt;/strong&gt; Base thermal threshold below which degree-days do not accumulate.&lt;/li&gt;
+              &lt;/ul&gt;
+            ")
+          )
+        )
+      )
+    )
+  )
+  
+  server = function(input, output, session) {
+    
+    # Store state for High and Low curves
+    state &lt;- shiny::reactiveValues(
+      high_x = init_high$x,
+      high_y = init_high$y,
+      low_x  = init_low$x,
+      low_y  = init_low$y,
+      current_active = "High"
+    )
+    
+    # Sync text inputs when active curve changes or state is updated
+    sync_text_inputs &lt;- function() {
+      if (state$current_active == "High") {
+        shiny::updateTextInput(session, "x_coords", value = paste(round(state$high_x, 2), collapse = ", "))
+        shiny::updateTextInput(session, "y_coords", value = paste(round(state$high_y, 2), collapse = ", "))
+      } else {
+        shiny::updateTextInput(session, "x_coords", value = paste(round(state$low_x, 2), collapse = ", "))
+        shiny::updateTextInput(session, "y_coords", value = paste(round(state$low_y, 2), collapse = ", "))
+      }
+    }
+    
+    # Observe active curve toggle
+    shiny::observeEvent(input$active_curve, {
+      state$current_active &lt;- input$active_curve
+      sync_text_inputs()
+    }, ignoreInit = TRUE)
+    
+    # Reset button handler
+    shiny::observeEvent(input$reset_btn, {
+      state$high_x &lt;- init_high$x
+      state$high_y &lt;- init_high$y
+      state$low_x  &lt;- init_low$x
+      state$low_y  &lt;- init_low$y
+      shiny::updateNumericInput(session, "min_temp", value = init_min)
+      sync_text_inputs()
+    })
+    
+    # Handle click on temperature plot to reposition closest node
+    shiny::observeEvent(input$temp_click, {
+      cx &lt;- input$temp_click$x
+      cy &lt;- input$temp_click$y
+      
+      x_curr &lt;- if (state$current_active == "High") state$high_x else state$low_x
+      y_curr &lt;- if (state$current_active == "High") state$high_y else state$low_y
+      
+      n &lt;- length(x_curr)
+      if (n &lt; 3) return()
+      
+      # Find nearest node in normalized distance
+      xr &lt;- max(x_curr) - min(x_curr)
+      yr &lt;- max(y_curr) - min(y_curr)
+      if (xr == 0) xr &lt;- 1
+      if (yr == 0) yr &lt;- 1
+      
+      dists &lt;- ((x_curr - cx) / xr)^2 + ((y_curr - cy) / yr)^2
+      idx &lt;- which.min(dists)
+      
+      # Monotonicity bounds for Day (X)
+      min_x &lt;- if (idx == 1) x_curr[1] else x_curr[idx - 1] + 0.01
+      max_x &lt;- if (idx == n) x_curr[n] else x_curr[idx + 1] - 0.01
+      new_x &lt;- max(min_x, min(max_x, cx))
+      
+      x_curr[idx] &lt;- new_x
+      y_curr[idx] &lt;- cy
+      
+      if (state$current_active == "High") {
+        state$high_x &lt;- x_curr
+        state$high_y &lt;- y_curr
+      } else {
+        state$low_x  &lt;- x_curr
+        state$low_y  &lt;- y_curr
+      }
+      
+      sync_text_inputs()
+    })
+    
+    # Parse text inputs when user edits text directly
+    shiny::observeEvent(list(input$x_coords, input$y_coords), {
+      shiny::req(input$x_coords, input$y_coords)
+      
+      x_vals &lt;- tryCatch(as.numeric(trimws(strsplit(input$x_coords, ",")[[1]])), error = function(e) NA)
+      y_vals &lt;- tryCatch(as.numeric(trimws(strsplit(input$y_coords, ",")[[1]])), error = function(e) NA)
+      
+      if (length(x_vals) &gt;= 3 &amp;&amp; length(x_vals) == length(y_vals) &amp;&amp; 
+          !any(is.na(x_vals)) &amp;&amp; !any(is.na(y_vals)) &amp;&amp; all(diff(x_vals) &gt; 0)) {
+        if (state$current_active == "High") {
+          state$high_x &lt;- x_vals
+          state$high_y &lt;- y_vals
+        } else {
+          state$low_x  &lt;- x_vals
+          state$low_y  &lt;- y_vals
+        }
+      }
+    })
+    
+    # Rebuild simulation community with active splines
+    sim_reactive &lt;- shiny::reactive({
+      shiny::req(input$min_temp)
+      
+      # Validate coordinate lengths and monotonicity
+      shiny::validate(
+        shiny::need(length(state$high_x) == length(state$high_y), "High temp X &amp; Y must have equal length."),
+        shiny::need(length(state$low_x)  == length(state$low_y),  "Low temp X &amp; Y must have equal length."),
+        shiny::need(length(state$high_x) &gt;= 3, "High temp spline requires at least 3 nodes."),
+        shiny::need(length(state$low_x)  &gt;= 3, "Low temp spline requires at least 3 nodes."),
+        shiny::need(all(diff(state$high_x) &gt; 0), "High temp Day knots must be strictly increasing."),
+        shiny::need(all(diff(state$low_x)  &gt; 0), "Low temp Day knots must be strictly increasing.")
+      )
+      
+      tryCatch({
+        sp_high &lt;- splines::interpSpline(state$high_x, state$high_y)
+        sp_low  &lt;- splines::interpSpline(state$low_x,  state$low_y)
+        
+        comm &lt;- community
+        comm &lt;- setTemp(comm, "High", sp_high)
+        comm &lt;- setTemp(comm, "Low",  sp_low)
+        comm &lt;- setTemp(comm, "Min",  input$min_temp)
+        
+        # Calculate active temperature degree-day integration
+        comm &lt;- activeTemp(comm, messages = FALSE)
+        
+        list(community = comm, high_spline = sp_high, low_spline = sp_low)
+      }, error = function(e) {
+        shiny::validate(paste("Error constructing temperature splines:", e$message))
+      })
+    })
+    
+    # Render daily high &amp; low temperature splines plot
+    output$plot_temp &lt;- shiny::renderPlot({
+      res &lt;- sim_reactive()
+      shiny::req(res)
+      
+      high_sp &lt;- res$high_spline
+      low_sp  &lt;- res$low_spline
+      
+      x_range &lt;- range(c(state$high_x, state$low_x))
+      pred_x  &lt;- seq(x_range[1], x_range[2], length.out = 200)
+      
+      pred_high &lt;- stats::predict(high_sp, pred_x)$y
+      pred_low  &lt;- stats::predict(low_sp,  pred_x)$y
+      
+      y_range &lt;- range(c(pred_high, pred_low, state$high_y, state$low_y))
+      
+      graphics::par(bg = "white", col.axis = "#495057", col.lab = "#212529", col.main = "#1a73e8", fg = "#cccccc")
+      graphics::plot(pred_x, pred_high, type = "l", col = "#dc3545", lwd = 3,
+                     xlim = x_range, ylim = y_range,
+                     xlab = "Day", ylab = "Temperature (°F)",
+                     main = "Daily High &amp; Low Temperature Splines",
+                     panel.first = graphics::grid(col = "#e9ecef", lty = 1))
+      
+      graphics::lines(pred_x, pred_low, col = "#0d6efd", lwd = 3)
+      
+      # Plot nodes
+      graphics::points(state$high_x, state$high_y, col = "#dc3545", pch = 19, cex = 1.6)
+      graphics::points(state$low_x,  state$low_y,  col = "#0d6efd", pch = 19, cex = 1.6)
+      
+      # Highlight nodes for currently active curve
+      if (state$current_active == "High") {
+        graphics::points(state$high_x, state$high_y, col = "#7209b7", pch = 1, cex = 2.6, lwd = 2)
+      } else {
+        graphics::points(state$low_x,  state$low_y,  col = "#7209b7", pch = 1, cex = 2.6, lwd = 2)
+      }
+      
+      graphics::legend("topright", legend = c("High Temp", "Low Temp", "Active Knots"),
+                       col = c("#dc3545", "#0d6efd", "#7209b7"),
+                       lty = c(1, 1, NA), pch = c(19, 19, 1), lwd = c(2, 2, 2), bty = "n")
+    })
+    
+    # Render degree-day calculation plot using temp.plot()
+    output$plot_degreeday &lt;- shiny::renderPlot({
+      res &lt;- sim_reactive()
+      shiny::req(res)
+      
+      graphics::par(bg = "white", col.axis = "#495057", col.lab = "#212529", col.main = "#2ec4b6", fg = "#cccccc")
+      temp.plot(res$community, main = "Degree-Day Dynamics over Time")
+    })
+  }
+  
+  shiny::shinyApp(ui = ui, server = server)
+}
 
 # --- Launch Application ---
 
