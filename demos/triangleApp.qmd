@@ -14,33 +14,15 @@ format:
 
 The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). You can interactively adjust substrate width, step density, toggle plant modules, and inspect spatial grid statistics.
 
-```{r, echo=FALSE, results='asis'}
-inc_files <- c("R/triangle.R", "R/substrate_triangle.R", "R/triangleApp.R")
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 750
+#| components: [viewer]
 
-cat("```{shinylive-r}\n")
-cat("#| standalone: true\n")
-cat("#| viewerHeight: 750\n")
-cat("#| components: [viewer]\n\n")
+webr::install("byandell/ewing")
+library(ewing)
 
-cat("library(shiny)\n")
-cat("library(bslib)\n")
-cat("library(ggplot2)\n")
-cat("library(stats)\n\n")
-
-for (f in inc_files) {
-  fp <- file.path("..", f)
-  if (file.exists(fp)) {
-    lines <- readLines(fp, warn = FALSE)
-    lines <- lines[!grepl("^\\s*#'", lines)]
-    cat(paste0("# --- Auto-Included from ", f, " ---\n\n"))
-    cat(paste(lines, collapse = "\n"))
-    cat("\n\n")
-  }
-}
-
-cat("# --- Launch Application ---\n\n")
-cat("triangleApp()\n")
-cat("```\n")
+triangleApp()
 ```
 
 ---

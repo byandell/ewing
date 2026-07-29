@@ -14,41 +14,15 @@ format:
 
 The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). It provides a streamlined **Systems Ethology platform (`sysetholApp()`)** with clean sidebar controls (`sysetholInput`), dynamic conditional panels (`Steps per click` log-scale geometric slider when `nsim = 1`, `Confidence Band` when `nsim > 1`), sidebar **Run Engine** & **Reset** buttons, and modular tabs (`sysetholOutput`: **Dist Plots** fine time-granularity step plots, **Substrate Plots**, **Envelope Plots**, and **Input Data** via `inputApp`).
 
-```{r, echo=FALSE, results='asis'}
-inc_files <- c(
-  "R/triangle.R", "R/community.R", "R/Org.R", "R/event.R", "R/event.future.R",
-  "R/organism.features.R", "R/host.parasite.R", "R/init.simulation.R", "R/init.population.R",
-  "R/future.host.R", "R/future.events.R", "R/future.R",
-  "R/substrate.host.R", "R/substrate_triangle.R", "R/ewing_substrate.R", "R/ewing_ageclass.R",
-  "R/ewing_discrete.R", "R/ewing_envelope.R", "R/ggplot_ewing.R", "R/ggplot_current.R",
-  "R/temp.R", "R/inputApp.R", "R/distPlotApp.R", "R/envPlotApp.R", "R/substrateApp.R", "R/sysetholApp.R"
-)
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 880
+#| components: [viewer]
 
-cat("```{shinylive-r}\n")
-cat("#| standalone: true\n")
-cat("#| viewerHeight: 880\n")
-cat("#| components: [viewer]\n\n")
+webr::install("byandell/ewing")
+library(ewing)
 
-cat("library(shiny)\n")
-cat("library(bslib)\n")
-cat("library(ggplot2)\n")
-cat("library(cowplot)\n")
-cat("library(stats)\n\n")
-
-for (f in inc_files) {
-  fp <- file.path("..", f)
-  if (file.exists(fp)) {
-    lines <- readLines(fp, warn = FALSE)
-    lines <- lines[!grepl("^\\s*#'", lines)]
-    cat(paste0("# --- Auto-Included from ", f, " ---\n\n"))
-    cat(paste(lines, collapse = "\n"))
-    cat("\n\n")
-  }
-}
-
-cat("# --- Launch Application ---\n\n")
-cat("sysetholApp()\n")
-cat("```\n")
+sysetholApp()
 ```
 
 ---

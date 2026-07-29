@@ -36,33 +36,23 @@ ewing/
 
 ## 2. Key Design Patterns & Engineering Solutions
 
-### A. Dynamic R Source File Inlining (`inc_files`)
-To eliminate code and data duplication between package source files (`R/*.R`, `data/*.txt`) and the serverless WebAssembly Shinylive documents, all `.qmd` demonstration applications use dynamic `results='asis'` knitr code blocks.
+### A. Standard WebAssembly Package Installation (`webr::install`)
+To eliminate code and data duplication between package source files (`R/`, `data/`) and the serverless WebAssembly Shinylive demo documents in `demos/*.qmd`, all `.qmd` demonstration applications use the standard **`webr::install()`** WebAssembly package installer.
 
 ```r
-```{r, echo=FALSE, results='asis'}
-inc_files <- c("R/triangle.R", "R/community.R", "R/Org.R", 
-               "R/substrate_triangle.R", "R/ewing_substrate.R", "R/sysetholApp.R")
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 880
+#| components: [viewer]
 
-cat("```{shinylive-r}\n")
-cat("#| standalone: true\n")
-cat("#| viewerHeight: 880\n\n")
+webr::install("byandell/ewing")
+library(ewing)
 
-cat("library(shiny)\nlibrary(bslib)\nlibrary(ggplot2)\n\n")
-
-# Inlining R source files directly into Shinylive block
-for (f in inc_files) {
-  if (file.exists(f)) {
-    cat(paste0("# --- Inlined: ", f, " ---\n"))
-    cat(readLines(f), sep = "\n")
-    cat("\n\n")
-  }
-}
-
-cat("shinyApp(ui = sysetholUI(), server = function(input, output, session) { sysetholServer(...) })\n")
-cat("```\n")
+sysetholApp()
 ```
 ```
+
+This standard 5-line architecture lets browser `webR` load the installed `ewing` package namespace directly, ensuring 100% code parity without requiring build-time string splicing or file concatenation.
 
 ### B. Non-Self-Contained WebAssembly Output (`embed-resources: false`)
 Shinylive applications execute browser WebAssembly (`webR`) workers and service workers (`shinylive-sw.js`). Modern browser security models block WebWorkers when embedded inside standalone data URIs. Setting `embed-resources: false` in `demos/_quarto.yml` ensures Quarto emits modular static web files (`.html`, `.js`, `.css`) compatible with browser security requirements.

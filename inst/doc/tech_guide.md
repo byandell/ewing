@@ -57,10 +57,10 @@ The Technical Guide is organized into five specialized domain vignettes under `v
   - Published `demos/hexmapApp.qmd` linking static autoplots and live Posit Connect web applications.
 
 ### V. UI Architecture ([ui.Rmd](../../vignettes/tech_guide/ui.Rmd))
-- **Prompts**: Detail the modular Shiny architecture upgrading `ewingApp()`, dynamic `results='asis'` R file inlining (`inc_files`) for Shinylive documents, and download safety wrappers.
+- **Prompts**: Detail the modular Shiny architecture upgrading `ewingApp()`, standard `webr::install("byandell/ewing")` WebAssembly package loading for Shinylive documents, and download safety wrappers.
 - **Results**:
-  - Formulated the code-reuse architecture allowing `.qmd` demos to dynamically read `R/*.R` source scripts at build time.
-  - Eliminated manual duplication between package R functions and WebAssembly Shinylive applications.
+  - Formulated the code-reuse architecture allowing `.qmd` demos to load the installed R package directly via `webr::install()` in client-side WebAssembly.
+  - Eliminated build-time string concatenation hacks and manual code duplication between package R functions and WebAssembly Shinylive applications.
 
 ---
 
@@ -70,7 +70,7 @@ While the Technical Guide focuses on the R vignette documentation (`vignettes/te
 
 Refer to **[demo_guide.md](demo_guide.md)** for:
 - Architecture of the Quarto Shinylive WebAssembly Demos Gallery (`demos/_quarto.yml`).
-- Dynamic `results='asis'` R code inlining (`inc_files`) to avoid code duplication with package R files.
+- Standard WebAssembly package installation (`webr::install("byandell/ewing")`) to ensure 100% code parity with package R files.
 - GitHub Pages Jekyll 404 resolution (`Content not found. Please use links in the navbar`) via `touch docs/.nojekyll`.
 - Top navbar reorganization (`_pkgdown.yml`) placing **Demos** before **Guides**.
 - Adding **Main Site** return navigation links (`href: ../index.html`) in Quarto headers.
