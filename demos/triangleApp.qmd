@@ -14,15 +14,9 @@ format:
 
 The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). You can interactively adjust substrate width, step density, toggle plant modules, and inspect spatial grid statistics.
 
-```{shinylive-r}
-#| standalone: true
-#| viewerHeight: 750
-#| components: [viewer]
-
-webr::install("byandell/ewing")
-library(ewing)
-
-triangleApp()
+```{r, echo=FALSE, results='asis'}
+source("shinylive_helpers.R")
+render_standalone_app("triangleApp", height = 750)
 ```
 
 ---

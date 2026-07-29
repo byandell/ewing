@@ -31,24 +31,31 @@ ewing/
 
 ---
 
-## 2. WebAssembly Design Pattern (`webr::install`)
+## 2. WebAssembly Design Pattern (`demos/shinylive_helpers.R`)
 
-All `.qmd` demonstration applications in `demos/` use `webr::install()` to load the package namespace directly in browser WebAssembly (`webR`):
+All `.qmd` demonstration applications in `demos/` use the targeted **`render_standalone_app()`** architecture defined in [`shinylive_helpers.R`](../demos/shinylive_helpers.R). Rather than forcing webR to download `byandell/ewing` along with 120+ heavy R dependencies (such as `sf`, `leaflet`, and `readxl`) via `webr::install()`, this pattern dynamically bundles only the specific R source files required for each interactive application using standard pre-installed webR libraries (`shiny`, `bslib`, `ggplot2`, `splines`, `stats`, `graphics`).
 
 ```r
-```{shinylive-r}
-#| standalone: true
-#| viewerHeight: 880
-#| components: [viewer]
-
-webr::install("byandell/ewing")
-library(ewing)
-
-sysetholApp()
+```{r, echo=FALSE, results='asis'}
+source("shinylive_helpers.R")
+render_standalone_app("sysetholApp", height = 880)
 ```
 ```
 
-This ensures 100% code parity between package functions and browser applications without code duplication.
+### Key Technical Details
+
+1. **Roxygen2 Protection & Vector Safety**:
+   To prevent Pandoc JSON string serialization errors during Quarto rendering, `shinylive_helpers.R` strips all `#'` roxygen docstrings before outputting code blocks:
+   ```r
+   lines <- lines[!grepl("^\\s*#'", lines)]
+   ```
+   This uses `!grepl(...)` (rather than `!grep(...)`) to strictly follow R vector subsetting safety.
+
+2. **Auto-Embedded Default Data Tables**:
+   For simulation apps (`sysetholApp` and `hexmoveApp`), `shinylive_helpers.R` reads configuration tables from `data/*.txt` (`organism.features`, `future.host`, `future.parasite`, `substrate.*`, `temperature.*`, `host.parasite`, `redscale`) and embeds them as pre-parsed data frames via `dput()` directly in `.GlobalEnv`. When `init.simulation()` or `mydata()` runs in the browser, all datasets are immediately available offline.
+
+3. **Zero Network & Installation Overhead**:
+   Applications initialize in milliseconds in the browser with 100% code parity and zero network dependency download delays.
 
 ---
 

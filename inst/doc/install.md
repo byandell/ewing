@@ -1,30 +1,23 @@
 
-All Shinylive WebAssembly demonstration applications and documentation have been refactored to the standard **`webr::install()`** architecture.
+All Shinylive WebAssembly demonstration applications and documentation have been refactored to the targeted **`demos/shinylive_helpers.R`** architecture.
 
-### Summary of Changes
+### Summary of Architecture & Design
 
-1. **Refactored Quarto Shinylive Demo Applications (`demos/*.qmd`)**:
-   Replaced all `knitr` `readLines()` / `inc_files` code-splicing blocks across all 6 demo documents ([sysetholApp.qmd](../demos/sysetholApp.qmd), [fivePlotApp.qmd](../demos/fivePlotApp.qmd), [fiveShowApp.qmd](../demos/fiveShowApp.qmd), [tempApp.qmd](../demos/tempApp.qmd), [triangleApp.qmd](../demos/triangleApp.qmd), [hexmoveApp.qmd](../demos/hexmoveApp.qmd)) with standard, 5-line `webr::install()` blocks:
+1. **Targeted Quarto Shinylive Demo Applications (`demos/*.qmd`)**:
+   All 6 Shinylive demo documents ([sysetholApp.qmd](../demos/sysetholApp.qmd), [fivePlotApp.qmd](../demos/fivePlotApp.qmd), [fiveShowApp.qmd](../demos/fiveShowApp.qmd), [tempApp.qmd](../demos/tempApp.qmd), [triangleApp.qmd](../demos/triangleApp.qmd), [hexmoveApp.qmd](../demos/hexmoveApp.qmd)) use `render_standalone_app()` to dynamically bundle app-specific R code blocks:
 
    ```r
-   ```{shinylive-r}
-   #| standalone: true
-   #| viewerHeight: 880
-   #| components: [viewer]
-
-   webr::install("byandell/ewing")
-   library(ewing)
-
-   sysetholApp()
+   ```{r, echo=FALSE, results='asis'}
+   source("shinylive_helpers.R")
+   render_standalone_app("sysetholApp", height = 880)
+   ```
    ```
 
-   ```
+2. **Roxygen2 Protection & Subsetting Safety**:
+   Strips all `#'` roxygen docstrings before outputting code blocks (`lines[!grepl("^\\s*#'", lines)]`) to prevent Pandoc JSON string serialization errors, following R vector subsetting safety (`!grepl`).
 
-2. **Updated Technical Guide Vignette ([ui.Rmd](../vignettes/tech_guide/ui.Rmd))**:
-   Updated Section 1 (Serverless WebAssembly Integration) to document the `webr::install("byandell/ewing")` pattern and function launcher mappings.
+3. **Auto-Embedded Default Data Tables**:
+   Default configuration datasets from `data/*.txt` (`organism.features`, `future.host`, `future.parasite`, `substrate.*`, `temperature.*`, `host.parasite`, `redscale`) are serialized via `dput()` directly into `.GlobalEnv` for simulation apps (`sysetholApp`, `hexmoveApp`).
 
-3. **Updated Package Meta-Documentation ([demo_guide.md](../inst/doc/demo_guide.md) & [tech_guide.md](../inst/doc/tech_guide.md))**:
-   Updated the design pattern sections to reflect the clean `webr::install()` pattern.
-
-4. **Pushed to GitHub ([4aff1a6](https://github.com/byandell/ewing/commit/4aff1a6))**:
-   Pushed commit `4aff1a6` to `master`. GitHub Actions is building and deploying the simplified static pages to `gh-pages`.
+4. **Zero Wasm Package Downloads**:
+   Eliminates `webr::install()` network delays and heavy C++/Wasm GIS dependencies (`sf`, `leaflet`, `readxl`). Applications use only standard pre-installed webR packages (`shiny`, `bslib`, `ggplot2`, `splines`, `stats`, `graphics`).
