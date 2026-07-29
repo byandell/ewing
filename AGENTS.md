@@ -126,6 +126,10 @@ Key packages: `dplyr`, `tidyr`, `ggplot2`, `tibble`, `rlang`, `purrr`,
 
 ## Shinylive & Development Guidelines
 
+- **No Automatic Git Commit/Push:** Prepare file edits and run local
+  verifications (`quarto render`, etc.), but DO NOT execute `git commit`
+  or `git push`. Leave all staging, committing, and pushing for the user
+  to execute manually.
 - **Standard Helper Pattern:** All Quarto Shinylive `.qmd` demos in
   `demos/` should use `source("include_ewing.R")` and
   `render_shinylive_app("appFunction()", height = ...)` to dynamically
