@@ -233,9 +233,3730 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 #| viewerHeight: 880
 #| components: [viewer]
 
-webr::install("byandell/ewing")
-library(ewing)
+library(shiny)
+library(bslib)
+library(ggplot2)
+library(splines)
+library(stats)
+library(graphics)
 
+# --- Auto-Included Data Table: future.host ---
+future.host &lt;- structure(list(current = c("crawler", "first.instar", "first.molt", 
+"second.1", "second.2", "second.3", "second.3", "female", "male", 
+"second.molt", "third.1", "third.2", "third.3", "virgin", "gravid", 
+"death", "starved"), future = c("first.instar", "first.molt", 
+"second.1", "second.2", "second.3", "female", "male", "second.molt", 
+"death", "third.1", "third.2", "third.3", "virgin", "gravid", 
+"gravid", "death", "death"), fid = c(2L, 3L, 4L, 5L, 6L, 8L, 
+9L, 10L, 16L, 11L, 12L, 13L, 14L, 15L, 15L, 16L, 16L), time = c(55L, 
+92L, 48L, 30L, 30L, 52L, 52L, 0L, 0L, 48L, 55L, 55L, 95L, 90L, 
+10L, 0L, 0L), pch = c("0", "1", "1", "2", "2", "2", "2", "2", 
+"2", "2", "3", "3", "3", "V", "G", "D", "D"), color = c("brown", 
+"green", "green", "turquoise", "turquoise", "turquoise", "turquoise", 
+"turquoise", "turquoise", "turquoise", "blue", "blue", "blue", 
+"violet", "black", "red", "red"), ageclass = c("crawler", "host", 
+"host", "host", "host", "host", "host", "host", "host", "host", 
+"host", "host", "host", "host", "gravid", NA, "gravid"), event = c("future", 
+"future", "future", "future", "future", "future", "future", "future", 
+"future", "future", "future", "future", "future", "future", "birth", 
+"death", "future"), init = c(10L, 4L, 4L, 1L, 1L, 1L, 1L, 0L, 
+0L, 1L, 1L, 1L, 1L, 1L, 2L, 0L, 0L)), class = "data.frame", row.names = c("1", 
+"2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", 
+"14", "15", "16", "17"))
+
+
+# --- Auto-Included Data Table: future.parasite ---
+future.parasite &lt;- structure(list(current = c("egg", "larvae", "prepupae", "pupae", 
+"adult", "adult", "feed", "ovip", "death", "male", "starved"), 
+    future = c("larvae", "prepupae", "pupae", "adult", "feed", 
+    "ovip", "adult", "adult", "death", "death", "death"), fid = c(2L, 
+    3L, 4L, 5L, 7L, 8L, 5L, 5L, 9L, 9L, 9L), time = c(48L, 60L, 
+    24L, 144L, 12L, 12L, 12L, 12L, 0L, 0L, 0L), pch = c("E", 
+    "L", "p", "P", "F", "H", "F", "H", "D", "D", "D"), color = c("brown", 
+    "green", "turquoise", "blue", "orange", "purple", "orange", 
+    "purple", "red", "red", "red"), ageclass = c("young", "young", 
+    "young", "young", "adult", "adult", "adult", "adult", NA, 
+    "adult", "adult"), event = c("future", "future", "future", 
+    "future", "future", "future", "attack", "attack", "death", 
+    "future", "future"), init = c(10L, 5L, 3L, 2L, 1L, 0L, 0L, 
+    0L, 0L, 0L, 0L)), class = "data.frame", row.names = c("1", 
+"2", "3", "4", "5", "6", "7", "8", "9", "10", "11"))
+
+
+# --- Auto-Included Data Table: host.parasite ---
+host.parasite &lt;- structure(list(ovip = c(0L, 0L, 0L, 0L, 3L, 4L, 2L, 3L, 5L, 5L, 
+2L, 0L, 0L, 0L, 0L, 0L), feed = c(0L, 5L, 2L, 5L, 2L, 1L, 0L, 
+0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L), offspring = c(0, 0, 0, 0, 
+0, 0, 0, 1.3, 1.3, 1.3, 2.7, 0, 0, 0, 0, 0), male = c(NA, 5L, 
+5L, 5L, 5L, 5L, 4L, 2L, 1L, 1L, 0L, NA, NA, NA, NA, NA)), class = "data.frame", row.names = c("crawler", 
+"first.instar", "first.molt", "second.1", "second.2", "second.3", 
+"second.molt", "third.1", "third.2", "third.3", "virgin", "gravid", 
+"death", "parasite", "male", "female"))
+
+
+# --- Auto-Included Data Table: organism.features ---
+organism.features &lt;- structure(list(units = c("DD", "hr", NA), offspring = c("20", 
+"host", NA), attack = c(NA, "host", NA), birth = c("gravid", 
+NA, NA), substrate = c("substrate", "substrate", NA), deplete = c(100L, 
+48L, NA), subclass = c("host", "adult", NA), parasite = c(NA, 
+"ecto", NA), move = c("crawler", "adult", NA)), class = "data.frame", row.names = c("host", 
+"parasite", "substrate"))
+
+
+# --- Auto-Included Data Table: redscale ---
+redscale &lt;- structure(list(DD = c(-5L, 0L, 0L, 55L, 147L, 195L, 225L, 255L, 
+307L, 355L, 410L, 465L, 560L, 650L, 651L), aphytis.feed = c(0L, 
+0L, 0L, 5L, 2L, 5L, 2L, 1L, 0L, 0L, 0L, 0L, 0L, 0L, 0L), aphytis = c(0L, 
+0L, 0L, 0L, 0L, 0L, 3L, 4L, 2L, 3L, 5L, 5L, 2L, 0L, 0L), comperiella = c(0, 
+0, 0, 3, 3, 2, 2, 3, 4, 5, 5, 5, 3.5, 0, 0), encarsia = c(0, 
+0, 0, 4, 3.5, 5, 5, 5, 4.5, 4.5, 4, 3, 3, 0, 0), gender = c("either", 
+"either", "neuter", "neuter", "neuter", "neuter", "neuter", "neuter", 
+"female", "female", "female", "female", "female", "female", "female"
+), pch = c("P", "P", "0", "1", "1", "2", "2", "2", "2", "3", 
+"3", "3", "V", "G", "D"), color = c("white", "white", "brown", 
+"green", "green", "turquoise", "turquoise", "turquoise", "turquoise", 
+"blue", "blue", "blue", "violet", "black", "red"), stage = c("parasite", 
+"parasite", "crawler", "first.instar", "first.molt", "second.1", 
+"second.2", "second.3", "second.molt", "third.1", "third.2", 
+"third.3", "virgin", "gravid", "death")), class = "data.frame", row.names = c(NA, 
+-15L))
+
+
+# --- Auto-Included Data Table: substrate.host ---
+substrate.host &lt;- structure(list(substrate = c("fruit", "fruit", "fruit", "fruit", 
+"twig", "leaf", "leaf"), side = c("1", "2", "3", "4", NA, "top", 
+"bottom"), init = c(1L, 1L, 1L, 1L, 1L, 5L, 0L), find = c(5L, 
+5L, 5L, 5L, 1L, 3L, 2L), move = c(1L, 1L, 1L, 1L, 5L, 3L, 4L), 
+    fruit = c(3L, 3L, 3L, 3L, 3L, 3L, 3L), twig = c(2L, 2L, 2L, 
+    2L, 1L, 2L, 1L), leaf = c(1L, 1L, 1L, 1L, 2L, 1L, 2L)), class = "data.frame", row.names = c("fr1", 
+"fr2", "fr3", "fr4", "twig", "lftop", "lfbot"))
+
+
+# --- Auto-Included Data Table: substrate.parasite ---
+substrate.parasite &lt;- structure(list(substrate = c("fruit", "fruit", "fruit", "fruit", 
+"twig", "leaf", "leaf"), side = c("1", "2", "3", "4", NA, "top", 
+"bottom"), init = c(1L, 1L, 1L, 1L, 1L, 5L, 0L), find = c(5L, 
+5L, 5L, 5L, 1L, 3L, 2L), move = c(1L, 1L, 1L, 1L, 5L, 3L, 4L), 
+    fruit = c(3L, 3L, 3L, 3L, 3L, 3L, 3L), twig = c(2L, 2L, 2L, 
+    2L, 1L, 2L, 1L), leaf = c(1L, 1L, 1L, 1L, 2L, 1L, 2L)), class = "data.frame", row.names = c("fr1", 
+"fr2", "fr3", "fr4", "twig", "lftop", "lfbot"))
+
+
+# --- Auto-Included Data Table: substrate.substrate ---
+substrate.substrate &lt;- structure(list(fr1 = c(0L, 1L, 1L, 1L, 1L, 1L, 1L), fr2 = c(1L, 
+0L, 1L, 1L, 1L, 1L, 1L), fr3 = c(1L, 1L, 0L, 1L, 1L, 1L, 1L), 
+    fr4 = c(1L, 1L, 1L, 0L, 1L, 1L, 1L), twig = c(1L, 1L, 1L, 
+    1L, 1L, 1L, 1L), lftop = c(1L, 1L, 1L, 1L, 1L, 1L, 1L), lfbot = c(1L, 
+    1L, 1L, 1L, 1L, 1L, 1L)), class = "data.frame", row.names = c("fr1", 
+"fr2", "fr3", "fr4", "twig", "lftop", "lfbot"))
+
+
+# --- Auto-Included Data Table: temperature.base ---
+temperature.base &lt;- structure(list(Day = c(0L, 0L, 0L, 0L, 0L, 30L, 30L, 30L, 30L, 
+30L, 30L), Time = c(0L, 8L, 12L, 18L, 20L, 0L, 8L, 12L, 15L, 
+18L, 20L), Base = c(0L, 0L, 100L, 75L, 0L, 0L, 0L, 80L, 100L, 
+80L, 60L)), class = "data.frame", row.names = c(NA, -11L))
+
+
+# --- Auto-Included Data Table: temperature.par ---
+temperature.par &lt;- structure(list(value = c(24L, 200L, 52L, 70L, 75L, 85L, 90L, 
+8L), description = c("hours in day", "number of days", "minimum temperature for degree-day calculation (Fahrenheit)", 
+"begining daily low temperature", "ending daily low temperature", 
+"begining daily high temperature", "ending daily high temperature", 
+"number of nodes for interpolating spline")), class = "data.frame", row.names = c("Unit", 
+"Days", "Min", "LowBeg", "LowEnd", "HighBeg", "HighEnd", "Length"
+))
+
+
+# --- Source: spline.R ---
+## $Id: spline.R,v 1.0 2002/12/09 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###########################################################################################
+## Support routines for future.meanvalue
+###########################################################################################
+spline.rate &lt;- function( meanvalue, x )
+{
+  coeff &lt;- stats::coef( meanvalue )
+  for( i in 2:ncol( coeff ))
+    coeff[,i-1] &lt;- i * coeff[,i]
+  coeff[,ncol( coeff ) ] &lt;- 0
+  meanvalue$coefficients &lt;- coeff
+  if( missing( x ))
+    stats::predict( meanvalue )
+  else
+    stats::predict( meanvalue, x )
+}
+###########################################################################################
+spline.deriv &lt;- function( s )
+{
+  s$coefficients &lt;- s$coefficients[,-1]
+  for( i in seq( 2, ncol( s$coefficients )))
+    s$coefficients[,i] &lt;- s$coefficients[,i] * i
+  s
+}
+###########################################################################################
+splinesum &lt;- function( xy, fit = splines::interpSpline( xy$x, xy$y ),
+                       log2 = log( 2 ), tol = 1e-5 )
+{
+  n &lt;- nrow( xy )
+  ## mean time to future event (assume linear off end )
+  maxx &lt;- xy[n,"x"]
+  mean.y &lt;- maxx * mean( exp( - stats::predict( fit )$y )) + xy[1,"x"]
+  rate &lt;- spline.rate( fit, maxx )$y
+  if( rate &gt; tol )
+    mean.y &lt;- mean.y + exp( - xy[n,"y"] ) / rate
+
+  ## median time to future event
+  adiff &lt;- diff( stats::coef( fit )[,1] )
+  ## undefined if mean value function not monotone
+  if( !( all( adiff &lt; 0) || all( adiff &gt; 0 )))
+    median.y &lt;- NA
+  else {
+    invmvalue &lt;- splines::backSpline( fit )
+    median.y &lt;- stats::predict( invmvalue, log2 )$y
+    if( is.na( median.y ))
+      median.y &lt;- spline.extrapolate( fit, invmvalue, log2 )
+  }
+  c( mean = mean.y, median = median.y )
+}
+###########################################################################################
+summaryshow &lt;- function( xy, fit, col = "black", sums = splinesum( xy, fit ))
+{
+  tmpar &lt;- graphics::par( col = col )
+  graphics::mtext( paste( "mean =", round( sums[1], 2 )), 3, at = graphics::par("usr")[1], adj = 0 )
+  medianshow &lt;- if( is.na( sums[2] ))
+    "curve not monotone"
+  else
+    paste( "median =", round( sums[2], 2 ))
+  graphics::mtext( medianshow, 3, at = graphics::par("usr")[2] / 1.25, adj = 1 )
+  graphics::par( tmpar )
+  invisible( sums )
+}
+###########################################################################################
+curve.plot &lt;- function( xy = seq(0,1,by=.25), y = c(0,.1,.5,.9,1),
+  z = graphics::locator(1,"n"), n=5, action="add",
+  fit = splines::interpSpline( xy$x, xy$y ),
+  backfit = TRUE, save.ends = 3, col = c("blue","red"), lwd = 4,
+  f = function( x ) x, finv = function( x ) x )
+{
+  if( !is.list( xy )) {
+    xy &lt;- data.frame( x = xy )
+    xy$y &lt;- y
+  }
+  else
+    xy &lt;- as.data.frame( xy )
+  if( !match( action, c("refresh","finish"), nomatch = 0 )) {
+    z &lt;- as.data.frame(z)
+    tmp &lt;- z$x &gt; max( xy$x )
+    if( any( tmp )) {
+      if( all( tmp ))
+        return( xy )
+      z$x &lt;- z$x[!tmp]
+      z$y &lt;- z$y[!tmp]
+    }
+  }
+  remove.points &lt;- function( xy, finv, save.ends = TRUE ) {
+    ## find closest point after standardizing distances
+    usr &lt;- graphics::par( "usr" )
+    tmp &lt;- (( xy$x - z$x ) / diff( usr[1:2] )) ^ 2 +
+      (( xy$y - z$y ) / diff( usr[3:4] )) ^ 2
+    if( save.ends )
+      tmp &lt;- tmp[ - c( 1, nrow( xy )) ]
+    tmp &lt;- save.ends + min( seq( tmp )[ tmp == min( tmp ) ] )
+    tmpd &lt;- xy[tmp,"y"]
+    tmpd &lt;- finv( tmpd )
+    graphics::points( xy[tmp,"x"], tmpd, lwd = lwd, col = "white" ) 
+    tmp
+  }
+  for( i in 1:n) {
+    switch( action,
+      noaction =
+        return( xy )
+      ,
+      add = {
+        graphics::points(z$x,z$y, lwd = lwd )
+        z$y &lt;- f( z$y )
+        xy &lt;- rbind(xy,z)
+        xy &lt;- xy[order(xy$x),]
+        fit &lt;- splines::interpSpline( xy$x, xy$y )
+      },
+      replace = {
+        graphics::points(z$x,z$y, lwd = lwd )
+        z$y &lt;- f( z$y )
+        tmp &lt;- remove.points( xy, finv, save.ends == 3 )
+        tmpp &lt;- ( tmp &gt; 1 &amp; tmp &lt; length( xy$x ))
+        if( save.ends != 2 | tmpp )
+          xy$x[tmp] &lt;- z$x
+        if( save.ends != 1 | tmpp )
+          xy$y[tmp] &lt;- z$y
+        fit &lt;- splines::interpSpline( xy$x, xy$y )
+      },
+      delete = {
+        z$y &lt;- f( z$y )
+        tmp &lt;- remove.points( xy, finv, save.ends &gt; 0 )
+        xy &lt;- xy[-tmp,]
+        fit &lt;- splines::interpSpline( xy$x, xy$y )
+      },
+      refresh =, finish = {
+        xy
+      }
+    )
+    tmpp &lt;- stats::predict( fit )
+    graphics::lines( tmpp$x, finv( tmpp$y ), col = col[1], lwd = lwd )
+
+    adiff &lt;- diff( stats::coef( fit )[,1] )
+    if( backfit &amp; ( all( adiff &lt; 0) || all( adiff &gt; 0 ))) {
+      ## backspline (not quite a spline) fit to inverse
+      tmpback &lt;- stats::predict( splines::backSpline( fit ))
+      graphics::lines( tmpback$y, finv( tmpback$x ), col = col[2], lwd = lwd )
+    }
+  }
+  list( xy = xy[order(xy$x),], fit = fit )
+}
+###########################################################################################
+cdf.lines &lt;- function( data, fig = "mean value", nspline = 8,
+  conf = c(50,80,90,95), rescale = 1,
+  col = c("green","blue","red","orange") )
+{
+  rate &lt;- fig == "mean value"
+  n &lt;- length( data )
+  data &lt;- sort( data )
+  prob &lt;- seq( n ) / ( n + 1 )
+  f &lt;- - rescale * log( 1 - prob )
+  ylab &lt;- "prob"
+  if( rate )
+    ylab &lt;- "cum rate"
+  else
+    f &lt;- 1 - exp( -f )
+  graphics::lines( data, f, lwd = 2 )
+  conf &lt;- conf / 100
+  for( i in seq( length( conf ))) {
+    ## lower confidence
+    tmp &lt;- stats::qbinom( conf[i], n, prob, lower.tail = TRUE ) / ( n + 1 )
+    tmp &lt;- 1 - exp( rescale * log( 1 - tmp ))
+    tmpna &lt;- is.na( tmp )
+    if( any( tmpna ))
+      tmp[tmpna] &lt;- f[1]
+    if( rate )
+      tmp &lt;- - log( 1 - tmp )
+    graphics::lines( data, tmp, lty = 2, col = col[i] )
+    ## upper confidence
+    tmp &lt;- stats::qbinom( conf[i], n, prob, lower.tail = FALSE ) / ( n + 1 )
+    tmp &lt;- 1 - exp( rescale * log( 1 - tmp ))
+    tmpna &lt;- is.na( tmp )
+    if( any( tmpna ))
+      tmp[tmpna] &lt;- f[n]
+    if( rate )
+      tmp &lt;- - log( 1 - tmp )
+    graphics::lines( data, tmp, lty = 2, col = col[i] )
+  }
+}
+###########################################################################################
+rspline &lt;- function( meantime = 1,
+                    fivepar = c(dispersion = 1, location = 0, intensity = 1, truncation = 0,
+                      rejection = Inf ),
+                    fit = NULL,
+                    meanvalue = fit$meanvalue, invmvalue = fit$invmvalue,
+                    span = Inf )
+{
+  ## dispersion = a, location = b, intensity = c
+  ## truncation = -log(1-d), rejection = -log(1-e)
+
+  ## y = a M^-1( G(d)+cV ) + b  if 1 - exp( -cV ) &lt; G(e)
+  ## y = span        if 1 - exp( -cV ) &gt;= G(e)
+
+  ## this is not quite right for truncation, as we know event happened before b
+  ## if 1-exp(-cV) &lt; d, but I am not sure how to pass that information along yet
+
+  default &lt;- is.null( meanvalue )
+
+  ##          V ~ exp(1)
+  ## intensity:      V/c
+  ## truncation:      (G(d)+V)/c
+  rate &lt;- ( fivepar["truncation"] + rexp( 1 )) / fivepar["intensity"]
+
+  ## mean value inverse:    M^-1( G(d)+V/c )
+  if( default )
+    y &lt;- rate
+  else {
+    y &lt;- stats::predict( invmvalue, rate )$y
+    ## kludge to linearly extrapolate beyond cubic spline fit
+    if( is.na( y ))
+      y &lt;- spline.extrapolate( meanvalue, invmvalue, rate )
+  }
+
+  ## dispersion and location:  y = a M^-1( cV ) + b
+  y &lt;- meantime * fivepar["dispersion"] * y + fivepar["location"]
+
+  ## rejection:      y &gt;= e? then set y to span
+  if( y &gt; fivepar["rejection"] )
+    y &lt;- span
+
+  y
+}
+###########################################################################################
+spline.extrapolate &lt;- function( meanvalue, invmvalue, x )
+{
+  ## linear extrapolation of inverse spline beyond upper end
+  coeff &lt;- stats::coef( invmvalue )
+  nr &lt;- nrow( coeff ) - 1
+  xknot &lt;- splines::splineKnots( invmvalue )[nr+(0:1)]
+  yknot &lt;- splines::splineKnots( meanvalue )[nr+1]
+  tmpr &lt;- ( xknot[2] - xknot[1] )
+  slope &lt;- coeff[nr,2] + tmpr * ( 2 * coeff[nr,3] + tmpr * 3 * coeff[nr,4] )
+  yknot + slope * ( x - xknot[2] )
+}
+###########################################################################################
+### spline.design() is a prototype for designing spline curves
+### Ultimately, pieces of spline.design, spline.temp() and spline.meanvalue()
+### will be pulled out as subroutines to reduce code overlap
+###########################################################################################
+spline.design &lt;- function (y = yinit, x = xinit, nspline = 8, xy = data.frame(x = x, 
+    y = y), n = 1, horizontal = FALSE) 
+{
+    is.data &lt;- !missing(y)
+    if (is.data) {
+        data &lt;- y
+        if (missing(x)) 
+            x &lt;- as.numeric(names(y))
+        datax &lt;- x
+        ndata &lt;- length(data)
+        choose &lt;- round(seq(1, ndata, length = nspline))
+        xinit &lt;- x &lt;- x[choose]
+        yinit &lt;- y &lt;- y[choose]
+    }
+    else {
+        tmp &lt;- seq(0, nspline - 1)
+        if (missing(x)) 
+            xinit &lt;- tmp
+        else xinit &lt;- x
+        if (missing(y)) 
+            yinit &lt;- rep(50, nspline)
+        else yinit &lt;- y
+    }
+
+  ## plot curve and surrounding axes
+  graphics::par( mfrow = c(1,1), mar = rep(4.1,4))
+  plotit &lt;- function( xy, fig = "temp", fit = splines::interpSpline( xy$x, xy$y ),
+    horizontal = FALSE, strip = .25, margin = .1 )
+  {
+    switch( fig, {
+        y &lt;- xy$y
+        ylim &lt;- range(y)
+      }
+    )
+    xlim &lt;- range(xy$x)
+    xlim &lt;- xlim + c(-1,1) * margin * diff( xlim )
+    if( horizontal ) {
+      if( diff( ylim ) == 0 )
+        ylim &lt;- ylim * c(.75,1.25)
+      separator &lt;- ylim[2]
+      ylim[2] &lt;- ylim[2] + strip * diff( ylim )
+    }
+    else {
+      separator &lt;- xlim[2]
+      xlim[2] &lt;- xlim[2] + strip * diff( xlim )
+    }
+    axt &lt;- c("n","s")
+    tmpar &lt;- graphics::par( xaxt = axt[1+horizontal], yaxt = axt[2-horizontal] )
+    plot( xy$x, y, xlim = xlim, ylim = ylim, type="n", xlab = "", ylab = "" )
+    graphics::par( xaxt = "s", yaxt = "s" )
+    graphics::points( xy$x, y, lwd = 4 )
+    graphics::title( fig )
+    graphics::mtext( "time", 1, 2 )
+    graphics::mtext( fig, 2, 2 )
+    if( horizontal ) {
+      p &lt;- pretty( c(ylim[1],separator) )
+      graphics::axis( 2, p[ p &lt;= separator ] )
+      graphics::abline( h = separator, lty = 2 )
+    }
+    else {
+      p &lt;- pretty( c(xlim[1],separator) )
+      graphics::axis( 1, p[ p &lt;= separator ] )
+      graphics::abline( v = separator, lty = 2 )
+    }
+    curve.plot( xy, n = n, action = "refresh", fit = fit, backfit = FALSE,
+      save.ends = 0 )
+    separator
+  }
+  ## place commands along right strip of plot, highlighting current command
+  plotcmd &lt;- function( ans, fig, cmds, cmdlocs, usr, col = "green", rest = "black",
+    horizontal = TRUE )
+  {
+    ans &lt;- c( ans, fig )
+    tmp &lt;- is.na( match( cmds, ans ))
+    if( any( tmp )) for( i in unique( cmdlocs$adj )) {
+      tmpi &lt;- tmp &amp; i == cmdlocs$adj
+      if( any( tmpi ))
+        graphics::text( cmdlocs$x[tmpi], cmdlocs$y[tmpi], cmds[tmpi], col = rest, adj = i )
+    }
+    if( any( !tmp )) for( i in unique( cmdlocs$adj )) {
+      tmpi &lt;- !tmp &amp; i == cmdlocs$adj
+      if( any( tmpi ))
+        graphics::text( cmdlocs$x[tmpi], cmdlocs$y[tmpi], cmds[tmpi], col = col, adj = i )
+    }
+  }
+  cmds &lt;- c("add","delete","replace","","finish","restart","refresh","rescale",
+    "","data","temp")
+  newlocs &lt;- if( horizontal )
+    function( cmds, data = FALSE, usr )
+    {
+      if( !data )
+        cmds &lt;- cmds[ cmds != "data" ]
+      n &lt;- length( cmds )
+      blank &lt;- seq( n )[ cmds == "" | cmds == " " ]
+      tmp &lt;- diff(usr[3:4]) / 20
+      m &lt;- mean( usr[1:2] )
+      y &lt;- usr[4] + 0.5 * tmp - c( tmp * seq( blank[1] - 1 ), 0,
+        tmp * seq( blank[2] - blank[1] - 1 ), 0,
+        tmp * seq( n - blank[2] ))
+      x &lt;- c( rep( usr[1], blank[1] - 1 ), mean( m, usr[1] ),
+        rep( m, blank[2] - blank[1] - 1 ), mean( m, usr[2] ),
+        rep( usr[2], n - blank[2] ))
+      adj &lt;- c( rep( 0, blank[1] ),
+        rep( 0.5, blank[2] - blank[1] ),
+        rep( 1, n - blank[2] ))
+      tmp &lt;- data.frame( x = x, y = y, adj = adj )
+      cmds[blank[2]] &lt;- " "
+      row.names( tmp ) &lt;- cmds
+      tmp
+    }
+  else
+    function( cmds, data = FALSE, usr )
+    {
+      if( !data )
+        cmds &lt;- cmds[ cmds != "data" ]
+      n &lt;- length( cmds )
+      blank &lt;- seq( n )[ cmds == "" ]
+      tmp &lt;- diff(usr[3:4]) / 20
+      m &lt;- mean( usr[3:4] )
+      tmp &lt;- c( usr[4] - tmp * seq( blank[1] - 1 ),
+        mean( m, usr[4] ),
+        m + tmp * ( seq( blank[1] + 1, blank[2] - 1 ) - mean( blank )),
+        mean( m, usr[3] ),
+        usr[3] + tmp * seq( n - blank[2] ))
+      tmp &lt;- data.frame( x = rep( usr[2], n ), y = tmp, adj = rep( 1, n ))
+      cmds[blank[2]] &lt;- " "
+      row.names( tmp ) &lt;- cmds
+      tmp
+    }
+
+  fig &lt;- "temp"
+  newans &lt;- ans &lt;- "replace"
+
+  graphics::par( mar = c(4.1,4.1,3.1,4.1),omi=rep(.25,4))
+  fit &lt;- splines::interpSpline( xy$x, xy$y )
+  separator &lt;- plotit( xy, fig, fit, horizontal )
+
+  usr &lt;- graphics::par("usr")
+  cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+  cmds &lt;- row.names( cmdlocs )
+  plotcmd( ans, fig, cmds, cmdlocs, usr )
+  use.data &lt;- FALSE
+  rescale.data &lt;- 1
+  repeat {
+    ## get command from plot using cursor
+    z &lt;- graphics::locator(1,"n")
+    if(( !horizontal &amp; z$x &gt; separator ) | ( horizontal * z$y &gt; separator )) {
+      if( horizontal ) { # need to look at both z&amp;y 
+        x &lt;- abs( z$x - cmdlocs$x )
+        x &lt;- x == min( x )
+        newans &lt;- cmds[x]
+        z &lt;- abs( z$y - cmdlocs$y )[x]
+        newans &lt;- newans[ z == min( z ) ][1]
+      }
+      else {
+        z &lt;- abs(z$y - cmdlocs$y )
+        newans &lt;- cmds[ z == min( z ) ][1]
+      }
+      switch( newans,
+        finish =, refresh = {
+          separator &lt;- plotit( xy, fig, fit, horizontal )
+          usr &lt;- graphics::par("usr")
+          cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+        },
+        data = {
+          use.data &lt;- is.data &amp; !use.data
+          if( is.data &amp; !use.data )
+            plotit( xy, fig, fit, horizontal )
+        },
+        temp = {
+          fig &lt;- newans
+          separator &lt;- plotit( xy, fig, fit, horizontal )
+          usr &lt;- graphics::par("usr")
+          cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+        },
+        rescale = {
+          cat( "enter new values followed by RETURN key\n" )
+          tmpy &lt;- readline( paste( "maximum ", fig, "(",
+            round( max( xy$y ), 2 ), "):", sep = "" ))
+          if( tmpy != "" ) {
+            tmpy &lt;- suppressWarnings(as.numeric( tmpy )) / max( xy$y )
+            xy$y &lt;- tmpy * xy$y
+            if( is.data )
+              rescale.data &lt;- rescale.data * tmpy
+          }
+          tmpx &lt;- readline( paste( "maximum time(", 
+            round( max( xy$x ), 2 ), "):", sep = "" ))
+          if( tmpx != "" ) {
+            tmpx &lt;- suppressWarnings(as.numeric( tmpx )) / max( xy$x )
+            xy$x &lt;- tmpx * xy$x
+          }
+          fit &lt;- splines::interpSpline( xy$x, xy$y )
+          separator &lt;- plotit( xy, fig, fit, horizontal )
+          usr &lt;- graphics::par("usr")
+          cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+        },
+        restart = {
+          if( is.data )
+            rescale.data &lt;- 1
+          xy &lt;- data.frame( x = xinit, y = yinit )
+          fit &lt;- splines::interpSpline( xy$x, xy$y )
+          separator &lt;- plotit( xy, fig, fit, horizontal )
+          usr &lt;- graphics::par("usr")
+          cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+        },
+        add =, delete =, replace = {
+          ans &lt;- newans
+        }
+      )
+      if( use.data ) {
+        rx &lt;- range( xy$x )
+        dx &lt;- range( datax )        
+        graphics::lines( rx[1] + ( datax - dx[1] ) * diff( rx ) / diff( dx ), data * rescale.data )
+      }
+      plotcmd( ans, fig, cmds, cmdlocs, usr )
+    }
+    else {
+      fit &lt;- curve.plot( xy, n = n, action = ans, z = z, fit = fit, backfit = FALSE,
+        save.ends = 0 )
+      xy &lt;- fit$xy
+      fit &lt;- fit$fit
+      ans &lt;- "replace"
+      plotcmd( ans, fig, cmds, cmdlocs, usr )
+    }
+    if( newans == "finish" )
+      break
+  }
+  plotcmd( newans, fig, cmds, cmdlocs, "red" )
+  tmp &lt;- curve.plot( xy, n = n, action = "refresh", backfit = FALSE, save.ends = 0 )
+  tmp
+}
+
+# --- Source: triangle.R ---
+## $Id: triangle.R,v 0.9 2002/12/09 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###########################################################################################
+## rtri( n, width )
+##
+## plot.current( x, species )
+## text.current( x, species )
+##
+###########################################################################################
+###########################################################################################
+### Tridiagonal Coordinate System S3 Classes &amp; Algebra
+###########################################################################################
+tricoord &lt;- function(a, b = NULL, c = NULL) {
+  if (is.data.frame(a) &amp;&amp; all(c("a", "b", "c") %in% names(a))) {
+    res &lt;- a
+  } else if (is.matrix(a) &amp;&amp; ncol(a) == 3) {
+    res &lt;- as.data.frame(a)
+    names(res) &lt;- c("a", "b", "c")
+  } else if (!is.null(b) &amp;&amp; !is.null(c)) {
+    res &lt;- data.frame(a = a, b = b, c = c)
+  } else if (is.numeric(a) &amp;&amp; length(a) == 3) {
+    res &lt;- data.frame(a = a[1], b = a[2], c = a[3])
+  } else {
+    stop("Invalid tricoord input format")
+  }
+  class(res) &lt;- c("tricoord", "data.frame")
+  res
+}
+
+`+.tricoord` &lt;- function(e1, e2) {
+  # Handle vector offsets cleanly
+  if (is.numeric(e2) &amp;&amp; length(e2) == 3) {
+    tricoord(e1$a + e2[1], e1$b + e2[2], e1$c + e2[3])
+  } else if (inherits(e2, "tricoord")) {
+    tricoord(e1$a + e2$a, e1$b + e2$b, e1$c + e2$c)
+  } else {
+    stop("Invalid right hand operand for tricoord addition")
+  }
+}
+
+`-.tricoord` &lt;- function(e1, e2) {
+  if (is.numeric(e2) &amp;&amp; length(e2) == 3) {
+    tricoord(e1$a - e2[1], e1$b - e2[2], e1$c - e2[3])
+  } else if (inherits(e2, "tricoord")) {
+    tricoord(e1$a - e2$a, e1$b - e2$b, e1$c - e2$c)
+  } else {
+    stop("Invalid right hand operand for tricoord subtraction")
+  }
+}
+
+###########################################################################################
+rtri &lt;- function( n, width, tri = matrix(0,3,n), roundoff = TRUE )
+{
+  tri &lt;- as.matrix( tri )
+  if( n == 1 ) {
+    xy &lt;- stats::runif( 2, 0, width )
+    if( roundoff )
+      xy &lt;- round( xy )
+
+    i &lt;- sample( 3, 1  )
+    i1 &lt;- 1 + i%%3
+    i2 &lt;- 1 + (i+1)%%3
+    tri[i1,] &lt;- tri[i1,] + xy[1]
+    tri[i2,] &lt;- tri[i2,] - xy[2]
+    tri[i,] &lt;- - ( tri[i1,] + tri[i2,] )
+    return( tri )
+  }
+  else {
+    xy &lt;- data.frame( x = stats::runif( n, 0, width ),
+      y = - stats::runif( n, 0, width ))
+    if( roundoff )
+      xy &lt;- round( xy )
+
+    out &lt;- sample( 3, n, replace = TRUE )
+    for( i in 1:3 ) {
+      outi &lt;- out == i
+      if( any( outi )) {
+        i1 &lt;- 1 + i%%3
+        i2 &lt;- 1 + (i+1)%%3
+        tri[i1,outi] &lt;- tri[i1,outi] + xy$x[outi]
+        tri[i2,outi] &lt;- tri[i2,outi] + xy$y[outi]
+        tri[i,outi] &lt;- - ( tri[i1,outi] + tri[i2,outi] )
+      }
+    }
+  }
+  tri
+}
+###########################################################################################
+car2tri.default &lt;- function(x,y)
+  car2tri( cbind( x, y ))
+car2tri &lt;- function( xy, xmult = ( 2 + sq3 ) / 4, ymult = ( 3 + 2 * sq3 ) / 12,
+  sq3 = sqrt( 3 ))
+{
+#  if( !is.matrix( xy ))
+#    xy &lt;- t( as.matrix( xy ))
+  aa &lt;- xmult * xy[,1] - ymult * xy[,2]
+  bb &lt;- - xmult * xy[,1] - ymult * xy[,2]
+  cc &lt;- -( aa + bb )
+  rbind( a = aa, b = bb, c = cc )
+}
+###########################################################################################
+tri2car.default &lt;- function(aa,bb,cc=-(aa+bb))
+  tri2car( rbind( aa, bb, cc ))
+tri2car &lt;- function(tri, xmult = 2 / ( 2 + sq3 ), ymult = 6 / ( 3 + 2 * sq3 ),
+  sq3 = sqrt( 3 ))
+{
+  if( inherits(tri, "tricoord") ) {
+    # If the user passes our S3 tricoord dataframe, map it correctly natively.
+    x &lt;- ( tri$a - tri$b ) * xmult
+    y &lt;- - ( tri$a + tri$b ) * ymult
+  } else {
+    if( !is.matrix( tri ))
+      tri &lt;- as.matrix( tri )
+    x &lt;- ( tri[1,] - tri[2,] ) * xmult
+    y &lt;- - ( tri[1,] + tri[2,] ) * ymult
+  }
+  data.frame( x = x, y = y )
+}
+###########################################################################################
+cardist &lt;- function( xy )
+  sqrt( xy[,1]^2 + xy[,2]^2 )
+###########################################################################################
+tridist &lt;- function( tri )
+  apply( tri, 1, max )
+###########################################################################################
+gasket &lt;- function( aa, bb )
+{
+  n &lt;- length( aa )
+  pp &lt;- c(-1,1,0,1)
+  dda &lt;- diff( aa )
+  ddb &lt;- diff( bb )
+  ss &lt;- sign( sign( dda ) - sign( ddb ))
+  dda &lt;- 2 - abs( dda )
+  ddb &lt;- 2 - abs( ddb )
+  aa &lt;- 2 * aa
+  aa &lt;- c( aa[1], rbind( aa[-n] + pp[dda+1+ss], aa[-1] + pp[dda+1-ss], aa[-1] ))
+  bb &lt;- 2 * bb
+  bb &lt;- c( bb[1], rbind( bb[-n] + pp[ddb+1-ss], bb[-1] + pp[ddb+1+ss], bb[-1] ))
+  data.frame( aa = aa, bb = bb )
+}
+
+# --- Source: substrate_triangle.R ---
+get_substrate_grid &lt;- function(width, step = 1, orientation = "up") {
+  pts &lt;- expand.grid(a = seq(0, width - step, by = step), 
+                     b = seq(0, width - step, by = step))
+  
+  if (orientation == "up") {
+    pts &lt;- subset(pts, a + b &lt;= width - step)
+    pts$c &lt;- -(pts$a + pts$b)
+  } else {
+    pts &lt;- subset(pts, a + b &lt;= width - step)
+    pts$a &lt;- -pts$a
+    pts$b &lt;- -pts$b
+    pts$c &lt;- -(pts$a + pts$b)
+  }
+  return(pts)
+}
+
+substrate_topology &lt;- function(width = 10, step = 1) {
+  W &lt;- width - step
+  
+  # Topology adjacency offsets
+  list(
+    fr2   = list(offset = c(0, 0, 0), dir = "down"),
+    fr1   = list(offset = c(-W, -W, 2*W), dir = "up"),
+    fr3   = list(offset = c(-W, 0, W), dir = "up"),
+    fr4   = list(offset = c(0, -W, W), dir = "up"),
+    tw1   = list(offset = c(-W, 0, W), dir = "down"),
+    twig  = list(offset = c(-W, 0, W), dir = "down"),
+    tw2   = list(offset = c(-2*W, 0, 2*W), dir = "up"),
+    lftop = list(offset = c(-2*W, W, W), dir = "down"),
+    lfbot = list(offset = c(-3*W, W, 2*W), dir = "up")
+  )
+}
+
+create_substrate &lt;- function(topology, width = 10, step = 1) {
+  W &lt;- width - step
+  all_points &lt;- data.frame()
+  labels_df &lt;- data.frame()
+  poly_df &lt;- data.frame()
+  
+  for (sub in names(topology)) {
+    cfg &lt;- topology[[sub]]
+    grid &lt;- get_substrate_grid(width, step, cfg$dir)
+    
+    o_a &lt;- cfg$offset[1]
+    o_b &lt;- cfg$offset[2]
+    o_c &lt;- cfg$offset[3]
+
+    # Needs tricoord and tri2car which are presumably exported/available from R/triangle.R
+    grid_tri &lt;- tricoord(grid$a, grid$b, grid$c)
+    grid_tri &lt;- grid_tri + cfg$offset
+    
+    car_pts &lt;- tri2car(grid_tri)
+    car_pts$substrate &lt;- sub
+    all_points &lt;- rbind(all_points, car_pts)
+    
+    # Determine bounds and midpoints for side labels 1,2,3
+    if (cfg$dir == "up") {
+      v_top &lt;- c(o_a, o_b, o_c)
+      v_br  &lt;- c(o_a + W, o_b, o_c - W)
+      v_bl  &lt;- c(o_a, o_b + W, o_c - W)
+      
+      m1 &lt;- (v_top + v_bl) / 2
+      m2 &lt;- (v_top + v_br) / 2
+      m3 &lt;- (v_bl + v_br)  / 2
+      centroid &lt;- (v_top + v_br + v_bl) / 3
+      p_mat &lt;- cbind(v_top, v_br, v_bl)
+    } else {
+      v_bot &lt;- c(o_a, o_b, o_c)
+      v_tr  &lt;- c(o_a, o_b - W, o_c + W)
+      v_tl  &lt;- c(o_a - W, o_b, o_c + W)
+      
+      m1 &lt;- (v_bot + v_tr) / 2
+      m2 &lt;- (v_bot + v_tl) / 2
+      m3 &lt;- (v_tl + v_tr)  / 2
+      centroid &lt;- (v_bot + v_tr + v_tl) / 3
+      p_mat &lt;- cbind(v_bot, v_tr, v_tl)
+    }
+    
+    # Interpolate slightly towards the centroid to put text "just inside" the edges
+    w_in &lt;- 0.25 # weight towards centroid
+    l1 &lt;- m1 * (1 - w_in) + centroid * w_in
+    l2 &lt;- m2 * (1 - w_in) + centroid * w_in
+    l3 &lt;- m3 * (1 - w_in) + centroid * w_in
+    
+    mat_l &lt;- cbind(l1, l2, l3)
+    car_l &lt;- tri2car(mat_l)
+    car_l$label &lt;- c("1", "2", "3")
+    car_l$substrate &lt;- sub
+    labels_df &lt;- rbind(labels_df, car_l)
+    
+    car_p &lt;- tri2car(p_mat)
+    car_p$substrate &lt;- sub
+    poly_df &lt;- rbind(poly_df, car_p)
+  }
+  
+  centers &lt;- stats::aggregate(cbind(x,y) ~ substrate, data=all_points, mean)
+  
+  obj &lt;- list(
+    points = all_points, 
+    labels = labels_df, 
+    poly = poly_df, 
+    centers = centers,
+    topology = topology
+  )
+  class(obj) &lt;- "substrate"
+  return(obj)
+}
+
+autoplot.substrate &lt;- function(object, ...) {
+  ggplot2::ggplot() +
+    # Draw the black boundary lines outlining the substrates exactly over outer dots
+    ggplot2::geom_polygon(data=object$poly, ggplot2::aes(x=x, y=y, group=substrate), fill=NA, color="black", linewidth=0.7) +
+    # Plot grid dots
+    ggplot2::geom_point(data=object$points, ggplot2::aes(x=x, y=y, color=substrate), size=1.5) +
+    # Plot Substrate Labels (Centers)
+    ggplot2::geom_text(data=object$centers, ggplot2::aes(x=x, y=y, label=substrate), color="black", fontface="bold", size=5) +
+    # Axis side numbers
+    ggplot2::geom_text(data=object$labels, ggplot2::aes(x=x, y=y, label=label), color="darkred", fontface="bold", size=4) +
+    ggplot2::theme_void() +
+    ggplot2::coord_fixed() +
+    ggplot2::ggtitle("Ewing Tridiagonal Substrate Network Mapping")
+}
+
+create_hex_overlay &lt;- function(object, step = 1) {
+  pts &lt;- if (inherits(object, "substrate")) object$points else object
+  if (is.null(pts) || nrow(pts) == 0) return(data.frame())
+  
+  xmult &lt;- 2 / (2 + sqrt(3))
+  ymult &lt;- 6 / (3 + 2 * sqrt(3))
+  d &lt;- step * sqrt(xmult^2 + ymult^2)
+  r &lt;- d / sqrt(3)
+  
+  angles &lt;- (seq(0, 5) * 60 + 30) * pi / 180
+  dx &lt;- r * cos(angles)
+  dy &lt;- r * sin(angles)
+  
+  n_pts &lt;- nrow(pts)
+  hex_list &lt;- vector("list", n_pts)
+  
+  for (i in seq_len(n_pts)) {
+    px &lt;- pts$x[i] + dx
+    py &lt;- pts$y[i] + dy
+    sub &lt;- pts$substrate[i]
+    hex_list[[i]] &lt;- data.frame(
+      x = px,
+      y = py,
+      cell_id = i,
+      substrate = sub,
+      stringsAsFactors = FALSE
+    )
+  }
+  
+  do.call(rbind, hex_list)
+}
+
+
+# --- Source: ewing_substrate.R ---
+ewing_substrate &lt;- function( community,
+                             species,
+                             headstuff = c( 0, "start", sum( to.plot )),
+                             units = getOrgFeature( community, species[1], "units" ),
+                             right = species[1], adj = c(0,.5,1),
+                             show_sub = NULL,
+                             step = 0,
+                             layout = c("facet", "hex"),
+                             width = 10,
+                             step_density = 1,
+                             rescale = TRUE,
+                             ...)
+{
+  layout &lt;- match.arg(layout)
+  
+  if (length(species) &gt; 1) {
+    res_list &lt;- lapply(species, function(sp) {
+      df &lt;- ewing_substrate(community = community, species = sp, headstuff = headstuff,
+                            units = units, right = right, adj = adj, show_sub = show_sub,
+                            step = step, layout = layout, width = width, step_density = step_density,
+                            rescale = rescale, ...)
+      if (!is.null(df) &amp;&amp; nrow(df) &gt; 0) {
+        df$species &lt;- sp
+      }
+      df
+    })
+    res_list &lt;- res_list[!sapply(res_list, is.null)]
+    if (length(res_list) == 0) return(NULL)
+    combined &lt;- do.call(rbind, res_list)
+    attr(combined, "species") &lt;- paste(species, collapse = " &amp; ")
+    step_val &lt;- if (!is.null(community$step)) community$step else if (!is.null(community$count$step)) community$count$step else if (!is.null(attr(community, "nstep"))) attr(community, "nstep") else step
+    attr(combined, "step") &lt;- step_val
+    attr(combined, "layout") &lt;- layout
+    attr(combined, "width") &lt;- width
+    attr(combined, "step_density") &lt;- step_density
+    class(combined) &lt;- c("ewing_substrate", class(combined))
+    return(combined)
+  }
+  
+  ## plot current stages for species (except random parasites)
+  organism &lt;- get.species( community, species )[,-1]
+  if(is.null(organism)) # species is not in community
+    return(NULL)
+  
+  future &lt;- getOrgFuture( community, species, c("color","pch") )
+  
+  # Substrate names mapping (e.g. fr1, fr2, fr3, fr4, twig, lftop, lfbot)
+  substrate_feat &lt;- getOrgFeature( community, species, "substrate")
+  sub_interact &lt;- getOrgInteract(community, substrate_feat, species)
+  substrates &lt;- rownames(sub_interact)
+  if (is.null(substrates) || length(substrates) == 0) {
+    substrates &lt;- names(getOrgInteract(community, substrate_feat, substrate_feat))
+  }
+  if (is.null(show_sub)) show_sub &lt;- substrates
+  
+  position &lt;- paste( "pos", letters[1:3], sep = "." )
+  
+  if (layout == "hex") {
+    topo &lt;- substrate_topology(width = width, step = step_density)
+    n_org &lt;- ncol(organism)
+    gx &lt;- numeric(n_org)
+    gy &lt;- numeric(n_org)
+    
+    sub_indices &lt;- organism["sub.stage", ]
+    org_sub_names &lt;- substrates[sub_indices]
+    
+    # Process organisms per substrate patch to rescale local coordinates into substrate surface triangle
+    unique_subs &lt;- unique(org_sub_names)
+    
+    for (sub in unique_subs) {
+      idx &lt;- which(org_sub_names == sub)
+      
+      target_name &lt;- sub
+      if (!target_name %in% names(topo)) {
+        if (target_name == "twig") target_name &lt;- "tw1"
+        if (target_name == "tw1") target_name &lt;- "twig"
+      }
+      
+      cfg &lt;- topo[[target_name]]
+      
+      pa &lt;- organism["pos.a", idx]
+      pb &lt;- organism["pos.b", idx]
+      pc &lt;- organism["pos.c", idx]
+      
+      if (!is.null(cfg)) {
+        # Determine substrate surface width (allows substrates of different sizes in future)
+        W_sub &lt;- if (!is.null(cfg$width)) (cfg$width - step_density) else (width - step_density)
+        
+        if (rescale) {
+          amin &lt;- min(pa); amax &lt;- max(pa)
+          bmin &lt;- min(pb); bmax &lt;- max(pb)
+          
+          u &lt;- if (amax &gt; amin) (pa - amin) / (amax - amin) else rep(0.5, length(idx))
+          v &lt;- if (bmax &gt; bmin) (pb - bmin) / (bmax - bmin) else rep(0.5, length(idx))
+          
+          # 15% inner padding to ensure symbols sit comfortably inside substrate polygon borders
+          u_m &lt;- 0.15 + 0.70 * u
+          v_m &lt;- 0.15 + 0.70 * v
+          
+          a_p &lt;- u_m * W_sub
+          b_p &lt;- v_m * (W_sub - a_p)
+          c_p &lt;- -(a_p + b_p)
+        } else {
+          a_p &lt;- pa
+          b_p &lt;- pb
+          c_p &lt;- pc
+        }
+        
+        off &lt;- cfg$offset
+        if (cfg$dir == "up") {
+          ga &lt;- a_p + off[1]
+          gb &lt;- b_p + off[2]
+          gc &lt;- c_p + off[3]
+        } else {
+          ga &lt;- -a_p + off[1]
+          gb &lt;- -b_p + off[2]
+          gc &lt;- -c_p + off[3]
+        }
+        car &lt;- tri2car(tricoord(ga, gb, gc))
+        gx[idx] &lt;- car$x
+        gy[idx] &lt;- car$y
+      } else {
+        car &lt;- tri2car(organism[position, idx, drop = FALSE])
+        gx[idx] &lt;- car$x
+        gy[idx] &lt;- car$y
+      }
+    }
+    
+    xy &lt;- data.frame(x = gx, y = gy)
+  } else {
+    xy &lt;- tri2car( organism[position,] )
+  }
+  
+  dat &lt;- dplyr::filter(
+    dplyr::mutate(
+      tibble::tibble(xy), 
+      stage = organism["stage",],
+      substrate = substrates[organism["sub.stage",]],
+      pchar = factor(as.character( future$pch[.data$stage + 1] ), levels = unique(as.character(future$pch))),
+      color = as.character( future$color[.data$stage + 1] ),
+      species = species),
+    .data$substrate %in% show_sub)
+  
+  attr(dat, "species") &lt;- species
+  step_val &lt;- if (!is.null(community$step)) community$step else if (!is.null(community$count$step)) community$count$step else if (!is.null(attr(community, "nstep"))) attr(community, "nstep") else step
+  attr(dat, "step") &lt;- step_val
+  attr(dat, "layout") &lt;- layout
+  attr(dat, "width") &lt;- width
+  attr(dat, "step_density") &lt;- step_density
+  class(dat) &lt;- c("ewing_substrate", class(dat))
+  dat
+}
+
+ggplot_ewing_substrate &lt;- function(object,
+                                   xlab = "horizontal", ylab = "vertical",
+                                   layout = attr(object, "layout"),
+                                   width = attr(object, "width"),
+                                   step_density = attr(object, "step_density"),
+                                   layers = c("poly", "hex", "organisms", "centers", "labels"),
+                                   ...)
+{     
+  if (is.null(layout)) layout &lt;- "facet"
+  if (is.null(width)) width &lt;- 10
+  if (is.null(step_density)) step_density &lt;- 1
+  
+  species &lt;- attr(object, "species")
+  step &lt;- attr(object, "step")
+  
+  # Allows same color for different pchar, but only one color per pchar.
+  tmp &lt;- dplyr::arrange(
+    dplyr::distinct(
+      dplyr::distinct(object, .data$pchar, .data$color),
+      .data$pchar, .keep_all = TRUE),
+    .data$pchar)
+  col.palate &lt;- tmp$color
+  names(col.palate) &lt;- as.character(tmp$pchar)
+  
+  if (layout == "hex") {
+    topo &lt;- substrate_topology(width = width, step = step_density)
+    sub_obj &lt;- create_substrate(topo, width = width, step = step_density)
+    hex_overlay &lt;- create_hex_overlay(sub_obj, step = step_density)
+    
+    p &lt;- ggplot2::ggplot()
+    if ("poly" %in% layers &amp;&amp; nrow(sub_obj$poly) &gt; 0) {
+      p &lt;- p + ggplot2::geom_polygon(data = sub_obj$poly, ggplot2::aes(x = x, y = y, group = substrate), 
+                                     fill = NA, color = "black", linewidth = 0.7)
+    }
+    if ("hex" %in% layers &amp;&amp; nrow(hex_overlay) &gt; 0) {
+      p &lt;- p + ggplot2::geom_polygon(data = hex_overlay, ggplot2::aes(x = x, y = y, group = cell_id), 
+                                     fill = NA, color = "gray75", linewidth = 0.3)
+    }
+    if ("organisms" %in% layers &amp;&amp; nrow(object) &gt; 0) {
+      p &lt;- p + ggplot2::geom_text(data = object, ggplot2::aes(x = x, y = y, label = pchar, color = pchar), 
+                                  fontface = "bold", size = 4) +
+        ggplot2::scale_color_manual(name = "Stage", values = col.palate) +
+        ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(label = names(col.palate))))
+    }
+    if ("centers" %in% layers &amp;&amp; nrow(sub_obj$centers) &gt; 0) {
+      p &lt;- p + ggplot2::geom_text(data = sub_obj$centers, ggplot2::aes(x = x, y = y, label = substrate), 
+                                  color = "black", fontface = "bold", size = 4.5)
+    }
+    if ("labels" %in% layers &amp;&amp; nrow(sub_obj$labels) &gt; 0) {
+      p &lt;- p + ggplot2::geom_text(data = sub_obj$labels, ggplot2::aes(x = x, y = y, label = label), 
+                                  color = "darkred", fontface = "bold", size = 3.5)
+    }
+    
+    return(p + ggplot2::theme_void() + 
+             ggplot2::theme(plot.margin = ggplot2::margin(2, 2, 2, 2, "pt")) +
+             ggplot2::coord_fixed() + 
+             ggplot2::ggtitle(paste(species, "on Hex Substrate Grid at", step, "steps")))
+  }
+  
+  # Default Facet View by Substrate Component
+  ggplot2::ggplot(object) +
+    ggplot2::aes(.data$x, .data$y, label = .data$pchar, col = .data$pchar) +
+    ggplot2::geom_text() +
+    ggplot2::facet_wrap(~ substrate) +
+    ggplot2::xlab(xlab) +
+    ggplot2::ylab(ylab) +
+    ggplot2::scale_color_manual(name = "Stage", values = col.palate) + 
+    ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(label = names(col.palate)))) +
+    ggplot2::ggtitle(paste(species, "on substrate at", step, "steps"))
+}
+autoplot.ewing_substrate &lt;- function(object, ...)
+  ggplot_ewing_substrate(object, ...)
+
+# --- Source: ewing_ageclass.R ---
+ewing_ageclass &lt;- function(community, substrate = TRUE, total = TRUE,
+                           normalize = TRUE, ...) {
+  nsim_val &lt;- NULL
+  nstep_val &lt;- NULL
+  if (inherits(community, "ewing_discrete")) {
+    nsim_val &lt;- attr(community, "nsim")
+    nstep_val &lt;- attr(community, "nstep")
+    community &lt;- community[[1]]
+  }
+  count &lt;- readCount(community)
+  if(!length(count)) return(NULL)
+  species &lt;- names(count)
+  if(is.null(species)) return(NULL)
+  
+  ageclass &lt;- list()
+  for( i in species ) {
+    ageclass[[i]] &lt;- levels( getOrgFuture( community, i, "ageclass" ))
+  }
+  substrates &lt;- list()
+  for( i in species ) {
+    substrates[[i]] &lt;- levels( getOrgInteract( community,, i, "substrate" ))
+  }
+  out &lt;- list()
+  for(i in species) {
+    out[[i]] &lt;- mutate(
+      tidyr::pivot_longer(
+        tibble::tibble(
+          as.data.frame(count[[i]])),
+        dplyr::any_of(c(ageclass[[i]], substrates[[i]])), 
+        names_to = "State",
+        values_to = "Count"),
+      Type = ifelse(.data$State %in% substrates[[i]], "substrate", "ageclass"))
+  }
+  out &lt;- dplyr::bind_rows(out, .id = "Species")
+  if(!substrate) {
+    out &lt;- dplyr::filter(out, .data$Type != "substrate")
+  }
+  if(total) {
+    tot &lt;- dplyr::mutate(
+      dplyr::ungroup(
+        dplyr::summarize(
+          dplyr::group_by(
+            out,
+            .data$Species, .data$step, .data$time, .data$future, .data$Type),
+          Count = sum(.data$Count),
+          .groups = "drop")
+      ),
+      State = "total")
+    out &lt;- dplyr::bind_rows(out, tot)      
+  }
+  if(normalize) {
+    out &lt;- dplyr::ungroup(
+      dplyr::mutate(
+        dplyr::group_by(
+          out,
+          .data$Species, .data$State, .data$Type),
+        Count = {
+          m &lt;- max(.data$Count, na.rm = TRUE)
+          if (!is.na(m) &amp;&amp; m &gt; 0) .data$Count / m else 0
+        }))
+  }
+  subs &lt;- if (substrate) unlist(substrates) else NULL
+  if (length(species) &gt; 1) {
+    ordered_levels &lt;- unique(c(ageclass[[species[1]]], "total", unlist(ageclass[species[-1]]), subs))
+  } else {
+    ordered_levels &lt;- unique(c(unlist(ageclass), "total", subs))
+  }
+  out$State &lt;- factor(out$State, levels = ordered_levels)
+  
+  attr(out, "nstep") &lt;- if (!is.null(nstep_val)) nstep_val else attr(community, "nstep")
+  if (is.null(attr(out, "nstep")) &amp;&amp; !is.null(out$step)) {
+    attr(out, "nstep") &lt;- max(out$step, na.rm = TRUE)
+  }
+  attr(out, "nsim") &lt;- if (!is.null(nsim_val)) nsim_val else attr(community, "nsim")
+  
+  class(out) &lt;- c("ewing_ageclass", class(out))
+  out
+}
+ggplot_ewing_ageclass &lt;- function(object, main = NULL, title = NULL, ... )
+{
+  if (is.null(title)) title &lt;- main
+  if (is.null(title)) {
+    nstep &lt;- attr(object, "nstep")
+    if (is.null(nstep) &amp;&amp; !is.null(object$step)) {
+      nstep &lt;- max(object$step, na.rm = TRUE)
+    }
+    nsim &lt;- attr(object, "nsim")
+    if (!is.null(nstep)) {
+      if (!is.null(nsim) &amp;&amp; nsim &gt; 1) {
+        title &lt;- paste0("Age Distribution over Time (", nstep, " steps, nsim = ", nsim, ")")
+      } else {
+        title &lt;- paste0("Age Distribution over Time (", nstep, " steps)")
+      }
+    } else if (!is.null(nsim) &amp;&amp; nsim &gt; 1) {
+      title &lt;- paste0("Age Distribution over Time (nsim = ", nsim, ")")
+    } else {
+      title &lt;- "Age Distribution over Time"
+    }
+  }
+  
+  ggplot2::ggplot(object) +
+    ggplot2::aes(.data$time, .data$Count, col = .data$State, group = .data$State, shape = .data$Species) +
+    ggplot2::geom_step(na.rm = TRUE) +
+    ggplot2::geom_point(size = 2, na.rm = TRUE) +
+    ggplot2::scale_shape_manual(name = "Species", values = c(1, 2, 0, 5, 6, 3, 4)) +
+    ggplot2::labs(title = title, color = "State", shape = "Species") +
+    ggplot2::facet_wrap(.data$Type ~ .data$Species, scales = "free")
+}
+autoplot.ewing_ageclass &lt;- function(object, ...)
+  ggplot_ewing_ageclass(object, ...)
+
+
+# --- Source: temp.R ---
+## $Id: temp.R,v 1.0 2002/12/09 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###########################################################################################
+## initTemp( community, lo.hour, hi.hour )  ### creates Temperature object
+## activeTemp( community, lo.hour, hi.hour )    ### updates Temperature object
+## checkTime( ) # check if activeTemp needs updating to cover time interval
+##
+## temp.design( )
+## temp.plot( )
+###########################################################################################
+rescale.temp &lt;- function( low, high, newry = ry, newrx = rx,
+  ry = range( c( stats::predict( low, low$knots )$y, stats::predict( high, high$knots )$y )))
+{
+  if( max( abs( ry - newry )) &gt; 0 ) {
+    tmpy &lt;- diff( newry ) / diff( ry )
+    low$coefficients &lt;- low$coefficients * tmpy
+    high$coefficients &lt;- high$coefficients * tmpy
+    tmpy &lt;- newry[1] - ry[1] * tmpy
+    low$coefficients[,1] &lt;- tmpy + low$coefficients[,1]
+    high$coefficients[,1] &lt;- tmpy + high$coefficients[,1]
+  }
+  rx &lt;- range( low$knots, high$knots )
+  if( max( abs( rx - newrx )) &gt; 0 ) {
+    newx &lt;- diff( newrx ) / diff( rx )
+    low$knots &lt;- newrx[1] + newx * low$knots
+    high$knots &lt;- newrx[1] + newx * high$knots
+    tmp &lt;- 1
+    for( i in seq( 2, ncol( low$coefficients ))) {
+      tmp &lt;- tmp * newx
+      low$coefficients[,i] &lt;- low$coefficients[,i] / tmp
+      high$coefficients[,i] &lt;- high$coefficients[,i] / tmp
+    }
+  }
+  list( low = low, high = high )
+}
+###########################################################################################
+### Temperature data structure
+### Min minimum temperature for degree-day computations
+### Time    list of hours when temperature changes through a day
+### Base    list of temperature shifts through a day
+###     list names indicate first day Hour and Base applies
+### Low spline fit for daily low temperatures
+### High    spline fit for daily high temperatures
+### DegreeDay   spline fit (hour-&gt;DD) for currently active days
+### Hour        ramped backspline fit (DD-&gt;hour) for currently active days
+### Idea is that DegreeDay and Hour are updated whenever a future event is scheduled
+### past the latest future event already scheduled. At that time, the first
+### and last time of fit are both adjusted. This can be done without rebuilding
+### the whole spline fit by appropriate adjustment of knots and coefficents.
+### Steps:  (1) combine Hour, Low and High to get knots
+###     (2) build spline coefficients
+###########################################################################################
+temp.spline &lt;- function( community, hour, temp, start = 0,
+  mintemp = getTemp( community, "Min" ), cumulative = TRUE,
+  mult = getTemp( community, "Unit" ) )
+{
+  if( is.data.frame( hour ) &amp; missing( temp )) {
+    temp &lt;- hour$temp
+    hour &lt;- hour$hour
+  }
+  ## drop low value if ones on either side are low
+  low &lt;- temp &lt;= mintemp
+  toolow &lt;- low &amp; c(FALSE,low[-length(low)]) &amp; c(low[-1],FALSE)
+  hour &lt;- hour[!toolow]
+  temp &lt;- temp[!toolow]
+  lh &lt;- length( hour )
+  ## expand single low in middle to two
+  low &lt;- temp &lt;= mintemp
+  toolow &lt;- low &amp; c(FALSE,!low[-length(low)]) &amp; c(!low[-1],FALSE)
+  if( any( toolow )) {
+    hour &lt;- c(hour,hour[toolow])
+    temp &lt;- c(temp,temp[toolow])
+    temp &lt;- temp[ order( hour ) ]
+    hour &lt;- sort( hour )
+  }
+  ## truncate on left
+  low &lt;- temp &lt;= mintemp &amp; c(temp[-1] &gt; mintemp,FALSE)
+  low1 &lt;- c(FALSE,low[-lh])
+  if( any( low ))
+    hour[low] &lt;- hour[low] + ( hour[low1] - hour[low] ) * ( mintemp - temp[low] ) /
+      ( temp[low1] - temp[low] )
+  ## truncate on right
+  low &lt;- temp &lt;= mintemp &amp; c(FALSE,temp[-lh] &gt; mintemp)
+  low1 &lt;- c(low[-1],FALSE)
+  if( any( low ))
+    hour[low] &lt;- hour[low] + ( hour[low1] - hour[low] ) * ( mintemp - temp[low] ) /
+      ( temp[low1] - temp[low] )
+  temp[ temp &lt; mintemp ] &lt;- mintemp
+  temp &lt;- temp[ !duplicated( hour ) ]
+  hour &lt;- unique( hour )
+
+  ## linear interpolating spline for temp
+  lh &lt;- length( hour ) - 1
+  h0 &lt;- 1:lh
+  aa &lt;- ( temp[1+h0] - temp[h0] ) / ( hour[1+h0]-hour[h0] )
+  aa &lt;- c( aa, aa[lh] )
+  bb &lt;- temp - mintemp
+  s &lt;- list( knots = hour, coefficients = cbind( bb,aa,0,0) )
+  dimnames( s$coefficients ) &lt;- list( paste( floor( hour / mult ), round( hour %% mult ),
+    sep = "." ), c("const","linear","quad","cubic") )
+  attr(s,"formula") &lt;- temp ~ hour
+  class( s ) &lt;- c("npolySpline","polySpline","spline")
+  if( !cumulative )
+    return( s )
+
+  ## quadratic spline for cumulative temp
+  aa &lt;- s$coefficients[,3] &lt;- s$coefficients[,2] / 2 / mult / mult
+  lh &lt;- length( aa ) - 1
+  h0 &lt;- 1:lh
+  h1 &lt;- 1 + h0
+  hour &lt;- s$knots
+  bb &lt;- s$coefficients[,2] &lt;- s$coefficients[,1] / mult
+  cc &lt;- ( hour[h1] - hour[h0] ) * ( bb[h0] + aa[h0] *
+    ( hour[h1] - hour[h0] ))
+  s$coefficients[,1] &lt;- start + c( 0, cumsum( cc ))
+  s
+}
+###########################################################################################
+temp.repeat &lt;- function( community, period = range( days ))
+{
+  lodays &lt;- range( getTemp( community, "Low" )$knots )
+  hidays &lt;- range( getTemp( community, "High" )$knots )
+  days &lt;- c( max( lodays[1], hidays[1] ), min( lodays[2], hidays[2] ))
+  lodays &lt;- period[1] &gt;= days[1] &amp; period[1] &lt;= days[2]
+  if( lodays )
+    days[1] &lt;- period[1]
+  hidays &lt;- period[2] &lt;= days[2] &amp; period[2] &gt;= days[1]
+  if( hidays )
+    days[2] &lt;- period[2]
+  if( !( lodays &amp; hidays )) {
+    stop( paste( "\nSimulation period is outside of Temperature days:\n period =",
+      paste( round( period ), collapse = "," ), "; days =",
+      paste( round( days ), collapse = "," ), "\nNeed to run temp.design() and start over!" ))
+  }
+  period &lt;- days
+
+  days &lt;- seq( days[1], days[2] )
+  low &lt;- stats::predict( getTemp( community, "Low" ), days )$y
+  high &lt;- stats::predict( getTemp( community, "High" ), days )$y
+  periods &lt;- c( as.numeric( names( getTemp( community, "Time" ))), Inf )
+  temps &lt;- hours &lt;- numeric( )
+  period[2] &lt;- period[2] + 1
+  for( i in seq( length( periods ) - 1 )) {
+    day &lt;- max( period[1], periods[i] )
+    this.period &lt;- days &gt;= day &amp; days &lt; min( period[2], periods[i+1] )
+    n &lt;- sum( this.period )
+    if( n ) {
+      if( !is.null( getTemp( community, "Time", i ))) {
+        time &lt;- getTemp( community, "Time", i )
+        base &lt;- getTemp( community, "Base", i )
+      }
+      h &lt;- length( time )
+      lotemp &lt;- rep( low[this.period], rep(h,n) )
+      hitemp &lt;- rep( high[this.period], rep(h,n) )
+      temp &lt;- ( base - min( base )) / diff( range( base ))
+      temps &lt;- c( temps, rep( temp, n ) * ( hitemp - lotemp ) + lotemp )
+
+      hours &lt;- c( hours, rep( time, n ) + rep( getTemp( community, "Unit" ) *
+        seq( day, day + n - 1 ), rep(h,n) ))
+    }
+  }
+  day &lt;- days == period[2]
+  if( any( day )) {
+    temps &lt;- c( temps, low[day] + temp[1] * ( high[day] -
+      getTemp( community, "Low" )[day] ))
+    hours &lt;- c( hours, getTemp( community, "Unit" ) * period[2] )
+  }
+  data.frame( hour = hours, temp = temps )
+}
+##########################################################################################
+showTemp &lt;- function( community )
+{
+  cat( "Temperature set for days",
+      paste( range( getTemp( community, "Low" )$knots ), collapse = " to " ), "\n" )
+  cat( "Daily low temperature range:",
+      paste( round( range( stats::predict( getTemp( community, "Low" ))$y )),
+            collapse = " to " ), "\n" )
+  cat( "Daily high temperature range:",
+      paste( round( range( stats::predict( getTemp( community, "High" ))$y )),
+            collapse = " to " ), "\n" )
+  if( !is.null( getTemp( community, "DegreeDay" ) ))
+    cat( "Active temperature range:",
+        paste( round( range( getTemp( community, "DegreeDay", "knots" ) )),
+              collapse = " to " ), "\n" )
+  cat( "Run temp.design() to adjust temperature range\n" )
+}
+##########################################################################################
+activeTemp &lt;- function( community,
+                       lo.hour = min( getTemp( community, "DegreeDay", "knots" ) ),
+                       hi.hour = max( getTemp( community, "DegreeDay", "knots" ) ),
+                       degreeday, messages = TRUE )
+{
+  unit &lt;- getTemp( community, "Unit" )
+  if( missing( hi.hour )) {
+    hi.hour &lt;- if( length( lo.hour ) &gt; 1 )
+      lo.hour[2]
+    else
+      lo.hour + unit
+  }
+  ## period is in units of hours
+  period &lt;- c( floor( lo.hour[1] / unit ), ceiling( hi.hour / unit ))
+  if( missing( degreeday )) {
+    degreeday &lt;- if( is.null( getTemp( community, "DegreeDay" ) ))
+      0
+    else
+      getDegreeDay( community, lo.hour[1] )
+  }
+  if( is.na( degreeday ))
+    degreeday &lt;- 0
+  community &lt;- setTemp( community, "DegreeDay",
+                       temp.spline( community, temp.repeat( community, period ),
+                                   start = degreeday ))
+  community &lt;- setTemp( community, "Hour",
+                       break.backSpline( getTemp( community, "DegreeDay" )))
+
+  if(messages) {
+    tmp &lt;- period * unit
+    names( tmp ) &lt;- c("lo.hour","hi.hour")
+    print( tmp )
+  }
+  community
+}
+###########################################################################################
+updateTemp &lt;- function( community,
+                       period = range( getTemp( community, "DegreeDay", "knots" ) ))
+{
+  ## period is in units of hours
+  first &lt;- period[1]
+  last &lt;- period[2]
+
+  s &lt;- getTemp( community, "DegreeDay" )
+  knots &lt;- s$knots
+  ## drop earlier times that are now in the past
+  drop &lt;- sum( knots &lt; first ) - 1
+  nk &lt;- length( knots )
+  change &lt;- drop &gt; 0
+  if( change ) {
+    s$knots &lt;- knots[ - seq( drop ) ]
+    s$coefficients &lt;- s$coefficients[ - seq( drop ), ]
+  }
+  ## add new days to include last
+  period &lt;- ceiling( c( knots[nk], last ) / getTemp( community, "Unit" ) )
+  if( period[1] &lt;= period[2] ) {
+    change &lt;- TRUE
+    news &lt;- temp.spline( community, temp.repeat( community, period ),
+      start = getHour( getTemp( community, "Unit" ) * period[1] ))
+    nk &lt;- length( s$knots )
+    if( s$knots[nk] == news$knots[1] ) {
+      s$knots &lt;- s$knots[-nk]
+      s$coefficients &lt;- s$coefficients[-nk,]
+    }
+    else
+      s$coefficients[nk,] &lt;- news$coefficients[1,]
+    s$knots &lt;- c( s$knots, news$knots )
+    s$coefficients &lt;- rbind( s$coefficients, news$coefficients )    
+  }
+  if( change ) {
+    community &lt;- setTemp( community, "DegreeDay", s )
+    community &lt;- setTemp( community, "Hour", break.backSpline( s ))
+  }
+  community
+}
+###########################################################################################
+ramp.backSpline &lt;- function( s )
+{
+  ## ramped backspline is a trick to get backSpline when curve is flat in spots
+  ## if tmp &lt;- stats::predict( ramp.backSpline( s ))
+  ## then plot tmp$y versus tmp$x-tmp$y to "recover" original curve.
+  ## problem is that one cannot recover particular x this way!
+
+  s$coefficients[,1] &lt;- s$coefficients[,1] + s$knots
+  s$coefficients[,2] &lt;- s$coefficients[,2] + 1
+  splines::backSpline( s )
+}
+###########################################################################################
+break.backSpline &lt;- function( tmp )
+{
+  ## alternative to ramped backSpline that first removes flat regions (slope 0)
+  ## problem remains that leftover may still have slope 0 at a point
+  ## this can cause anomolous results!
+
+  ## find flat regions and cut out
+  tmpc &lt;- diff(tmp$coefficients[,1]) == 0 
+  tmpk &lt;- cumsum( diff(tmp$knots) * ( tmpc ))
+  tmpk &lt;- c(tmpk,tmpk[length(tmpk)])
+  tmp$knots &lt;- tmp$knots - tmpk
+  tmpc &lt;- c(!tmpc,TRUE)
+  tmp$knots &lt;- tmp$knots[tmpc]
+  tmp$coefficients &lt;- tmp$coefficients[tmpc,]
+  tmp$breaks
+  nb &lt;- dim( tmp$coefficients )
+
+  ## kludge for backspline: cannot handle slope of zero
+  tmpn &lt;- tmp$coefficients[,2] == 0
+  if( any( tmpn )) {
+    tmpn &lt;- seq( tmpn )[ tmpn ]
+    tmp$coefficients[ tmpn, 2:nb[2] ] &lt;-
+      ( tmp$coefficients[ pmin( nb[1], tmpn + 1 ), 2:nb[2] ] +
+       tmp$coefficients[ pmax(     1, tmpn - 1 ), 2:nb[2] ] ) / 2
+  }
+
+  ## back spline
+  tmpb &lt;- splines::backSpline(tmp )
+
+  if( any( tmpc )) {
+    ## shift back spline based on breaks
+    tmpb$coefficients[,1] &lt;- tmpb$coefficients[,1] + tmpk[tmpc]
+  }
+  tmpb
+}
+###########################################################################################
+getDegreeDay &lt;- function( community, hour )
+{
+  stats::predict( getTemp( community, "DegreeDay" ), hour )$y
+}
+###########################################################################################
+getHour &lt;- function( community, dd )
+{
+  stats::predict( getTemp( community, "Hour" ), dd )$y
+}
+###########################################################################################
+getTime &lt;- function( community, species, x )
+{
+  if( is.na(x)){
+    cat("getTime missing value\n")
+    browser()
+  }
+  switch( getOrgFeature( community, species, "units" ),
+    ## organisms on hour basis assumed to be active only 6am-6pm
+    hr = getDegreeDay( community,
+      ( getTemp( community, "Unit" ) / 2 + x + floor( x / getTemp( community, "Unit" ) )) / 2 ),
+    DD = x )
+}
+###########################################################################################
+checkTime &lt;- function( community, x, base, units )
+{
+## NOTE: Sometimes base can be negative!! (reset to 0)
+  if( units == "hr" ) {
+    x &lt;- max( x )
+#    print( c( base = base, x = x, knots = range( getTemp( community, "DegreeDay", "knots" ))))
+    if( x &gt; max( getTemp( community, "DegreeDay", "knots" )))
+      community &lt;- activeTemp( community, max( base, 0 ),
+                              x + getTemp( community, "Unit" ), messages = FALSE )
+  }
+  community
+}
+###########################################################################################
+transTime &lt;- function( community, org1name, org2name, x,
+                      unit1 = getOrgFeature( community, org1name, "units" ),
+                      unit2 = getOrgFeature( community, org2name, "units" ))
+{
+  if( is.na(x)){
+    cat("transTime missing value\n")
+    browser()
+  }
+  if( unit1 == unit2 )
+    return( x )
+  switch( unit1,
+    ## organisms on hour basis assumed to be active only 6am-6pm
+    hr = getDegreeDay( community,
+      ( getTemp( community, "Unit" ) / 2 + x + floor( x / getTemp( community, "Unit" ))) / 2 ),
+    DD = getHour( x ))
+}
+###########################################################################################
+### To do:
+### 1. interactive designer for hourly temp fluctation over one day
+### 2. interactive designer for daily lows and highs over season: temp.design() DONE
+### 3. check future event trees hour vs. DD
+### 4. schedule interaction events with hour-DD translation
+### 5. make aphytis dormant at night
+###########################################################################################
+
+# --- Source: initTemp.R ---
+##########################################################################################
+### simulation temperature administration
+##########################################################################################
+initTemp &lt;- function( community, lo.hour = 0, hi.hour = getTemp( community, "Unit" ),
+                      days = TemperaturePar["Days"], 
+                      messages = TRUE, datafile = "", ... )
+{
+  if(messages) {
+    cat( "Initializing Temperature Profile ...\n" )
+  }
+  Temperature &lt;- list()
+  
+  TemperaturePar &lt;- getOrgData(community, "temperature", "par", messages, datafile)
+  #  mydata( "TemperaturePar", getOrgInfo( community, "package" ), messages = messages)
+  TemperaturePar &lt;- array( TemperaturePar[,"value"],
+                           dimnames = list( row.names( TemperaturePar )))
+  Temperature$Unit &lt;- TemperaturePar["Unit"]
+  Temperature$Min &lt;- TemperaturePar["Min"]
+  
+  ## set up daily temperature base
+  
+  TemperatureBase &lt;- getOrgData(community, "temperature", "base", messages, datafile)
+  #  mydata( "TemperatureBase", getOrgInfo( community, "package" ), messages = messages)
+  Temperature$Time &lt;- split( TemperatureBase$Time, TemperatureBase$Day )
+  Temperature$Base &lt;- split( TemperatureBase$Base, TemperatureBase$Day )
+  
+  community$temp &lt;- Temperature
+  
+  tmp &lt;- seq( lo.hour / Temperature$Unit,
+              days + 1 + ( hi.hour / Temperature$Unit ),
+              length = TemperaturePar["Length"] )
+  tmp0 &lt;- seq( 0, 1, length = TemperaturePar["Length"] )
+  tmp1 &lt;-  0.25 * ( TemperaturePar["HighBeg"] - TemperaturePar["LowBeg"] )
+  Temperature$Low &lt;- splines::interpSpline( tmp, TemperaturePar["LowBeg"] * ( 1 - tmp0 ) +
+                                              TemperaturePar["LowEnd"] * tmp0 +
+                                              sin( pi * 4 * tmp0 ) * tmp1 )
+  Temperature$High &lt;- splines::interpSpline( tmp, TemperaturePar["HighBeg"] * ( 1 - tmp0 ) +
+                                               TemperaturePar["HighEnd"] * tmp0 +
+                                               sin( pi * ( 0.125 + 4 * tmp0 )) * tmp1 )
+  
+  Temperature$DegreeDay &lt;- NULL
+  
+  if(messages) {
+    cat( "Base daily temperature fluctuation:\n" )
+  }
+  for( i in names( Temperature$time )) {
+    cat( "From day", i, ":\n" )
+    tmp &lt;- Temperature$Base[[i]]
+    names( tmp ) &lt;- Temperature$Time[[i]]
+    print( tmp )
+  }
+  community$temp &lt;- Temperature
+  
+  if(messages) {
+    showTemp( community )
+    cat( "Initial active temperature:\n" )
+  }
+  activeTemp( community, lo.hour, hi.hour, getTemp( community, "Time", 1 )[1],
+              messages = messages)
+}
+###########################################################################################
+getTemp &lt;- function( community, element, sub )
+{
+  tempelem &lt;- community$temp[[element]]
+  if( !missing( sub ))
+    tempelem &lt;- tempelem[[sub]]
+  tempelem
+}
+###########################################################################################
+setTemp &lt;- function( community, element, value )
+{
+  community$temp[[element]] &lt;- value
+  community
+}
+
+# --- Source: temp.design.R ---
+temp.design &lt;- function( community, nspline = 8, n = 1, horizontal = TRUE,
+                         col = c(low="blue",high="red") )
+{
+  low &lt;- getTemp( community, "Low" )
+  high &lt;- getTemp( community, "High" )
+  is.data &lt;- !is.null( low )
+  if( !is.data ) {
+    tmp &lt;- seq( 0, 60, length = nspline )
+    low &lt;- interpSpline( tmp, 60 + 0.125 * tmp + sin( 0.25 * tmp ))
+    high &lt;- interpSpline( tmp, 70 + 0.15 * tmp + sin(( pi / 8 ) + 0.225 * tmp ))
+  }
+  ## plot curve and surrounding axes
+  par( mfrow = c(1,1), mar = rep(4.1,4))
+  cat( "Switch to Graphic Screen to Adjust High and Low Temperatures\n" )
+  
+  plotit &lt;- function( low, high, fig = fig, horizontal = FALSE, strip = .25, margin = 0 )
+  {
+    lowpred &lt;- stats::predict( low, low$knots )
+    highpred &lt;- stats::predict( high, high$knots )
+    ylim &lt;- range( c( lowpred$y, highpred$y ))
+    xlim &lt;- range( c( lowpred$x, highpred$x))
+    xlim &lt;- xlim + c(-1,1) * margin * diff( xlim )
+    if( horizontal ) {
+      if( diff( ylim ) == 0 )
+        ylim &lt;- ylim * c(.75,1.25)
+      separator &lt;- ylim[2]
+      ylim[2] &lt;- ylim[2] + strip * diff( ylim )
+    }
+    else {
+      separator &lt;- xlim[2]
+      xlim[2] &lt;- xlim[2] + strip * diff( xlim )
+    }
+    axt &lt;- c("n","s")
+    tmpar &lt;- par( xaxt = axt[1+horizontal], yaxt = axt[2-horizontal] )
+    plot( xlim, ylim, xlim = xlim, ylim = ylim, type="n", xlab = "", ylab = "" )
+    par( xaxt = "s", yaxt = "s" )
+    title( fig )
+    mtext( "day", 1, 2 )
+    mtext( "temp", 2, 2 )
+    if( horizontal ) {
+      p &lt;- pretty( c(ylim[1],separator) )
+      axis( 2, p[ p &lt;= separator ] )
+      abline( h = separator, lty = 2 )
+    }
+    else {
+      p &lt;- pretty( c(xlim[1],separator) )
+      axis( 1, p[ p &lt;= separator ] )
+      abline( v = separator, lty = 2 )
+    }
+    points( highpred$x, highpred$y, lwd = 4 )
+    curve.plot( highpred, n = n, action = "refresh", fit = high, backfit = FALSE,
+                save.ends = 3, col = "red", lwd = 2 * ( 1 + ( fig == "high" )))
+    points( lowpred$x, lowpred$y, lwd = 4 )
+    curve.plot( lowpred, n = n, action = "refresh", fit = low, backfit = FALSE,
+                save.ends = 3, col = "blue", lwd = 2 * ( 1 + ( fig == "low" )))
+    separator
+  }
+  ## place commands along right strip of plot, highlighting current command
+  plotcmd &lt;- function( ans, fig, cmds, cmdlocs, usr, col = "green", rest = "black",
+                       horizontal = TRUE, data = FALSE )
+  {
+    ans &lt;- c( ans, fig )
+    if( data )
+      ans &lt;- c( ans, "data" )
+    tmp &lt;- is.na( match( cmds, ans ))
+    if( any( tmp )) for( i in unique( cmdlocs$adj )) {
+      tmpi &lt;- tmp &amp; i == cmdlocs$adj
+      if( any( tmpi ))
+        text( cmdlocs$x[tmpi], cmdlocs$y[tmpi], cmds[tmpi], col = rest, adj = i )
+    }
+    if( any( !tmp )) for( i in unique( cmdlocs$adj )) {
+      tmpi &lt;- !tmp &amp; i == cmdlocs$adj
+      if( any( tmpi ))
+        text( cmdlocs$x[tmpi], cmdlocs$y[tmpi], cmds[tmpi], col = col, adj = i )
+    }
+  }
+  cmds &lt;- c("add","delete","replace","rescale","","finish","refresh","restart",
+            "","data","high","low")
+  newlocs &lt;- if( horizontal )
+    function( cmds, data = FALSE, usr )
+    {
+      if( !data )
+        cmds &lt;- cmds[ cmds != "data" ]
+      n &lt;- length( cmds )
+      blank &lt;- seq( n )[ cmds == "" | cmds == " " ]
+      tmp &lt;- diff(usr[3:4]) / 20
+      m &lt;- mean( usr[1:2] )
+      y &lt;- usr[4] + 0.5 * tmp - c( tmp * seq( blank[1] - 1 ), 0,
+                                   tmp * seq( blank[2] - blank[1] - 1 ), 0,
+                                   tmp * seq( n - blank[2] ))
+      x &lt;- c( rep( usr[1], blank[1] - 1 ), mean( m, usr[1] ),
+              rep( m, blank[2] - blank[1] - 1 ), mean( m, usr[2] ),
+              rep( usr[2], n - blank[2] ))
+      adj &lt;- c( rep( 0, blank[1] ),
+                rep( 0.5, blank[2] - blank[1] ),
+                rep( 1, n - blank[2] ))
+      tmp &lt;- data.frame( x = x, y = y, adj = adj )
+      cmds[blank[2]] &lt;- " "
+      row.names( tmp ) &lt;- cmds
+      tmp
+    }
+  else
+    function( cmds, data = FALSE, usr )
+    {
+      if( !data )
+        cmds &lt;- cmds[ cmds != "data" ]
+      n &lt;- length( cmds )
+      blank &lt;- seq( n )[ cmds == "" | cmds == " " ]
+      tmp &lt;- diff(usr[3:4]) / 20
+      m &lt;- mean( usr[3:4] )
+      tmp &lt;- c( usr[4] - tmp * seq( blank[1] - 1 ),
+                mean( m, usr[4] ),
+                m + tmp * ( seq( blank[1] + 1, blank[2] - 1 ) - mean( blank )),
+                mean( m, usr[3] ),
+                usr[3] + tmp * seq( n - blank[2] ))
+      tmp &lt;- data.frame( x = rep( usr[2], n ), y = tmp, adj = rep( 1, n ))
+      cmds[blank[2]] &lt;- " "
+      row.names( tmp ) &lt;- cmds
+      tmp
+    }
+  
+  newans &lt;- ans &lt;- "replace"
+  par( mar = c(4.1,4.1,3.1,4.1),omi=rep(.25,4))
+  fig &lt;- "low"
+  fit &lt;- low
+  separator &lt;- plotit( low, high, fig, horizontal )
+  
+  usr &lt;- par("usr")
+  cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+  cmds &lt;- row.names( cmdlocs )
+  use.data &lt;- FALSE
+  plotcmd( ans, fig, cmds, cmdlocs, usr, data = use.data )
+  rescale.data &lt;- c( range( stats::predict( low, low$knots )$y,
+                            stats::predict( high, high$knots )$y ), range( low$knots, high$knots ))
+  repeat {
+    ## get command from plot using cursor
+    z &lt;- locator(1,"n")
+    if(( !horizontal &amp; z$x &gt; separator ) | ( horizontal &amp; z$y &gt; separator )) {
+      if( horizontal ) { # need to look at both z&amp;y 
+        x &lt;- abs( z$x - cmdlocs$x )
+        x &lt;- x == min( x )
+        newans &lt;- cmds[x]
+        z &lt;- abs( z$y - cmdlocs$y )[x]
+        newans &lt;- newans[ z == min( z ) ][1]
+      }
+      else {
+        z &lt;- abs(z$y - cmdlocs$y )
+        newans &lt;- cmds[ z == min( z ) ][1]
+      }
+      switch( newans,
+              finish =, refresh = {
+                separator &lt;- plotit( low, high, fig, horizontal )
+                usr &lt;- par("usr")
+                cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+              },
+              data = {
+                use.data &lt;- is.data &amp; !use.data
+                if( is.data &amp; !use.data )
+                  plotit( low, high, fig, horizontal )
+              },
+              high =, low = {
+                if( newans != fig )
+                  fig &lt;- newans
+                separator &lt;- plotit( low, high, fig, horizontal )
+                usr &lt;- par("usr")
+                cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+              },
+              rescale = {
+                tmpcmds &lt;- cmds
+                tmpans &lt;- tmpcmds[ cmds == "rescale" ] &lt;-
+                  "rescale: Switch to Character Screen"
+                plotcmd( tmpans, fig, tmpcmds, cmdlocs, usr, data = use.data )
+                ry &lt;- range( c( stats::predict( low, low$knots )$y, stats::predict( high, high$knots )$y ))
+                cat( "\nEnter new minimum/maximum followed by RETURN key\n" )
+                newry &lt;- ry
+                show &lt;- c("minimum","maximum")
+                change &lt;- FALSE
+                for( i in 1:2 ) {
+                  tmpy &lt;- readline( paste( show[i], " temp (",
+                                           round( ry[i], 2 ), "):", sep = "" ))
+                  tmpy &lt;- if( tmpy == "" ) NA
+                  else as.numeric( tmpy )
+                  if( is.na( tmpy ))
+                    tmpy &lt;- ry[i]
+                  else
+                    change &lt;- TRUE
+                  rescale.data[i] &lt;- tmpy
+                }
+                tmp &lt;- range( c( low$knots, high$knots ))
+                for( i in 1:2 ) {
+                  tmpx &lt;- readline( paste( show[i], " time (", 
+                                           round( tmp[i], 2 ), "):", sep = "" ))
+                  tmpx &lt;- if( tmpx == "" ) NA
+                  else as.numeric( tmpx )
+                  if( is.na( tmpx ))
+                    tmpx &lt;- tmp[i]
+                  else
+                    change &lt;- TRUE
+                  rescale.data[2+i] &lt;- tmpx
+                }
+                cat( "Switch to Graphic Screen to Adjust High and Low Temperatures\n" )
+                if( change ) {
+                  tmp &lt;- rescale.temp( low, high, rescale.data[1:2],
+                                       rescale.data[3:4], ry )
+                  low &lt;- tmp$low
+                  high &lt;- tmp$high
+                }
+                separator &lt;- plotit( low, high, fig, horizontal )
+                usr &lt;- par("usr")
+                cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+              },
+              restart = {
+                low &lt;- getTemp( community, "Low" )
+                high &lt;- getTemp( community, "High" )
+                if( is.data )
+                  rescale.data &lt;- c( range( stats::predict( low, low$knots )$y,
+                                            stats::predict( high, high$knots )$y ), range( low$knots, high$knots ))
+                separator &lt;- plotit( low, high, fig, horizontal )
+                usr &lt;- par("usr")
+                cmdlocs &lt;- newlocs( cmds, data = is.data, usr = usr)
+              },
+              add =, delete =, replace = {
+                ans &lt;- newans
+              }
+      )
+      if( use.data ) {
+        tmp &lt;- rescale.temp( getTemp( community, "Low" ), getTemp( community, "High" ),
+                             rescale.data[1:2], rescale.data[3:4] )
+        for( i in c("low","high") ) {
+          datax &lt;- tmp[[i]]$knots
+          lines( datax, stats::predict( tmp[[i]], datax )$y )
+        }
+      }
+      plotcmd( ans, fig, cmds, cmdlocs, usr, data = use.data )
+    }
+    else { # modify the curve knots
+      fit &lt;- get( fig )
+      if( z$x &gt;= min( fit$knots ) &amp; z$x &lt;= max( fit$knots )) {
+        fit &lt;- curve.plot( as.data.frame( stats::predict( fit, fit$knots )), n = n, action = ans,
+                           z = z, fit = fit, backfit = FALSE, save.ends = 2, col = col[fig] )
+        assign( fig, fit$fit )
+      }
+      ans &lt;- "replace"
+      plotcmd( ans, fig, cmds, cmdlocs, usr, data = use.data )
+    }
+    if( newans == "finish" )
+      break
+  }
+  plotcmd( newans, fig, cmds, cmdlocs, "red", data = use.data )
+  community &lt;- setTemp( community, "Low", low )
+  community &lt;- setTemp( community, "High", high )
+  activeTemp( community )
+}
+
+# --- Source: temp.plot.R ---
+temp.plot &lt;- function( community, lo.hour = s$knots[1], hi.hour = max( s$knots ),
+                       length = 201,
+                       col = NULL, derivative = FALSE, ..., printit = FALSE )
+{
+  s &lt;- getTemp( community, "DegreeDay" )
+  x &lt;- seq( lo.hour, hi.hour, length = length )
+  ## make sure to pick up knots to plot in this region
+  x &lt;- unique( sort( c( x, s$knots[ s$knots &gt;= lo.hour &amp; s$knots &lt;= hi.hour ] )))
+  ylab &lt;- "degree-days"
+  if( derivative ) {
+    ylab &lt;- "degrees above min"
+    s$coefficients &lt;- s$coefficients[,-1]
+    for( i in seq( 2, ncol( s$coefficients )))
+      s$coefficients[,i] &lt;- s$coefficients[,i] * i
+  }
+  y &lt;- stats::predict( s, x )$y
+  plot( x / getTemp( community, "Unit" ), y, type = "l", xlab = "day",
+        ylab = ylab, ... )
+  if( printit )
+    print( cbind( hi.hour, stats::predict( s, hi.hour )$y ))
+  if( !is.null( col ))
+    points( s$knots, coef(s)[,1], col = col )
+  if( !derivative ) {
+    s &lt;- getTemp( community, "Hour" )
+    x &lt;- seq( min( y ), max( y ), length = length )
+    tmp &lt;- stats::predict( s, x )
+    lines( tmp$y / getTemp( community, "Unit" ), tmp$x, col = "blue" )
+  }
+}
+###########################################################################################
+temp.lines &lt;- function( s, mult = 24, col = "red" )
+{
+  x &lt;- seq( s$knots[1], max( s$knots ), length = 51 )
+  x &lt;- unique( sort( c( x, s$knots )))
+  p &lt;- stats::predict( s, x )
+  lines( p$x, p$y, col = col )
+  if( !is.null( col ))
+    points( s$knots / mult, coef(s)[,1], col = col )
+}
+
+# --- Source: my.R ---
+###########################################################################################
+## System files
+###########################################################################################
+my.read &lt;- function(dataname, stringsAsFactors = TRUE)
+{
+  switch(tools::file_ext(dataname),
+         "txt" =, "tsv" = read.table(dataname, stringsAsFactors = stringsAsFactors),
+         "csv" = read.csv(dataname, stringsAsFactors = stringsAsFactors),
+         "xls" = readxl::read_xls(dataname),
+         "xlsx" = readxl::read_xlsx(dataname))
+}
+###########################################################################################
+my.eval &lt;- function(species, extension, element, checkdata = FALSE )
+{
+  if( !missing( extension ))
+    species &lt;- paste( species, extension, sep = ".")
+  if( exists( species )) 
+    organism &lt;- get( species )
+  else {
+    if( checkdata ) {
+      organism &lt;- utils::data( list = species )
+      if( organism == species )
+        organism &lt;- NULL
+    }
+    else
+      organism &lt;- NULL
+  }
+  if(!( missing(element) | is.null( organism )))
+    organism &lt;- organism[[element]]
+  organism
+}
+###########################################################################################
+mydata &lt;- function( dataname, package, restart = FALSE, messages = TRUE )
+{
+  edata &lt;- exists( dataname )
+  if( restart &amp; edata ) {
+    remove( list = dataname, pos = 1 )
+    edata &lt;- !edata
+  }
+  if( !edata ) {
+    utils::data( list = dataname, package = eval( package ))
+    if(messages) {
+      cat( "Data", dataname, "loaded\n" )
+    }
+  }
+  else
+    if(messages) {
+      cat( "Data", dataname, "already loaded\n" )
+    }
+} 
+
+# --- Source: Org.R ---
+###########################################################################################
+### Organism Features
+###########################################################################################
+getOrgFeature &lt;- function( community, species, feature = names( OrgFeature ))
+{
+  OrgFeature &lt;- getOrgInfo( community, "Feature" )
+  if (!is.null(OrgFeature)) {
+    if( missing( species ))
+      return( row.names( OrgFeature ))
+    f &lt;- OrgFeature[ species, feature ]
+    if( length( feature ) == 1 ) {
+      if( any( is.na( f )))
+        return( NA )
+      f &lt;- as.character( f )
+    }
+    else {
+      f &lt;- apply( f, 2, as.character )
+    }
+    f &lt;- c( unlist( f ))
+    numf &lt;- suppressWarnings(as.numeric( f ))
+    if( all( !is.na( numf )))
+      f &lt;- numf
+    return(f)
+  }
+  
+  # Fallback for webR standalone adapter objects
+  if (missing(species)) return(c("host", "parasite"))
+  if (missing(feature) || is.null(feature)) return(c(substrate = "substrate", units = "units"))
+  if (length(feature) == 1) {
+    if (feature == "substrate") return("substrate")
+    if (feature == "units") return("units")
+    return(NA)
+  }
+  res &lt;- rep("substrate", length(feature))
+  names(res) &lt;- feature
+  res
+}
+##########################################################################################
+getOrgHosts &lt;- function( community, species,
+                         feature = c("offspring","attack","substrate") ###HOST SPECIFIC###
+)
+{
+  # This seems overly complicated and adds substrate; maybe function name is wrong
+  f &lt;- unique( getOrgFeature( community, species, feature ))
+  # f[match(species, f, nomatch = 0)] # this would only get species
+  o &lt;- getOrgFeature( community )
+  o[ match( f, o, nomatch = 0 ) ]
+}
+###########################################################################################
+getOrgFuture &lt;- function( community, species, feature, current,
+                          future = OrgFuture[[species]] )
+{
+  OrgFuture &lt;- getOrgInfo( community, "Future" )
+  if (!is.null(OrgFuture) &amp;&amp; !is.null(OrgFuture[[species]])) {
+    future &lt;- OrgFuture[[species]]
+    if( missing( current )) {
+      if( missing( feature ))
+        return( future )
+      future &lt;- future[,feature]
+    }
+    else {
+      if( !is.numeric( current ))
+        current &lt;- match( current, future$current, nomatch = 0 )
+      if( missing( feature ))
+        future &lt;- future[ current, ]
+      else
+        future &lt;- future[ current, feature ]
+    }
+    if( is.null( future ))
+      return( NA )
+    if(is.character( future ))
+      future &lt;- as.factor(future)
+    return(future)
+  }
+  
+  # Fallback for webR standalone adapter objects
+  if (!is.null(community$pop[[species]])) {
+    pch_vec &lt;- community$pop[[species]]$pch
+    col_vec &lt;- community$pop[[species]]$col
+    fut &lt;- data.frame(pch = pch_vec, color = col_vec, stringsAsFactors = FALSE)
+    if (missing(feature)) return(fut)
+    if (length(feature) == 1) return(fut[[feature]])
+    return(fut[, feature, drop = FALSE])
+  }
+  NULL
+}
+###########################################################################################
+get.interact &lt;- function( community, species, host, avail, event )
+{
+  id &lt;- get.species.element( community, host, "stage", avail )
+  interact &lt;- getOrgInteract( community, host, species, event )[id]
+  interact[ is.na( interact ) ] &lt;- 0
+  interact
+}
+###########################################################################################
+getOrgInteract &lt;- function( community,
+                            org1name = getOrgFeature( community, org2name, "substrate" ),
+                            org2name, event = NULL )
+{
+  OrgInteract &lt;- getOrgInfo( community, "Interact" )
+  if (!is.null(OrgInteract) &amp;&amp; !is.null(OrgInteract[[org1name]][[org2name]])) {
+    tmp &lt;- OrgInteract[[org1name]][[org2name]]
+    if( is.null( event ))
+      return( tmp )
+    event &lt;- as.character( event )
+    inter &lt;- tmp[,event]
+    if( length( event ) == 1 )
+      names( inter ) &lt;- row.names( tmp )
+    if(is.character(inter))
+      inter &lt;- factor(inter)
+    return(inter)
+  }
+  
+  # Fallback for webR standalone adapter objects
+  sub_names &lt;- if (!is.null(community$sub_names)) community$sub_names else c("fr1", "fr2", "fr3", "fr4", "twig", "lftop", "lfbot")
+  mat &lt;- matrix(1, nrow = length(sub_names), ncol = 1, dimnames = list(sub_names, "substrate"))
+  as.data.frame(mat)
+}
+###########################################################################################
+getOrgMeanValue &lt;- function( community, species )
+{
+  OrgMeanValue &lt;- getOrgInfo( community, "MeanValue" )
+  ## The global org$MeanValue[[species]] contains mean value information.
+  OrgMeanValue[[species]]
+}
+###########################################################################################
+copyOrgInfo &lt;- function( fromname, toname )
+{
+  out &lt;- list()
+  for( i in c("sim")) {
+    from &lt;- paste( fromname, i, sep = "." )
+    if( exists( from )) {
+      toto &lt;- paste( toname, i, sep = "." )
+      out[[toto]] &lt;- get( from )
+      cat( "copied", from, "to", toto, "into list\n" )
+    }
+  }
+  return(out)
+}
+###########################################################################################
+get.alive &lt;- function( community, species, substrate )
+{
+  alive &lt;- getOrgAlive( community, species )
+  alive &lt;- seq_along( alive )[alive]
+  alive[ substrate == get.species.element( community, species, "sub.stage", alive ) ]
+}
+###########################################################################################
+getOrgAlive &lt;- function( community, species, element )
+{
+  organism &lt;- get.species( community, species )
+  ## identify dead organisms (free nodes for leftist tree)
+  tmp &lt;- c( FALSE, apply( organism[c("dist","up","left","right"),-1], 2,
+                          function( x ) any( x &gt; 1 )))
+  if( !any( tmp )) {
+    tmpp &lt;- organism["up",1]
+    if( tmpp &gt; 1 )
+      tmp[tmpp] &lt;- TRUE
+  }
+  if( !missing( element ))
+    tmp &lt;- organism[ element, tmp ]
+  tmp
+}
+###########################################################################################
+getOrgAgeClass &lt;- function( community, species, stage = seq_len( nrow( future )),
+                            future = getOrgFuture( community, species ))
+{
+  ageclass &lt;- future$ageclass[stage]
+  tmp &lt;- !is.na( ageclass )
+  if( any( tmp ))
+    ageclass[ !is.na( ageclass ) ]
+  else
+    NA
+}
+###########################################################################################
+getOrgSubstrate &lt;- function( community, species, elements = seq_len( nrow( inter )),
+                             substrate = getOrgFeature( community, species, "substrate" ),
+                             inter = getOrgInteract( community, substrate, species ))
+{
+  sites &lt;- inter$substrate[elements]
+  tmp &lt;- !is.na( sites )
+  if( any( tmp ))
+    sites[ !is.na( sites ) ]
+  else
+    NA
+}
+###########################################################################################
+sampleOrgSubstrate &lt;- function( community, species, elements = seq_len( nrow( inter )),
+                                substrate.name = getOrgFeature( community, species, "substrate" ),
+                                inter = getOrgInteract( community, substrate.name, species ))
+{
+  if( is.na( substrate.name ))
+    return( elements )
+  newsub &lt;- as.matrix( cbind( elements, inter[ elements, levels( factor(inter$substrate) ) ] ))
+  apply( newsub, 1, function( x, is ) {
+    ns &lt;- sample( levels( factor(is) ), 1, prob = x[-1] / sum( x[-1] ))
+    sub &lt;- seq_len( nrow( inter ))[ ns == is ]
+    if( length( sub ) &gt; 1 ) {
+      newsub &lt;- getOrgInteract( community, substrate.name, substrate.name )[x[1],sub]
+      sample( sub, 1, prob = newsub / sum( newsub ))
+    }
+    else
+      sub
+  }, inter$substrate )
+} 
+##########################################################################################
+### simulation organism administration
+##########################################################################################
+initOrgInfo &lt;- function( package, messages = TRUE, datafile = "", ... )
+{
+  community &lt;- list( pop = list( ))
+  community$org &lt;- list( )
+  community$org$package &lt;- package
+  ## Get data
+  community$org$Feature &lt;- getOrgData(community, "organism", "features",
+                                      messages, datafile)
+  
+  community$pop &lt;- list()
+  community
+}
+##########################################################################################
+setOrgInfo &lt;- function( community, species, hosts, package, messages = TRUE,
+                        datafile = "", ... )
+{
+  Organism &lt;- community$org
+  
+  if( is.null( Organism$Future ))
+    Organism$Future &lt;- list( )
+  if( is.null( Organism$Interact ))
+    Organism$Interact &lt;- list( )
+  
+  for( j in hosts )
+    if( is.null( Organism$Interact[[j]] ))
+      Organism$Interact[[j]] &lt;- list( )
+  
+  ## Do not reset MeanValue as it may have important spline fits!
+  if( is.null( Organism$MeanValue ))
+    Organism$MeanValue &lt;- list( )
+  
+  for( i in species ) {
+    future &lt;- getOrgData(community, "future", i,
+                         messages, datafile)
+    
+    # Check that future agrees with organism.feature information
+    subclass &lt;- Organism$Feature[i,"subclass"]
+    if(!(subclass %in% unique(future$ageclass))) {
+      stop(paste("Future table", paste("future", i, sep = "."),
+                 "does not include", subclass))
+    }
+    
+    level.ageclass &lt;- unique( future$ageclass )
+    level.ageclass &lt;- as.character( level.ageclass[ !is.na( level.ageclass ) ] )
+    future$ageclass &lt;- ordered( future$ageclass, level.ageclass )
+    Organism$Future[[i]] &lt;- future
+    for( j in hosts )
+      if( i != j ) {
+        Organism$Interact[[j]][[i]] &lt;- getOrgData(community, j, i,
+                                                  messages, datafile)
+        
+        # Check that interaction agrees with host current stage information
+        # This is messy!
+        if(j %in% species) {
+          if(!all(row.names(Organism$Interact[[j]][[i]]) %in%
+                  c(as.character(Organism$Future[[j]]$current), i))) {
+            stop(paste("Interaction table", paste(j, i, sep = "."),
+                       "does not match", j, "current stages"))
+          }
+        }
+      }
+    if( is.null( Organism$MeanValue[[i]] ))
+      Organism$MeanValue[[i]] &lt;- list( )
+    else
+      cat( "Keeping Mean Value information for", i, "if any\n" )
+  }
+  for( i in unique( getOrgFeature( community, species, "substrate" ))) {
+    Organism$Interact[[i]][[i]] &lt;- getOrgData(community, i, i,
+                                              messages, datafile)
+  }
+  community$org &lt;- Organism
+  community
+}
+###########################################################################################
+getOrgData &lt;- function(community, left, right,
+                       messages = TRUE, datafile = "")
+{
+  # Get Organism Data from
+  #     package data
+  #     global data supplied by user
+  #     external data file supplied by user
+  sheet &lt;- paste( left, right, sep = "." )
+  data_exists &lt;- FALSE
+  if (is.character(datafile) &amp;&amp; length(datafile) == 1 &amp;&amp; nzchar(datafile)) {
+    if (dir.exists(datafile)) {
+      extensions &lt;- c(".txt", ".tsv", ".csv", ".xls", ".xlsx")
+      datafile_paths &lt;- file.path(datafile, paste0(sheet, extensions))
+      exist_idx &lt;- file.exists(datafile_paths)
+      if (any(exist_idx)) {
+        datafile &lt;- datafile_paths[exist_idx][1]
+        data_exists &lt;- TRUE
+      } else {
+        data_exists &lt;- FALSE
+      }
+      sheet &lt;- ""
+    } else if (file.exists(datafile)) {
+      data_exists &lt;- TRUE
+    }
+  }
+  if(!data_exists) {
+    # Load package data or get user-provided global data.
+    mydata( sheet, getOrgInfo( community, "package" ), messages = messages)
+    my.eval( sheet )
+  } else {
+    # Read data file from user if provided.
+    if(sheet == "")
+      my.read(datafile)
+    else {
+      out &lt;- as.data.frame(readxl::read_excel(datafile, sheet = sheet, .name_repair = "none"))
+      if(names(out)[1] == "") { # first column is actual row names
+        rownames(out) &lt;- out[[1]]
+        out[[1]] &lt;- NULL
+      }
+      out
+    }
+  }
+}
+###########################################################################################
+getOrgNames &lt;- function(datafile = "") {
+  if(datafile == "") {
+    c("organism.features", "future.host", "future.parasite",
+      "substrate.host", "substrate.parasite", "substrate.substrate",
+      "temperature.base", "temperature.par")
+  } else {
+    readxl::excel_sheets(datafile)
+  }
+}
+###########################################################################################
+getOrgDataSimple &lt;- function(community, dataname, datafile = ""){
+  out &lt;- getOrgData(
+    community,
+    left = stringr::str_remove(dataname, "\\..*"),
+    right = stringr::str_remove(dataname, ".*\\."),
+    messages = FALSE, datafile = datafile)
+  # Kludge to reinstate rownames as a column
+  if(!identical(rownames(out), as.character(seq_len(nrow(out))))) {
+    out &lt;- data.frame(rownames = rownames(out), out)
+  }
+  out
+}
+###########################################################################################
+getOrgInfo &lt;- function( community, element )
+{
+  community$org[[element]]
+}
+###########################################################################################
+setOrgMeanValue &lt;- function( community, species, stage, mvalue )
+{
+  ## The global Organism$MeanValue[[species]] contains mean value information.
+  community$org$MeanValue[[species]][[stage]] &lt;- mvalue
+  community
+}
+
+# --- Source: organism.features.R ---
+NULL
+
+# --- Source: future.host.R ---
+NULL
+
+# --- Source: substrate.host.R ---
+NULL
+
+# --- Source: host.parasite.R ---
+NULL
+
+# --- Source: simdata.R ---
+NULL
+
+# --- Source: redscale.R ---
+NULL
+
+# --- Source: init.simulation.R ---
+init.simulation &lt;- function( package = "ewing", 
+                             count = 200,
+                             interact = FALSE,
+                             messages = TRUE,
+                             ...)
+{
+  community &lt;- initOrgInfo( package, messages = messages, ... )
+  community &lt;- initTemp( community, messages = messages, ... )
+  
+  species &lt;- getOrgFeature( community )[1:2]
+  hosts &lt;- getOrgHosts( community, species )
+  
+  if(messages) {
+    cat( "Creating simulation organism set using species:\n",
+         paste( species, collapse = ", " ), "\n\n" )
+  }
+  
+  community &lt;- setOrgInfo( community, species, hosts, package,
+                           messages = messages, ... )
+  
+  if(messages) {
+    cat( "\n" )
+  }
+  species &lt;- unique( species )
+  num &lt;- numeric( length( species ))
+  names( num ) &lt;- species
+  
+  count &lt;- rep_len(count, length(species))
+  names(count) &lt;- species
+  
+  for( i in species ) {
+    num[i] &lt;- reuse &lt;- count[i]
+    
+    if(messages | (interact &amp; interactive())) {
+      cat( paste( "Initialize ", i, " at size ", reuse, sep = "" ))
+    }
+    if(interact &amp; interactive()) {
+      cat(" :")
+      r &lt;- readline( )
+      if( r != "" &amp; is.na( pmatch( substring( r, 1, 1 ), c("y","Y") )))
+        reuse &lt;- suppressWarnings(as.numeric( r ))
+      if( is.na( reuse ))
+        reuse &lt;- count[i]
+    }
+    if( reuse ) {
+      if(messages) {
+        cat( "...\n" )
+      }
+      community &lt;- init.population( community, i, n = reuse, messages = messages, ... )
+      num[i] &lt;- reuse
+    }
+  }
+  class( community ) &lt;- c("ewing", "list")
+  attr(community, "count") &lt;- count
+  community
+}
+
+# --- Source: future.events.R ---
+future.events &lt;- function( community,
+                           nstep = 4000,
+                           species = get.species( community ),
+                           
+                           refresh = nstep / 20, cex = 0.5,
+                           substrate.plot = TRUE, extinct = TRUE,
+                           timeit = TRUE, debugit = FALSE,
+                           messages = TRUE, append = NULL, ... )
+  
+{
+  ## Integrity check of dataset, and initialization of tallies.
+  if( missing( community ))
+    stop( "Must specify a community." )
+  
+  if (is.null(append)) {
+    append &lt;- !is.null(community$count$counts) &amp;&amp; nrow(community$count$counts) &gt; 0
+  }
+  
+  if( debugit ) cat( "initialization\n" )
+  community &lt;- initCount( community, species, debugit = debugit, file = NULL,
+                           append = append, messages = messages )
+  if( timeit )
+    community &lt;- init.timing( community )
+  
+  mintime &lt;- getCount( community, , "mintime" )
+  species.now &lt;- species[ mintime == min( mintime ) ][1]
+  future &lt;- getOrgFuture( community, species.now )
+  
+  # Set up list for plot information.
+  p &lt;- list()
+  pstep &lt;- 0
+  if (!is.null(community$plot)) {
+    p &lt;- community$plot
+    pstep &lt;- length(p)
+  }
+  
+  start_step &lt;- if (append &amp;&amp; !is.null(community$count$step)) community$count$step else 0
+  
+  ## for nstep steps schedule future events and process immediate events
+  for( istep in seq( nstep )) {
+    ## stop if any extinct and extinct flag on, or all extinct
+    omintime &lt;- mintime
+    mintime &lt;- getCount( community, , "mintime" )
+    if( debugit ) print( mintime )
+    if( min( mintime ) &lt; min( omintime )) {
+      cat( "time reversal!\n" ) # should not happen
+      browser()
+    }
+    tmp &lt;- mintime == Inf
+    if( any( tmp )) {
+      if( extinct | all( tmp )) {
+        for( i in names( mintime )[tmp] )
+          cat( "***", i, "is extinct ***\n" )
+        if( plotit )
+          plot.ewing( community, substrate = substrate.plot, cex = cex, ...)
+        break
+      }
+    }
+    ## each species is always sorted so 1st element is next future event
+    species.prev &lt;- species.now
+    species.now &lt;- species[ mintime == min( mintime ) ][1]
+    individual &lt;- get.individual( community, species.now )
+    if( is.na( individual["time"] ) | individual["time"] == Inf ) {
+      cat( "No more finite future events. End of simulation.\n" )
+      break
+    }
+    if( all( individual[c("dist","left","right","up")] == 1 )) {
+      cat( individual["time"], ": last", species.now, "alive",
+           getCount( community, species.now, "base" ), "\n" )
+    }
+    if( species.now != species.prev )
+      future &lt;- getOrgFuture( community, species.now )
+    ## make future event the current stage
+    current &lt;- individual["stage"]
+    stage &lt;- as.character( future$current[current] )
+    if(!length(stage))
+      stop(paste("no stage", current))
+    community &lt;- updateCount( community, species.now, individual, stage == "death",
+                              start_step + istep )
+    individual["stage"] &lt;- current
+    individual["sub.stage"] &lt;- individual["sub.future"]
+    community &lt;- put.individual( community, species.now, individual )
+    
+    if( debugit ) {
+      cat( species.now, istep, "base",
+           getCount( community, species.now, "base" ), "\n" )
+      print( c( step = istep, 
+                countage = sum( getCount( community, species.now, "countage" )),
+                countsub = sum( getCount( community, species.now, "countsub" )),
+                round( individual["time"], 2 ), current, stage ))
+    }
+    
+    ## processing of immediate, pending and future events
+    ## this is the main show--all the rest is setup
+    event.type &lt;- as.character( future[ current, "event" ] )
+    if( debugit ) cat( "do", event.type, istep, stage,
+                       as.character( future$current[ individual["future"] ] ),
+                       individual["time"], "\n" )
+    community &lt;- set.timing( community, event.type )
+    if( event.type == "death" )
+      community &lt;- event.death( community, species.now )
+    else {
+      if( event.type != "future" ) {
+        ## this routine could be user supplied
+        ## generic routines are event.birth, event.attack
+        event.parsed &lt;- get( paste( "event", event.type, sep = "." ))
+        community &lt;- event.parsed( community, species.now )
+      }
+      community &lt;- event.future( community, species.now )
+    }
+    community &lt;- set.timing( community, event.type, 1 )
+    
+    ## refresh plot
+    if( refresh &amp; ! ( istep %% refresh )) {
+      community &lt;- set.timing( community, "refresh" )
+      # Save the ewing_ageclass and ewing_substrate objects.
+      pstep &lt;- pstep + 1
+      p[[pstep]] &lt;- ewing_snapshot(community, start_step + istep, ...)
+      
+      if(messages) {
+        cat( "refresh", istep )
+        for( j in get.species( community ))
+          cat( ":", j, sum( getCount( community, j, "countage" ), na.rm = TRUE ))
+        cat( "\n" )
+      }
+      community &lt;- set.timing( community, "refresh", 1 )
+    }
+    ## periodic browser if in debug mode
+    if( debugit ) {
+      cat( "done", istep, "\n" )    
+      if( refresh &amp; !( istep %% refresh )) {
+        cat( "Type \"c\" to continue or \"Q\" to quit.\n" )
+        browser()
+      }
+    }
+  }
+  community &lt;- set.timing( community, "refresh" )
+  ## end of main loop on future events
+  if( debugit ) cat("done\n")
+  
+  if( sum( getOrgAlive( community, species.now )) &gt; 1 ) {
+    ## tally events at end of simulation
+    community &lt;- setEvents( community, "final" )
+  }
+  community &lt;- set.timing( community, "refresh", 1 )
+  
+  community &lt;- fini.timing( community )
+  community$step &lt;- start_step + nstep
+  attr(community, "nstep") &lt;- start_step + nstep
+  
+  if( !refresh | (nstep%%refresh)) {
+    pstep &lt;- pstep + 1
+    p[[pstep]] &lt;- ewing_snapshot(community, start_step + istep, ...)
+  }
+  community$plot &lt;- p
+  
+  community
+}
+
+# --- Source: ewing_discrete.R ---
+ewing_discrete &lt;- function(nsim, verbose = FALSE, ...) {
+  sims &lt;- seq_len(nsim)
+  
+  object &lt;- as.list(sims)
+  names(object) &lt;- sims
+  
+  for(i in sims) {
+    if(verbose) cat(".")
+    object[[i]] &lt;- ewing_discrete1(...)
+  }
+  make_ewing_discrete(object)
+}
+ewing_discrete1 &lt;- function(siminit = init.simulation(interact = FALSE,
+                                                    messages = FALSE, ...),
+                            increment = 0.5, ...)
+{
+  # Make sure increment is 1,2,5 x power of 10
+  incr &lt;- pretty(increment)
+  increment &lt;- incr[which.min(abs(incr - increment))[1]]
+  
+  out &lt;- future.events(siminit, refresh = 1000,
+                       plotit = FALSE, messages = FALSE, ...)
+  attrs &lt;- attributes(out)
+  
+  # Get age classes used later for summaries and plots
+  items &lt;- purrr::map(out$org$Future, function(x) levels(factor(x$ageclass)))
+  
+  out &lt;- readCount(out)
+  out &lt;- purrr::map(
+    out,
+    function(x) {
+      purrr::map_df(
+        dplyr::distinct(
+          purrr::map_df(
+            dplyr::mutate(
+              as.data.frame(x),
+              time = ifelse(.data$step == 0, 0,
+                            increment * ceiling(.data$time / increment))),
+            rev),
+          .data$time, .keep_all = TRUE),
+        rev)
+    })
+  attr(out, "count") &lt;- attrs$count
+  attr(out, "nstep") &lt;- attrs$nstep
+  attr(out, "items") &lt;- items
+  out
+}
+summary.ewing_discrete &lt;- function(object, ...) {
+  summary(ewing_envelopes(object), ...)
+}
+
+# --- Source: ggplot_ewing.R ---
+ggplot_ewing &lt;- function(object, step = 0, ageclass = TRUE,
+                         substrate = !ageclass, ...)
+{
+  if(!inherits(object, "ewing_snapshot")) {
+    object &lt;- ewing_snapshot(object, step, ...)
+  }
+  step &lt;- object$step
+  
+  p &lt;- list()
+  i &lt;- 0
+  if(ageclass) {
+    i &lt;- i + 1
+    p[[i]] &lt;- ggplot2::autoplot(object$ageclass, ...)
+  }
+  if(substrate) {
+    species &lt;- names(object$substrate)
+    for(j in species) {
+      i &lt;- i + 1
+      p[[i]] &lt;- ggplot2::autoplot(object$substrate[[j]], ...)
+    }
+  }
+  if(length(p) == 1) p &lt;- p[[1]]
+  p
+}
+autoplot.ewing &lt;- function(object, ...) {
+  ggplot_ewing(object, ...)
+}
+plot.ewing &lt;- function(x, ...) {
+  ggplot_ewing(x, ...)
+}
+
+# --- Source: ggplot_current.R ---
+ggplot_current &lt;- function( x,
+                          species,
+                          col = as.character( future$color[stage] ),
+                          headstuff = c( 0, "start"),
+                          units = getOrgFeature( x, species, "units" ),
+                          right = species, adj = c(0,.5,1),
+                          position = paste( "pos", letters[1:3], sep = "." ),
+                          pch = as.character( future$pch[stage] ), cex = 0.5,
+                          stage = organism["stage",],
+                          xlab = "horizontal", ylab = "vertical",
+                          future = getOrgFuture( x, species, c("color","pch") ),
+                          facet = TRUE, ...)
+{
+  ## plot current stages for species (except random parasites)
+  organism &lt;- get.species( x, species )[,-1]
+  if(is.null(organism))
+    return(NULL)
+  
+  tri_coord &lt;- tri2car( organism[position,] )
+  tri_coord$col &lt;- NA
+  tri_coord$label &lt;- pch
+  values &lt;- future$color
+  names(values) &lt;- future$pch
+  values &lt;- unique(values)
+
+  # Facet by Substrate.
+  # This needs to use generic function to get substrate names.
+  tmp &lt;- names(x$org$Interact$substrate$substrate)
+  tri_coord$substrate &lt;- tmp[organism["sub.stage",]]
+  
+  p &lt;- ggplot2::ggplot(tri_coord) +
+    ggplot2::aes(x, y, col = label, label = label) +
+    ggplot2::geom_text(size=3) +
+    ggplot2::xlab(xlab) +
+    ggplot2::ylab(ylab) +
+    ggplot2::ggtitle(paste(units, "future event", right),
+      subtitle = paste(headstuff, collapse = " ")) +
+    ggplot2::scale_color_manual(values = values)
+  if(facet) {
+    p &lt;- p + ggplot2::facet_wrap(~substrate)
+  }
+  p
+}
+
+# --- Source: distPlotApp.R ---
+distPlotApp &lt;- function(title = "Population Ethology") {
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      initParInput("init_par"),
+      distPlotInput("dist_plot"),
+      futureInput("future")),
+    distPlotOutput("dist_plot")
+  )
+  server &lt;- function(input, output, server) {
+    init_par &lt;- initParServer("init_par")
+    siminit &lt;- initServer("init", init_par)
+    simres &lt;- futureServer("future", siminit)
+    distPlotServer("dist_plot", simres)
+  }
+  
+  shiny::shinyApp(ui = ui, server = server)
+}
+distPlotServer &lt;- function(id, simres) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+    
+    dist_plot &lt;- shiny::reactive({
+      shiny::req(simres(), input$total, input$norm)
+      object &lt;- if(inherits(simres(), "ewing")) {
+        ewing_ageclass(simres(), total = input$total, normalize = input$norm)
+      } else {
+        NULL
+      }
+      if(is.null(object)) return(plot_null("no simulation"))
+      ggplot2::autoplot(object)
+    })
+    output$dist_plot &lt;- shiny::renderPlot({
+      dist_plot()
+    })
+    
+    # Return.
+    dist_plot
+  })
+}
+distPlotInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    shiny::checkboxInput(ns("norm"), "Normalize Plot", TRUE),
+    shiny::checkboxInput(ns("total"), "Include Total", TRUE))
+}
+distPlotOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::plotOutput(ns("dist_plot"), height = "4in")
+}
+
+# --- Source: multApp.R ---
+multApp &lt;- function(title = "Population Ethology") {
+  ui &lt;- shiny::fluidPage(
+    shiny::titlePanel(title),
+    shiny::sidebarLayout(
+      shiny::sidebarPanel(
+        multInput("ewing")
+      ),
+      shiny::mainPanel(
+        multOutput("ewing")
+      )))
+  
+  server &lt;- function(input, output, server) {
+    multServer("ewing")
+  }
+  
+  shiny::shinyApp(ui = ui, server = server)
+}
+multServer &lt;- function(id) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+    
+    simres &lt;- shiny::reactive({
+      nsim &lt;- as.integer(shiny::req(input$nsim))
+      shiny::withProgress(
+        message = paste('Ewing Discrete', nsim, 'Simulations ...'),
+                        value = 0,
+        {
+          out &lt;- as.list(seq_len(nsim))
+          inc &lt;- 1 / nsim
+          for(i in seq_len(nsim)) {
+            shiny::incProgress(inc)
+            out[[i]] &lt;- ewing_discrete1(
+              count = as.numeric(c(input$host, input$parasite)),
+              nstep = input$steps)
+          }
+        }
+      )
+    })
+    
+    distplot &lt;- shiny::reactive({
+      if(inherits(simres(), "ewing")) {
+        ggplot2::autoplot(ewing_ageclass(simres(), total = input$total,
+                                         normalize = input$norm))
+      } else {
+        NULL
+      }
+    })
+    output$distPlot &lt;- shiny::renderPlot({
+      distplot()
+    })
+    # *** This is not right. Need to get each species name here and in `ewing_substrate`
+    # species &lt;- ewing:::getOrgFeature(simres)
+    #   gives list but includes substrates.
+    # can figure out what substrate goes to species with 
+    # ewing:::getOrgFeature(simres, species[i], "substrate")
+    # if it is NA (or "NA"), then that is a substrate.
+    # So cycle through species generating plots.
+    # put as much in `ewing_substrate` as possible.
+    species &lt;- shiny::reactive({
+      get.organisms(datafile())$species
+    })
+    substrates &lt;- shiny::reactive({
+      get.organisms(datafile())$substrates
+    })
+    output$sppsize &lt;- shiny::renderUI({
+      shiny::req(species())
+      lapply(species(), function(x) {
+        shiny::sliderInput(ns(x),
+                           label = paste0("Number of ", x, "s:"),
+                           min = 0,
+                           max = 500,
+                           value = 100,
+                           step = 20)
+      })
+    })
+    sppplot &lt;- shiny::reactive({
+      shiny::req(species(), simres())
+      if(inherits(simres(), "ewing")) {
+        if(!is.null(simres())) {
+          p &lt;- lapply(species(), function(x) {
+            p &lt;- ggplot2::autoplot(ewing_substrate(simres(), x))
+            if(inherits(p, "ggplot"))
+              p &lt;- p + ggplot2::ggtitle(paste(x, "on", substrates()[1]))
+            p
+          })
+          if(any(unlist(purrr::map(p, is.null))))
+            p &lt;- NULL
+          p
+        }
+      } else {
+        ggplot2::ggplot()
+      }
+    })
+    output$sppPlot &lt;- shiny::renderPlot({
+      if(!is.null(sppplot())) {
+        spp &lt;- length(species())
+        cowplot::plot_grid(plotlist = sppplot(), nrow = spp)
+      } else {
+        ggplot2::ggplot()
+      }
+    })
+    envdata &lt;- shiny::reactive({
+      shiny::req(simres())
+      if(inherits(simres(), "ewing_discrete")) {
+        ewing_envelopes(simres())
+      } else {
+        NULL
+      }
+    })
+    envelopePlot &lt;- shiny::reactive({
+      shiny::req(envdata())
+      nsim &lt;- as.integer(shiny::req(input$nsim))
+      conf &lt;- (nsim &gt;= 10) &amp; input$conf 
+      if(inherits(simres(), "ewing_discrete")) {
+        ggplot_ewing_envelopes(envdata(), conf)
+      } else {
+        NULL
+      }
+    })
+    output$envPlot &lt;- shiny::renderPlot({
+      envelopePlot()
+    })
+    output$plots &lt;- shiny::renderUI({
+      nsim &lt;- as.integer(shiny::req(input$nsim), simres())
+      if(nsim == 1) {
+        shiny::req(species())
+        shiny::tagList(
+          shiny::plotOutput(ns("distPlot"), height = "4in"),
+          shiny::plotOutput(ns("sppPlot"), height = paste0(2 * length(species()), "in")))
+      } else {
+        shiny::plotOutput(ns("envPlot"))
+      }
+    })
+    
+    data &lt;- reactive({
+      nsim &lt;- as.integer(shiny::req(input$nsim))
+      species &lt;- shiny::req(input$species)
+      if(nsim == 1) {
+        readCount(simres())[[species]]
+      } else {
+        shiny::req(envdata())
+        print(envdata(), species = species)
+      }
+    })
+    params &lt;- shiny::reactive({
+      nsim &lt;- shiny::req(input$nsim)
+      paste(shiny::req(input$host), shiny::req(input$parasite),
+            shiny::req(input$steps), nsim, sep = "_")
+    })
+    output$downloadRun &lt;- shiny::downloadHandler(
+      filename = function() {
+        paste0(paste(shiny::req(input$outfile), shiny::req(input$species), params(), sep = "_"), ".csv") },
+      content = function(file) {
+        utils::write.csv(data(), file, row.names = FALSE)
+      }
+    )
+    
+    output$downloadPlot &lt;- shiny::downloadHandler(
+      filename = function() {
+        paste0(paste(shiny::req(input$plotfile), params(), sep = "_"), ".pdf") },
+      content = function(file) {
+        grDevices::pdf(file, width = 9)
+        nsim &lt;- as.integer(shiny::req(input$nsim))
+        if(nsim == 1) {
+          print(distplot())
+          for(i in species()) {
+            print(sppplot()[[i]])
+          }
+        } else {
+          print(envelopePlot())
+        }
+        grDevices::dev.off()
+      }
+    )
+    
+    datanames &lt;- shiny::reactive({
+      getOrgNames(datafile())
+    })
+    output$inputfiles &lt;- shiny::renderUI({
+      shiny::tagList(
+        shiny::selectInput(ns("dataname"), "", datanames(), "organism.features"),
+        DT::renderDataTable({
+          getOrgDataSimple(simres(),shiny::req(input$dataname), datafile())
+        }, escape = FALSE,
+        options = list(scrollX = TRUE, pageLength = 10)))
+    })
+    
+    datafile &lt;- shiny::reactive({
+      if(shiny::isTruthy(input$datafile)) {
+        input$datafile$datapath
+      } else {
+        ""
+      }
+    })
+    output$outs &lt;- shiny::renderUI({
+      switch(input$button,
+             Plots        =  shiny::uiOutput(ns("plots")),
+             "Input Data" =  shiny::uiOutput(ns("inputfiles")))
+    })
+    
+    output$plottype &lt;- shiny::renderUI({
+      if(input$nsim == 1) {
+        shiny::tagList(
+          shiny::checkboxInput(ns("norm"), "Normalize Plot", TRUE),
+          shiny::checkboxInput(ns("total"), "Include Total", TRUE))
+      } else {
+        shiny::checkboxInput(ns("conf"), "Confidence band", FALSE)
+      }
+    })
+    output$version &lt;- shiny::renderText({
+      paste("Ewing package version ", utils::packageVersion("ewing"))
+    })
+  })
+}
+multInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    shiny::h4("Simulation Settings"),
+    shiny::uiOutput(ns("sppsize")),
+    shiny::sliderInput(ns("steps"),
+                       label = "Simulation steps:",
+                       min = 1000,
+                       max = 10000,
+                       value = 1000,
+                       step = 500),
+    shiny::radioButtons(ns("nsim"),
+                        "Number of Simulations",
+                        c(1,10,20,50,100,200),
+                        1, inline = TRUE),
+    
+    shiny::fileInput(ns("datafile"), "Optional XLSX Input Data File",
+                     multiple = FALSE,
+                     accept = c(".xls", ".xlsx")),
+    
+    shiny::actionButton(ns("go"), "Start Simulation"),
+    
+    shiny::HTML("&lt;hr style='height:1px;border:none;color:#333;background-color:#333;' /&gt;"),
+    shiny::uiOutput(ns("plottype")),
+    shiny::h4("Save Files"),
+    shiny::fluidRow(
+      shiny::column(6, shiny::textInput(ns("outfile"), "Species Table", "mysim")),
+      shiny::column(3, shiny::selectInput(ns("species"), "", c("host", "parasite"), "host")),
+      shiny::column(3, shiny::downloadButton(ns("downloadRun"), "Table"))),
+    shiny::fluidRow(
+      shiny::column(9, shiny::textInput(ns("plotfile"), "Plot File", "myplot")),
+      shiny::column(3, shiny::downloadButton(ns("downloadPlot"), "Plots"))),
+    
+    shiny::HTML("&lt;hr  style='height:1px;border:none;color:#333;background-color:#333;' /&gt;"),
+    shiny::HTML("See &lt;a href='https://github.com/byandell/ewing'&gt;ewing package on github&lt;/a&gt;"),
+    shiny::uiOutput(ns("version"))
+  )
+}
+multOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    shiny::radioButtons(ns("button"), "", c("Plots", "Input Data"),
+                        "Plots", inline = TRUE),
+    shiny::uiOutput(ns("outs"))
+  )
+}
+
+# --- Source: inputApp.R ---
+inputApp &lt;- function(title = "Input Data Explorer") {
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      inputAppInput("input_app")
+    ),
+    bslib::card(
+      inputAppOutput("input_app")
+    )
+  )
+  server &lt;- function(input, output, session) {
+    inputAppServer("input_app")
+  }
+  shiny::shinyApp(ui = ui, server = server)
+}
+
+inputAppInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    shiny::selectInput(ns("dataname"), "Select Dataset Table:",
+      choices = c(
+        "organism.features", "future.host", "future.parasite",
+        "substrate.host", "substrate.parasite", "substrate.substrate",
+        "host.parasite", "temperature.base", "temperature.par"
+      ),
+      selected = "organism.features"
+    )
+  )
+}
+
+inputAppOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tableOutput(ns("org_table"))
+}
+
+inputAppServer &lt;- function(id, simres = shiny::reactiveVal(NULL), datafile = shiny::reactiveVal("")) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+
+    output$org_table &lt;- shiny::renderTable(
+      {
+        name &lt;- input$dataname %||% "organism.features"
+        sim &lt;- if (is.reactive(simres)) simres() else simres
+        dfile &lt;- if (is.reactive(datafile)) datafile() else datafile
+
+        if (is.null(sim)) sim &lt;- tryCatch(init.simulation(datafile = dfile), error = function(e) NULL)
+        sim_single &lt;- if (inherits(sim, "ewing_discrete")) sim[[1]] else sim
+
+        res &lt;- NULL
+
+        # 1. Check if dataset is stored in sim$datasets (e.g. injected in webR demo)
+        if (!is.null(sim_single$datasets) &amp;&amp; !is.null(sim_single$datasets[[name]])) {
+          res &lt;- sim_single$datasets[[name]]
+        }
+
+        # 2. Extract dynamically via getOrgDataSimple or getOrg* package routines
+        if (is.null(res)) {
+          res &lt;- tryCatch({
+            getOrgDataSimple(sim_single, name, datafile = dfile)
+          }, error = function(e) NULL)
+        }
+
+        # 3. Dynamic fallback to extracting from sim_single$org state structures
+        if (is.null(res) || !is.data.frame(res) || nrow(res) == 0) {
+          res &lt;- tryCatch({
+            left &lt;- stringr::str_remove(name, "\\..*")
+            right &lt;- stringr::str_remove(name, ".*\\.")
+
+            if (left == "organism" &amp;&amp; right == "features") {
+              if (!is.null(sim_single$org$Feature)) as.data.frame(sim_single$org$Feature) else NULL
+            } else if (left == "future") {
+              if (!is.null(sim_single$org$Future[[right]])) sim_single$org$Future[[right]] else getOrgFuture(sim_single, right)
+            } else if (!is.null(sim_single$org$Interact[[left]][[right]])) {
+              sim_single$org$Interact[[left]][[right]]
+            } else if (!is.null(sim_single$org[[left]][[right]])) {
+              sim_single$org[[left]][[right]]
+            } else {
+              NULL
+            }
+          }, error = function(e) NULL)
+        }
+
+        if (is.null(res) || !is.data.frame(res) || nrow(res) == 0) {
+          res &lt;- data.frame(Info = paste("Dataset", name, "is not available in current simulation instance."))
+        }
+
+        res
+      },
+      striped = TRUE,
+      hover = TRUE,
+      bordered = TRUE
+    )
+  })
+}
+
+# --- Source: origEwingApp.R ---
+origEwingApp &lt;- function(title = "Population Ethology") {
+  ui &lt;- shiny::fluidPage(
+    shiny::titlePanel(title),
+    shiny::sidebarLayout(
+      shiny::sidebarPanel(
+        origEwingInput("ewing")
+      ),
+      shiny::mainPanel(
+        origEwingOutput("ewing")
+      )))
+  
+  server &lt;- function(input, output, server) {
+    origEwingServer("ewing")
+  }
+  
+  shiny::shinyApp(ui = ui, server = server)
+}
+origEwingServer &lt;- function(id) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+    
+    simres &lt;- shiny::bindEvent(
+      shiny::bindCache(
+        shiny::reactive({
+          nsim &lt;- as.integer(input$nsim)
+          if(nsim == 1) {
+            # Ideally, would like to continue simulation. That would require
+            # - feed simres() back into future.events, which requires some logic
+            # - use option "append = TRUE" to append to outfile
+            siminit &lt;- init.simulation(count = as.numeric(c(input$host, input$parasite)),
+                                       datafile = datafile()) # initialize simulation
+            future.events(siminit, nstep = input$steps, plotit = FALSE) # simulate future events
+          } else {
+            shiny::withProgress(message = paste('Ewing Discrete', nsim,
+                                                'Simulations ...'),
+                                value = 0,
+                                {
+                                  out &lt;- as.list(seq_len(nsim))
+                                  inc &lt;- 1 / nsim
+                                  for(i in seq_len(nsim)) {
+                                    shiny::incProgress(inc)
+                                    out[[i]] &lt;- ewing_discrete1(
+                                      count = as.numeric(c(input$host, input$parasite)),
+                                      nstep = input$steps)
+                                  }
+                                  make_ewing_discrete(out)
+                                })
+          }
+        }),
+        input$host, input$parasite, input$steps, input$nsim, input$go,
+        input$datafile),
+      input$go)
+    
+    distplot &lt;- shiny::reactive({
+      if(inherits(simres(), "ewing")) {
+        ggplot2::autoplot(ewing_ageclass(simres(), total = input$total,
+                                         normalize = input$norm))
+      } else {
+        NULL
+      }
+    })
+    output$distPlot &lt;- shiny::renderPlot({
+      distplot()
+    })
+    # *** This is not right. Need to get each species name here and in `ewing_substrate`
+    # species &lt;- ewing:::getOrgFeature(simres)
+    #   gives list but includes substrates.
+    # can figure out what substrate goes to species with 
+    # ewing:::getOrgFeature(simres, species[i], "substrate")
+    # if it is NA (or "NA"), then that is a substrate.
+    # So cycle through species generating plots.
+    # put as much in `ewing_substrate` as possible.
+    species &lt;- shiny::reactive({
+      get.organisms(datafile())$species
+    })
+    substrates &lt;- shiny::reactive({
+      get.organisms(datafile())$substrates
+    })
+    output$sppsize &lt;- shiny::renderUI({
+      shiny::req(species())
+      lapply(species(), function(x) {
+        shiny::sliderInput(ns(x),
+                           label = paste0("Number of ", x, "s:"),
+                           min = 0,
+                           max = 500,
+                           value = 100,
+                           step = 20)
+      })
+    })
+    sppplot &lt;- shiny::reactive({
+      shiny::req(species(), simres())
+      if(inherits(simres(), "ewing")) {
+        if(!is.null(simres())) {
+          p &lt;- lapply(species(), function(x) {
+            p &lt;- ggplot2::autoplot(ewing_substrate(simres(), x))
+            if(inherits(p, "ggplot"))
+              p &lt;- p + ggplot2::ggtitle(paste(x, "on", substrates()[1]))
+            p
+          })
+          if(any(unlist(purrr::map(p, is.null))))
+            p &lt;- NULL
+          p
+        }
+      } else {
+        ggplot2::ggplot()
+      }
+    })
+    output$sppPlot &lt;- shiny::renderPlot({
+      if(!is.null(sppplot())) {
+        spp &lt;- length(species())
+        cowplot::plot_grid(plotlist = sppplot(), nrow = spp)
+      } else {
+        ggplot2::ggplot()
+      }
+    })
+    envdata &lt;- shiny::reactive({
+      shiny::req(simres())
+      if(inherits(simres(), "ewing_discrete")) {
+        ewing_envelopes(simres())
+      } else {
+        NULL
+      }
+    })
+    envelopePlot &lt;- shiny::reactive({
+      shiny::req(envdata())
+      nsim &lt;- as.integer(shiny::req(input$nsim))
+      conf &lt;- (nsim &gt;= 10) &amp; input$conf 
+      if(inherits(simres(), "ewing_discrete")) {
+        ggplot_ewing_envelopes(envdata(), conf)
+      } else {
+        NULL
+      }
+    })
+    output$envPlot &lt;- shiny::renderPlot({
+      envelopePlot()
+    })
+    output$plots &lt;- shiny::renderUI({
+      nsim &lt;- as.integer(shiny::req(input$nsim), simres())
+      if(nsim == 1) {
+        shiny::req(species())
+        shiny::tagList(
+          shiny::plotOutput(ns("distPlot"), height = "4in"),
+          shiny::plotOutput(ns("sppPlot"), height = paste0(2 * length(species()), "in")))
+      } else {
+        shiny::plotOutput(ns("envPlot"))
+      }
+    })
+    
+    data &lt;- reactive({
+      nsim &lt;- as.integer(shiny::req(input$nsim))
+      species &lt;- shiny::req(input$species)
+      if(nsim == 1) {
+        readCount(simres())[[species]]
+      } else {
+        shiny::req(envdata())
+        print(envdata(), species = species)
+      }
+    })
+    params &lt;- shiny::reactive({
+      nsim &lt;- shiny::req(input$nsim)
+      paste(shiny::req(input$host), shiny::req(input$parasite),
+            shiny::req(input$steps), nsim, sep = "_")
+    })
+    output$downloadRun &lt;- shiny::downloadHandler(
+      filename = function() {
+        paste0(paste(shiny::req(input$outfile), shiny::req(input$species), params(), sep = "_"), ".csv") },
+      content = function(file) {
+        utils::write.csv(data(), file, row.names = FALSE)
+      }
+    )
+    
+    output$downloadPlot &lt;- shiny::downloadHandler(
+      filename = function() {
+        paste0(paste(shiny::req(input$plotfile), params(), sep = "_"), ".pdf") },
+      content = function(file) {
+        grDevices::pdf(file, width = 9)
+        nsim &lt;- as.integer(shiny::req(input$nsim))
+        if(nsim == 1) {
+          print(distplot())
+          for(i in species()) {
+            print(sppplot()[[i]])
+          }
+        } else {
+          print(envelopePlot())
+        }
+        grDevices::dev.off()
+      }
+    )
+    
+    datanames &lt;- shiny::reactive({
+      getOrgNames(datafile())
+    })
+    output$inputfiles &lt;- shiny::renderUI({
+      shiny::tagList(
+        shiny::selectInput(ns("dataname"), "", datanames(), "organism.features"),
+        DT::renderDataTable({
+          getOrgDataSimple(simres(),shiny::req(input$dataname), datafile())
+        }, escape = FALSE,
+        options = list(scrollX = TRUE, pageLength = 10)))
+    })
+    
+    datafile &lt;- shiny::reactive({
+      if(shiny::isTruthy(input$datafile)) {
+        input$datafile$datapath
+      } else {
+        ""
+      }
+    })
+    output$outs &lt;- shiny::renderUI({
+      switch(input$button,
+             Plots        =  shiny::uiOutput(ns("plots")),
+             "Input Data" =  shiny::uiOutput(ns("inputfiles")))
+    })
+    
+    output$plottype &lt;- shiny::renderUI({
+      if(input$nsim == 1) {
+        shiny::tagList(
+          shiny::checkboxInput(ns("norm"), "Normalize Plot", TRUE),
+          shiny::checkboxInput(ns("total"), "Include Total", TRUE))
+      } else {
+        shiny::checkboxInput(ns("conf"), "Confidence band", FALSE)
+      }
+    })
+    output$version &lt;- shiny::renderText({
+      paste("Ewing package version ", utils::packageVersion("ewing"))
+    })
+  })
+}
+origEwingInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    shiny::h4("Simulation Settings"),
+    shiny::uiOutput(ns("sppsize")),
+    shiny::sliderInput(ns("steps"),
+                       label = "Simulation steps:",
+                       min = 1000,
+                       max = 10000,
+                       value = 1000,
+                       step = 500),
+    shiny::radioButtons(ns("nsim"),
+                        "Number of Simulations",
+                        c(1,10,20,50,100,200),
+                        1, inline = TRUE),
+    
+    shiny::fileInput(ns("datafile"), "Optional XLSX Input Data File",
+                     multiple = FALSE,
+                     accept = c(".xls", ".xlsx")),
+    
+    shiny::actionButton(ns("go"), "Start Simulation"),
+    
+    shiny::HTML("&lt;hr style='height:1px;border:none;color:#333;background-color:#333;' /&gt;"),
+    shiny::uiOutput(ns("plottype")),
+    shiny::h4("Save Files"),
+    shiny::fluidRow(
+      shiny::column(6, shiny::textInput(ns("outfile"), "Species Table", "mysim")),
+      shiny::column(3, shiny::selectInput(ns("species"), "", c("host", "parasite"), "host")),
+      shiny::column(3, shiny::downloadButton(ns("downloadRun"), "Table"))),
+    shiny::fluidRow(
+      shiny::column(9, shiny::textInput(ns("plotfile"), "Plot File", "myplot")),
+      shiny::column(3, shiny::downloadButton(ns("downloadPlot"), "Plots"))),
+    
+    shiny::HTML("&lt;hr  style='height:1px;border:none;color:#333;background-color:#333;' /&gt;"),
+    shiny::HTML("See &lt;a href='https://github.com/byandell/ewing'&gt;ewing package on github&lt;/a&gt;"),
+    shiny::uiOutput(ns("version"))
+  )
+}
+origEwingOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    shiny::radioButtons(ns("button"), "", c("Plots", "Input Data"),
+                        "Plots", inline = TRUE),
+    shiny::uiOutput(ns("outs"))
+  )
+}
+
+# --- Source: sysetholApp.R ---
+sysetholApp &lt;- function(title = "Systems Ethology Platform") {
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      width = 320,
+      sysetholInput("sysethol")
+    ),
+    sysetholOutput("sysethol")
+  )
+  
+  server &lt;- function(input, output, session) {
+    sysetholServer("sysethol")
+  }
+  
+  shiny::shinyApp(ui = ui, server = server)
+}
+
+step_size_choices &lt;- c(1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000)
+
+step_size_slider &lt;- function(inputId, label = "Steps per click:", selected = 50) {
+  idx &lt;- match(selected, step_size_choices)
+  if (is.na(idx)) idx &lt;- 6
+  sl &lt;- shiny::sliderInput(inputId, label, min = 1, max = length(step_size_choices), value = idx, step = 1, ticks = TRUE)
+  sl$children[[2]]$attribs[['data-values']] &lt;- paste(step_size_choices, collapse = ",")
+  sl
+}
+
+parse_step_size &lt;- function(val) {
+  if (is.null(val)) return(50)
+  num &lt;- round(as.numeric(val))
+  if (is.na(num)) return(50)
+  
+  # Direct large values (e.g., 20, 50, 100, 200, 500, 1000, 2000)
+  if (num %in% step_size_choices &amp;&amp; num &gt; 10) {
+    return(num)
+  }
+  
+  # 0-based JavaScript index from ion.rangeSlider (0 to 10)
+  if (num &gt;= 0 &amp;&amp; num &lt; length(step_size_choices)) {
+    return(step_size_choices[num + 1])
+  }
+  
+  # Fallback for direct value
+  if (num %in% step_size_choices) {
+    return(num)
+  }
+  
+  50
+}
+
+sysetholInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    shiny::div(
+      style = "font-size: 0.85rem;",
+      shiny::h4("Simulation Setup", style = "font-size: 0.95rem; font-weight: 600; margin-bottom: 6px;"),
+      shiny::sliderInput(ns("n_host"), "Number of hosts:", min = 0, max = 500, value = 200, step = 20),
+      shiny::sliderInput(ns("n_parasite"), "Number of parasites:", min = 0, max = 500, value = 100, step = 20),
+      shiny::radioButtons(ns("nsim"), "Number of Simulations:", choices = c(1, 10, 20, 50, 100, 200), selected = 1, inline = TRUE),
+      
+      # Conditional Control: Steps per click ONLY shown when nsim == 1 (Geometric log scale choices 1..2000)
+      shiny::conditionalPanel(
+        condition = sprintf("input['%s'] == '1'", ns("nsim")),
+        step_size_slider(ns("step_size"), "Steps per click:", selected = 50)
+      ),
+      
+      # Conditional Control: Total Simulation steps ONLY shown when nsim &gt; 1
+      shiny::conditionalPanel(
+        condition = sprintf("input['%s'] != '1'", ns("nsim")),
+        shiny::sliderInput(ns("steps"), "Total Simulation steps:", min = 500, max = 5000, value = 1000, step = 500)
+      ),
+      
+      shiny::div(
+        style = "display: flex; gap: 6px; margin: 10px 0 8px 0;",
+        shiny::actionButton(ns("run_engine"), "Run Engine", class = "btn-sm btn-primary flex-fill", style = "font-weight: 600;"),
+        shiny::actionButton(ns("reset_engine"), "Reset", class = "btn-sm btn-outline-secondary")
+      ),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      
+      shiny::h4("Display &amp; Plot Options", style = "font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;"),
+      shiny::checkboxInput(ns("norm"), "Normalize Dist Plot", TRUE),
+      shiny::checkboxInput(ns("total"), "Include Total in Dist", TRUE),
+      
+      # Conditional Control: Confidence Band ONLY shown when nsim &gt; 1
+      shiny::conditionalPanel(
+        condition = sprintf("input['%s'] != '1'", ns("nsim")),
+        shiny::checkboxInput(ns("confidence"), "Confidence Band Envelope", TRUE)
+      ),
+      
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      substrateInput(ns("substrate"))
+    )
+  )
+}
+
+sysetholOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::uiOutput(ns("sysethol_tabs"))
+}
+
+sysetholServer &lt;- function(id) {
+  shiny::moduleServer(id, function(input, output, session) {
+    ns &lt;- session$ns
+    
+    current_sim &lt;- shiny::reactiveVal(NULL)
+    
+    # Initialize simulation on start
+    shiny::observe({
+      if (is.null(current_sim())) {
+        nh &lt;- input$n_host %||% 200
+        np &lt;- input$n_parasite %||% 100
+        sim &lt;- init.simulation(count = c(nh, np))
+        sz &lt;- parse_step_size(input$step_size %||% 5)
+        sim &lt;- future.events(sim, nstep = sz, plotit = FALSE)
+        current_sim(sim)
+      }
+    })
+    
+    # Run Engine button
+    shiny::observeEvent(input$run_engine, {
+      nsim_val &lt;- as.numeric(input$nsim %||% 1)
+      nh &lt;- input$n_host %||% 200
+      np &lt;- input$n_parasite %||% 100
+      
+      if (nsim_val == 1) {
+        sim &lt;- current_sim()
+        if (is.null(sim)) {
+          sim &lt;- init.simulation(count = c(nh, np))
+        }
+        sz &lt;- parse_step_size(input$step_size %||% 5)
+        new_state &lt;- future.events(sim, nstep = sz, plotit = FALSE)
+        current_sim(new_state)
+      } else {
+        tot_steps &lt;- input$steps %||% 1000
+        res &lt;- ewing_discrete(nsim = nsim_val, nstep = tot_steps, count = c(nh, np), verbose = FALSE)
+        current_sim(res)
+      }
+    })
+    
+    # Reset button
+    shiny::observeEvent(input$reset_engine, {
+      nh &lt;- input$n_host %||% 200
+      np &lt;- input$n_parasite %||% 100
+      sim &lt;- init.simulation(count = c(nh, np))
+      sz &lt;- parse_step_size(input$step_size %||% 5)
+      sim &lt;- future.events(sim, nstep = sz, plotit = FALSE)
+      current_sim(sim)
+    })
+    
+    # Input Data App Server
+    inputAppServer("input_app", simres = current_sim)
+    
+    # Dynamic Tabs (Envelope Plots shown ONLY when nsim &gt; 1)
+    output$sysethol_tabs &lt;- shiny::renderUI({
+      nsim_val &lt;- as.numeric(input$nsim %||% 1)
+      if (nsim_val == 1) {
+        bslib::navset_tab(
+          bslib::nav_panel("Dist Plots", bslib::card(shiny::plotOutput(ns("dist_plot"), height = "500px"))),
+          bslib::nav_panel("Substrate Plots", bslib::card(substrateOutput(ns("substrate")))),
+          bslib::nav_panel("Input Data", bslib::card(
+            inputAppInput(ns("input_app")),
+            inputAppOutput(ns("input_app"))
+          ))
+        )
+      } else {
+        bslib::navset_tab(
+          bslib::nav_panel("Dist Plots", bslib::card(shiny::plotOutput(ns("dist_plot"), height = "500px"))),
+          bslib::nav_panel("Substrate Plots", bslib::card(substrateOutput(ns("substrate")))),
+          bslib::nav_panel("Envelope Plots", bslib::card(shiny::plotOutput(ns("env_plot"), height = "500px"))),
+          bslib::nav_panel("Input Data", bslib::card(
+            inputAppInput(ns("input_app")),
+            inputAppOutput(ns("input_app"))
+          ))
+        )
+      }
+    })
+    
+    # Dist Plots Tab
+    output$dist_plot &lt;- shiny::renderPlot({
+      sim &lt;- current_sim()
+      shiny::req(sim)
+      norm_val &lt;- input$norm %||% TRUE
+      tot_val &lt;- input$total %||% TRUE
+      ac &lt;- ewing_ageclass(sim, total = tot_val, normalize = norm_val)
+      ggplot2::autoplot(ac)
+    })
+    
+    # Substrate Plots Tab Module
+    substrateServer("substrate", simres = current_sim)
+    
+    # Envelope Plots Tab
+    output$env_plot &lt;- shiny::renderPlot({
+      sim &lt;- current_sim()
+      conf_val &lt;- input$confidence %||% TRUE
+      if (inherits(sim, "ewing_discrete")) {
+        ggplot_ewing_envelopes(sim, confidence = conf_val)
+      } else if (!is.null(sim)) {
+        # Single run fallback: build envelope from current sim
+        env &lt;- ewing_envelopes(sim)
+        ggplot_ewing_envelopes(env, confidence = conf_val)
+      } else {
+        ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No active simulation for envelope plot")
+      }
+    })
+    
+    # Return active simulation state
+    current_sim
+  })
+}
+
+# --- Launch Application ---
 sysetholApp()</code></pre>
 <hr>
 <section id="programmatic-application-usage" class="level2">

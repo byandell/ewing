@@ -233,9 +233,738 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 #| viewerHeight: 850
 #| components: [viewer]
 
-webr::install("byandell/ewing")
-library(ewing)
+library(shiny)
+library(bslib)
+library(ggplot2)
+library(stats)
+library(graphics)
 
+# --- Auto-Included Data Table: future.host ---
+future.host &lt;- structure(list(current = c("crawler", "first.instar", "first.molt", 
+"second.1", "second.2", "second.3", "second.3", "female", "male", 
+"second.molt", "third.1", "third.2", "third.3", "virgin", "gravid", 
+"death", "starved"), future = c("first.instar", "first.molt", 
+"second.1", "second.2", "second.3", "female", "male", "second.molt", 
+"death", "third.1", "third.2", "third.3", "virgin", "gravid", 
+"gravid", "death", "death"), fid = c(2L, 3L, 4L, 5L, 6L, 8L, 
+9L, 10L, 16L, 11L, 12L, 13L, 14L, 15L, 15L, 16L, 16L), time = c(55L, 
+92L, 48L, 30L, 30L, 52L, 52L, 0L, 0L, 48L, 55L, 55L, 95L, 90L, 
+10L, 0L, 0L), pch = c("0", "1", "1", "2", "2", "2", "2", "2", 
+"2", "2", "3", "3", "3", "V", "G", "D", "D"), color = c("brown", 
+"green", "green", "turquoise", "turquoise", "turquoise", "turquoise", 
+"turquoise", "turquoise", "turquoise", "blue", "blue", "blue", 
+"violet", "black", "red", "red"), ageclass = c("crawler", "host", 
+"host", "host", "host", "host", "host", "host", "host", "host", 
+"host", "host", "host", "host", "gravid", NA, "gravid"), event = c("future", 
+"future", "future", "future", "future", "future", "future", "future", 
+"future", "future", "future", "future", "future", "future", "birth", 
+"death", "future"), init = c(10L, 4L, 4L, 1L, 1L, 1L, 1L, 0L, 
+0L, 1L, 1L, 1L, 1L, 1L, 2L, 0L, 0L)), class = "data.frame", row.names = c("1", 
+"2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", 
+"14", "15", "16", "17"))
+
+
+# --- Auto-Included Data Table: future.parasite ---
+future.parasite &lt;- structure(list(current = c("egg", "larvae", "prepupae", "pupae", 
+"adult", "adult", "feed", "ovip", "death", "male", "starved"), 
+    future = c("larvae", "prepupae", "pupae", "adult", "feed", 
+    "ovip", "adult", "adult", "death", "death", "death"), fid = c(2L, 
+    3L, 4L, 5L, 7L, 8L, 5L, 5L, 9L, 9L, 9L), time = c(48L, 60L, 
+    24L, 144L, 12L, 12L, 12L, 12L, 0L, 0L, 0L), pch = c("E", 
+    "L", "p", "P", "F", "H", "F", "H", "D", "D", "D"), color = c("brown", 
+    "green", "turquoise", "blue", "orange", "purple", "orange", 
+    "purple", "red", "red", "red"), ageclass = c("young", "young", 
+    "young", "young", "adult", "adult", "adult", "adult", NA, 
+    "adult", "adult"), event = c("future", "future", "future", 
+    "future", "future", "future", "attack", "attack", "death", 
+    "future", "future"), init = c(10L, 5L, 3L, 2L, 1L, 0L, 0L, 
+    0L, 0L, 0L, 0L)), class = "data.frame", row.names = c("1", 
+"2", "3", "4", "5", "6", "7", "8", "9", "10", "11"))
+
+
+# --- Auto-Included Data Table: host.parasite ---
+host.parasite &lt;- structure(list(ovip = c(0L, 0L, 0L, 0L, 3L, 4L, 2L, 3L, 5L, 5L, 
+2L, 0L, 0L, 0L, 0L, 0L), feed = c(0L, 5L, 2L, 5L, 2L, 1L, 0L, 
+0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L), offspring = c(0, 0, 0, 0, 
+0, 0, 0, 1.3, 1.3, 1.3, 2.7, 0, 0, 0, 0, 0), male = c(NA, 5L, 
+5L, 5L, 5L, 5L, 4L, 2L, 1L, 1L, 0L, NA, NA, NA, NA, NA)), class = "data.frame", row.names = c("crawler", 
+"first.instar", "first.molt", "second.1", "second.2", "second.3", 
+"second.molt", "third.1", "third.2", "third.3", "virgin", "gravid", 
+"death", "parasite", "male", "female"))
+
+
+# --- Auto-Included Data Table: organism.features ---
+organism.features &lt;- structure(list(units = c("DD", "hr", NA), offspring = c("20", 
+"host", NA), attack = c(NA, "host", NA), birth = c("gravid", 
+NA, NA), substrate = c("substrate", "substrate", NA), deplete = c(100L, 
+48L, NA), subclass = c("host", "adult", NA), parasite = c(NA, 
+"ecto", NA), move = c("crawler", "adult", NA)), class = "data.frame", row.names = c("host", 
+"parasite", "substrate"))
+
+
+# --- Auto-Included Data Table: redscale ---
+redscale &lt;- structure(list(DD = c(-5L, 0L, 0L, 55L, 147L, 195L, 225L, 255L, 
+307L, 355L, 410L, 465L, 560L, 650L, 651L), aphytis.feed = c(0L, 
+0L, 0L, 5L, 2L, 5L, 2L, 1L, 0L, 0L, 0L, 0L, 0L, 0L, 0L), aphytis = c(0L, 
+0L, 0L, 0L, 0L, 0L, 3L, 4L, 2L, 3L, 5L, 5L, 2L, 0L, 0L), comperiella = c(0, 
+0, 0, 3, 3, 2, 2, 3, 4, 5, 5, 5, 3.5, 0, 0), encarsia = c(0, 
+0, 0, 4, 3.5, 5, 5, 5, 4.5, 4.5, 4, 3, 3, 0, 0), gender = c("either", 
+"either", "neuter", "neuter", "neuter", "neuter", "neuter", "neuter", 
+"female", "female", "female", "female", "female", "female", "female"
+), pch = c("P", "P", "0", "1", "1", "2", "2", "2", "2", "3", 
+"3", "3", "V", "G", "D"), color = c("white", "white", "brown", 
+"green", "green", "turquoise", "turquoise", "turquoise", "turquoise", 
+"blue", "blue", "blue", "violet", "black", "red"), stage = c("parasite", 
+"parasite", "crawler", "first.instar", "first.molt", "second.1", 
+"second.2", "second.3", "second.molt", "third.1", "third.2", 
+"third.3", "virgin", "gravid", "death")), class = "data.frame", row.names = c(NA, 
+-15L))
+
+
+# --- Auto-Included Data Table: substrate.host ---
+substrate.host &lt;- structure(list(substrate = c("fruit", "fruit", "fruit", "fruit", 
+"twig", "leaf", "leaf"), side = c("1", "2", "3", "4", NA, "top", 
+"bottom"), init = c(1L, 1L, 1L, 1L, 1L, 5L, 0L), find = c(5L, 
+5L, 5L, 5L, 1L, 3L, 2L), move = c(1L, 1L, 1L, 1L, 5L, 3L, 4L), 
+    fruit = c(3L, 3L, 3L, 3L, 3L, 3L, 3L), twig = c(2L, 2L, 2L, 
+    2L, 1L, 2L, 1L), leaf = c(1L, 1L, 1L, 1L, 2L, 1L, 2L)), class = "data.frame", row.names = c("fr1", 
+"fr2", "fr3", "fr4", "twig", "lftop", "lfbot"))
+
+
+# --- Auto-Included Data Table: substrate.parasite ---
+substrate.parasite &lt;- structure(list(substrate = c("fruit", "fruit", "fruit", "fruit", 
+"twig", "leaf", "leaf"), side = c("1", "2", "3", "4", NA, "top", 
+"bottom"), init = c(1L, 1L, 1L, 1L, 1L, 5L, 0L), find = c(5L, 
+5L, 5L, 5L, 1L, 3L, 2L), move = c(1L, 1L, 1L, 1L, 5L, 3L, 4L), 
+    fruit = c(3L, 3L, 3L, 3L, 3L, 3L, 3L), twig = c(2L, 2L, 2L, 
+    2L, 1L, 2L, 1L), leaf = c(1L, 1L, 1L, 1L, 2L, 1L, 2L)), class = "data.frame", row.names = c("fr1", 
+"fr2", "fr3", "fr4", "twig", "lftop", "lfbot"))
+
+
+# --- Auto-Included Data Table: substrate.substrate ---
+substrate.substrate &lt;- structure(list(fr1 = c(0L, 1L, 1L, 1L, 1L, 1L, 1L), fr2 = c(1L, 
+0L, 1L, 1L, 1L, 1L, 1L), fr3 = c(1L, 1L, 0L, 1L, 1L, 1L, 1L), 
+    fr4 = c(1L, 1L, 1L, 0L, 1L, 1L, 1L), twig = c(1L, 1L, 1L, 
+    1L, 1L, 1L, 1L), lftop = c(1L, 1L, 1L, 1L, 1L, 1L, 1L), lfbot = c(1L, 
+    1L, 1L, 1L, 1L, 1L, 1L)), class = "data.frame", row.names = c("fr1", 
+"fr2", "fr3", "fr4", "twig", "lftop", "lfbot"))
+
+
+# --- Auto-Included Data Table: temperature.base ---
+temperature.base &lt;- structure(list(Day = c(0L, 0L, 0L, 0L, 0L, 30L, 30L, 30L, 30L, 
+30L, 30L), Time = c(0L, 8L, 12L, 18L, 20L, 0L, 8L, 12L, 15L, 
+18L, 20L), Base = c(0L, 0L, 100L, 75L, 0L, 0L, 0L, 80L, 100L, 
+80L, 60L)), class = "data.frame", row.names = c(NA, -11L))
+
+
+# --- Auto-Included Data Table: temperature.par ---
+temperature.par &lt;- structure(list(value = c(24L, 200L, 52L, 70L, 75L, 85L, 90L, 
+8L), description = c("hours in day", "number of days", "minimum temperature for degree-day calculation (Fahrenheit)", 
+"begining daily low temperature", "ending daily low temperature", 
+"begining daily high temperature", "ending daily high temperature", 
+"number of nodes for interpolating spline")), class = "data.frame", row.names = c("Unit", 
+"Days", "Min", "LowBeg", "LowEnd", "HighBeg", "HighEnd", "Length"
+))
+
+
+# --- Source: triangle.R ---
+## $Id: triangle.R,v 0.9 2002/12/09 yandell@stat.wisc.edu Exp $
+##
+## Functions for Bland Ewing's modeling.
+##
+##     Copyright (C) 2000,2001,2002 Brian S. Yandell.
+##
+## This program is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 2, or (at your option) any
+## later version.
+##
+## These functions are distributed in the hope that they will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## The text of the GNU General Public License, version 2, is available
+## as http://www.gnu.org/copyleft or by writing to the Free Software
+## Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+##
+###########################################################################################
+## rtri( n, width )
+##
+## plot.current( x, species )
+## text.current( x, species )
+##
+###########################################################################################
+###########################################################################################
+### Tridiagonal Coordinate System S3 Classes &amp; Algebra
+###########################################################################################
+tricoord &lt;- function(a, b = NULL, c = NULL) {
+  if (is.data.frame(a) &amp;&amp; all(c("a", "b", "c") %in% names(a))) {
+    res &lt;- a
+  } else if (is.matrix(a) &amp;&amp; ncol(a) == 3) {
+    res &lt;- as.data.frame(a)
+    names(res) &lt;- c("a", "b", "c")
+  } else if (!is.null(b) &amp;&amp; !is.null(c)) {
+    res &lt;- data.frame(a = a, b = b, c = c)
+  } else if (is.numeric(a) &amp;&amp; length(a) == 3) {
+    res &lt;- data.frame(a = a[1], b = a[2], c = a[3])
+  } else {
+    stop("Invalid tricoord input format")
+  }
+  class(res) &lt;- c("tricoord", "data.frame")
+  res
+}
+
+`+.tricoord` &lt;- function(e1, e2) {
+  # Handle vector offsets cleanly
+  if (is.numeric(e2) &amp;&amp; length(e2) == 3) {
+    tricoord(e1$a + e2[1], e1$b + e2[2], e1$c + e2[3])
+  } else if (inherits(e2, "tricoord")) {
+    tricoord(e1$a + e2$a, e1$b + e2$b, e1$c + e2$c)
+  } else {
+    stop("Invalid right hand operand for tricoord addition")
+  }
+}
+
+`-.tricoord` &lt;- function(e1, e2) {
+  if (is.numeric(e2) &amp;&amp; length(e2) == 3) {
+    tricoord(e1$a - e2[1], e1$b - e2[2], e1$c - e2[3])
+  } else if (inherits(e2, "tricoord")) {
+    tricoord(e1$a - e2$a, e1$b - e2$b, e1$c - e2$c)
+  } else {
+    stop("Invalid right hand operand for tricoord subtraction")
+  }
+}
+
+###########################################################################################
+rtri &lt;- function( n, width, tri = matrix(0,3,n), roundoff = TRUE )
+{
+  tri &lt;- as.matrix( tri )
+  if( n == 1 ) {
+    xy &lt;- stats::runif( 2, 0, width )
+    if( roundoff )
+      xy &lt;- round( xy )
+
+    i &lt;- sample( 3, 1  )
+    i1 &lt;- 1 + i%%3
+    i2 &lt;- 1 + (i+1)%%3
+    tri[i1,] &lt;- tri[i1,] + xy[1]
+    tri[i2,] &lt;- tri[i2,] - xy[2]
+    tri[i,] &lt;- - ( tri[i1,] + tri[i2,] )
+    return( tri )
+  }
+  else {
+    xy &lt;- data.frame( x = stats::runif( n, 0, width ),
+      y = - stats::runif( n, 0, width ))
+    if( roundoff )
+      xy &lt;- round( xy )
+
+    out &lt;- sample( 3, n, replace = TRUE )
+    for( i in 1:3 ) {
+      outi &lt;- out == i
+      if( any( outi )) {
+        i1 &lt;- 1 + i%%3
+        i2 &lt;- 1 + (i+1)%%3
+        tri[i1,outi] &lt;- tri[i1,outi] + xy$x[outi]
+        tri[i2,outi] &lt;- tri[i2,outi] + xy$y[outi]
+        tri[i,outi] &lt;- - ( tri[i1,outi] + tri[i2,outi] )
+      }
+    }
+  }
+  tri
+}
+###########################################################################################
+car2tri.default &lt;- function(x,y)
+  car2tri( cbind( x, y ))
+car2tri &lt;- function( xy, xmult = ( 2 + sq3 ) / 4, ymult = ( 3 + 2 * sq3 ) / 12,
+  sq3 = sqrt( 3 ))
+{
+#  if( !is.matrix( xy ))
+#    xy &lt;- t( as.matrix( xy ))
+  aa &lt;- xmult * xy[,1] - ymult * xy[,2]
+  bb &lt;- - xmult * xy[,1] - ymult * xy[,2]
+  cc &lt;- -( aa + bb )
+  rbind( a = aa, b = bb, c = cc )
+}
+###########################################################################################
+tri2car.default &lt;- function(aa,bb,cc=-(aa+bb))
+  tri2car( rbind( aa, bb, cc ))
+tri2car &lt;- function(tri, xmult = 2 / ( 2 + sq3 ), ymult = 6 / ( 3 + 2 * sq3 ),
+  sq3 = sqrt( 3 ))
+{
+  if( inherits(tri, "tricoord") ) {
+    # If the user passes our S3 tricoord dataframe, map it correctly natively.
+    x &lt;- ( tri$a - tri$b ) * xmult
+    y &lt;- - ( tri$a + tri$b ) * ymult
+  } else {
+    if( !is.matrix( tri ))
+      tri &lt;- as.matrix( tri )
+    x &lt;- ( tri[1,] - tri[2,] ) * xmult
+    y &lt;- - ( tri[1,] + tri[2,] ) * ymult
+  }
+  data.frame( x = x, y = y )
+}
+###########################################################################################
+cardist &lt;- function( xy )
+  sqrt( xy[,1]^2 + xy[,2]^2 )
+###########################################################################################
+tridist &lt;- function( tri )
+  apply( tri, 1, max )
+###########################################################################################
+gasket &lt;- function( aa, bb )
+{
+  n &lt;- length( aa )
+  pp &lt;- c(-1,1,0,1)
+  dda &lt;- diff( aa )
+  ddb &lt;- diff( bb )
+  ss &lt;- sign( sign( dda ) - sign( ddb ))
+  dda &lt;- 2 - abs( dda )
+  ddb &lt;- 2 - abs( ddb )
+  aa &lt;- 2 * aa
+  aa &lt;- c( aa[1], rbind( aa[-n] + pp[dda+1+ss], aa[-1] + pp[dda+1-ss], aa[-1] ))
+  bb &lt;- 2 * bb
+  bb &lt;- c( bb[1], rbind( bb[-n] + pp[ddb+1-ss], bb[-1] + pp[ddb+1+ss], bb[-1] ))
+  data.frame( aa = aa, bb = bb )
+}
+
+# --- Source: substrate_triangle.R ---
+get_substrate_grid &lt;- function(width, step = 1, orientation = "up") {
+  pts &lt;- expand.grid(a = seq(0, width - step, by = step), 
+                     b = seq(0, width - step, by = step))
+  
+  if (orientation == "up") {
+    pts &lt;- subset(pts, a + b &lt;= width - step)
+    pts$c &lt;- -(pts$a + pts$b)
+  } else {
+    pts &lt;- subset(pts, a + b &lt;= width - step)
+    pts$a &lt;- -pts$a
+    pts$b &lt;- -pts$b
+    pts$c &lt;- -(pts$a + pts$b)
+  }
+  return(pts)
+}
+
+substrate_topology &lt;- function(width = 10, step = 1) {
+  W &lt;- width - step
+  
+  # Topology adjacency offsets
+  list(
+    fr2   = list(offset = c(0, 0, 0), dir = "down"),
+    fr1   = list(offset = c(-W, -W, 2*W), dir = "up"),
+    fr3   = list(offset = c(-W, 0, W), dir = "up"),
+    fr4   = list(offset = c(0, -W, W), dir = "up"),
+    tw1   = list(offset = c(-W, 0, W), dir = "down"),
+    twig  = list(offset = c(-W, 0, W), dir = "down"),
+    tw2   = list(offset = c(-2*W, 0, 2*W), dir = "up"),
+    lftop = list(offset = c(-2*W, W, W), dir = "down"),
+    lfbot = list(offset = c(-3*W, W, 2*W), dir = "up")
+  )
+}
+
+create_substrate &lt;- function(topology, width = 10, step = 1) {
+  W &lt;- width - step
+  all_points &lt;- data.frame()
+  labels_df &lt;- data.frame()
+  poly_df &lt;- data.frame()
+  
+  for (sub in names(topology)) {
+    cfg &lt;- topology[[sub]]
+    grid &lt;- get_substrate_grid(width, step, cfg$dir)
+    
+    o_a &lt;- cfg$offset[1]
+    o_b &lt;- cfg$offset[2]
+    o_c &lt;- cfg$offset[3]
+
+    # Needs tricoord and tri2car which are presumably exported/available from R/triangle.R
+    grid_tri &lt;- tricoord(grid$a, grid$b, grid$c)
+    grid_tri &lt;- grid_tri + cfg$offset
+    
+    car_pts &lt;- tri2car(grid_tri)
+    car_pts$substrate &lt;- sub
+    all_points &lt;- rbind(all_points, car_pts)
+    
+    # Determine bounds and midpoints for side labels 1,2,3
+    if (cfg$dir == "up") {
+      v_top &lt;- c(o_a, o_b, o_c)
+      v_br  &lt;- c(o_a + W, o_b, o_c - W)
+      v_bl  &lt;- c(o_a, o_b + W, o_c - W)
+      
+      m1 &lt;- (v_top + v_bl) / 2
+      m2 &lt;- (v_top + v_br) / 2
+      m3 &lt;- (v_bl + v_br)  / 2
+      centroid &lt;- (v_top + v_br + v_bl) / 3
+      p_mat &lt;- cbind(v_top, v_br, v_bl)
+    } else {
+      v_bot &lt;- c(o_a, o_b, o_c)
+      v_tr  &lt;- c(o_a, o_b - W, o_c + W)
+      v_tl  &lt;- c(o_a - W, o_b, o_c + W)
+      
+      m1 &lt;- (v_bot + v_tr) / 2
+      m2 &lt;- (v_bot + v_tl) / 2
+      m3 &lt;- (v_tl + v_tr)  / 2
+      centroid &lt;- (v_bot + v_tr + v_tl) / 3
+      p_mat &lt;- cbind(v_bot, v_tr, v_tl)
+    }
+    
+    # Interpolate slightly towards the centroid to put text "just inside" the edges
+    w_in &lt;- 0.25 # weight towards centroid
+    l1 &lt;- m1 * (1 - w_in) + centroid * w_in
+    l2 &lt;- m2 * (1 - w_in) + centroid * w_in
+    l3 &lt;- m3 * (1 - w_in) + centroid * w_in
+    
+    mat_l &lt;- cbind(l1, l2, l3)
+    car_l &lt;- tri2car(mat_l)
+    car_l$label &lt;- c("1", "2", "3")
+    car_l$substrate &lt;- sub
+    labels_df &lt;- rbind(labels_df, car_l)
+    
+    car_p &lt;- tri2car(p_mat)
+    car_p$substrate &lt;- sub
+    poly_df &lt;- rbind(poly_df, car_p)
+  }
+  
+  centers &lt;- stats::aggregate(cbind(x,y) ~ substrate, data=all_points, mean)
+  
+  obj &lt;- list(
+    points = all_points, 
+    labels = labels_df, 
+    poly = poly_df, 
+    centers = centers,
+    topology = topology
+  )
+  class(obj) &lt;- "substrate"
+  return(obj)
+}
+
+autoplot.substrate &lt;- function(object, ...) {
+  ggplot2::ggplot() +
+    # Draw the black boundary lines outlining the substrates exactly over outer dots
+    ggplot2::geom_polygon(data=object$poly, ggplot2::aes(x=x, y=y, group=substrate), fill=NA, color="black", linewidth=0.7) +
+    # Plot grid dots
+    ggplot2::geom_point(data=object$points, ggplot2::aes(x=x, y=y, color=substrate), size=1.5) +
+    # Plot Substrate Labels (Centers)
+    ggplot2::geom_text(data=object$centers, ggplot2::aes(x=x, y=y, label=substrate), color="black", fontface="bold", size=5) +
+    # Axis side numbers
+    ggplot2::geom_text(data=object$labels, ggplot2::aes(x=x, y=y, label=label), color="darkred", fontface="bold", size=4) +
+    ggplot2::theme_void() +
+    ggplot2::coord_fixed() +
+    ggplot2::ggtitle("Ewing Tridiagonal Substrate Network Mapping")
+}
+
+create_hex_overlay &lt;- function(object, step = 1) {
+  pts &lt;- if (inherits(object, "substrate")) object$points else object
+  if (is.null(pts) || nrow(pts) == 0) return(data.frame())
+  
+  xmult &lt;- 2 / (2 + sqrt(3))
+  ymult &lt;- 6 / (3 + 2 * sqrt(3))
+  d &lt;- step * sqrt(xmult^2 + ymult^2)
+  r &lt;- d / sqrt(3)
+  
+  angles &lt;- (seq(0, 5) * 60 + 30) * pi / 180
+  dx &lt;- r * cos(angles)
+  dy &lt;- r * sin(angles)
+  
+  n_pts &lt;- nrow(pts)
+  hex_list &lt;- vector("list", n_pts)
+  
+  for (i in seq_len(n_pts)) {
+    px &lt;- pts$x[i] + dx
+    py &lt;- pts$y[i] + dy
+    sub &lt;- pts$substrate[i]
+    hex_list[[i]] &lt;- data.frame(
+      x = px,
+      y = py,
+      cell_id = i,
+      substrate = sub,
+      stringsAsFactors = FALSE
+    )
+  }
+  
+  do.call(rbind, hex_list)
+}
+
+
+# --- Source: ewing_substrate.R ---
+ewing_substrate &lt;- function( community,
+                             species,
+                             headstuff = c( 0, "start", sum( to.plot )),
+                             units = getOrgFeature( community, species[1], "units" ),
+                             right = species[1], adj = c(0,.5,1),
+                             show_sub = NULL,
+                             step = 0,
+                             layout = c("facet", "hex"),
+                             width = 10,
+                             step_density = 1,
+                             rescale = TRUE,
+                             ...)
+{
+  layout &lt;- match.arg(layout)
+  
+  if (length(species) &gt; 1) {
+    res_list &lt;- lapply(species, function(sp) {
+      df &lt;- ewing_substrate(community = community, species = sp, headstuff = headstuff,
+                            units = units, right = right, adj = adj, show_sub = show_sub,
+                            step = step, layout = layout, width = width, step_density = step_density,
+                            rescale = rescale, ...)
+      if (!is.null(df) &amp;&amp; nrow(df) &gt; 0) {
+        df$species &lt;- sp
+      }
+      df
+    })
+    res_list &lt;- res_list[!sapply(res_list, is.null)]
+    if (length(res_list) == 0) return(NULL)
+    combined &lt;- do.call(rbind, res_list)
+    attr(combined, "species") &lt;- paste(species, collapse = " &amp; ")
+    step_val &lt;- if (!is.null(community$step)) community$step else if (!is.null(community$count$step)) community$count$step else if (!is.null(attr(community, "nstep"))) attr(community, "nstep") else step
+    attr(combined, "step") &lt;- step_val
+    attr(combined, "layout") &lt;- layout
+    attr(combined, "width") &lt;- width
+    attr(combined, "step_density") &lt;- step_density
+    class(combined) &lt;- c("ewing_substrate", class(combined))
+    return(combined)
+  }
+  
+  ## plot current stages for species (except random parasites)
+  organism &lt;- get.species( community, species )[,-1]
+  if(is.null(organism)) # species is not in community
+    return(NULL)
+  
+  future &lt;- getOrgFuture( community, species, c("color","pch") )
+  
+  # Substrate names mapping (e.g. fr1, fr2, fr3, fr4, twig, lftop, lfbot)
+  substrate_feat &lt;- getOrgFeature( community, species, "substrate")
+  sub_interact &lt;- getOrgInteract(community, substrate_feat, species)
+  substrates &lt;- rownames(sub_interact)
+  if (is.null(substrates) || length(substrates) == 0) {
+    substrates &lt;- names(getOrgInteract(community, substrate_feat, substrate_feat))
+  }
+  if (is.null(show_sub)) show_sub &lt;- substrates
+  
+  position &lt;- paste( "pos", letters[1:3], sep = "." )
+  
+  if (layout == "hex") {
+    topo &lt;- substrate_topology(width = width, step = step_density)
+    n_org &lt;- ncol(organism)
+    gx &lt;- numeric(n_org)
+    gy &lt;- numeric(n_org)
+    
+    sub_indices &lt;- organism["sub.stage", ]
+    org_sub_names &lt;- substrates[sub_indices]
+    
+    # Process organisms per substrate patch to rescale local coordinates into substrate surface triangle
+    unique_subs &lt;- unique(org_sub_names)
+    
+    for (sub in unique_subs) {
+      idx &lt;- which(org_sub_names == sub)
+      
+      target_name &lt;- sub
+      if (!target_name %in% names(topo)) {
+        if (target_name == "twig") target_name &lt;- "tw1"
+        if (target_name == "tw1") target_name &lt;- "twig"
+      }
+      
+      cfg &lt;- topo[[target_name]]
+      
+      pa &lt;- organism["pos.a", idx]
+      pb &lt;- organism["pos.b", idx]
+      pc &lt;- organism["pos.c", idx]
+      
+      if (!is.null(cfg)) {
+        # Determine substrate surface width (allows substrates of different sizes in future)
+        W_sub &lt;- if (!is.null(cfg$width)) (cfg$width - step_density) else (width - step_density)
+        
+        if (rescale) {
+          amin &lt;- min(pa); amax &lt;- max(pa)
+          bmin &lt;- min(pb); bmax &lt;- max(pb)
+          
+          u &lt;- if (amax &gt; amin) (pa - amin) / (amax - amin) else rep(0.5, length(idx))
+          v &lt;- if (bmax &gt; bmin) (pb - bmin) / (bmax - bmin) else rep(0.5, length(idx))
+          
+          # 15% inner padding to ensure symbols sit comfortably inside substrate polygon borders
+          u_m &lt;- 0.15 + 0.70 * u
+          v_m &lt;- 0.15 + 0.70 * v
+          
+          a_p &lt;- u_m * W_sub
+          b_p &lt;- v_m * (W_sub - a_p)
+          c_p &lt;- -(a_p + b_p)
+        } else {
+          a_p &lt;- pa
+          b_p &lt;- pb
+          c_p &lt;- pc
+        }
+        
+        off &lt;- cfg$offset
+        if (cfg$dir == "up") {
+          ga &lt;- a_p + off[1]
+          gb &lt;- b_p + off[2]
+          gc &lt;- c_p + off[3]
+        } else {
+          ga &lt;- -a_p + off[1]
+          gb &lt;- -b_p + off[2]
+          gc &lt;- -c_p + off[3]
+        }
+        car &lt;- tri2car(tricoord(ga, gb, gc))
+        gx[idx] &lt;- car$x
+        gy[idx] &lt;- car$y
+      } else {
+        car &lt;- tri2car(organism[position, idx, drop = FALSE])
+        gx[idx] &lt;- car$x
+        gy[idx] &lt;- car$y
+      }
+    }
+    
+    xy &lt;- data.frame(x = gx, y = gy)
+  } else {
+    xy &lt;- tri2car( organism[position,] )
+  }
+  
+  dat &lt;- dplyr::filter(
+    dplyr::mutate(
+      tibble::tibble(xy), 
+      stage = organism["stage",],
+      substrate = substrates[organism["sub.stage",]],
+      pchar = factor(as.character( future$pch[.data$stage + 1] ), levels = unique(as.character(future$pch))),
+      color = as.character( future$color[.data$stage + 1] ),
+      species = species),
+    .data$substrate %in% show_sub)
+  
+  attr(dat, "species") &lt;- species
+  step_val &lt;- if (!is.null(community$step)) community$step else if (!is.null(community$count$step)) community$count$step else if (!is.null(attr(community, "nstep"))) attr(community, "nstep") else step
+  attr(dat, "step") &lt;- step_val
+  attr(dat, "layout") &lt;- layout
+  attr(dat, "width") &lt;- width
+  attr(dat, "step_density") &lt;- step_density
+  class(dat) &lt;- c("ewing_substrate", class(dat))
+  dat
+}
+
+ggplot_ewing_substrate &lt;- function(object,
+                                   xlab = "horizontal", ylab = "vertical",
+                                   layout = attr(object, "layout"),
+                                   width = attr(object, "width"),
+                                   step_density = attr(object, "step_density"),
+                                   layers = c("poly", "hex", "organisms", "centers", "labels"),
+                                   ...)
+{     
+  if (is.null(layout)) layout &lt;- "facet"
+  if (is.null(width)) width &lt;- 10
+  if (is.null(step_density)) step_density &lt;- 1
+  
+  species &lt;- attr(object, "species")
+  step &lt;- attr(object, "step")
+  
+  # Allows same color for different pchar, but only one color per pchar.
+  tmp &lt;- dplyr::arrange(
+    dplyr::distinct(
+      dplyr::distinct(object, .data$pchar, .data$color),
+      .data$pchar, .keep_all = TRUE),
+    .data$pchar)
+  col.palate &lt;- tmp$color
+  names(col.palate) &lt;- as.character(tmp$pchar)
+  
+  if (layout == "hex") {
+    topo &lt;- substrate_topology(width = width, step = step_density)
+    sub_obj &lt;- create_substrate(topo, width = width, step = step_density)
+    hex_overlay &lt;- create_hex_overlay(sub_obj, step = step_density)
+    
+    p &lt;- ggplot2::ggplot()
+    if ("poly" %in% layers &amp;&amp; nrow(sub_obj$poly) &gt; 0) {
+      p &lt;- p + ggplot2::geom_polygon(data = sub_obj$poly, ggplot2::aes(x = x, y = y, group = substrate), 
+                                     fill = NA, color = "black", linewidth = 0.7)
+    }
+    if ("hex" %in% layers &amp;&amp; nrow(hex_overlay) &gt; 0) {
+      p &lt;- p + ggplot2::geom_polygon(data = hex_overlay, ggplot2::aes(x = x, y = y, group = cell_id), 
+                                     fill = NA, color = "gray75", linewidth = 0.3)
+    }
+    if ("organisms" %in% layers &amp;&amp; nrow(object) &gt; 0) {
+      p &lt;- p + ggplot2::geom_text(data = object, ggplot2::aes(x = x, y = y, label = pchar, color = pchar), 
+                                  fontface = "bold", size = 4) +
+        ggplot2::scale_color_manual(name = "Stage", values = col.palate) +
+        ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(label = names(col.palate))))
+    }
+    if ("centers" %in% layers &amp;&amp; nrow(sub_obj$centers) &gt; 0) {
+      p &lt;- p + ggplot2::geom_text(data = sub_obj$centers, ggplot2::aes(x = x, y = y, label = substrate), 
+                                  color = "black", fontface = "bold", size = 4.5)
+    }
+    if ("labels" %in% layers &amp;&amp; nrow(sub_obj$labels) &gt; 0) {
+      p &lt;- p + ggplot2::geom_text(data = sub_obj$labels, ggplot2::aes(x = x, y = y, label = label), 
+                                  color = "darkred", fontface = "bold", size = 3.5)
+    }
+    
+    return(p + ggplot2::theme_void() + 
+             ggplot2::theme(plot.margin = ggplot2::margin(2, 2, 2, 2, "pt")) +
+             ggplot2::coord_fixed() + 
+             ggplot2::ggtitle(paste(species, "on Hex Substrate Grid at", step, "steps")))
+  }
+  
+  # Default Facet View by Substrate Component
+  ggplot2::ggplot(object) +
+    ggplot2::aes(.data$x, .data$y, label = .data$pchar, col = .data$pchar) +
+    ggplot2::geom_text() +
+    ggplot2::facet_wrap(~ substrate) +
+    ggplot2::xlab(xlab) +
+    ggplot2::ylab(ylab) +
+    ggplot2::scale_color_manual(name = "Stage", values = col.palate) + 
+    ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(label = names(col.palate)))) +
+    ggplot2::ggtitle(paste(species, "on substrate at", step, "steps"))
+}
+autoplot.ewing_substrate &lt;- function(object, ...)
+  ggplot_ewing_substrate(object, ...)
+
+# --- Source: hexmoveApp.R ---
+hexmoveAppInput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    initParInput(ns("init_par")),
+    shiny::hr(),
+    substrateInput(ns("substrate"))
+  )
+}
+
+hexmoveAppOutput &lt;- function(id) {
+  ns &lt;- shiny::NS(id)
+  bslib::navset_tab(
+    bslib::nav_panel("Hex Substrate Map", substrateOutput(ns("substrate"))),
+    bslib::nav_panel("Simulation Summary", initOutput(ns("init")))
+  )
+}
+
+hexmoveAppServer &lt;- function(id, mysim = NULL, width = 10, step = 1) {
+  shiny::moduleServer(id, function(input, output, session) {
+    init_par &lt;- initParServer("init_par")
+    siminit &lt;- initServer("init", init_par)
+    
+    initial_state &lt;- shiny::reactive({
+      if (!is.null(mysim)) {
+        mysim
+      } else {
+        siminit()
+      }
+    })
+    
+    substrateServer("substrate", initial_state, width = width, step_density = step)
+  })
+}
+
+hexmoveApp &lt;- function(mysim = NULL, width = 10, step = 1, title = "Organism Movement on Hex Grid") {
+  
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      width = 340,
+      hexmoveAppInput("hexmove")
+    ),
+    hexmoveAppOutput("hexmove")
+  )
+  
+  server &lt;- function(input, output, session) {
+    hexmoveAppServer("hexmove", mysim = mysim, width = width, step = step)
+  }
+  
+  shiny::shinyApp(ui = ui, server = server)
+}
+
+# --- Launch Application ---
 hexmoveApp()</code></pre>
 <hr>
 <section id="programmatic-application-usage" class="level2">
