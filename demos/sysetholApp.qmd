@@ -14,15 +14,9 @@ format:
 
 The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). It provides a streamlined **Systems Ethology platform (`sysetholApp()`)** with clean sidebar controls (`sysetholInput`), dynamic conditional panels (`Steps per click` log-scale geometric slider when `nsim = 1`, `Confidence Band` when `nsim > 1`), sidebar **Run Engine** & **Reset** buttons, and modular tabs (`sysetholOutput`: **Dist Plots** fine time-granularity step plots, **Substrate Plots**, **Envelope Plots**, and **Input Data** via `inputApp`).
 
-```{shinylive-r}
-#| standalone: true
-#| viewerHeight: 880
-#| components: [viewer]
-
-webr::install("byandell/ewing")
-library(ewing)
-
-sysetholApp()
+```{r, echo=FALSE, results='asis'}
+source("include_ewing.R")
+render_shinylive_app("sysetholApp()", height = 880)
 ```
 
 ---

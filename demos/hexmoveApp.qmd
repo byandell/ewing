@@ -14,15 +14,9 @@ format:
 
 The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). You can interactively step through simulation events (+1, +10, +100 steps), toggle species visibility (`Host`, `Parasite`), switch between **Overlay (1 Map)** and **Separate (Adjacent Maps)** view modes, and inspect organism positions on hexagonal substrate overlays.
 
-```{shinylive-r}
-#| standalone: true
-#| viewerHeight: 850
-#| components: [viewer]
-
-webr::install("byandell/ewing")
-library(ewing)
-
-hexmoveApp()
+```{r, echo=FALSE, results='asis'}
+source("include_ewing.R")
+render_shinylive_app("hexmoveApp()", height = 850)
 ```
 
 ---

@@ -14,15 +14,9 @@ format:
 
 The live application below is running completely client-side in your browser using serverless **Shinylive** (WebAssembly). You can click directly on the temperature spline plot on the left to move individual high or low temperature knot coordinates.
 
-```{shinylive-r}
-#| standalone: true
-#| viewerHeight: 750
-#| components: [viewer]
-
-webr::install("byandell/ewing")
-library(ewing)
-
-tempApp()
+```{r, echo=FALSE, results='asis'}
+source("include_ewing.R")
+render_shinylive_app("tempApp()", height = 750)
 ```
 
 ---

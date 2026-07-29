@@ -54,6 +54,9 @@ old/
 docs
 demos/_extensions/
 demos/.quarto/
+demos/site_libs/
+site_libs/
 
 .quarto/
 inst/scripts/*.png
+
