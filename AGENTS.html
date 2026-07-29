@@ -189,7 +189,7 @@
 <ul><li>
 <strong>No Automatic Git Commit/Push:</strong> Prepare file edits and run local verifications (<code>quarto render</code>, etc.), but DO NOT execute <code>git commit</code> or <code>git push</code>. Leave all staging, committing, and pushing for the user to execute manually.</li>
 <li>
-<strong>Standard Helper Pattern:</strong> All Quarto Shinylive <code>.qmd</code> demos in <code>demos/</code> should use <code>source("include_ewing.R")</code> and <code>render_shinylive_app("appFunction()", height = ...)</code> to dynamically load package R source files cleanly without code duplication.</li>
+<strong>Standard Shinylive Pattern:</strong> All Quarto Shinylive <code>.qmd</code> demos in <code>demos/</code> should use standard <code>shinylive-r</code> WebAssembly code blocks with <code>webr::install("byandell/ewing")</code> and <code><a href="http://www.stat.wisc.edu/~yandell/ewing" class="external-link">library(ewing)</a></code> for serverless package loading.</li>
 <li>
 <strong>R Vector Subsetting Rule:</strong> When filtering vectors in R, ALWAYS use <code>grepl("^\\s*#'", lines)</code> with <code>!grepl(...)</code> or <code>grep(..., invert = TRUE)</code>. NEVER use <code>!grep(...)</code> (which evaluates <code>!2</code> -&gt; <code>FALSE</code> in R and wipes out the entire vector to <code>character(0)</code>).</li>
 <li>
