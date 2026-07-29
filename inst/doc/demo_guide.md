@@ -31,9 +31,9 @@ ewing/
 
 ---
 
-## 2. WebAssembly Design Pattern (`demos/shinylive_helpers.R`)
+## 2. WebAssembly Design Pattern & `shinylive_helpers.R` Advice
 
-All `.qmd` demonstration applications in `demos/` use the targeted **`render_standalone_app()`** architecture defined in [`shinylive_helpers.R`](../demos/shinylive_helpers.R). Rather than forcing webR to download `byandell/ewing` along with 120+ heavy R dependencies (such as `sf`, `leaflet`, and `readxl`) via `webr::install()`, this pattern dynamically bundles only the specific R source files required for each interactive application using standard pre-installed webR libraries (`shiny`, `bslib`, `ggplot2`, `splines`, `stats`, `graphics`).
+Rather than requiring `webr::install()` to download heavy compiled dependencies (such as `sf`, `leaflet`, and `readxl`) inside the browser, demonstration applications use the targeted **`render_standalone_app()`** helper in [`shinylive_helpers.R`](../demos/shinylive_helpers.R):
 
 ```r
 ```{r, echo=FALSE, results='asis'}
@@ -42,20 +42,25 @@ render_standalone_app("sysetholApp", height = 880)
 ```
 ```
 
-### Key Technical Details
+### Best Practices & Advice
 
-1. **Roxygen2 Protection & Vector Safety**:
-   To prevent Pandoc JSON string serialization errors during Quarto rendering, `shinylive_helpers.R` strips all `#'` roxygen docstrings before outputting code blocks:
+1. **Bypass Heavy Package Downloads**:
+   Bundle only pure R source files required for each specific app. Rely on standard pre-installed webR packages (`shiny`, `bslib`, `ggplot2`, `splines`, `stats`, `graphics`) for instant load times.
+
+2. **Robust Working Directory Resolution**:
+   Detect `R/` and `data/` paths dynamically to ensure rendering succeeds whether invoked from root or `demos/`:
+   ```r
+   r_dir <- if (dir.exists("R")) "R" else if (dir.exists("../R")) "../R" else file.path("..", "..", "R")
+   ```
+
+3. **Strip Roxygen Comments**:
+   Prevent Pandoc JSON serialization errors by stripping docstring comments using safe vector evaluation (`!grepl`):
    ```r
    lines <- lines[!grepl("^\\s*#'", lines)]
    ```
-   This uses `!grepl(...)` (rather than `!grep(...)`) to strictly follow R vector subsetting safety.
 
-2. **Auto-Embedded Default Data Tables**:
-   For simulation apps (`sysetholApp` and `hexmoveApp`), `shinylive_helpers.R` reads configuration tables from `data/*.txt` (`organism.features`, `future.host`, `future.parasite`, `substrate.*`, `temperature.*`, `host.parasite`, `redscale`) and embeds them as pre-parsed data frames via `dput()` directly in `.GlobalEnv`. When `init.simulation()` or `mydata()` runs in the browser, all datasets are immediately available offline.
-
-3. **Zero Network & Installation Overhead**:
-   Applications initialize in milliseconds in the browser with 100% code parity and zero network dependency download delays.
+4. **Auto-Embed Default Datasets**:
+   Serialize required configuration tables (`data/*.txt`) via `dput()` directly into `.GlobalEnv` so simulation routines (`init.simulation()`, `mydata()`) execute offline seamlessly.
 
 ---
 
