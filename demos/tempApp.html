@@ -1195,6 +1195,19 @@ ewing_substrate &lt;- function( community,
                              rescale = TRUE,
                              ...)
 {
+  if (inherits(community, "isle_royale_sim")) {
+    p_map &lt;- autoplot(community$habitat_overlay, show_landmarks = TRUE)
+    moose_sf &lt;- sf::st_as_sf(community$moose_pop, coords = c("lon", "lat"), crs = sf::st_crs(community$habitat_overlay$layer))
+    wolf_sf  &lt;- sf::st_as_sf(community$wolf_pop, coords = c("lon", "lat"), crs = sf::st_crs(community$habitat_overlay$layer))
+    
+    p_map &lt;- p_map +
+      ggplot2::geom_sf(data = moose_sf, color = "#27ae60", shape = 21, fill = NA, stroke = 1.0, size = 0.8, alpha = 0.85) +
+      ggplot2::geom_sf(data = wolf_sf, color = "#e74c3c", shape = 21, fill = NA, stroke = 1.4, size = 1.5, alpha = 0.95) +
+      ggplot2::ggtitle(paste0("Isle Royale Substrate Plot (Step ", community$nstep, ")"))
+    
+    return(p_map)
+  }
+
   layout &lt;- match.arg(layout)
   
   if (length(species) &gt; 1) {
@@ -1342,7 +1355,8 @@ ggplot_ewing_substrate &lt;- function(object,
                                    step_density = attr(object, "step_density"),
                                    layers = c("poly", "hex", "organisms", "centers", "labels"),
                                    ...)
-{     
+{
+  if (inherits(object, "ggplot")) return(object)
   if (is.null(layout)) layout &lt;- "facet"
   if (is.null(width)) width &lt;- 10
   if (is.null(step_density)) step_density &lt;- 1
@@ -1413,6 +1427,44 @@ ewing_ageclass &lt;- function(community, substrate = TRUE, total = TRUE,
                            normalize = TRUE, ...) {
   nsim_val &lt;- NULL
   nstep_val &lt;- NULL
+  
+  if (inherits(community, "isle_royale_sim")) {
+    if (is.null(community$history) || nrow(community$history) == 0) return(NULL)
+    out &lt;- community$history
+    if (!substrate) {
+      out &lt;- dplyr::filter(out, .data$Type != "substrate")
+    }
+    if (total) {
+      tot &lt;- dplyr::mutate(
+        dplyr::ungroup(
+          dplyr::summarize(
+            dplyr::group_by(out, .data$Species, .data$step, .data$time, .data$Type),
+            Count = sum(.data$Count),
+            .groups = "drop"
+          )
+        ),
+        State = "total"
+      )
+      out &lt;- dplyr::bind_rows(out, tot)
+    }
+    if (normalize) {
+      out &lt;- dplyr::ungroup(
+        dplyr::mutate(
+          dplyr::group_by(out, .data$Species, .data$State, .data$Type),
+          Count = {
+            m &lt;- max(.data$Count, na.rm = TRUE)
+            if (!is.na(m) &amp;&amp; m &gt; 0) .data$Count / m else 0
+          }
+        )
+      )
+    }
+    ordered_levels &lt;- unique(c("calf", "yearling", "adult", "senior", "pup", "subadult", "total"))
+    out$State &lt;- factor(out$State, levels = ordered_levels[ordered_levels %in% unique(out$State)])
+    attr(out, "nstep") &lt;- community$nstep
+    class(out) &lt;- c("ewing_ageclass", class(out))
+    return(out)
+  }
+  
   if (inherits(community, "ewing_discrete")) {
     nsim_val &lt;- attr(community, "nsim")
     nstep_val &lt;- attr(community, "nstep")

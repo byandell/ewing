@@ -25,7 +25,13 @@ get_habitat_features(
 
 get_moose_landmarks(watershed_obj, use_cache = TRUE)
 
-add_habitat_hex_overlay(hex_obj, habitat_sf = NULL, landmarks_sf = NULL)
+add_habitat_hex_overlay(
+  hex_obj,
+  habitat_sf = NULL,
+  landmarks_sf = NULL,
+  features = NULL,
+  landmarks = NULL
+)
 
 # S3 method for class 'habitat_hex_overlay'
 autoplot(object, show_landmarks = TRUE, ...)

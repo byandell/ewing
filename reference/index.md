@@ -2,6 +2,11 @@
 
 ## All functions
 
+- [`IsleRoyaleApp()`](https://byandell.github.io/ewing/reference/IsleRoyaleApp.md)
+  [`IsleRoyaleInput()`](https://byandell.github.io/ewing/reference/IsleRoyaleApp.md)
+  [`IsleRoyaleOutput()`](https://byandell.github.io/ewing/reference/IsleRoyaleApp.md)
+  [`IsleRoyaleServer()`](https://byandell.github.io/ewing/reference/IsleRoyaleApp.md)
+  : Isle Royale Wolf-Moose Simulation App
 - [`TemperatureBase`](https://byandell.github.io/ewing/reference/TemperatureBase.md)
   [`TemperaturePar`](https://byandell.github.io/ewing/reference/TemperatureBase.md)
   : temperature data tables for simulation
@@ -125,6 +130,10 @@
   [`inputAppOutput()`](https://byandell.github.io/ewing/reference/inputApp.md)
   [`inputAppServer()`](https://byandell.github.io/ewing/reference/inputApp.md)
   : Input Data App
+- [`init_isle_royale_sim()`](https://byandell.github.io/ewing/reference/isle_royale_sim.md)
+  [`run_isle_royale_sim()`](https://byandell.github.io/ewing/reference/isle_royale_sim.md)
+  [`ggplot_isle_royale_sim()`](https://byandell.github.io/ewing/reference/isle_royale_sim.md)
+  : Isle Royale Wolf-Moose Predator-Prey Simulation
 - [`build_base_map()`](https://byandell.github.io/ewing/reference/leaflet.md)
   [`get_huc_from_point()`](https://byandell.github.io/ewing/reference/leaflet.md)
   [`get_hucs_from_polygon()`](https://byandell.github.io/ewing/reference/leaflet.md)

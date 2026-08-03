@@ -87,7 +87,13 @@ with a hexagonal substrate grid overlay, calculating habitat suitability weights
 <span></span>
 <span><span class="fu">get_moose_landmarks</span><span class="op">(</span><span class="va">watershed_obj</span>, use_cache <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">add_habitat_hex_overlay</span><span class="op">(</span><span class="va">hex_obj</span>, habitat_sf <span class="op">=</span> <span class="cn">NULL</span>, landmarks_sf <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span><span class="fu">add_habitat_hex_overlay</span><span class="op">(</span></span>
+<span>  <span class="va">hex_obj</span>,</span>
+<span>  habitat_sf <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  landmarks_sf <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  features <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  landmarks <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'habitat_hex_overlay'</span></span>
 <span><span class="fu">autoplot</span><span class="op">(</span><span class="va">object</span>, show_landmarks <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">...</span><span class="op">)</span></span>
