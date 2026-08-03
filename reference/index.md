@@ -84,6 +84,12 @@
   : GGplot of Ewing envelope
 - [`ggplot_ewing_envelopes()`](https://byandell.github.io/ewing/reference/ggplot_ewing_envelopes.md)
   : GGplot of Ewing multiple envelopes
+- [`get_habitat_features()`](https://byandell.github.io/ewing/reference/habitat.md)
+  [`get_moose_landmarks()`](https://byandell.github.io/ewing/reference/habitat.md)
+  [`add_habitat_hex_overlay()`](https://byandell.github.io/ewing/reference/habitat.md)
+  [`autoplot(`*`<habitat_hex_overlay>`*`)`](https://byandell.github.io/ewing/reference/habitat.md)
+  [`add_leaflet_habitat_overlay()`](https://byandell.github.io/ewing/reference/habitat.md)
+  : Moose Habitat & Substrate Overlay Utilities
 - [`hexmapInput()`](https://byandell.github.io/ewing/reference/hexmapApp.md)
   [`hexmapOutput()`](https://byandell.github.io/ewing/reference/hexmapApp.md)
   [`hexmapServer()`](https://byandell.github.io/ewing/reference/hexmapApp.md)
