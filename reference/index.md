@@ -126,6 +126,7 @@
 - [`initTemp()`](https://byandell.github.io/ewing/reference/initTemp.md)
   : temperature data tables for simulation
 - [`inputApp()`](https://byandell.github.io/ewing/reference/inputApp.md)
+  [`discover_dataset_tables()`](https://byandell.github.io/ewing/reference/inputApp.md)
   [`inputAppInput()`](https://byandell.github.io/ewing/reference/inputApp.md)
   [`inputAppOutput()`](https://byandell.github.io/ewing/reference/inputApp.md)
   [`inputAppServer()`](https://byandell.github.io/ewing/reference/inputApp.md)
@@ -168,6 +169,14 @@
   [`simpleOutput()`](https://byandell.github.io/ewing/reference/simpleServer.md)
   [`simpleApp()`](https://byandell.github.io/ewing/reference/simpleServer.md)
   : simple Input
+- [`step_size_choices`](https://byandell.github.io/ewing/reference/step_controls.md)
+  [`step_size_slider()`](https://byandell.github.io/ewing/reference/step_controls.md)
+  [`parse_step_size()`](https://byandell.github.io/ewing/reference/step_controls.md)
+  [`axisUnitInput()`](https://byandell.github.io/ewing/reference/step_controls.md)
+  [`axisUnitServer()`](https://byandell.github.io/ewing/reference/step_controls.md)
+  [`ageClassControlInput()`](https://byandell.github.io/ewing/reference/step_controls.md)
+  [`ageClassControlServer()`](https://byandell.github.io/ewing/reference/step_controls.md)
+  : Simulation Step Size Slider and Parsing Controls
 - [`substrate.host`](https://byandell.github.io/ewing/reference/substrate.host.md)
   [`substrate.parasite`](https://byandell.github.io/ewing/reference/substrate.host.md)
   [`substrate.substrate`](https://byandell.github.io/ewing/reference/substrate.host.md)

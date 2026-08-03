@@ -9,7 +9,9 @@ matrices.
 ``` r
 inputApp(title = "Input Data Explorer")
 
-inputAppInput(id)
+discover_dataset_tables(datafile = "", sim = NULL)
+
+inputAppInput(id, choices = NULL)
 
 inputAppOutput(id)
 
@@ -26,14 +28,22 @@ inputAppServer(
 
   Application title
 
+- datafile:
+
+  Reactive optional datafile path or string
+
+- sim:
+
+  Simulation instance (\`ewing\` or \`isle_royale_sim\`)
+
 - id:
 
   Module ID string
 
+- choices:
+
+  Optional vector of initial table choices
+
 - simres:
 
-  Reactive simulation state (\`ewing\` object)
-
-- datafile:
-
-  Reactive optional datafile path
+  Reactive simulation state (\`ewing\` or \`isle_royale_sim\` object)

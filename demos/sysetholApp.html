@@ -1194,17 +1194,22 @@ ewing_substrate &lt;- function( community,
                              width = 10,
                              step_density = 1,
                              rescale = TRUE,
+                             x_var = c("step", "time"),
                              ...)
 {
+  x_var &lt;- match.arg(x_var)
+  
   if (inherits(community, "isle_royale_sim")) {
     p_map &lt;- autoplot(community$habitat_overlay, show_landmarks = TRUE)
     moose_sf &lt;- sf::st_as_sf(community$moose_pop, coords = c("lon", "lat"), crs = sf::st_crs(community$habitat_overlay$layer))
     wolf_sf  &lt;- sf::st_as_sf(community$wolf_pop, coords = c("lon", "lat"), crs = sf::st_crs(community$habitat_overlay$layer))
     
+    hdr_str &lt;- if (x_var == "step") paste0("Step ", community$nstep) else paste0("Time Units ", community$nstep)
+    
     p_map &lt;- p_map +
       ggplot2::geom_sf(data = moose_sf, color = "#27ae60", shape = 21, fill = NA, stroke = 1.0, size = 0.8, alpha = 0.85) +
       ggplot2::geom_sf(data = wolf_sf, color = "#e74c3c", shape = 21, fill = NA, stroke = 1.4, size = 1.5, alpha = 0.95) +
-      ggplot2::ggtitle(paste0("Isle Royale Substrate Plot (Step ", community$nstep, ")"))
+      ggplot2::ggtitle(paste0("Isle Royale Substrate Plot (", hdr_str, ")"))
     
     return(p_map)
   }
@@ -1462,6 +1467,7 @@ ewing_ageclass &lt;- function(community, substrate = TRUE, total = TRUE,
     ordered_levels &lt;- unique(c("calf", "yearling", "adult", "senior", "pup", "subadult", "total"))
     out$State &lt;- factor(out$State, levels = ordered_levels[ordered_levels %in% unique(out$State)])
     attr(out, "nstep") &lt;- community$nstep
+    attr(out, "units") &lt;- "days"
     class(out) &lt;- c("ewing_ageclass", class(out))
     return(out)
   }
@@ -1536,12 +1542,22 @@ ewing_ageclass &lt;- function(community, substrate = TRUE, total = TRUE,
     attr(out, "nstep") &lt;- max(out$step, na.rm = TRUE)
   }
   attr(out, "nsim") &lt;- if (!is.null(nsim_val)) nsim_val else attr(community, "nsim")
+  attr(out, "units") &lt;- if (inherits(community, "isle_royale_sim")) "days" else tryCatch(getOrgFeature(community, species[1], "units"), error = function(e) "time")
   
   class(out) &lt;- c("ewing_ageclass", class(out))
   out
 }
-ggplot_ewing_ageclass &lt;- function(object, main = NULL, title = NULL, ... )
+ggplot_ewing_ageclass &lt;- function(object, main = NULL, title = NULL, x_var = c("step", "time"), time_unit = NULL, ... )
 {
+  x_var &lt;- match.arg(x_var)
+  
+  if (is.null(time_unit)) {
+    time_unit &lt;- attr(object, "units")
+  }
+  if (is.null(time_unit) || is.na(time_unit) || time_unit == "NA") {
+    time_unit &lt;- "time"
+  }
+  
   if (is.null(title)) title &lt;- main
   if (is.null(title)) {
     nstep &lt;- attr(object, "nstep")
@@ -1549,29 +1565,67 @@ ggplot_ewing_ageclass &lt;- function(object, main = NULL, title = NULL, ... )
       nstep &lt;- max(object$step, na.rm = TRUE)
     }
     nsim &lt;- attr(object, "nsim")
+    unit_str &lt;- if (x_var == "step") "steps" else time_unit
+    time_hdr &lt;- if (x_var == "step") "Steps" else paste0(toupper(substring(time_unit, 1, 1)), substring(time_unit, 2))
     if (!is.null(nstep)) {
       if (!is.null(nsim) &amp;&amp; nsim &gt; 1) {
-        title &lt;- paste0("Age Distribution over Time (", nstep, " steps, nsim = ", nsim, ")")
+        title &lt;- paste0("Age Classes over ", time_hdr, " (", nstep, " ", unit_str, ", nsim = ", nsim, ")")
       } else {
-        title &lt;- paste0("Age Distribution over Time (", nstep, " steps)")
+        title &lt;- paste0("Age Classes over ", time_hdr, " (", nstep, " ", unit_str, ")")
       }
-    } else if (!is.null(nsim) &amp;&amp; nsim &gt; 1) {
-      title &lt;- paste0("Age Distribution over Time (nsim = ", nsim, ")")
     } else {
-      title &lt;- "Age Distribution over Time"
+      title &lt;- paste0("Age Classes over ", time_hdr)
     }
   }
   
-  ggplot2::ggplot(object) +
-    ggplot2::aes(.data$time, .data$Count, col = .data$State, group = .data$State, shape = .data$Species) +
-    ggplot2::geom_step(na.rm = TRUE) +
-    ggplot2::geom_point(size = 2, na.rm = TRUE) +
-    ggplot2::scale_shape_manual(name = "Species", values = c(1, 2, 0, 5, 6, 3, 4)) +
-    ggplot2::labs(title = title, color = "State", shape = "Species") +
-    ggplot2::facet_wrap(.data$Type ~ .data$Species, scales = "free")
+  species_vec &lt;- unique(as.character(object$Species))
+  if (length(species_vec) == 0) species_vec &lt;- "Organism"
+  
+  p_list &lt;- list()
+  
+  for (sp in species_vec) {
+    df_sp &lt;- object[object$Species == sp, , drop = FALSE]
+    if (is.factor(df_sp$State)) {
+      df_sp$State &lt;- droplevels(df_sp$State)
+    }
+    
+    x_col &lt;- if (x_var == "step" &amp;&amp; "step" %in% names(df_sp)) "step" else "time"
+    x_lbl &lt;- if (x_var == "step") "steps" else time_unit
+    
+    sp_title &lt;- paste(toupper(substring(sp, 1, 1)), substring(sp, 2), " Age Classes", sep = "")
+    
+    p_sub &lt;- ggplot2::ggplot(df_sp, ggplot2::aes(x = .data[[x_col]], y = .data$Count, col = .data$State, group = .data$State)) +
+      ggplot2::geom_step(na.rm = TRUE, linewidth = 0.8) +
+      ggplot2::geom_point(size = 2, na.rm = TRUE) +
+      ggplot2::theme_minimal() +
+      ggplot2::labs(
+        title = sp_title,
+        x = x_lbl,
+        y = "Count",
+        color = "Age Class"
+      ) +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(size = 11, face = "bold", hjust = 0.5),
+        legend.position = "right"
+      )
+      
+    p_list[[sp]] &lt;- p_sub
+  }
+  
+  if (length(p_list) == 1) {
+    return(p_list[[1]] + ggplot2::ggtitle(title))
+  }
+  
+  grid_plots &lt;- cowplot::plot_grid(plotlist = p_list, ncol = length(p_list), align = "h")
+  title_widget &lt;- cowplot::ggdraw() + 
+    cowplot::draw_label(title, fontface = 'bold', x = 0.5, hjust = 0.5, size = 13)
+  
+  cowplot::plot_grid(title_widget, grid_plots, ncol = 1, rel_heights = c(0.12, 1))
 }
-autoplot.ewing_ageclass &lt;- function(object, ...)
-  ggplot_ewing_ageclass(object, ...)
+autoplot.ewing_ageclass &lt;- function(object, x_var = c("step", "time"), ...) {
+  x_var &lt;- match.arg(x_var)
+  ggplot_ewing_ageclass(object, x_var = x_var, ...)
+}
 
 
 # --- Source: ewing_envelope.R ---
@@ -5538,20 +5592,30 @@ distPlotApp &lt;- function(title = "Population Ethology") {
   
   shiny::shinyApp(ui = ui, server = server)
 }
-distPlotServer &lt;- function(id, simres) {
+distPlotServer &lt;- function(id, simres, x_var = NULL, total = NULL, norm = NULL) {
   shiny::moduleServer(id, function(input, output, session) {
     ns &lt;- session$ns
     
     dist_plot &lt;- shiny::reactive({
-      shiny::req(simres(), input$total, input$norm)
-      object &lt;- if(inherits(simres(), "ewing")) {
-        ewing_ageclass(simres(), total = input$total, normalize = input$norm)
-      } else {
-        NULL
-      }
-      if(is.null(object)) return(plot_null("no simulation"))
-      ggplot2::autoplot(object)
+      sim &lt;- if (is.reactive(simres)) simres() else simres
+      shiny::req(sim)
+      
+      tot_val &lt;- if (is.reactive(total)) total() else if (!is.null(total)) total else if (!is.null(input$total)) input$total else TRUE
+      norm_val &lt;- if (is.reactive(norm)) norm() else if (!is.null(norm)) norm else if (!is.null(input$norm)) input$norm else TRUE
+      xv_val &lt;- if (is.reactive(x_var)) x_var() else if (!is.null(x_var)) x_var else if (!is.null(input$x_var)) input$x_var else "step"
+      
+      if (is.null(tot_val)) tot_val &lt;- TRUE
+      if (is.null(norm_val)) norm_val &lt;- TRUE
+      if (is.null(xv_val) || !xv_val %in% c("step", "time")) xv_val &lt;- "step"
+      
+      object &lt;- tryCatch({
+        ewing_ageclass(sim, total = tot_val, normalize = norm_val)
+      }, error = function(e) NULL)
+      
+      if (is.null(object)) return(plot_null("no simulation"))
+      ggplot2::autoplot(object, x_var = xv_val)
     })
+    
     output$dist_plot &lt;- shiny::renderPlot({
       dist_plot()
     })
@@ -5850,16 +5914,52 @@ inputApp &lt;- function(title = "Input Data Explorer") {
   shiny::shinyApp(ui = ui, server = server)
 }
 
-inputAppInput &lt;- function(id) {
+discover_dataset_tables &lt;- function(datafile = "", sim = NULL) {
+  found &lt;- character(0)
+  
+  # 1. Inspect datafile directory
+  d_path &lt;- if (is.character(datafile) &amp;&amp; datafile != "") datafile else if (!is.null(sim) &amp;&amp; !is.null(sim$datafile)) sim$datafile else ""
+  
+  if (d_path != "" &amp;&amp; file.exists(d_path)) {
+    if (dir.exists(d_path)) {
+      files &lt;- list.files(d_path, pattern = "\\.(txt|csv|rds)$", full.names = FALSE)
+      if (length(files) &gt; 0) {
+        found &lt;- tools::file_path_sans_ext(files)
+      }
+    } else if (grepl("\\.xlsx$", d_path, ignore.case = TRUE)) {
+      sheets &lt;- tryCatch(readxl::excel_sheets(d_path), error = function(e) character(0))
+      if (length(sheets) &gt; 0) found &lt;- sheets
+    }
+  }
+  
+  # 2. Inspect sim$datasets if present
+  if (!is.null(sim) &amp;&amp; !is.null(sim$datasets)) {
+    found &lt;- unique(c(found, names(sim$datasets)))
+  }
+  
+  # 3. Default fallback choices if nothing found
+  if (length(found) == 0) {
+    found &lt;- c(
+      "organism.features", "future.host", "future.parasite",
+      "substrate.host", "substrate.parasite", "substrate.substrate",
+      "host.parasite", "temperature.base", "temperature.par"
+    )
+  }
+  
+  unique(found)
+}
+
+inputAppInput &lt;- function(id, choices = NULL) {
   ns &lt;- shiny::NS(id)
+  default_choices &lt;- if (!is.null(choices)) choices else c(
+    "organism.features", "future.host", "future.parasite",
+    "substrate.host", "substrate.parasite", "substrate.substrate",
+    "host.parasite", "temperature.base", "temperature.par"
+  )
   shiny::tagList(
     shiny::selectInput(ns("dataname"), "Select Dataset Table:",
-      choices = c(
-        "organism.features", "future.host", "future.parasite",
-        "substrate.host", "substrate.parasite", "substrate.substrate",
-        "host.parasite", "temperature.base", "temperature.par"
-      ),
-      selected = "organism.features"
+      choices = default_choices,
+      selected = default_choices[1]
     )
   )
 }
@@ -5873,31 +5973,53 @@ inputAppServer &lt;- function(id, simres = shiny::reactiveVal(NULL), datafile = 
   shiny::moduleServer(id, function(input, output, session) {
     ns &lt;- session$ns
 
+    # Dynamically update select choices based on folder / simulation contents
+    shiny::observe({
+      sim &lt;- if (is.reactive(simres)) simres() else simres
+      dfile &lt;- if (is.reactive(datafile)) datafile() else datafile
+      
+      discovered &lt;- discover_dataset_tables(dfile, sim)
+      if (length(discovered) &gt; 0) {
+        current_sel &lt;- input$dataname
+        sel &lt;- if (!is.null(current_sel) &amp;&amp; current_sel %in% discovered) current_sel else discovered[1]
+        shiny::updateSelectInput(session, "dataname", choices = discovered, selected = sel)
+      }
+    })
+
     output$org_table &lt;- shiny::renderTable(
       {
         name &lt;- input$dataname %||% "organism.features"
         sim &lt;- if (is.reactive(simres)) simres() else simres
         dfile &lt;- if (is.reactive(datafile)) datafile() else datafile
 
-        if (is.null(sim)) sim &lt;- tryCatch(init.simulation(datafile = dfile), error = function(e) NULL)
-        sim_single &lt;- if (inherits(sim, "ewing_discrete")) sim[[1]] else sim
-
         res &lt;- NULL
 
+        # 0. Check direct file in datafile directory if points to folder
+        if (is.character(dfile) &amp;&amp; dfile != "" &amp;&amp; dir.exists(dfile)) {
+          txt_path &lt;- file.path(dfile, paste0(name, ".txt"))
+          if (file.exists(txt_path)) res &lt;- tryCatch(utils::read.table(txt_path, header = TRUE, sep = "\t", stringsAsFactors = FALSE), error = function(e) NULL)
+          if (is.null(res)) {
+            csv_path &lt;- file.path(dfile, paste0(name, ".csv"))
+            if (file.exists(csv_path)) res &lt;- tryCatch(utils::read.csv(csv_path, stringsAsFactors = FALSE), error = function(e) NULL)
+          }
+        }
+
         # 1. Check if dataset is stored in sim$datasets (e.g. injected in webR demo)
-        if (!is.null(sim_single$datasets) &amp;&amp; !is.null(sim_single$datasets[[name]])) {
-          res &lt;- sim_single$datasets[[name]]
+        if (is.null(res) &amp;&amp; !is.null(sim) &amp;&amp; !is.null(sim$datasets) &amp;&amp; !is.null(sim$datasets[[name]])) {
+          res &lt;- sim$datasets[[name]]
         }
 
         # 2. Extract dynamically via getOrgDataSimple or getOrg* package routines
-        if (is.null(res)) {
+        if (is.null(res) &amp;&amp; !is.null(sim) &amp;&amp; inherits(sim, "ewing")) {
+          sim_single &lt;- if (inherits(sim, "ewing_discrete")) sim[[1]] else sim
           res &lt;- tryCatch({
             getOrgDataSimple(sim_single, name, datafile = dfile)
           }, error = function(e) NULL)
         }
 
         # 3. Dynamic fallback to extracting from sim_single$org state structures
-        if (is.null(res) || !is.data.frame(res) || nrow(res) == 0) {
+        if ((is.null(res) || !is.data.frame(res) || nrow(res) == 0) &amp;&amp; !is.null(sim) &amp;&amp; inherits(sim, "ewing")) {
+          sim_single &lt;- if (inherits(sim, "ewing_discrete")) sim[[1]] else sim
           res &lt;- tryCatch({
             left &lt;- stringr::str_remove(name, "\\..*")
             right &lt;- stringr::str_remove(name, ".*\\.")
@@ -6535,39 +6657,6 @@ sysetholApp &lt;- function(title = "Systems Ethology Platform") {
   shiny::shinyApp(ui = ui, server = server)
 }
 
-step_size_choices &lt;- c(1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000)
-
-step_size_slider &lt;- function(inputId, label = "Steps per click:", selected = 50) {
-  idx &lt;- match(selected, step_size_choices)
-  if (is.na(idx)) idx &lt;- 6
-  sl &lt;- shiny::sliderInput(inputId, label, min = 1, max = length(step_size_choices), value = idx, step = 1, ticks = TRUE)
-  sl$children[[2]]$attribs[['data-values']] &lt;- paste(step_size_choices, collapse = ",")
-  sl
-}
-
-parse_step_size &lt;- function(val) {
-  if (is.null(val)) return(50)
-  num &lt;- round(as.numeric(val))
-  if (is.na(num)) return(50)
-  
-  # Direct large values (e.g., 20, 50, 100, 200, 500, 1000, 2000)
-  if (num %in% step_size_choices &amp;&amp; num &gt; 10) {
-    return(num)
-  }
-  
-  # 0-based JavaScript index from ion.rangeSlider (0 to 10)
-  if (num &gt;= 0 &amp;&amp; num &lt; length(step_size_choices)) {
-    return(step_size_choices[num + 1])
-  }
-  
-  # Fallback for direct value
-  if (num %in% step_size_choices) {
-    return(num)
-  }
-  
-  50
-}
-
 sysetholInput &lt;- function(id) {
   ns &lt;- shiny::NS(id)
   shiny::tagList(
@@ -6595,20 +6684,31 @@ sysetholInput &lt;- function(id) {
         shiny::actionButton(ns("run_engine"), "Run Engine", class = "btn-sm btn-primary flex-fill", style = "font-weight: 600;"),
         shiny::actionButton(ns("reset_engine"), "Reset", class = "btn-sm btn-outline-secondary")
       ),
-      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
       
-      shiny::h4("Display &amp; Plot Options", style = "font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;"),
-      shiny::checkboxInput(ns("norm"), "Normalize Dist Plot", TRUE),
-      shiny::checkboxInput(ns("total"), "Include Total in Dist", TRUE),
-      
-      # Conditional Control: Confidence Band ONLY shown when nsim &gt; 1
+      # Conditional Controls for Substrate Plots (shown ONLY on Substrate Plots tab)
       shiny::conditionalPanel(
-        condition = sprintf("input['%s'] != '1'", ns("nsim")),
-        shiny::checkboxInput(ns("confidence"), "Confidence Band Envelope", TRUE)
+        condition = sprintf("input['%s'] == 'Substrate Plots'", ns("tabset")),
+        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+        shiny::h4("Substrate Display Options", style = "font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;"),
+        axisUnitInput(ns("substrate_axis")),
+        substrateInput(ns("substrate"))
       ),
       
-      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
-      substrateInput(ns("substrate"))
+      # Conditional Controls for Age Classes (shown ONLY on Age Classes tab)
+      shiny::conditionalPanel(
+        condition = sprintf("input['%s'] == 'Age Classes'", ns("tabset")),
+        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+        shiny::h4("Age Classes Display Options", style = "font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;"),
+        ageClassControlInput(ns("age_ctrls"))
+      ),
+      
+      # Conditional Controls for Envelope Plots (shown ONLY on Envelope Plots tab when nsim &gt; 1)
+      shiny::conditionalPanel(
+        condition = sprintf("input['%s'] == 'Envelope Plots' &amp;&amp; input['%s'] != '1'", ns("tabset"), ns("nsim")),
+        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+        shiny::h4("Envelope Display Options", style = "font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;"),
+        shiny::checkboxInput(ns("confidence"), "Confidence Band Envelope", TRUE)
+      )
     )
   )
 }
@@ -6623,6 +6723,8 @@ sysetholServer &lt;- function(id) {
     ns &lt;- session$ns
     
     current_sim &lt;- shiny::reactiveVal(NULL)
+    sub_x_var &lt;- axisUnitServer("substrate_axis")
+    age_ctrls &lt;- ageClassControlServer("age_ctrls")
     
     # Initialize simulation on start
     shiny::observe({
@@ -6642,41 +6744,46 @@ sysetholServer &lt;- function(id) {
       nh &lt;- input$n_host %||% 200
       np &lt;- input$n_parasite %||% 100
       
-      if (nsim_val == 1) {
-        sim &lt;- current_sim()
-        if (is.null(sim)) {
-          sim &lt;- init.simulation(count = c(nh, np))
+      withProgress(message = "Executing Simulation Engine...", value = 0.2, {
+        if (nsim_val == 1) {
+          # Single run mode
+          sz &lt;- parse_step_size(input$step_size %||% 50)
+          sim &lt;- current_sim()
+          if (is.null(sim)) sim &lt;- init.simulation(count = c(nh, np))
+          sim &lt;- future.events(sim, nstep = sz, plotit = FALSE)
+          current_sim(sim)
+        } else {
+          # Multi-run discrete envelope mode
+          tot_steps &lt;- as.numeric(input$steps %||% 1000)
+          sims &lt;- ewing_discrete(nsim = nsim_val, nstep = tot_steps, count = c(nh, np), verbose = FALSE)
+          current_sim(sims)
         }
-        sz &lt;- parse_step_size(input$step_size %||% 5)
-        new_state &lt;- future.events(sim, nstep = sz, plotit = FALSE)
-        current_sim(new_state)
-      } else {
-        tot_steps &lt;- input$steps %||% 1000
-        res &lt;- ewing_discrete(nsim = nsim_val, nstep = tot_steps, count = c(nh, np), verbose = FALSE)
-        current_sim(res)
-      }
+        incProgress(0.8, detail = "Done")
+      })
     })
     
-    # Reset button
+    # Reset Engine button
     shiny::observeEvent(input$reset_engine, {
       nh &lt;- input$n_host %||% 200
       np &lt;- input$n_parasite %||% 100
       sim &lt;- init.simulation(count = c(nh, np))
-      sz &lt;- parse_step_size(input$step_size %||% 5)
-      sim &lt;- future.events(sim, nstep = sz, plotit = FALSE)
       current_sim(sim)
     })
     
     # Input Data App Server
     inputAppServer("input_app", simres = current_sim)
     
+    # Compose Dist Plot Module for Age Classes
+    distPlotServer("dist_plot", simres = current_sim, x_var = age_ctrls$x_var, total = age_ctrls$total, norm = age_ctrls$norm)
+    
     # Dynamic Tabs (Envelope Plots shown ONLY when nsim &gt; 1)
     output$sysethol_tabs &lt;- shiny::renderUI({
       nsim_val &lt;- as.numeric(input$nsim %||% 1)
       if (nsim_val == 1) {
         bslib::navset_tab(
-          bslib::nav_panel("Dist Plots", bslib::card(shiny::plotOutput(ns("dist_plot"), height = "500px"))),
+          id = ns("tabset"),
           bslib::nav_panel("Substrate Plots", bslib::card(substrateOutput(ns("substrate")))),
+          bslib::nav_panel("Age Classes", bslib::card(distPlotOutput(ns("dist_plot")))),
           bslib::nav_panel("Input Data", bslib::card(
             inputAppInput(ns("input_app")),
             inputAppOutput(ns("input_app"))
@@ -6684,8 +6791,9 @@ sysetholServer &lt;- function(id) {
         )
       } else {
         bslib::navset_tab(
-          bslib::nav_panel("Dist Plots", bslib::card(shiny::plotOutput(ns("dist_plot"), height = "500px"))),
+          id = ns("tabset"),
           bslib::nav_panel("Substrate Plots", bslib::card(substrateOutput(ns("substrate")))),
+          bslib::nav_panel("Age Classes", bslib::card(distPlotOutput(ns("dist_plot")))),
           bslib::nav_panel("Envelope Plots", bslib::card(shiny::plotOutput(ns("env_plot"), height = "500px"))),
           bslib::nav_panel("Input Data", bslib::card(
             inputAppInput(ns("input_app")),
@@ -6693,16 +6801,6 @@ sysetholServer &lt;- function(id) {
           ))
         )
       }
-    })
-    
-    # Dist Plots Tab
-    output$dist_plot &lt;- shiny::renderPlot({
-      sim &lt;- current_sim()
-      shiny::req(sim)
-      norm_val &lt;- input$norm %||% TRUE
-      tot_val &lt;- input$total %||% TRUE
-      ac &lt;- ewing_ageclass(sim, total = tot_val, normalize = norm_val)
-      ggplot2::autoplot(ac)
     })
     
     # Substrate Plots Tab Module

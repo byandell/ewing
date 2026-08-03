@@ -22,7 +22,7 @@ init_isle_royale_sim(
   landmarks_rds = NULL
 )
 
-run_isle_royale_sim(sim_obj, nstep = 1000, refresh = 100, ...)
+run_isle_royale_sim(sim_obj, nstep = 1000, refresh = 10, ...)
 
 ggplot_isle_royale_sim(x, ...)
 ```

@@ -412,13 +412,13 @@ increments, the <strong><code>Steps per click</code></strong> slider in
 <strong>Discrete Values</strong>:
 <code>1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000</code>.</li>
 <li>
-<strong><code>step_size_slider()</code> Helper</strong>: Attaches
+<strong><code><a href="../../reference/step_controls.html">step_size_slider()</a></code> Helper</strong>: Attaches
 <code>data-values="1,2,5,10,20,50,100,200,500,1000,2000"</code> to
 <code><a href="https://rdrr.io/pkg/shiny/man/sliderInput.html" class="external-link">shiny::sliderInput</a></code>, configuring the underlying JavaScript
 slider (<code>ion.rangeSlider</code>) to display discrete geometric tick
 marks.</li>
 <li>
-<strong><code>parse_step_size()</code> Server Parsing</strong>:
+<strong><code><a href="../../reference/step_controls.html">parse_step_size()</a></code> Server Parsing</strong>:
 Evaluates incoming values from the client slider, resolving string
 values directly or falling back to index positions.</li>
 </ul>
@@ -495,7 +495,7 @@ spurious missing-value warnings.</li>
 (<code>parse_step_size</code>)</strong>: Fixed a 1-off index offset
 where Shiny’s <code>ion.rangeSlider</code> sent 0-based JavaScript
 indices (<code>0..10</code>) for custom <code>data-values</code>.
-Updated <code>parse_step_size()</code> to map 0-based JS indices
+Updated <code><a href="../../reference/step_controls.html">parse_step_size()</a></code> to map 0-based JS indices
 (<code>num + 1</code>) to <code>step_size_choices[1..11]</code>. This
 ensures selecting 50 advances exactly 50 steps, 100 advances 100 steps,
 etc., eliminating the 1-off mapping error.</li>
@@ -699,7 +699,77 @@ between the R package codebase and browser WebAssembly applications.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="engineering-prompt-history">2. Engineering Prompt History<a class="anchor" aria-label="anchor" href="#engineering-prompt-history"></a>
+<h2 id="isleroyaleapp-ui-architecture-tab-aware-sidebar-decluttering">3. <code>IsleRoyaleApp</code> UI Architecture &amp; Tab-Aware
+Sidebar Decluttering<a class="anchor" aria-label="anchor" href="#isleroyaleapp-ui-architecture-tab-aware-sidebar-decluttering"></a>
+</h2>
+<div class="section level3">
+<h3 id="a--5-multi-view-output-panels-isleroyaleoutput">A. 5 Multi-View Output Panels (<code>IsleRoyaleOutput</code>)<a class="anchor" aria-label="anchor" href="#a--5-multi-view-output-panels-isleroyaleoutput"></a>
+</h3>
+<ol style="list-style-type: decimal">
+<li>
+<strong>Substrate Plot</strong>: Native <code>ggplot2</code> spatial
+GIS substrate map using local <code>sf</code> layers
+(<code>inst/extdata/isle_royale/</code>) displaying habitat features,
+landmark pins, hex grid, and active organism positions with <strong>0
+API calls</strong>.</li>
+<li>
+<strong>Age Classes</strong>: Side-by-side <code>cowplot</code>
+multi-panel plot displaying step-by-step population age-class dynamics
+(<code>ewing_ageclass(sim)</code>). Each species (Moose vs. Wolf)
+features a dedicated panel with an adjacent legend listing only its
+specific age-class states.</li>
+<li>
+<strong>Census Benchmarks</strong>: High-resolution dual-panel
+<code>cowplot</code> grid rendering spatial organism positions alongside
+40-year empirical census trajectory benchmarks
+(<code>wolf_moose.csv</code>).</li>
+<li>
+<strong>Live Demographics</strong>: Tabular summary of active living
+organisms grouped by age class that updates dynamically as simulation
+steps execute.</li>
+<li>
+<strong>Input Data</strong>: Composes <code>inputAppInput</code> /
+<code>inputAppOutput</code> / <code>inputAppServer</code> leveraging
+<code><a href="../../reference/inputApp.html">discover_dataset_tables()</a></code> to dynamically discover and view
+input configuration tables with zero hardcoded table names.</li>
+</ol>
+</div>
+<div class="section level3">
+<h3 id="b--tab-aware-sidebar-decluttering">B. Tab-Aware Sidebar Decluttering<a class="anchor" aria-label="anchor" href="#b--tab-aware-sidebar-decluttering"></a>
+</h3>
+<p>Both <code>sysetholApp</code> and <code>IsleRoyaleApp</code> use
+<code>conditionalPanel</code> bound to <code>input.tabset</code> to
+display plot-specific controls strictly when their target panel is
+active: - <strong>Substrate Plot(s)</strong> active: Displays spatial
+map feature toggles (<code>show_habitat</code>,
+<code>show_landmarks</code>, species &amp; density sliders) and axis
+units selector (<code>axis_unit</code>). - <strong>Age Classes</strong>
+active: Displays <code>ageClassControlInput</code> (<em>Normalize
+Plot</em>, <em>Include Total in Plot</em>, <em>Display Units</em>). -
+<strong>Envelope Plots</strong> active: Displays <code>confidence</code>
+(<em>Confidence Band Envelope</em>). - <strong>Input Data</strong> /
+<strong>Live Demographics</strong> active: Hides all plot-specific
+options, leaving only primary simulation setup and step execution
+controls.</p>
+</div>
+<div class="section level3">
+<h3 id="c--logarithmic-stepping-custom-unit-labeling-step_controls-r">C. Logarithmic Stepping &amp; Custom Unit Labeling
+(<code>step_controls.R</code>)<a class="anchor" aria-label="anchor" href="#c--logarithmic-stepping-custom-unit-labeling-step_controls-r"></a>
+</h3>
+<ul>
+<li>Logarithmic step slider choices:
+<code>1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000</code>.</li>
+<li>Dynamic unit labeling: <code>IsleRoyaleApp</code> displays
+<strong><code>Steps</code> vs <code>Days</code></strong> in the sidebar
+and plots the X-axis labeled <strong><code>"days"</code></strong>, while
+<code>sysetholApp</code> displays <strong><code>Steps</code> vs
+<code>Time</code></strong>.</li>
+</ul>
+<hr>
+</div>
+</div>
+<div class="section level2">
+<h2 id="engineering-prompt-history">4. Engineering Prompt History<a class="anchor" aria-label="anchor" href="#engineering-prompt-history"></a>
 </h2>
 </div>
 <div class="section level2">

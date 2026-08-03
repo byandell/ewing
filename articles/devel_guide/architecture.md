@@ -125,3 +125,30 @@ Panels](https://byandell.github.io/ewing/articles/devel_guide/simulation.md) -
 Panels](https://byandell.github.io/ewing/articles/devel_guide/visualization.md) -
 [Utilities & Download
 Controls](https://byandell.github.io/ewing/articles/devel_guide/utilities.md)
+
+------------------------------------------------------------------------
+
+## 4. Peer Application Wrappers & Shared Sub-Modules
+
+`IsleRoyaleApp.R` and `sysetholApp.R` are built as peer application
+wrappers sharing identical underlying Shiny sub-modules: -
+**`step_controls` (`step_size_slider` / `parse_step_size` /
+`axisUnitInput` / `ageClassControlInput`)**: Centralized logarithmic
+step click slider, dynamic axis units selector (`Steps` vs. `Days` for
+Isle Royale; `Steps` vs. `Time` for general apps), and Age Classes
+display options sub-modules in
+[R/step_controls.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/step_controls.R). -
+**`distPlotApp` (`distPlotOutput` / `distPlotServer`)**: Renders
+age-class population dynamics over simulation steps or days. -
+**`inputApp` (`inputAppInput` / `inputAppOutput` / `inputAppServer` /
+`discover_dataset_tables`)**: Dynamically discovers and displays input
+configuration data tables from any simulation site directory or Excel
+workbook. - **`substrateApp` (`substrateInput` / `substrateOutput` /
+`substrateServer`)**: Renders substrate grid overlays and organism
+positions across tridiagonal plant networks or real-world GIS spatial
+meshes. - **Tab-Aware Sidebar Decluttering**: Both applications utilize
+`conditionalPanel` logic bound to the active tab ID (`input.tabset`).
+Display options (e.g., spatial map feature toggles, age-class
+normalization options, envelope confidence controls) are contextually
+shown strictly when their target tab is active, keeping the sidebar
+uncluttered.

@@ -242,6 +242,38 @@ reactives</td>
 </tbody>
 </table>
 <p>For deep dives into each section, see: - <a href="./simulation.html">Simulation Panels</a> - <a href="./visualization.html">Visualization Panels</a> - <a href="./utilities.html">Utilities &amp; Download Controls</a></p>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="peer-application-wrappers-shared-sub-modules">4. Peer Application Wrappers &amp; Shared Sub-Modules<a class="anchor" aria-label="anchor" href="#peer-application-wrappers-shared-sub-modules"></a>
+</h2>
+<p><code>IsleRoyaleApp.R</code> and <code>sysetholApp.R</code> are built
+as peer application wrappers sharing identical underlying Shiny
+sub-modules: - <strong><code>step_controls</code>
+(<code>step_size_slider</code> / <code>parse_step_size</code> /
+<code>axisUnitInput</code> /
+<code>ageClassControlInput</code>)</strong>: Centralized logarithmic
+step click slider, dynamic axis units selector (<code>Steps</code>
+vs. <code>Days</code> for Isle Royale; <code>Steps</code>
+vs. <code>Time</code> for general apps), and Age Classes display options
+sub-modules in <a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/R/step_controls.R">R/step_controls.R</a>.
+- <strong><code>distPlotApp</code> (<code>distPlotOutput</code> /
+<code>distPlotServer</code>)</strong>: Renders age-class population
+dynamics over simulation steps or days. - <strong><code>inputApp</code>
+(<code>inputAppInput</code> / <code>inputAppOutput</code> /
+<code>inputAppServer</code> /
+<code>discover_dataset_tables</code>)</strong>: Dynamically discovers
+and displays input configuration data tables from any simulation site
+directory or Excel workbook. - <strong><code>substrateApp</code>
+(<code>substrateInput</code> / <code>substrateOutput</code> /
+<code>substrateServer</code>)</strong>: Renders substrate grid overlays
+and organism positions across tridiagonal plant networks or real-world
+GIS spatial meshes. - <strong>Tab-Aware Sidebar Decluttering</strong>:
+Both applications utilize <code>conditionalPanel</code> logic bound to
+the active tab ID (<code>input.tabset</code>). Display options (e.g.,
+spatial map feature toggles, age-class normalization options, envelope
+confidence controls) are contextually shown strictly when their target
+tab is active, keeping the sidebar uncluttered.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

@@ -975,6 +975,104 @@ vectors do not truncate the <code>community</code> object.</li>
 </ul>
 </li>
 </ul>
+<hr>
+</div>
+</div>
+<div class="section level2">
+<h2 id="isle-royale-predator-prey-framework-temporal-scaling">6. Isle Royale Predator-Prey Framework &amp; Temporal Scaling<a class="anchor" aria-label="anchor" href="#isle-royale-predator-prey-framework-temporal-scaling"></a>
+</h2>
+<div class="section level3">
+<h3 id="a--ecological-demographic-stage-structure">A. Ecological &amp; Demographic Stage Structure<a class="anchor" aria-label="anchor" href="#a--ecological-demographic-stage-structure"></a>
+</h3>
+<ul>
+<li>
+<strong>Moose Life Cycle (<code>future.moose</code>)</strong>:
+<ul>
+<li>
+<strong>Calf (0–1 yr)</strong>: High vulnerability to wolf predation
+and winter weather.</li>
+<li>
+<strong>Yearling (1–2 yrs)</strong>: Dispersal stage across habitat
+features.</li>
+<li>
+<strong>Adult (2–9 yrs)</strong>: Prime reproductive cows (1–2
+calves/yr). Low natural vulnerability to wolf predation.</li>
+<li>
+<strong>Senior (10+ yrs)</strong>: Aging adults with tooth wear and
+osteoarthritis; prime target for wolf pack hunting.</li>
+</ul>
+</li>
+<li>
+<strong>Wolf Life Cycle (<code>future.wolf</code>)</strong>:
+<ul>
+<li>
+<strong>Pups, Subadults, &amp; Adults</strong>: Pack structure with
+denning pups, roving subadults, and breeding pack adults.</li>
+<li>
+<strong>Predation Functional Response</strong>: Wolf attack rates in
+competing risk tables (<code>moose.wolf.txt</code>) selectively target
+vulnerable Calves and Senior adults over prime Adults.</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="b--temporal-scaling-rules-thermal-regimes">B. Temporal Scaling Rules &amp; Thermal Regimes<a class="anchor" aria-label="anchor" href="#b--temporal-scaling-rules-thermal-regimes"></a>
+</h3>
+<ul>
+<li>
+<strong>Time Unit Equivalence</strong>:
+<ul>
+<li>
+<strong>1 Time Unit (1 Step) = 1 Day</strong> (Degree-Day / daily
+unit increment).</li>
+<li>
+<strong>365 Time Units (Steps) = 1 Year</strong>.</li>
+</ul>
+</li>
+<li>
+<strong>Life-Cycle Scaling</strong>:
+<ul>
+<li>
+<strong>Stage Transitions</strong>: Transitions in
+<code>future.moose</code> and <code>future.wolf</code> (Calf
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\rightarrow</annotation></semantics></math>
+Yearling
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\rightarrow</annotation></semantics></math>
+Adult; Pup
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\rightarrow</annotation></semantics></math>
+Subadult
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\rightarrow</annotation></semantics></math>
+Adult) occur at <code>365</code> steps (<strong>1 year</strong>).</li>
+<li>
+<strong>Reproductive &amp; Lifespan Scaling</strong>: Annual births
+occur every <code>365</code> steps. Adult Moose lifespan =
+<code>2920</code> steps (<strong>8 years</strong>); Adult Wolf lifespan
+= <code>2555</code> steps (<strong>7 years</strong>).</li>
+</ul>
+</li>
+<li>
+<strong>Thermal Regimes</strong>: Moose timing uses Degree-Days
+(<code>units = DD</code>, 1 step = 1 daily fluctuation cycle); Wolf
+timing uses clock hours (<code>units = hr</code>, 24 hours = 1 step /
+day).</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="c--historical-census-calibration-wolf_moose-csv">C. Historical Census Calibration (<code>wolf_moose.csv</code>)<a class="anchor" aria-label="anchor" href="#c--historical-census-calibration-wolf_moose-csv"></a>
+</h3>
+<ul>
+<li>Benchmarked against 40-year empirical time series (1980–2019):
+<ul>
+<li>
+<strong>1980 Baseline</strong>: 664 Moose, 50 Wolves</li>
+<li>
+<strong>1995 Peak</strong>: 2,400 Moose, 16 Wolves</li>
+<li>
+<strong>2018 Crash</strong>: 1,500 Moose, 2 Wolves</li>
+</ul>
+</li>
+</ul>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

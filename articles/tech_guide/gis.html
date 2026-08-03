@@ -733,6 +733,31 @@ blue, and the unified hex mesh.</li>
 and continuous regional hex overlays.</li>
 </ul>
 </li>
+<li>
+<strong>Site Prototyping &amp; GIS Feature Pipeline (Isle Royale
+Prototype Template)</strong>:
+<ul>
+<li>
+<strong>OpenStreetMap Feature Extraction</strong>:
+<code><a href="../../reference/habitat.html">get_habitat_features()</a></code> extracts OpenStreetMap polygon/line
+features (lakes, bogs, waterways, shaded forests).</li>
+<li>
+<strong>Landmark Geocoding</strong>:
+<code><a href="../../reference/habitat.html">get_moose_landmarks()</a></code> geocodes landmark POIs (Windigo,
+Ojibway Lake, Feldtmann Lake, Tobin Harbor).</li>
+<li>
+<strong>Hexagon Habitat Suitability Scoring</strong>:
+<code><a href="../../reference/habitat.html">add_habitat_hex_overlay()</a></code> intersects habitat polygons with
+hex cells, calculating suitability scores / movement weight vectors per
+hexagon.</li>
+<li>
+<strong>RDS Feature Export</strong>: <code><a href="../../reference/hexmapApp.html">hexmapApp()</a></code>
+exports <code>site_features.rds</code> and
+<code>site_landmarks.rds</code> allowing offline simulation execution
+(<code><a href="../../reference/isle_royale_sim.html">init_isle_royale_sim()</a></code>, <code><a href="../../reference/ewing_substrate.html">ewing_substrate()</a></code>)
+with zero API calls.</li>
+</ul>
+</li>
 </ol>
 <hr>
 </div>

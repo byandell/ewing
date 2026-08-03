@@ -287,14 +287,15 @@ increments, the **`Steps per click`** slider in `sysetholInput` uses
 discrete geometric steps:
 
 - **Discrete Values**: `1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000`.
-- **`step_size_slider()` Helper**: Attaches
+- **[`step_size_slider()`](https://byandell.github.io/ewing/reference/step_controls.md)
+  Helper**: Attaches
   `data-values="1,2,5,10,20,50,100,200,500,1000,2000"` to
   [`shiny::sliderInput`](https://rdrr.io/pkg/shiny/man/sliderInput.html),
   configuring the underlying JavaScript slider (`ion.rangeSlider`) to
   display discrete geometric tick marks.
-- **`parse_step_size()` Server Parsing**: Evaluates incoming values from
-  the client slider, resolving string values directly or falling back to
-  index positions.
+- **[`parse_step_size()`](https://byandell.github.io/ewing/reference/step_controls.md)
+  Server Parsing**: Evaluates incoming values from the client slider,
+  resolving string values directly or falling back to index positions.
 
 ### Standalone `inputApp` Module Extraction
 
@@ -351,9 +352,10 @@ The **`Dist Plots`** panel visualizes age-class counts over time using
 
 - **Log-Scale Slider Parsing (`parse_step_size`)**: Fixed a 1-off index
   offset where Shiny’s `ion.rangeSlider` sent 0-based JavaScript indices
-  (`0..10`) for custom `data-values`. Updated `parse_step_size()` to map
-  0-based JS indices (`num + 1`) to `step_size_choices[1..11]`. This
-  ensures selecting 50 advances exactly 50 steps, 100 advances 100
+  (`0..10`) for custom `data-values`. Updated
+  [`parse_step_size()`](https://byandell.github.io/ewing/reference/step_controls.md)
+  to map 0-based JS indices (`num + 1`) to `step_size_choices[1..11]`.
+  This ensures selecting 50 advances exactly 50 steps, 100 advances 100
   steps, etc., eliminating the 1-off mapping error.
 - **Dynamic Reset & Startup Steps**: App startup and the **`Reset`**
   button now dynamically read `parse_step_size(input$step_size)` to
@@ -489,7 +491,54 @@ between the R package codebase and browser WebAssembly applications.
 
 ------------------------------------------------------------------------
 
-## 2. Engineering Prompt History
+## 3. `IsleRoyaleApp` UI Architecture & Tab-Aware Sidebar Decluttering
+
+### A. 5 Multi-View Output Panels (`IsleRoyaleOutput`)
+
+1.  **Substrate Plot**: Native `ggplot2` spatial GIS substrate map using
+    local `sf` layers (`inst/extdata/isle_royale/`) displaying habitat
+    features, landmark pins, hex grid, and active organism positions
+    with **0 API calls**.
+2.  **Age Classes**: Side-by-side `cowplot` multi-panel plot displaying
+    step-by-step population age-class dynamics (`ewing_ageclass(sim)`).
+    Each species (Moose vs. Wolf) features a dedicated panel with an
+    adjacent legend listing only its specific age-class states.
+3.  **Census Benchmarks**: High-resolution dual-panel `cowplot` grid
+    rendering spatial organism positions alongside 40-year empirical
+    census trajectory benchmarks (`wolf_moose.csv`).
+4.  **Live Demographics**: Tabular summary of active living organisms
+    grouped by age class that updates dynamically as simulation steps
+    execute.
+5.  **Input Data**: Composes `inputAppInput` / `inputAppOutput` /
+    `inputAppServer` leveraging
+    [`discover_dataset_tables()`](https://byandell.github.io/ewing/reference/inputApp.md)
+    to dynamically discover and view input configuration tables with
+    zero hardcoded table names.
+
+### B. Tab-Aware Sidebar Decluttering
+
+Both `sysetholApp` and `IsleRoyaleApp` use `conditionalPanel` bound to
+`input.tabset` to display plot-specific controls strictly when their
+target panel is active: - **Substrate Plot(s)** active: Displays spatial
+map feature toggles (`show_habitat`, `show_landmarks`, species & density
+sliders) and axis units selector (`axis_unit`). - **Age Classes**
+active: Displays `ageClassControlInput` (*Normalize Plot*, *Include
+Total in Plot*, *Display Units*). - **Envelope Plots** active: Displays
+`confidence` (*Confidence Band Envelope*). - **Input Data** / **Live
+Demographics** active: Hides all plot-specific options, leaving only
+primary simulation setup and step execution controls.
+
+### C. Logarithmic Stepping & Custom Unit Labeling (`step_controls.R`)
+
+- Logarithmic step slider choices:
+  `1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000`.
+- Dynamic unit labeling: `IsleRoyaleApp` displays **`Steps` vs `Days`**
+  in the sidebar and plots the X-axis labeled **`"days"`**, while
+  `sysetholApp` displays **`Steps` vs `Time`**.
+
+------------------------------------------------------------------------
+
+## 4. Engineering Prompt History
 
 ## [CRAFT Prompt](https://tyson-swetnam.github.io/intro-gpt/prompts/#the-craft-framework)
 

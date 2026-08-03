@@ -13,10 +13,17 @@ ewing_ageclass(
   ...
 )
 
-ggplot_ewing_ageclass(object, main = NULL, title = NULL, ...)
+ggplot_ewing_ageclass(
+  object,
+  main = NULL,
+  title = NULL,
+  x_var = c("step", "time"),
+  time_unit = NULL,
+  ...
+)
 
 # S3 method for class 'ewing_ageclass'
-autoplot(object, ...)
+autoplot(object, x_var = c("step", "time"), ...)
 ```
 
 ## Arguments

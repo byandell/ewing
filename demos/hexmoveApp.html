@@ -1193,17 +1193,22 @@ ewing_substrate &lt;- function( community,
                              width = 10,
                              step_density = 1,
                              rescale = TRUE,
+                             x_var = c("step", "time"),
                              ...)
 {
+  x_var &lt;- match.arg(x_var)
+  
   if (inherits(community, "isle_royale_sim")) {
     p_map &lt;- autoplot(community$habitat_overlay, show_landmarks = TRUE)
     moose_sf &lt;- sf::st_as_sf(community$moose_pop, coords = c("lon", "lat"), crs = sf::st_crs(community$habitat_overlay$layer))
     wolf_sf  &lt;- sf::st_as_sf(community$wolf_pop, coords = c("lon", "lat"), crs = sf::st_crs(community$habitat_overlay$layer))
     
+    hdr_str &lt;- if (x_var == "step") paste0("Step ", community$nstep) else paste0("Time Units ", community$nstep)
+    
     p_map &lt;- p_map +
       ggplot2::geom_sf(data = moose_sf, color = "#27ae60", shape = 21, fill = NA, stroke = 1.0, size = 0.8, alpha = 0.85) +
       ggplot2::geom_sf(data = wolf_sf, color = "#e74c3c", shape = 21, fill = NA, stroke = 1.4, size = 1.5, alpha = 0.95) +
-      ggplot2::ggtitle(paste0("Isle Royale Substrate Plot (Step ", community$nstep, ")"))
+      ggplot2::ggtitle(paste0("Isle Royale Substrate Plot (", hdr_str, ")"))
     
     return(p_map)
   }
@@ -1461,6 +1466,7 @@ ewing_ageclass &lt;- function(community, substrate = TRUE, total = TRUE,
     ordered_levels &lt;- unique(c("calf", "yearling", "adult", "senior", "pup", "subadult", "total"))
     out$State &lt;- factor(out$State, levels = ordered_levels[ordered_levels %in% unique(out$State)])
     attr(out, "nstep") &lt;- community$nstep
+    attr(out, "units") &lt;- "days"
     class(out) &lt;- c("ewing_ageclass", class(out))
     return(out)
   }
@@ -1535,12 +1541,22 @@ ewing_ageclass &lt;- function(community, substrate = TRUE, total = TRUE,
     attr(out, "nstep") &lt;- max(out$step, na.rm = TRUE)
   }
   attr(out, "nsim") &lt;- if (!is.null(nsim_val)) nsim_val else attr(community, "nsim")
+  attr(out, "units") &lt;- if (inherits(community, "isle_royale_sim")) "days" else tryCatch(getOrgFeature(community, species[1], "units"), error = function(e) "time")
   
   class(out) &lt;- c("ewing_ageclass", class(out))
   out
 }
-ggplot_ewing_ageclass &lt;- function(object, main = NULL, title = NULL, ... )
+ggplot_ewing_ageclass &lt;- function(object, main = NULL, title = NULL, x_var = c("step", "time"), time_unit = NULL, ... )
 {
+  x_var &lt;- match.arg(x_var)
+  
+  if (is.null(time_unit)) {
+    time_unit &lt;- attr(object, "units")
+  }
+  if (is.null(time_unit) || is.na(time_unit) || time_unit == "NA") {
+    time_unit &lt;- "time"
+  }
+  
   if (is.null(title)) title &lt;- main
   if (is.null(title)) {
     nstep &lt;- attr(object, "nstep")
@@ -1548,29 +1564,67 @@ ggplot_ewing_ageclass &lt;- function(object, main = NULL, title = NULL, ... )
       nstep &lt;- max(object$step, na.rm = TRUE)
     }
     nsim &lt;- attr(object, "nsim")
+    unit_str &lt;- if (x_var == "step") "steps" else time_unit
+    time_hdr &lt;- if (x_var == "step") "Steps" else paste0(toupper(substring(time_unit, 1, 1)), substring(time_unit, 2))
     if (!is.null(nstep)) {
       if (!is.null(nsim) &amp;&amp; nsim &gt; 1) {
-        title &lt;- paste0("Age Distribution over Time (", nstep, " steps, nsim = ", nsim, ")")
+        title &lt;- paste0("Age Classes over ", time_hdr, " (", nstep, " ", unit_str, ", nsim = ", nsim, ")")
       } else {
-        title &lt;- paste0("Age Distribution over Time (", nstep, " steps)")
+        title &lt;- paste0("Age Classes over ", time_hdr, " (", nstep, " ", unit_str, ")")
       }
-    } else if (!is.null(nsim) &amp;&amp; nsim &gt; 1) {
-      title &lt;- paste0("Age Distribution over Time (nsim = ", nsim, ")")
     } else {
-      title &lt;- "Age Distribution over Time"
+      title &lt;- paste0("Age Classes over ", time_hdr)
     }
   }
   
-  ggplot2::ggplot(object) +
-    ggplot2::aes(.data$time, .data$Count, col = .data$State, group = .data$State, shape = .data$Species) +
-    ggplot2::geom_step(na.rm = TRUE) +
-    ggplot2::geom_point(size = 2, na.rm = TRUE) +
-    ggplot2::scale_shape_manual(name = "Species", values = c(1, 2, 0, 5, 6, 3, 4)) +
-    ggplot2::labs(title = title, color = "State", shape = "Species") +
-    ggplot2::facet_wrap(.data$Type ~ .data$Species, scales = "free")
+  species_vec &lt;- unique(as.character(object$Species))
+  if (length(species_vec) == 0) species_vec &lt;- "Organism"
+  
+  p_list &lt;- list()
+  
+  for (sp in species_vec) {
+    df_sp &lt;- object[object$Species == sp, , drop = FALSE]
+    if (is.factor(df_sp$State)) {
+      df_sp$State &lt;- droplevels(df_sp$State)
+    }
+    
+    x_col &lt;- if (x_var == "step" &amp;&amp; "step" %in% names(df_sp)) "step" else "time"
+    x_lbl &lt;- if (x_var == "step") "steps" else time_unit
+    
+    sp_title &lt;- paste(toupper(substring(sp, 1, 1)), substring(sp, 2), " Age Classes", sep = "")
+    
+    p_sub &lt;- ggplot2::ggplot(df_sp, ggplot2::aes(x = .data[[x_col]], y = .data$Count, col = .data$State, group = .data$State)) +
+      ggplot2::geom_step(na.rm = TRUE, linewidth = 0.8) +
+      ggplot2::geom_point(size = 2, na.rm = TRUE) +
+      ggplot2::theme_minimal() +
+      ggplot2::labs(
+        title = sp_title,
+        x = x_lbl,
+        y = "Count",
+        color = "Age Class"
+      ) +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(size = 11, face = "bold", hjust = 0.5),
+        legend.position = "right"
+      )
+      
+    p_list[[sp]] &lt;- p_sub
+  }
+  
+  if (length(p_list) == 1) {
+    return(p_list[[1]] + ggplot2::ggtitle(title))
+  }
+  
+  grid_plots &lt;- cowplot::plot_grid(plotlist = p_list, ncol = length(p_list), align = "h")
+  title_widget &lt;- cowplot::ggdraw() + 
+    cowplot::draw_label(title, fontface = 'bold', x = 0.5, hjust = 0.5, size = 13)
+  
+  cowplot::plot_grid(title_widget, grid_plots, ncol = 1, rel_heights = c(0.12, 1))
 }
-autoplot.ewing_ageclass &lt;- function(object, ...)
-  ggplot_ewing_ageclass(object, ...)
+autoplot.ewing_ageclass &lt;- function(object, x_var = c("step", "time"), ...) {
+  x_var &lt;- match.arg(x_var)
+  ggplot_ewing_ageclass(object, x_var = x_var, ...)
+}
 
 
 # --- Source: ewing_envelope.R ---

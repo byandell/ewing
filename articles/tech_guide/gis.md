@@ -517,6 +517,27 @@ regional domain.
     - [`autoplot.watershed_hex_overlay()`](https://byandell.github.io/ewing/reference/watershed.md)
       renders static `ggplot2` autoplots featuring dashed component HUC
       boundaries and continuous regional hex overlays.
+6.  **Site Prototyping & GIS Feature Pipeline (Isle Royale Prototype
+    Template)**:
+    - **OpenStreetMap Feature Extraction**:
+      [`get_habitat_features()`](https://byandell.github.io/ewing/reference/habitat.md)
+      extracts OpenStreetMap polygon/line features (lakes, bogs,
+      waterways, shaded forests).
+    - **Landmark Geocoding**:
+      [`get_moose_landmarks()`](https://byandell.github.io/ewing/reference/habitat.md)
+      geocodes landmark POIs (Windigo, Ojibway Lake, Feldtmann Lake,
+      Tobin Harbor).
+    - **Hexagon Habitat Suitability Scoring**:
+      [`add_habitat_hex_overlay()`](https://byandell.github.io/ewing/reference/habitat.md)
+      intersects habitat polygons with hex cells, calculating
+      suitability scores / movement weight vectors per hexagon.
+    - **RDS Feature Export**:
+      [`hexmapApp()`](https://byandell.github.io/ewing/reference/hexmapApp.md)
+      exports `site_features.rds` and `site_landmarks.rds` allowing
+      offline simulation execution
+      ([`init_isle_royale_sim()`](https://byandell.github.io/ewing/reference/isle_royale_sim.md),
+      [`ewing_substrate()`](https://byandell.github.io/ewing/reference/ewing_substrate.md))
+      with zero API calls.
 
 ------------------------------------------------------------------------
 

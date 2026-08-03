@@ -1,6 +1,7 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://byandell.github.io/ewing/404.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/AGENTS.html</loc></url>
+<url><loc>https://byandell.github.io/ewing/DEVELOPER.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/LICENSE.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/articles/devel_guide/architecture.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/articles/devel_guide/index.html</loc></url>
@@ -65,6 +66,7 @@
 <url><loc>https://byandell.github.io/ewing/reference/simApp.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/simdata.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/simpleServer.html</loc></url>
+<url><loc>https://byandell.github.io/ewing/reference/step_controls.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/substrate.host.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/substrateApp.html</loc></url>
 <url><loc>https://byandell.github.io/ewing/reference/substrate_topology.html</loc></url>

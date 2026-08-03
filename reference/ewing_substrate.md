@@ -19,6 +19,7 @@ ewing_substrate(
   width = 10,
   step_density = 1,
   rescale = TRUE,
+  x_var = c("step", "time"),
   ...
 )
 
