@@ -14,6 +14,7 @@ hexmapInput <- function(id) {
     shiny::p(shiny::HTML('Search, click, or outline a rubberband region on the Leaflet map, or manage selected HUCs below.')),
     shiny::uiOutput(ns("huc_selector")),
     shiny::uiOutput(ns("feature_selector")),
+    shiny::checkboxInput(ns("show_habitat"), "Overlay Moose Habitat Features & Landmarks", value = TRUE),
     shiny::sliderInput(ns("hex_diameter"), "Hexagon Extent Diameter (Degrees):", 
                        min = 0.001, max = 0.05, value = 0.01, step = 0.001),
     shiny::actionButton(ns("update"), "Generate Hex Topology", class = "btn-primary"),
@@ -228,7 +229,12 @@ hexmapServer <- function(id) {
       val <- input$hex_diameter
       if (is.null(val)) val <- 0.01
       
-      add_watershed_hex_overlay(huc, hex_diameter = val)
+      base_mesh <- add_watershed_hex_overlay(huc, hex_diameter = val)
+      if (isTRUE(input$show_habitat)) {
+        add_habitat_hex_overlay(base_mesh)
+      } else {
+        base_mesh
+      }
     })
     
     # Update Leaflet Map Shapes on composed module map handle
@@ -242,6 +248,10 @@ hexmapServer <- function(id) {
         leaflet::clearShapes() |>
         add_leaflet_hex_overlay(obj)
       
+      if (inherits(obj, "habitat_hex_overlay")) {
+        proxy <- proxy |> add_leaflet_habitat_overlay(obj)
+      }
+      
       # Zoom map to fit generated watershed bounding box
       bbox <- sf::st_bbox(sf::st_transform(obj$layer, 4326))
       proxy |> leaflet::fitBounds(
@@ -251,7 +261,8 @@ hexmapServer <- function(id) {
       
       n_hex <- length(obj$hex_overlay)
       feat_str <- if (!is.null(obj$feature_name) && obj$feature_name != "") paste0(" (Restricted to '", obj$feature_name, "')") else ""
-      status_msg(paste0("<div style='color:green;'><b>Generated Hex Grid:</b> ", n_hex, " hex cells created for HUC ", obj$huc_id, feat_str, "</div>"))
+      hab_str <- if (inherits(obj, "habitat_hex_overlay")) " + Moose Habitat Overlays" else ""
+      status_msg(paste0("<div style='color:green;'><b>Generated Hex Grid:</b> ", n_hex, " hex cells created for HUC ", obj$huc_id, feat_str, hab_str, "</div>"))
     })
     
     # Render ggplot autoplot
