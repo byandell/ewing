@@ -100,8 +100,25 @@ get_watershed <- function(huc_id, feature_name = NULL, huc_layer = NULL) {
   )
 }
 
-#' @param huc_info A watershed list returned from `get_watershed()`.
-#' @param hex_diameter Numeric representing the diameter of the hexagons in CRS units.
+safe_st_intersects <- function(x, y) {
+  tryCatch(
+    sf::st_intersects(x, y),
+    error = function(e) {
+      old_s2 <- sf::sf_use_s2(FALSE)
+      on.exit(sf::sf_use_s2(old_s2), add = TRUE)
+      x_val <- tryCatch(sf::st_make_valid(x), error = function(e2) x)
+      y_val <- tryCatch(sf::st_make_valid(y), error = function(e2) y)
+      sf::st_intersects(x_val, y_val)
+    }
+  )
+}
+
+#' Construct Spatial Substrate Hexagonal Overlay
+#'
+#' Projects a mathematical hexagonal substrate grid overlay across an extracted watershed boundary.
+#'
+#' @param huc_info Watershed object returned from `get_watershed()`.
+#' @param hex_diameter Diameter of hexagonal grid cells in degrees (default = `0.01`).
 #'
 #' @return `add_watershed_hex_overlay`: An S3 object of class `watershed_hex_overlay` containing the original geometry plus the hex layer.
 #' @export
@@ -116,7 +133,7 @@ add_watershed_hex_overlay <- function(huc_info, hex_diameter = 0.01) {
   
   # Filter the generated mesh to only retain hexagons crossing the actual geographical feature
   # (lengths > 0 signifies the hexagon touches the island geometry)
-  hex_overlay <- hex_mesh[lengths(sf::st_intersects(hex_mesh, huc_layer)) > 0]
+  hex_overlay <- hex_mesh[lengths(safe_st_intersects(hex_mesh, huc_layer)) > 0]
   
   huc_info$hex_overlay <- hex_overlay
   huc_info$hex_diameter <- hex_diameter

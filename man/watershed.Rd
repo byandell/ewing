@@ -26,9 +26,9 @@ discover_watershed_features(
 
 \item{huc_layer}{An optional pre-fetched SF object boundary to intercept identical querying sequences dynamically.}
 
-\item{huc_info}{A watershed list returned from `get_watershed()`.}
+\item{huc_info}{Watershed object returned from `get_watershed()`.}
 
-\item{hex_diameter}{Numeric representing the diameter of the hexagons in CRS units.}
+\item{hex_diameter}{Diameter of hexagonal grid cells in degrees (default = `0.01`).}
 
 \item{object}{An S3 object of class `watershed_hex_overlay`.}
 
@@ -49,4 +49,6 @@ discover_watershed_features(
 Retrieves watershed boundary dataset (WBD) geometry for HUC12 identifiers,
 applies OpenStreetMap feature clipping, generates hexagonal substrate grid overlays,
 and discovers named geographical features within subwatersheds.
+
+Projects a mathematical hexagonal substrate grid overlay across an extracted watershed boundary.
 }

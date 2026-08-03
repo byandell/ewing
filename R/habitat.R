@@ -267,7 +267,7 @@ add_habitat_hex_overlay <- function(hex_obj, habitat_sf = NULL, landmarks_sf = N
   types_list <- character(length(hex_mesh))
   
   if (!is.null(habitat_sf) && nrow(habitat_sf) > 0) {
-    inter <- sf::st_intersects(hex_mesh, habitat_sf)
+    inter <- safe_st_intersects(hex_mesh, habitat_sf)
     for (i in seq_along(inter)) {
       indices <- inter[[i]]
       if (length(indices) > 0) {
