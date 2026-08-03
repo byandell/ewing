@@ -1,0 +1,7 @@
+	feed	offspring	male
+calf	8.0	1.5	NA
+yearling	3.0	1.0	NA
+adult	1.0	0.5	NA
+senior	6.0	1.2	NA
+death	0.0	0.0	NA
+predated	0.0	0.0	NA

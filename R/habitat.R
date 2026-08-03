@@ -241,7 +241,17 @@ get_moose_landmarks <- function(watershed_obj, use_cache = TRUE) {
 #' @return `add_habitat_hex_overlay`: An S3 object of class `habitat_hex_overlay`.
 #' @export
 #' @rdname habitat
-add_habitat_hex_overlay <- function(hex_obj, habitat_sf = NULL, landmarks_sf = NULL) {
+add_habitat_hex_overlay <- function(hex_obj, habitat_sf = NULL, landmarks_sf = NULL, features = NULL, landmarks = NULL) {
+  if (is.null(habitat_sf)) habitat_sf <- features
+  if (is.null(landmarks_sf)) landmarks_sf <- landmarks
+  
+  if (is.character(habitat_sf) && file.exists(habitat_sf)) {
+    habitat_sf <- tryCatch(readRDS(habitat_sf), error = function(e) NULL)
+  }
+  if (is.character(landmarks_sf) && file.exists(landmarks_sf)) {
+    landmarks_sf <- tryCatch(readRDS(landmarks_sf), error = function(e) NULL)
+  }
+  
   if (is.null(habitat_sf)) {
     habitat_sf <- get_habitat_features(hex_obj)
   }

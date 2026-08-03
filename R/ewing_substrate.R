@@ -34,6 +34,19 @@ ewing_substrate <- function( community,
                              rescale = TRUE,
                              ...)
 {
+  if (inherits(community, "isle_royale_sim")) {
+    p_map <- autoplot(community$habitat_overlay, show_landmarks = TRUE)
+    moose_sf <- sf::st_as_sf(community$moose_pop, coords = c("lon", "lat"), crs = sf::st_crs(community$habitat_overlay$layer))
+    wolf_sf  <- sf::st_as_sf(community$wolf_pop, coords = c("lon", "lat"), crs = sf::st_crs(community$habitat_overlay$layer))
+    
+    p_map <- p_map +
+      ggplot2::geom_sf(data = moose_sf, color = "#27ae60", shape = 21, fill = NA, stroke = 1.0, size = 0.8, alpha = 0.85) +
+      ggplot2::geom_sf(data = wolf_sf, color = "#e74c3c", shape = 21, fill = NA, stroke = 1.4, size = 1.5, alpha = 0.95) +
+      ggplot2::ggtitle(paste0("Isle Royale Substrate Plot (Step ", community$nstep, ")"))
+    
+    return(p_map)
+  }
+
   layout <- match.arg(layout)
   
   if (length(species) > 1) {
@@ -194,7 +207,8 @@ ggplot_ewing_substrate <- function(object,
                                    step_density = attr(object, "step_density"),
                                    layers = c("poly", "hex", "organisms", "centers", "labels"),
                                    ...)
-{     
+{
+  if (inherits(object, "ggplot")) return(object)
   if (is.null(layout)) layout <- "facet"
   if (is.null(width)) width <- 10
   if (is.null(step_density)) step_density <- 1

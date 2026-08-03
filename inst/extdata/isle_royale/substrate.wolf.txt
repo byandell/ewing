@@ -1,0 +1,4 @@
+	substrate
+pup	1.0
+subadult	1.0
+adult	1.0

@@ -1,0 +1,5 @@
+	substrate
+calf	1.2
+yearling	1.0
+adult	1.0
+senior	0.8

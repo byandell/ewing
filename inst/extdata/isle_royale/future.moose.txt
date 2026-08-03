@@ -1,0 +1,8 @@
+current	future	fid	time	pch	color	ageclass	event	init
+calf	yearling	2	365	0	lightgreen	calf	future	50
+yearling	adult	3	365	1	green	yearling	future	50
+adult	senior	4	2920	2	darkgreen	adult	future	400
+senior	death	5	2190	3	brown	senior	future	100
+adult	calf	6	365	G	black	adult	birth	50
+death	death	7	0	D	red	NA	death	0
+predated	death	7	0	D	red	NA	death	0

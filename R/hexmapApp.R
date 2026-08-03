@@ -17,7 +17,10 @@ hexmapInput <- function(id) {
     shiny::checkboxInput(ns("show_habitat"), "Overlay Moose Habitat Features & Landmarks", value = TRUE),
     shiny::sliderInput(ns("hex_diameter"), "Hexagon Extent Diameter (Degrees):", 
                        min = 0.001, max = 0.05, value = 0.01, step = 0.001),
-    shiny::actionButton(ns("update"), "Generate Hex Topology", class = "btn-primary"),
+    shiny::actionButton(ns("update"), "Generate Hex Topology", class = "btn-primary", style = "width: 100%;"),
+    shiny::HTML("<hr style='margin: 10px 0;'/>"),
+    shiny::downloadButton(ns("download_features"), "Download Habitat Features (.rds)", class = "btn-secondary", style = "margin-bottom: 6px; width: 100%;"),
+    shiny::downloadButton(ns("download_landmarks"), "Download Sighting Landmarks (.rds)", class = "btn-secondary", style = "width: 100%;"),
     shiny::br(), shiny::br(),
     shiny::uiOutput(ns("status"))
   )
@@ -271,10 +274,53 @@ hexmapServer <- function(id) {
       ggplot2::autoplot(hex_obj())
     })
     
+    # Download Handlers for Extracted Spatial Features & Landmarks (.rds)
+    output$download_features <- shiny::downloadHandler(
+      filename = function() {
+        feat_name <- input$feature_name
+        if (is.null(feat_name) || trimws(feat_name) == "") feat_name <- "site"
+        paste0(gsub("[^A-Za-z0-9]", "_", tolower(feat_name)), "_features.rds")
+      },
+      content = function(file) {
+        obj <- hex_obj()
+        sf_data <- if (!is.null(obj) && !is.null(obj$habitat_sf)) obj$habitat_sf else NULL
+        if (is.null(sf_data)) sf_data <- data.frame()
+        saveRDS(sf_data, file)
+      }
+    )
+    
+    output$download_landmarks <- shiny::downloadHandler(
+      filename = function() {
+        feat_name <- input$feature_name
+        if (is.null(feat_name) || trimws(feat_name) == "") feat_name <- "site"
+        paste0(gsub("[^A-Za-z0-9]", "_", tolower(feat_name)), "_landmarks.rds")
+      },
+      content = function(file) {
+        obj <- hex_obj()
+        sf_data <- if (!is.null(obj) && !is.null(obj$landmarks_sf)) obj$landmarks_sf else NULL
+        if (is.null(sf_data)) sf_data <- data.frame()
+        saveRDS(sf_data, file)
+      }
+    )
+    
     # Output status messages
     output$status <- shiny::renderUI({
       shiny::HTML(status_msg())
     })
+    
+    # Return reactive list of spatial objects for downstream composition & site prototyping
+    list(
+      hex_obj = hex_obj,
+      habitat_sf = shiny::reactive({
+        obj <- hex_obj()
+        if (!is.null(obj) && !is.null(obj$habitat_sf)) obj$habitat_sf else NULL
+      }),
+      landmarks_sf = shiny::reactive({
+        obj <- hex_obj()
+        if (!is.null(obj) && !is.null(obj$landmarks_sf)) obj$landmarks_sf else NULL
+      }),
+      huc_info = huc_info
+    )
   })
 }
 

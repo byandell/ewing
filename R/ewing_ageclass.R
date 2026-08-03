@@ -35,6 +35,44 @@ ewing_ageclass <- function(community, substrate = TRUE, total = TRUE,
                            normalize = TRUE, ...) {
   nsim_val <- NULL
   nstep_val <- NULL
+  
+  if (inherits(community, "isle_royale_sim")) {
+    if (is.null(community$history) || nrow(community$history) == 0) return(NULL)
+    out <- community$history
+    if (!substrate) {
+      out <- dplyr::filter(out, .data$Type != "substrate")
+    }
+    if (total) {
+      tot <- dplyr::mutate(
+        dplyr::ungroup(
+          dplyr::summarize(
+            dplyr::group_by(out, .data$Species, .data$step, .data$time, .data$Type),
+            Count = sum(.data$Count),
+            .groups = "drop"
+          )
+        ),
+        State = "total"
+      )
+      out <- dplyr::bind_rows(out, tot)
+    }
+    if (normalize) {
+      out <- dplyr::ungroup(
+        dplyr::mutate(
+          dplyr::group_by(out, .data$Species, .data$State, .data$Type),
+          Count = {
+            m <- max(.data$Count, na.rm = TRUE)
+            if (!is.na(m) && m > 0) .data$Count / m else 0
+          }
+        )
+      )
+    }
+    ordered_levels <- unique(c("calf", "yearling", "adult", "senior", "pup", "subadult", "total"))
+    out$State <- factor(out$State, levels = ordered_levels[ordered_levels %in% unique(out$State)])
+    attr(out, "nstep") <- community$nstep
+    class(out) <- c("ewing_ageclass", class(out))
+    return(out)
+  }
+  
   if (inherits(community, "ewing_discrete")) {
     nsim_val <- attr(community, "nsim")
     nstep_val <- attr(community, "nstep")

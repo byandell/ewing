@@ -1,0 +1,6 @@
+current	future	fid	time	pch	color	ageclass	event	init
+pup	subadult	2	365	0	orange	pup	future	5
+subadult	adult	3	365	1	darkorange	subadult	future	10
+adult	death	4	2555	2	black	adult	future	15
+adult	pup	5	365	P	purple	adult	birth	5
+death	death	6	0	D	red	NA	death	0
