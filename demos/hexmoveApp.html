@@ -240,6 +240,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 library(shiny)
 library(bslib)
 library(ggplot2)
+library(cowplot)
 library(dplyr)
 library(tidyr)
 library(tibble)
@@ -5279,6 +5280,75 @@ plot_null &lt;- function(msg = "no data") {
                   ggplot2::aes(.data$x, .data$y, label = msg)) +
     ggplot2::geom_text(size = 10) + 
     ggplot2::theme_void()
+}
+
+# --- Source: step_controls.R ---
+step_size_choices &lt;- c(1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000)
+
+step_size_slider &lt;- function(inputId, label = "Steps per click:", selected = 50) {
+  idx &lt;- match(selected, step_size_choices)
+  if (is.na(idx)) idx &lt;- 6
+  sl &lt;- shiny::sliderInput(inputId, label, min = 1, max = length(step_size_choices), value = idx, step = 1, ticks = TRUE)
+  sl$children[[2]]$attribs[['data-values']] &lt;- paste(step_size_choices, collapse = ",")
+  sl
+}
+
+parse_step_size &lt;- function(val) {
+  if (is.null(val)) return(50)
+  num &lt;- round(as.numeric(val))
+  if (is.na(num)) return(50)
+  
+  # Direct large values (e.g., 20, 50, 100, 200, 500, 1000, 2000)
+  if (num %in% step_size_choices &amp;&amp; num &gt; 10) {
+    return(num)
+  }
+  
+  # 0-based JavaScript index from ion.rangeSlider (0 to 10)
+  if (num &gt;= 0 &amp;&amp; num &lt; length(step_size_choices)) {
+    return(step_size_choices[num + 1])
+  }
+  
+  # Fallback for direct value
+  if (num %in% step_size_choices) {
+    return(num)
+  }
+  
+  50
+}
+
+axisUnitInput &lt;- function(id, time_label = "Time", selected = "step") {
+  ns &lt;- shiny::NS(id)
+  choices &lt;- c("Steps" = "step")
+  choices[time_label] &lt;- "time"
+  shiny::radioButtons(ns("x_var"), "Display Units:",
+                      choices = choices,
+                      selected = selected, inline = TRUE)
+}
+
+axisUnitServer &lt;- function(id) {
+  shiny::moduleServer(id, function(input, output, session) {
+    shiny::reactive({ if (!is.null(input$x_var)) input$x_var else "step" })
+  })
+}
+
+ageClassControlInput &lt;- function(id, time_label = "Time") {
+  ns &lt;- shiny::NS(id)
+  shiny::tagList(
+    axisUnitInput(ns("axis_unit"), time_label = time_label),
+    shiny::checkboxInput(ns("norm"), "Normalize Plot", TRUE),
+    shiny::checkboxInput(ns("total"), "Include Total in Plot", TRUE)
+  )
+}
+
+ageClassControlServer &lt;- function(id) {
+  shiny::moduleServer(id, function(input, output, session) {
+    x_var &lt;- axisUnitServer("axis_unit")
+    list(
+      x_var = x_var,
+      norm = shiny::reactive({ if (!is.null(input$norm)) input$norm else TRUE }),
+      total = shiny::reactive({ if (!is.null(input$total)) input$total else TRUE })
+    )
+  })
 }
 
 # --- Source: initParApp.R ---

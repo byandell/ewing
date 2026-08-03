@@ -95,7 +95,7 @@
     "href": "IsleRoyaleApp.html",
     "title": "IsleRoyaleApp (Isle Royale Wolf-Moose Platform)",
     "section": "",
-    "text": "← Back to Demos Gallery\nThe IsleRoyaleApp() application provides an interactive 100% offline platform for exploring spatial wolf-moose predator-prey dynamics across the Isle Royale National Park landscape."
+    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). It provides an interactive Isle Royale Wolf-Moose Platform (IsleRoyaleApp()) featuring 100% offline spatial substrate mapping, continuous micro-step history tracking, side-by-side cowplot age class plots with per-species legends, custom time unit labeling (Steps vs Days), tab-aware sidebar decluttering (show_habitat, show_landmarks, norm, total), and dynamic table discovery (inputApp)."
   },
   {
     "objectID": "IsleRoyaleApp.html#programmatic-application-usage",
