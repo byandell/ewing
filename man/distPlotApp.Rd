@@ -9,7 +9,7 @@
 \usage{
 distPlotApp(title = "Population Ethology")
 
-distPlotServer(id, simres)
+distPlotServer(id, simres, x_var = NULL, total = NULL, norm = NULL)
 
 distPlotInput(id)
 

@@ -51,11 +51,33 @@ IsleRoyaleInput <- function(id) {
     shiny::sliderInput(ns("n_moose"), "Initial Moose Count:", min = 50, max = 3000, value = 664, step = 50),
     shiny::sliderInput(ns("n_wolves"), "Initial Wolf Count:", min = 0, max = 60, value = 50, step = 2),
     shiny::sliderInput(ns("hex_diameter"), "Hexagon Extent Diameter (Degrees):", min = 0.005, max = 0.03, value = 0.01, step = 0.001),
-    shiny::checkboxInput(ns("show_habitat"), "Overlay Moose Habitat Features", value = TRUE),
-    shiny::checkboxInput(ns("show_landmarks"), "Show Moose Sighting Landmarks", value = TRUE),
+    
+    # Conditional Spatial Overlay Controls (shown ONLY on Substrate Plot & Census Benchmarks)
+    shiny::conditionalPanel(
+      condition = sprintf("input['%s'] == 'Substrate Plot' || input['%s'] == 'Census Benchmarks'", ns("tabset"), ns("tabset")),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::h4("Map Overlay Options", style = "font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;"),
+      shiny::checkboxInput(ns("show_habitat"), "Overlay Moose Habitat Features", value = TRUE),
+      shiny::checkboxInput(ns("show_landmarks"), "Show Moose Sighting Landmarks", value = TRUE)
+    ),
+    
+    # Conditional Substrate Plot Axis Units
+    shiny::conditionalPanel(
+      condition = sprintf("input['%s'] == 'Substrate Plot'", ns("tabset")),
+      axisUnitInput(ns("substrate_axis"), time_label = "Days")
+    ),
+    
+    # Conditional Age Classes Display Controls (shown ONLY on Age Classes tab)
+    shiny::conditionalPanel(
+      condition = sprintf("input['%s'] == 'Age Classes'", ns("tabset")),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+      shiny::h4("Age Classes Options", style = "font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;"),
+      ageClassControlInput(ns("age_ctrls"), time_label = "Days")
+    ),
+    
     shiny::HTML("<hr style='margin: 10px 0;'/>"),
     shiny::actionButton(ns("reset_sim"), "Reset Simulation", class = "btn-warning", style = "margin-bottom: 6px; width: 100%;"),
-    shiny::sliderInput(ns("step_size"), "Steps per click:", min = 50, max = 1000, value = 200, step = 50),
+    step_size_slider(ns("step_size"), "Steps per click:", selected = 200),
     shiny::actionButton(ns("step_sim"), "Run Simulation Steps", class = "btn-primary", style = "width: 100%;"),
     shiny::br(), shiny::br(),
     shiny::uiOutput(ns("status"))
@@ -70,14 +92,15 @@ IsleRoyaleOutput <- function(id) {
   ns <- shiny::NS(id)
   shiny::tagList(
     shiny::tabsetPanel(
+      id = ns("tabset"),
       type = "tabs",
       shiny::tabPanel(
         "Substrate Plot",
         shiny::plotOutput(ns("substrate_plot"), height = "650px")
       ),
       shiny::tabPanel(
-        "Age Distributions",
-        shiny::plotOutput(ns("dist_plot"), height = "500px")
+        "Age Classes",
+        distPlotOutput(ns("dist_plot"))
       ),
       shiny::tabPanel(
         "Census Benchmarks",
@@ -92,18 +115,8 @@ IsleRoyaleOutput <- function(id) {
       shiny::tabPanel(
         "Input Data",
         shiny::br(),
-        shiny::selectInput(ns("input_table_name"), "Select Input Data Table:",
-                           choices = c(
-                             "organism.features",
-                             "future.moose",
-                             "future.wolf",
-                             "moose.wolf",
-                             "substrate.moose",
-                             "substrate.wolf",
-                             "wolf_moose (census)"
-                           ),
-                           selected = "organism.features"),
-        shiny::tableOutput(ns("input_data_table"))
+        inputAppInput(ns("input_data")),
+        inputAppOutput(ns("input_data"))
       )
     )
   )
@@ -119,6 +132,8 @@ IsleRoyaleServer <- function(id) {
     
     status_msg <- shiny::reactiveVal("")
     sim_state <- shiny::reactiveVal(NULL)
+    sub_x_var <- axisUnitServer("substrate_axis")
+    age_ctrls <- ageClassControlServer("age_ctrls")
     
     # Auto-update initial population slider defaults when baseline year changes
     shiny::observeEvent(input$start_year, {
@@ -136,7 +151,7 @@ IsleRoyaleServer <- function(id) {
       }
     })
     
-    # Initialize / Reset Simulation
+    # Initialize / Reset Simulation with Default Initial Steps (Matching sysetholApp behavior)
     shiny::observeEvent(list(input$reset_sim, input$start_year), {
       yr <- as.numeric(input$start_year)
       nm <- input$n_moose
@@ -151,16 +166,22 @@ IsleRoyaleServer <- function(id) {
         n_wolves = nw,
         hex_diameter = hd
       )
+      
+      # Run initial default simulation steps (matching sysetholApp.R)
+      steps <- parse_step_size(input$step_size)
+      if (is.null(steps) || steps <= 0) steps <- 200
+      sim <- run_isle_royale_sim(sim, nstep = steps)
+      
       sim_state(sim)
-      status_msg(paste0("<div style='color:green;'><b>Simulation Initialized:</b> Year ", yr, " with ", nm, " Moose and ", nw, " Wolves.</div>"))
+      status_msg(paste0("<div style='color:green;'><b>Simulation Initialized:</b> Year ", yr, " with ", nm, " Moose and ", nw, " Wolves (Executed ", steps, " initial steps).</div>"))
     }, ignoreNULL = FALSE)
     
     # Step Simulation Execution
     shiny::observeEvent(input$step_sim, {
       sim <- sim_state()
       shiny::req(sim)
-      steps <- input$step_size
-      if (is.null(steps) || steps <= 0) steps <- 100
+      steps <- parse_step_size(input$step_size)
+      if (is.null(steps) || steps <= 0) steps <- 200
       
       updated_sim <- run_isle_royale_sim(sim, nstep = steps)
       sim_state(updated_sim)
@@ -171,20 +192,11 @@ IsleRoyaleServer <- function(id) {
     output$substrate_plot <- shiny::renderPlot({
       sim <- sim_state()
       shiny::req(sim)
-      ewing_substrate(sim)
+      ewing_substrate(sim, x_var = sub_x_var())
     })
     
-    # Render Age-Class Distribution Simulation Dynamics Plot ("Dist Plot")
-    output$dist_plot <- shiny::renderPlot({
-      sim <- sim_state()
-      shiny::req(sim)
-      age_obj <- ewing_ageclass(sim, normalize = FALSE)
-      if (!is.null(age_obj)) {
-        ggplot2::autoplot(age_obj)
-      } else {
-        ggplot2::ggplot() + ggplot2::theme_void() + ggplot2::ggtitle("No simulation steps recorded yet")
-      }
-    })
+    # Compose Dist Plot Module for Age Classes
+    distPlotServer("dist_plot", simres = sim_state, x_var = age_ctrls$x_var, total = age_ctrls$total, norm = age_ctrls$norm)
     
     # Render ggplot autoplot (Dual-panel benchmark plot)
     output$autoplot <- shiny::renderPlot({
@@ -218,25 +230,10 @@ IsleRoyaleServer <- function(id) {
       rbind(df_moose, df_wolf)
     })
     
-    # Render Input Data Table
-    output$input_data_table <- shiny::renderTable({
-      name <- input$input_table_name
-      if (is.null(name) || name == "") name <- "organism.features"
-      
-      pkg_dir <- system.file("extdata/isle_royale", package = "ewing")
-      if (pkg_dir == "" || !dir.exists(pkg_dir)) pkg_dir <- "inst/extdata/isle_royale"
-      
-      if (name == "wolf_moose (census)") {
-        csv_path <- system.file("doc/isle_royale/wolf_moose.csv", package = "ewing")
-        if (csv_path == "" || !file.exists(csv_path)) csv_path <- "inst/doc/isle_royale/wolf_moose.csv"
-        if (file.exists(csv_path)) return(utils::read.csv(csv_path))
-      } else {
-        txt_path <- file.path(pkg_dir, paste0(name, ".txt"))
-        if (file.exists(txt_path)) return(utils::read.table(txt_path, header = TRUE, sep = "\t", stringsAsFactors = FALSE))
-      }
-      
-      data.frame(Info = paste("Table", name, "not found."))
-    }, striped = TRUE, hover = TRUE, bordered = TRUE)
+    # Compose Input Data App Module for Input Table Inspection
+    pkg_dir <- system.file("extdata/isle_royale", package = "ewing")
+    if (pkg_dir == "" || !dir.exists(pkg_dir)) pkg_dir <- "inst/extdata/isle_royale"
+    inputAppServer("input_data", simres = sim_state, datafile = shiny::reactiveVal(pkg_dir))
     
     # Output status message
     output$status <- shiny::renderUI({

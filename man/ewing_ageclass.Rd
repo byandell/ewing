@@ -14,9 +14,16 @@ ewing_ageclass(
   ...
 )
 
-ggplot_ewing_ageclass(object, main = NULL, title = NULL, ...)
+ggplot_ewing_ageclass(
+  object,
+  main = NULL,
+  title = NULL,
+  x_var = c("step", "time"),
+  time_unit = NULL,
+  ...
+)
 
-\method{autoplot}{ewing_ageclass}(object, ...)
+\method{autoplot}{ewing_ageclass}(object, x_var = c("step", "time"), ...)
 }
 \arguments{
 \item{community}{object of class \code{ewing} with population data by

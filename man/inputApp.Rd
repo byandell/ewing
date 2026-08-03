@@ -2,6 +2,7 @@
 % Please edit documentation in R/inputApp.R
 \name{inputApp}
 \alias{inputApp}
+\alias{discover_dataset_tables}
 \alias{inputAppInput}
 \alias{inputAppOutput}
 \alias{inputAppServer}
@@ -9,7 +10,9 @@
 \usage{
 inputApp(title = "Input Data Explorer")
 
-inputAppInput(id)
+discover_dataset_tables(datafile = "", sim = NULL)
+
+inputAppInput(id, choices = NULL)
 
 inputAppOutput(id)
 
@@ -22,11 +25,15 @@ inputAppServer(
 \arguments{
 \item{title}{Application title}
 
+\item{datafile}{Reactive optional datafile path or string}
+
+\item{sim}{Simulation instance (`ewing` or `isle_royale_sim`)}
+
 \item{id}{Module ID string}
 
-\item{simres}{Reactive simulation state (`ewing` object)}
+\item{choices}{Optional vector of initial table choices}
 
-\item{datafile}{Reactive optional datafile path}
+\item{simres}{Reactive simulation state (`ewing` or `isle_royale_sim` object)}
 }
 \description{
 Shiny module for inspecting simulation input parameter data tables, organism features,

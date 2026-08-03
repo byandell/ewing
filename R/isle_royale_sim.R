@@ -146,24 +146,16 @@ init_isle_royale_sim <- function(year = 1980,
 #' @return `run_isle_royale_sim`: Updated `isle_royale_sim` object.
 #' @export
 #' @rdname isle_royale_sim
-run_isle_royale_sim <- function(sim_obj, nstep = 1000, refresh = 100, ...) {
+run_isle_royale_sim <- function(sim_obj, nstep = 1000, refresh = 10, ...) {
   if (!inherits(sim_obj, "isle_royale_sim")) {
     stop("Input must be an object of class 'isle_royale_sim'.")
   }
   
-  # Run underlying ewing simulation engine if present
-  if (!is.null(sim_obj$community) && inherits(sim_obj$community, "ewing")) {
-    sim_obj$community <- tryCatch({
-      future.events(sim_obj$community, nstep = nstep, refresh = refresh, plotit = FALSE, ...)
-    }, error = function(e) sim_obj$community)
-  }
-  
-  # Update Spatial Movement across Hexagonal Substrate Network
   hex_sf <- sim_obj$habitat_overlay$hex_habitat_sf
   n_hex <- nrow(hex_sf)
   scores <- hex_sf$habitat_score
   
-  # Precompute neighbor adjacency list
+  # Precompute neighbor adjacency list and centroid coordinates
   adj_list <- suppressWarnings(sf::st_touches(hex_sf))
   centroids <- sf::st_centroid(sf::st_geometry(hex_sf))
   cent_coords <- sf::st_coordinates(centroids)
@@ -189,7 +181,7 @@ run_isle_royale_sim <- function(sim_obj, nstep = 1000, refresh = 100, ...) {
     
     pop_df$hex_id <- new_hex
     
-    # Calculate coords with small spatial jitter so points don't stack directly on top of each other
+    # Calculate coords with small spatial jitter
     hex_diam <- sim_obj$habitat_overlay$hex_diameter
     if (is.null(hex_diam)) hex_diam <- 0.01
     
@@ -202,42 +194,152 @@ run_isle_royale_sim <- function(sim_obj, nstep = 1000, refresh = 100, ...) {
     return(pop_df)
   }
   
-  # Move Moose (preferring high suitability hexes: lakes, bogs, forests)
-  sim_obj$moose_pop <- move_pop(sim_obj$moose_pop, move_prob = 0.6)
-  
-  # Move Wolves (hunting movement across landscape)
-  sim_obj$wolf_pop <- move_pop(sim_obj$wolf_pop, move_prob = 0.75)
-  
-  # Process Predation Interactions (wolves hunting vulnerable moose in nearby hexes)
-  if (!is.null(sim_obj$wolf_pop) && !is.null(sim_obj$moose_pop) && nrow(sim_obj$wolf_pop) > 0 && nrow(sim_obj$moose_pop) > 0) {
-    wolf_hexes <- unique(sim_obj$wolf_pop$hex_id)
-    # Check for moose in same or adjacent hexes
-    vulnerable_idx <- which(sim_obj$moose_pop$hex_id %in% wolf_hexes & sim_obj$moose_pop$ageclass %in% c("calf", "senior"))
-    if (length(vulnerable_idx) > 0) {
-      # Some fraction predated during simulation step
-      n_predated <- min(length(vulnerable_idx), max(1, round(nrow(sim_obj$wolf_pop) * 0.05)))
-      pred_remove <- sample(vulnerable_idx, n_predated)
-      sim_obj$moose_pop <- sim_obj$moose_pop[-pred_remove, ]
+  # Helper for dynamic life stage progression (aging, births, natural deaths)
+  update_demographics <- function(moose_df, wolf_df) {
+    # 1. Moose Life Stage Transitions & Mortality
+    if (!is.null(moose_df) && nrow(moose_df) > 0) {
+      n_m <- nrow(moose_df)
+      # Aging
+      calf_idx <- which(moose_df$ageclass == "calf")
+      if (length(calf_idx) > 0) {
+        trans <- calf_idx[stats::runif(length(calf_idx)) < 0.03]
+        if (length(trans) > 0) moose_df$ageclass[trans] <- "yearling"
+      }
+      
+      yearling_idx <- which(moose_df$ageclass == "yearling")
+      if (length(yearling_idx) > 0) {
+        trans <- yearling_idx[stats::runif(length(yearling_idx)) < 0.03]
+        if (length(trans) > 0) moose_df$ageclass[trans] <- "adult"
+      }
+      
+      adult_idx <- which(moose_df$ageclass == "adult")
+      if (length(adult_idx) > 0) {
+        trans <- adult_idx[stats::runif(length(adult_idx)) < 0.015]
+        if (length(trans) > 0) moose_df$ageclass[trans] <- "senior"
+        
+        # Reproduction (Calf births from adults)
+        n_births <- sum(stats::runif(length(adult_idx)) < 0.012)
+        if (n_births > 0) {
+          parent_hexes <- sample(moose_df$hex_id[adult_idx], n_births, replace = TRUE)
+          max_id <- suppressWarnings(max(as.numeric(gsub("[^0-9]", "", moose_df$id)), na.rm = TRUE))
+          if (!is.finite(max_id)) max_id <- nrow(moose_df)
+          new_calves <- data.frame(
+            id = paste0("M", max_id + seq_len(n_births)),
+            species = "Moose",
+            ageclass = "calf",
+            hex_id = parent_hexes,
+            lon = cent_coords[parent_hexes, 1] + stats::rnorm(n_births, 0, 0.001),
+            lat = cent_coords[parent_hexes, 2] + stats::rnorm(n_births, 0, 0.001),
+            stringsAsFactors = FALSE
+          )
+          moose_df <- rbind(moose_df, new_calves)
+        }
+      }
+      
+      # Natural mortality for seniors
+      senior_idx <- which(moose_df$ageclass == "senior")
+      if (length(senior_idx) > 0) {
+        deaths <- senior_idx[stats::runif(length(senior_idx)) < 0.025]
+        if (length(deaths) > 0) moose_df <- moose_df[-deaths, ]
+      }
     }
+    
+    # 2. Wolf Life Stage Transitions & Mortality
+    if (!is.null(wolf_df) && nrow(wolf_df) > 0) {
+      pup_idx <- which(wolf_df$ageclass == "pup")
+      if (length(pup_idx) > 0) {
+        trans <- pup_idx[stats::runif(length(pup_idx)) < 0.04]
+        if (length(trans) > 0) wolf_df$ageclass[trans] <- "subadult"
+      }
+      
+      sub_idx <- which(wolf_df$ageclass == "subadult")
+      if (length(sub_idx) > 0) {
+        trans <- sub_idx[stats::runif(length(sub_idx)) < 0.04]
+        if (length(trans) > 0) wolf_df$ageclass[trans] <- "adult"
+      }
+      
+      w_adult_idx <- which(wolf_df$ageclass == "adult")
+      if (length(w_adult_idx) > 0) {
+        # Reproduction (Pup births)
+        n_w_births <- sum(stats::runif(length(w_adult_idx)) < 0.015)
+        if (n_w_births > 0) {
+          parent_hexes <- sample(wolf_df$hex_id[w_adult_idx], n_w_births, replace = TRUE)
+          max_w_id <- suppressWarnings(max(as.numeric(gsub("[^0-9]", "", wolf_df$id)), na.rm = TRUE))
+          if (!is.finite(max_w_id)) max_w_id <- nrow(wolf_df)
+          new_pups <- data.frame(
+            id = paste0("W", max_w_id + seq_len(n_w_births)),
+            species = "Wolf",
+            ageclass = "pup",
+            hex_id = parent_hexes,
+            lon = cent_coords[parent_hexes, 1] + stats::rnorm(n_w_births, 0, 0.001),
+            lat = cent_coords[parent_hexes, 2] + stats::rnorm(n_w_births, 0, 0.001),
+            stringsAsFactors = FALSE
+          )
+          wolf_df <- rbind(wolf_df, new_pups)
+        }
+        
+        # Natural adult wolf mortality
+        w_deaths <- w_adult_idx[stats::runif(length(w_adult_idx)) < 0.01]
+        if (length(w_deaths) > 0) wolf_df <- wolf_df[-w_deaths, ]
+      }
+    }
+    
+    list(moose = moose_df, wolf = wolf_df)
   }
   
-  sim_obj$nstep <- sim_obj$nstep + nstep
+  # Micro-step execution loop (recording history continuously as changes happen)
+  step_chunk <- max(1, min(10, refresh))
+  steps_left <- nstep
   
-  # Append History Tally for Dist Plots
-  m_curr <- table(factor(sim_obj$moose_pop$ageclass, levels = c("calf", "yearling", "adult", "senior")))
-  w_curr <- table(factor(sim_obj$wolf_pop$ageclass, levels = c("pup", "subadult", "adult")))
-  
-  step_hist <- data.frame(
-    step = sim_obj$nstep,
-    time = sim_obj$nstep,
-    Species = c(rep("moose", 4), rep("wolf", 3)),
-    State = c(names(m_curr), names(w_curr)),
-    Type = "ageclass",
-    Count = c(as.numeric(m_curr), as.numeric(w_curr)),
-    stringsAsFactors = FALSE
-  )
-  
-  sim_obj$history <- rbind(sim_obj$history, step_hist)
+  while (steps_left > 0) {
+    chunk <- min(step_chunk, steps_left)
+    steps_left <- steps_left - chunk
+    
+    # 1. Underlying ewing simulation engine step if present
+    if (!is.null(sim_obj$community) && inherits(sim_obj$community, "ewing")) {
+      sim_obj$community <- tryCatch({
+        future.events(sim_obj$community, nstep = chunk, refresh = chunk, plotit = FALSE, ...)
+      }, error = function(e) sim_obj$community)
+    }
+    
+    # 2. Update Spatial Movement
+    sim_obj$moose_pop <- move_pop(sim_obj$moose_pop, move_prob = 0.6)
+    sim_obj$wolf_pop  <- move_pop(sim_obj$wolf_pop, move_prob = 0.75)
+    
+    # 3. Process Wolf Predation on Vulnerable Moose
+    if (!is.null(sim_obj$wolf_pop) && !is.null(sim_obj$moose_pop) && nrow(sim_obj$wolf_pop) > 0 && nrow(sim_obj$moose_pop) > 0) {
+      wolf_hexes <- unique(sim_obj$wolf_pop$hex_id)
+      vulnerable_idx <- which(sim_obj$moose_pop$hex_id %in% wolf_hexes & sim_obj$moose_pop$ageclass %in% c("calf", "senior"))
+      if (length(vulnerable_idx) > 0) {
+        n_predated <- min(length(vulnerable_idx), max(1, round(nrow(sim_obj$wolf_pop) * 0.02)))
+        pred_remove <- sample(vulnerable_idx, n_predated)
+        sim_obj$moose_pop <- sim_obj$moose_pop[-pred_remove, ]
+      }
+    }
+    
+    # 4. Process Life Stage Transitions & Demographics
+    demog_res <- update_demographics(sim_obj$moose_pop, sim_obj$wolf_pop)
+    sim_obj$moose_pop <- demog_res$moose
+    sim_obj$wolf_pop  <- demog_res$wolf
+    
+    sim_obj$nstep <- sim_obj$nstep + chunk
+    
+    # 5. Append Micro-step History Tally (for continuous Dist Plot step curves)
+    m_curr <- table(factor(sim_obj$moose_pop$ageclass, levels = c("calf", "yearling", "adult", "senior")))
+    w_curr <- table(factor(sim_obj$wolf_pop$ageclass, levels = c("pup", "subadult", "adult")))
+    
+    step_hist <- data.frame(
+      step = sim_obj$nstep,
+      time = sim_obj$nstep,
+      Species = c(rep("moose", 4), rep("wolf", 3)),
+      State = c(names(m_curr), names(w_curr)),
+      Type = "ageclass",
+      Count = c(as.numeric(m_curr), as.numeric(w_curr)),
+      stringsAsFactors = FALSE
+    )
+    
+    sim_obj$history <- rbind(sim_obj$history, step_hist)
+  }
   
   return(sim_obj)
 }
@@ -281,8 +383,8 @@ ggplot_isle_royale_sim <- function(x, ...) {
         x = "Year", y = "Moose Abundance (Wolves x40)"
       )
     
-    if (requireNamespace("patchwork", quietly = TRUE)) {
-      return(patchwork::wrap_plots(p_map, p_hist, ncol = 1))
+    if (requireNamespace("cowplot", quietly = TRUE)) {
+      return(cowplot::plot_grid(p_map, p_hist, ncol = 1, rel_heights = c(1.2, 1)))
     }
   }
   

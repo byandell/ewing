@@ -32,17 +32,22 @@ ewing_substrate <- function( community,
                              width = 10,
                              step_density = 1,
                              rescale = TRUE,
+                             x_var = c("step", "time"),
                              ...)
 {
+  x_var <- match.arg(x_var)
+  
   if (inherits(community, "isle_royale_sim")) {
     p_map <- autoplot(community$habitat_overlay, show_landmarks = TRUE)
     moose_sf <- sf::st_as_sf(community$moose_pop, coords = c("lon", "lat"), crs = sf::st_crs(community$habitat_overlay$layer))
     wolf_sf  <- sf::st_as_sf(community$wolf_pop, coords = c("lon", "lat"), crs = sf::st_crs(community$habitat_overlay$layer))
     
+    hdr_str <- if (x_var == "step") paste0("Step ", community$nstep) else paste0("Time Units ", community$nstep)
+    
     p_map <- p_map +
       ggplot2::geom_sf(data = moose_sf, color = "#27ae60", shape = 21, fill = NA, stroke = 1.0, size = 0.8, alpha = 0.85) +
       ggplot2::geom_sf(data = wolf_sf, color = "#e74c3c", shape = 21, fill = NA, stroke = 1.4, size = 1.5, alpha = 0.95) +
-      ggplot2::ggtitle(paste0("Isle Royale Substrate Plot (Step ", community$nstep, ")"))
+      ggplot2::ggtitle(paste0("Isle Royale Substrate Plot (", hdr_str, ")"))
     
     return(p_map)
   }

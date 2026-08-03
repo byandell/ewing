@@ -69,6 +69,7 @@ ewing_ageclass <- function(community, substrate = TRUE, total = TRUE,
     ordered_levels <- unique(c("calf", "yearling", "adult", "senior", "pup", "subadult", "total"))
     out$State <- factor(out$State, levels = ordered_levels[ordered_levels %in% unique(out$State)])
     attr(out, "nstep") <- community$nstep
+    attr(out, "units") <- "days"
     class(out) <- c("ewing_ageclass", class(out))
     return(out)
   }
@@ -143,14 +144,24 @@ ewing_ageclass <- function(community, substrate = TRUE, total = TRUE,
     attr(out, "nstep") <- max(out$step, na.rm = TRUE)
   }
   attr(out, "nsim") <- if (!is.null(nsim_val)) nsim_val else attr(community, "nsim")
+  attr(out, "units") <- if (inherits(community, "isle_royale_sim")) "days" else tryCatch(getOrgFeature(community, species[1], "units"), error = function(e) "time")
   
   class(out) <- c("ewing_ageclass", class(out))
   out
 }
 #' @export
 #' @rdname ewing_ageclass
-ggplot_ewing_ageclass <- function(object, main = NULL, title = NULL, ... )
+ggplot_ewing_ageclass <- function(object, main = NULL, title = NULL, x_var = c("step", "time"), time_unit = NULL, ... )
 {
+  x_var <- match.arg(x_var)
+  
+  if (is.null(time_unit)) {
+    time_unit <- attr(object, "units")
+  }
+  if (is.null(time_unit) || is.na(time_unit) || time_unit == "NA") {
+    time_unit <- "time"
+  }
+  
   if (is.null(title)) title <- main
   if (is.null(title)) {
     nstep <- attr(object, "nstep")
@@ -158,30 +169,68 @@ ggplot_ewing_ageclass <- function(object, main = NULL, title = NULL, ... )
       nstep <- max(object$step, na.rm = TRUE)
     }
     nsim <- attr(object, "nsim")
+    unit_str <- if (x_var == "step") "steps" else time_unit
+    time_hdr <- if (x_var == "step") "Steps" else paste0(toupper(substring(time_unit, 1, 1)), substring(time_unit, 2))
     if (!is.null(nstep)) {
       if (!is.null(nsim) && nsim > 1) {
-        title <- paste0("Age Distribution over Time (", nstep, " steps, nsim = ", nsim, ")")
+        title <- paste0("Age Classes over ", time_hdr, " (", nstep, " ", unit_str, ", nsim = ", nsim, ")")
       } else {
-        title <- paste0("Age Distribution over Time (", nstep, " steps)")
+        title <- paste0("Age Classes over ", time_hdr, " (", nstep, " ", unit_str, ")")
       }
-    } else if (!is.null(nsim) && nsim > 1) {
-      title <- paste0("Age Distribution over Time (nsim = ", nsim, ")")
     } else {
-      title <- "Age Distribution over Time"
+      title <- paste0("Age Classes over ", time_hdr)
     }
   }
   
-  ggplot2::ggplot(object) +
-    ggplot2::aes(.data$time, .data$Count, col = .data$State, group = .data$State, shape = .data$Species) +
-    ggplot2::geom_step(na.rm = TRUE) +
-    ggplot2::geom_point(size = 2, na.rm = TRUE) +
-    ggplot2::scale_shape_manual(name = "Species", values = c(1, 2, 0, 5, 6, 3, 4)) +
-    ggplot2::labs(title = title, color = "State", shape = "Species") +
-    ggplot2::facet_wrap(.data$Type ~ .data$Species, scales = "free")
+  species_vec <- unique(as.character(object$Species))
+  if (length(species_vec) == 0) species_vec <- "Organism"
+  
+  p_list <- list()
+  
+  for (sp in species_vec) {
+    df_sp <- object[object$Species == sp, , drop = FALSE]
+    if (is.factor(df_sp$State)) {
+      df_sp$State <- droplevels(df_sp$State)
+    }
+    
+    x_col <- if (x_var == "step" && "step" %in% names(df_sp)) "step" else "time"
+    x_lbl <- if (x_var == "step") "steps" else time_unit
+    
+    sp_title <- paste(toupper(substring(sp, 1, 1)), substring(sp, 2), " Age Classes", sep = "")
+    
+    p_sub <- ggplot2::ggplot(df_sp, ggplot2::aes(x = .data[[x_col]], y = .data$Count, col = .data$State, group = .data$State)) +
+      ggplot2::geom_step(na.rm = TRUE, linewidth = 0.8) +
+      ggplot2::geom_point(size = 2, na.rm = TRUE) +
+      ggplot2::theme_minimal() +
+      ggplot2::labs(
+        title = sp_title,
+        x = x_lbl,
+        y = "Count",
+        color = "Age Class"
+      ) +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(size = 11, face = "bold", hjust = 0.5),
+        legend.position = "right"
+      )
+      
+    p_list[[sp]] <- p_sub
+  }
+  
+  if (length(p_list) == 1) {
+    return(p_list[[1]] + ggplot2::ggtitle(title))
+  }
+  
+  grid_plots <- cowplot::plot_grid(plotlist = p_list, ncol = length(p_list), align = "h")
+  title_widget <- cowplot::ggdraw() + 
+    cowplot::draw_label(title, fontface = 'bold', x = 0.5, hjust = 0.5, size = 13)
+  
+  cowplot::plot_grid(title_widget, grid_plots, ncol = 1, rel_heights = c(0.12, 1))
 }
 #' @export
 #' @rdname ewing_ageclass
 #' @method autoplot ewing_ageclass
-autoplot.ewing_ageclass <- function(object, ...)
-  ggplot_ewing_ageclass(object, ...)
+autoplot.ewing_ageclass <- function(object, x_var = c("step", "time"), ...) {
+  x_var <- match.arg(x_var)
+  ggplot_ewing_ageclass(object, x_var = x_var, ...)
+}
 

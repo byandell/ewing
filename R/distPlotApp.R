@@ -39,20 +39,30 @@ distPlotApp <- function(title = "Population Ethology") {
 }
 #' @export
 #' @rdname distPlotApp
-distPlotServer <- function(id, simres) {
+distPlotServer <- function(id, simres, x_var = NULL, total = NULL, norm = NULL) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
     
     dist_plot <- shiny::reactive({
-      shiny::req(simres(), input$total, input$norm)
-      object <- if(inherits(simres(), "ewing")) {
-        ewing_ageclass(simres(), total = input$total, normalize = input$norm)
-      } else {
-        NULL
-      }
-      if(is.null(object)) return(plot_null("no simulation"))
-      ggplot2::autoplot(object)
+      sim <- if (is.reactive(simres)) simres() else simres
+      shiny::req(sim)
+      
+      tot_val <- if (is.reactive(total)) total() else if (!is.null(total)) total else if (!is.null(input$total)) input$total else TRUE
+      norm_val <- if (is.reactive(norm)) norm() else if (!is.null(norm)) norm else if (!is.null(input$norm)) input$norm else TRUE
+      xv_val <- if (is.reactive(x_var)) x_var() else if (!is.null(x_var)) x_var else if (!is.null(input$x_var)) input$x_var else "step"
+      
+      if (is.null(tot_val)) tot_val <- TRUE
+      if (is.null(norm_val)) norm_val <- TRUE
+      if (is.null(xv_val) || !xv_val %in% c("step", "time")) xv_val <- "step"
+      
+      object <- tryCatch({
+        ewing_ageclass(sim, total = tot_val, normalize = norm_val)
+      }, error = function(e) NULL)
+      
+      if (is.null(object)) return(plot_null("no simulation"))
+      ggplot2::autoplot(object, x_var = xv_val)
     })
+    
     output$dist_plot <- shiny::renderPlot({
       dist_plot()
     })

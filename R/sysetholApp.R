@@ -27,39 +27,6 @@ sysetholApp <- function(title = "Systems Ethology Platform") {
   shiny::shinyApp(ui = ui, server = server)
 }
 
-step_size_choices <- c(1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000)
-
-step_size_slider <- function(inputId, label = "Steps per click:", selected = 50) {
-  idx <- match(selected, step_size_choices)
-  if (is.na(idx)) idx <- 6
-  sl <- shiny::sliderInput(inputId, label, min = 1, max = length(step_size_choices), value = idx, step = 1, ticks = TRUE)
-  sl$children[[2]]$attribs[['data-values']] <- paste(step_size_choices, collapse = ",")
-  sl
-}
-
-parse_step_size <- function(val) {
-  if (is.null(val)) return(50)
-  num <- round(as.numeric(val))
-  if (is.na(num)) return(50)
-  
-  # Direct large values (e.g., 20, 50, 100, 200, 500, 1000, 2000)
-  if (num %in% step_size_choices && num > 10) {
-    return(num)
-  }
-  
-  # 0-based JavaScript index from ion.rangeSlider (0 to 10)
-  if (num >= 0 && num < length(step_size_choices)) {
-    return(step_size_choices[num + 1])
-  }
-  
-  # Fallback for direct value
-  if (num %in% step_size_choices) {
-    return(num)
-  }
-  
-  50
-}
-
 #' Systems Ethology Input Controls Module
 #' @export
 #' @rdname sysetholApp
@@ -90,20 +57,31 @@ sysetholInput <- function(id) {
         shiny::actionButton(ns("run_engine"), "Run Engine", class = "btn-sm btn-primary flex-fill", style = "font-weight: 600;"),
         shiny::actionButton(ns("reset_engine"), "Reset", class = "btn-sm btn-outline-secondary")
       ),
-      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
       
-      shiny::h4("Display & Plot Options", style = "font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;"),
-      shiny::checkboxInput(ns("norm"), "Normalize Dist Plot", TRUE),
-      shiny::checkboxInput(ns("total"), "Include Total in Dist", TRUE),
-      
-      # Conditional Control: Confidence Band ONLY shown when nsim > 1
+      # Conditional Controls for Substrate Plots (shown ONLY on Substrate Plots tab)
       shiny::conditionalPanel(
-        condition = sprintf("input['%s'] != '1'", ns("nsim")),
-        shiny::checkboxInput(ns("confidence"), "Confidence Band Envelope", TRUE)
+        condition = sprintf("input['%s'] == 'Substrate Plots'", ns("tabset")),
+        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+        shiny::h4("Substrate Display Options", style = "font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;"),
+        axisUnitInput(ns("substrate_axis")),
+        substrateInput(ns("substrate"))
       ),
       
-      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
-      substrateInput(ns("substrate"))
+      # Conditional Controls for Age Classes (shown ONLY on Age Classes tab)
+      shiny::conditionalPanel(
+        condition = sprintf("input['%s'] == 'Age Classes'", ns("tabset")),
+        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+        shiny::h4("Age Classes Display Options", style = "font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;"),
+        ageClassControlInput(ns("age_ctrls"))
+      ),
+      
+      # Conditional Controls for Envelope Plots (shown ONLY on Envelope Plots tab when nsim > 1)
+      shiny::conditionalPanel(
+        condition = sprintf("input['%s'] == 'Envelope Plots' && input['%s'] != '1'", ns("tabset"), ns("nsim")),
+        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
+        shiny::h4("Envelope Display Options", style = "font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;"),
+        shiny::checkboxInput(ns("confidence"), "Confidence Band Envelope", TRUE)
+      )
     )
   )
 }
@@ -125,6 +103,8 @@ sysetholServer <- function(id) {
     ns <- session$ns
     
     current_sim <- shiny::reactiveVal(NULL)
+    sub_x_var <- axisUnitServer("substrate_axis")
+    age_ctrls <- ageClassControlServer("age_ctrls")
     
     # Initialize simulation on start
     shiny::observe({
@@ -144,41 +124,46 @@ sysetholServer <- function(id) {
       nh <- input$n_host %||% 200
       np <- input$n_parasite %||% 100
       
-      if (nsim_val == 1) {
-        sim <- current_sim()
-        if (is.null(sim)) {
-          sim <- init.simulation(count = c(nh, np))
+      withProgress(message = "Executing Simulation Engine...", value = 0.2, {
+        if (nsim_val == 1) {
+          # Single run mode
+          sz <- parse_step_size(input$step_size %||% 50)
+          sim <- current_sim()
+          if (is.null(sim)) sim <- init.simulation(count = c(nh, np))
+          sim <- future.events(sim, nstep = sz, plotit = FALSE)
+          current_sim(sim)
+        } else {
+          # Multi-run discrete envelope mode
+          tot_steps <- as.numeric(input$steps %||% 1000)
+          sims <- ewing_discrete(nsim = nsim_val, nstep = tot_steps, count = c(nh, np), verbose = FALSE)
+          current_sim(sims)
         }
-        sz <- parse_step_size(input$step_size %||% 5)
-        new_state <- future.events(sim, nstep = sz, plotit = FALSE)
-        current_sim(new_state)
-      } else {
-        tot_steps <- input$steps %||% 1000
-        res <- ewing_discrete(nsim = nsim_val, nstep = tot_steps, count = c(nh, np), verbose = FALSE)
-        current_sim(res)
-      }
+        incProgress(0.8, detail = "Done")
+      })
     })
     
-    # Reset button
+    # Reset Engine button
     shiny::observeEvent(input$reset_engine, {
       nh <- input$n_host %||% 200
       np <- input$n_parasite %||% 100
       sim <- init.simulation(count = c(nh, np))
-      sz <- parse_step_size(input$step_size %||% 5)
-      sim <- future.events(sim, nstep = sz, plotit = FALSE)
       current_sim(sim)
     })
     
     # Input Data App Server
     inputAppServer("input_app", simres = current_sim)
     
+    # Compose Dist Plot Module for Age Classes
+    distPlotServer("dist_plot", simres = current_sim, x_var = age_ctrls$x_var, total = age_ctrls$total, norm = age_ctrls$norm)
+    
     # Dynamic Tabs (Envelope Plots shown ONLY when nsim > 1)
     output$sysethol_tabs <- shiny::renderUI({
       nsim_val <- as.numeric(input$nsim %||% 1)
       if (nsim_val == 1) {
         bslib::navset_tab(
-          bslib::nav_panel("Dist Plots", bslib::card(shiny::plotOutput(ns("dist_plot"), height = "500px"))),
+          id = ns("tabset"),
           bslib::nav_panel("Substrate Plots", bslib::card(substrateOutput(ns("substrate")))),
+          bslib::nav_panel("Age Classes", bslib::card(distPlotOutput(ns("dist_plot")))),
           bslib::nav_panel("Input Data", bslib::card(
             inputAppInput(ns("input_app")),
             inputAppOutput(ns("input_app"))
@@ -186,8 +171,9 @@ sysetholServer <- function(id) {
         )
       } else {
         bslib::navset_tab(
-          bslib::nav_panel("Dist Plots", bslib::card(shiny::plotOutput(ns("dist_plot"), height = "500px"))),
+          id = ns("tabset"),
           bslib::nav_panel("Substrate Plots", bslib::card(substrateOutput(ns("substrate")))),
+          bslib::nav_panel("Age Classes", bslib::card(distPlotOutput(ns("dist_plot")))),
           bslib::nav_panel("Envelope Plots", bslib::card(shiny::plotOutput(ns("env_plot"), height = "500px"))),
           bslib::nav_panel("Input Data", bslib::card(
             inputAppInput(ns("input_app")),
@@ -195,16 +181,6 @@ sysetholServer <- function(id) {
           ))
         )
       }
-    })
-    
-    # Dist Plots Tab
-    output$dist_plot <- shiny::renderPlot({
-      sim <- current_sim()
-      shiny::req(sim)
-      norm_val <- input$norm %||% TRUE
-      tot_val <- input$total %||% TRUE
-      ac <- ewing_ageclass(sim, total = tot_val, normalize = norm_val)
-      ggplot2::autoplot(ac)
     })
     
     # Substrate Plots Tab Module
