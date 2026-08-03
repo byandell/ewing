@@ -432,3 +432,33 @@ The `interactive step-by-step` refactor is completely deployed and verified. The
   - Mapped species legends (`shape = .data$Species`) using distinct open symbol aesthetics (`scale_shape_manual(name = "Species", values = c(1, 2, 0, 5, 6, 3, 4))`) for open circles, triangles, squares, etc.
   - Preserved continuous step history across sequential simulation stepping (`future.events.R`, `initCount.R`, `fileCount.R`, `sim.R`), accumulating step indices (`start_step + istep`) so "Run Engine" stepping renders complete history starting from step 0.
   - Fixed `setEvents()` in [`R/Events.R`](../../R/Events.R) so empty life stage vectors do not truncate the `community` object.
+
+---
+
+## 6. Isle Royale Predator-Prey Framework & Temporal Scaling
+
+### A. Ecological & Demographic Stage Structure
+- **Moose Life Cycle (`future.moose`)**:
+  - **Calf (0–1 yr)**: High vulnerability to wolf predation and winter weather.
+  - **Yearling (1–2 yrs)**: Dispersal stage across habitat features.
+  - **Adult (2–9 yrs)**: Prime reproductive cows (1–2 calves/yr). Low natural vulnerability to wolf predation.
+  - **Senior (10+ yrs)**: Aging adults with tooth wear and osteoarthritis; prime target for wolf pack hunting.
+- **Wolf Life Cycle (`future.wolf`)**:
+  - **Pups, Subadults, & Adults**: Pack structure with denning pups, roving subadults, and breeding pack adults.
+  - **Predation Functional Response**: Wolf attack rates in competing risk tables (`moose.wolf.txt`) selectively target vulnerable Calves and Senior adults over prime Adults.
+
+### B. Temporal Scaling Rules & Thermal Regimes
+- **Time Unit Equivalence**:
+  - **1 Time Unit (1 Step) = 1 Day** (Degree-Day / daily unit increment).
+  - **365 Time Units (Steps) = 1 Year**.
+- **Life-Cycle Scaling**:
+  - **Stage Transitions**: Transitions in `future.moose` and `future.wolf` (Calf $\rightarrow$ Yearling $\rightarrow$ Adult; Pup $\rightarrow$ Subadult $\rightarrow$ Adult) occur at `365` steps (**1 year**).
+  - **Reproductive & Lifespan Scaling**: Annual births occur every `365` steps. Adult Moose lifespan = `2920` steps (**8 years**); Adult Wolf lifespan = `2555` steps (**7 years**).
+- **Thermal Regimes**: Moose timing uses Degree-Days (`units = DD`, 1 step = 1 daily fluctuation cycle); Wolf timing uses clock hours (`units = hr`, 24 hours = 1 step / day).
+
+### C. Historical Census Calibration (`wolf_moose.csv`)
+- Benchmarked against 40-year empirical time series (1980–2019):
+  - **1980 Baseline**: 664 Moose, 50 Wolves
+  - **1995 Peak**: 2,400 Moose, 16 Wolves
+  - **2018 Crash**: 1,500 Moose, 2 Wolves
+
