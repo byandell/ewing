@@ -9,10 +9,11 @@ render_standalone_app <- function(app_name, height = 800) {
   # Standard webR pre-installed libraries
   cat("library(shiny)\n")
   cat("library(bslib)\n")
-  if (app_name %in% c("triangleApp", "hexmoveApp", "sysetholApp")) {
+  if (app_name %in% c("triangleApp", "hexmoveApp", "sysetholApp", "IsleRoyaleApp")) {
     cat("library(ggplot2)\n")
+    cat("library(cowplot)\n")
   }
-  if (app_name %in% c("hexmoveApp", "sysetholApp", "tempApp")) {
+  if (app_name %in% c("hexmoveApp", "sysetholApp", "tempApp", "IsleRoyaleApp")) {
     cat("library(dplyr)\n")
     cat("library(tidyr)\n")
     cat("library(tibble)\n")
@@ -27,6 +28,7 @@ render_standalone_app <- function(app_name, height = 800) {
   # Locate R and data directories robustly regardless of current working directory
   r_dir <- if (dir.exists("R")) "R" else if (dir.exists("../R")) "../R" else file.path("..", "..", "R")
   data_dir <- if (dir.exists("data")) "data" else if (dir.exists("../data")) "../data" else file.path("..", "..", "data")
+  ir_dir <- if (dir.exists("inst/extdata/isle_royale")) "inst/extdata/isle_royale" else if (dir.exists("../inst/extdata/isle_royale")) "../inst/extdata/isle_royale" else file.path("..", "..", "inst", "extdata", "isle_royale")
   
   # Auto-include default data tables for apps that require simulation datasets
   if (app_name %in% c("sysetholApp", "hexmoveApp", "tempApp")) {
@@ -38,6 +40,33 @@ render_standalone_app <- function(app_name, height = 800) {
         cat(paste0("# --- Auto-Included Data Table: ", tbl_name, " ---\n"))
         cat(paste0(tbl_name, " <- "))
         dput(df)
+        cat("\n\n")
+      }
+    }
+  }
+  
+  # Auto-include Isle Royale data tables for IsleRoyaleApp
+  if (app_name == "IsleRoyaleApp") {
+    ir_files <- list.files(ir_dir, pattern = "\\.txt$", full.names = TRUE)
+    for (f in ir_files) {
+      tbl_name <- sub("\\.txt$", "", basename(f))
+      df <- tryCatch(read.table(f, header = TRUE, check.names = FALSE, stringsAsFactors = FALSE), error = function(e) NULL)
+      if (!is.null(df)) {
+        cat(paste0("# --- Auto-Included Data Table: ", tbl_name, " ---\n"))
+        cat(paste0(tbl_name, " <- "))
+        dput(df)
+        cat("\n\n")
+      }
+    }
+    
+    # Auto-include historical wolf_moose.csv
+    csv_file <- if (file.exists("inst/doc/isle_royale/wolf_moose.csv")) "inst/doc/isle_royale/wolf_moose.csv" else if (file.exists("../inst/doc/isle_royale/wolf_moose.csv")) "../inst/doc/isle_royale/wolf_moose.csv" else file.path("..", "..", "inst", "doc", "isle_royale", "wolf_moose.csv")
+    if (file.exists(csv_file)) {
+      df_wm <- tryCatch(read.csv(csv_file, stringsAsFactors = FALSE), error = function(e) NULL)
+      if (!is.null(df_wm)) {
+        cat("# --- Auto-Included Historical Census Data: wolf_moose ---\n")
+        cat("wolf_moose <- ")
+        dput(df_wm)
         cat("\n\n")
       }
     }
@@ -64,11 +93,15 @@ render_standalone_app <- function(app_name, height = 800) {
     fiveShowApp = c("spline.R", "five.R", "fiveShowApp.R"),
     triangleApp = c("triangle.R", "substrate_triangle.R", "triangleApp.R"),
     tempApp     = c(sim_core_files, "tempApp.R"),
-    hexmoveApp  = c(sim_core_files, "initParApp.R", "initApp.R", "substrateApp.R", "hexmoveApp.R"),
+    hexmoveApp  = c(sim_core_files, "step_controls.R", "initParApp.R", "initApp.R", "substrateApp.R", "hexmoveApp.R"),
     sysetholApp = c(
-      sim_core_files, "initParApp.R", "initApp.R", "substrateApp.R", "distPlotApp.R",
+      sim_core_files, "step_controls.R", "initParApp.R", "initApp.R", "substrateApp.R", "distPlotApp.R",
       "multApp.R", "inputApp.R", "origEwingApp.R", "envPlotApp.R", "downloadApp.R",
       "simApp.R", "futureApp.R", "sysetholApp.R"
+    ),
+    IsleRoyaleApp = c(
+      sim_core_files, "step_controls.R", "initParApp.R", "initApp.R", "substrateApp.R", "distPlotApp.R",
+      "multApp.R", "inputApp.R", "habitat.R", "watershed.R", "isle_royale_sim.R", "IsleRoyaleApp.R"
     )
   )
   
