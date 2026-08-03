@@ -6,6 +6,7 @@ toc: false
 listing:
   contents:
     - sysetholApp.qmd
+    - IsleRoyaleApp.qmd
     - fivePlotApp.qmd
     - fiveShowApp.qmd
     - tempApp.qmd

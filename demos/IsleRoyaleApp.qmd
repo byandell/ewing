@@ -1,0 +1,77 @@
+---
+title: "IsleRoyaleApp (Isle Royale Wolf-Moose Platform)"
+description: "Interactive offline simulation platform exploring spatial predator-prey dynamics, wolf-moose movement over Isle Royale habitat features, age class distributions, and historical census benchmarks."
+author: "Brian S. Yandell"
+engine: knitr
+toc: true
+image: "images/isle_royale.png"
+format:
+  html:
+    embed-resources: false
+---
+
+[← Back to Demos Gallery](index.qmd)
+
+The **`IsleRoyaleApp()`** application provides an interactive 100% offline platform for exploring spatial wolf-moose predator-prey dynamics across the Isle Royale National Park landscape.
+
+---
+
+## Programmatic Application Usage
+
+Launch the interactive application natively in R using exported package functions:
+
+```r
+library(ewing)
+
+# Launch interactive offline Shiny app
+IsleRoyaleApp()
+```
+
+---
+
+## Executable Workflow: Isle Royale Spatial Predator-Prey Model
+
+Below is an executable simulation workflow displaying spatial individual organism distributions on the Isle Royale substrate map, step-by-step demographic tallies, and historical 40-year empirical census benchmarks (1980–2019).
+
+```{r}
+#| message: false
+#| warning: false
+#| fig.width: 9
+#| fig.height: 7
+
+library(ewing)
+library(ggplot2)
+
+# 1. Initialize Isle Royale spatial simulation with 1980 baseline counts (664 Moose, 50 Wolves)
+sim <- init_isle_royale_sim(year = 1980)
+
+# 2. Run simulation steps (e.g. 200 days)
+sim <- run_isle_royale_sim(sim, nstep = 200)
+
+# 3. Visualize spatial landscape & benchmark trajectories
+ggplot_isle_royale_sim(sim)
+```
+
+---
+
+## Age Classes Demographic Dynamics
+
+```{r}
+#| message: false
+#| warning: false
+#| fig.width: 9
+#| fig.height: 5
+
+# Plot side-by-side per-species age class dynamics over time (days)
+autoplot(ewing_ageclass(sim), x_var = "time")
+```
+
+---
+
+## Technical Features
+
+1. **100% Offline GIS Substrate Mapping**: Renders habitat features (lakes, bogs, shaded forests, waterways) and landmark POIs using pre-computed local `sf` layers (`inst/extdata/isle_royale/`) with **0 API calls**.
+2. **Dynamic Habitat-Weighted Movement**: Organisms evaluate adjacent hexagonal substrate cells, moving with probability proportional to habitat suitability scores.
+3. **Continuous Demographic Stepping**: Tallies births, aging (Calf $\rightarrow$ Yearling $\rightarrow$ Adult $\rightarrow$ Senior; Pup $\rightarrow$ Subadult $\rightarrow$ Adult), and wolf predation at micro-step increments.
+4. **Tab-Aware Sidebar Decluttering**: Displays plot-specific controls (`show_habitat`, `show_landmarks`, `norm`, `total`, `Steps` vs `Days`) strictly when their target tab is active.
+5. **Shared Modular Architecture**: Peer application wrapper composing `step_controls`, `distPlotApp`, `inputApp`, and `substrateApp`.

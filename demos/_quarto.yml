@@ -14,6 +14,8 @@ website:
         text: Gallery
       - href: sysetholApp.qmd
         text: sysetholApp
+      - href: IsleRoyaleApp.qmd
+        text: IsleRoyaleApp
       - href: fivePlotApp.qmd
         text: fivePlotApp
       - href: fiveShowApp.qmd
