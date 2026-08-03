@@ -28,46 +28,11 @@
     "text": "Programmatic Application Usage\nLaunch the interactive application natively in R:\nlibrary(ewing)\n\nfiveShowApp()"
   },
   {
-    "objectID": "fivePlotApp.html",
-    "href": "fivePlotApp.html",
-    "title": "fivePlotApp (Shinylive)",
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "ewing Demos Gallery",
     "section": "",
-    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can click directly on the baseline spline plot on the left to move individual nodes."
-  },
-  {
-    "objectID": "fivePlotApp.html#programmatic-application-usage",
-    "href": "fivePlotApp.html#programmatic-application-usage",
-    "title": "fivePlotApp (Shinylive)",
-    "section": "Programmatic Application Usage",
-    "text": "Programmatic Application Usage\nLaunch the interactive application natively in R:\nlibrary(ewing)\n\nfivePlotApp()"
-  },
-  {
-    "objectID": "sysetholApp.html",
-    "href": "sysetholApp.html",
-    "title": "sysetholApp (Systems Ethology Platform)",
-    "section": "",
-    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). It provides a streamlined Systems Ethology platform (sysetholApp()) with clean sidebar controls (sysetholInput), dynamic conditional panels (Steps per click log-scale geometric slider when nsim = 1, Confidence Band when nsim &gt; 1), sidebar Run Engine & Reset buttons, and modular tabs (sysetholOutput: Dist Plots fine time-granularity step plots, Substrate Plots, Envelope Plots, and Input Data via inputApp)."
-  },
-  {
-    "objectID": "sysetholApp.html#programmatic-application-usage",
-    "href": "sysetholApp.html#programmatic-application-usage",
-    "title": "sysetholApp (Systems Ethology Platform)",
-    "section": "Programmatic Application Usage",
-    "text": "Programmatic Application Usage\nLaunch the Systems Ethology Platform natively in R using exported package functions:\nlibrary(ewing)\n\nsysetholApp()"
-  },
-  {
-    "objectID": "hexmoveApp.html",
-    "href": "hexmoveApp.html",
-    "title": "hexmoveApp (Shinylive)",
-    "section": "",
-    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can interactively step through simulation events (+1, +10, +100 steps), toggle species visibility (Host, Parasite), switch between Overlay (1 Map) and Separate (Adjacent Maps) view modes, and inspect organism positions on hexagonal substrate overlays."
-  },
-  {
-    "objectID": "hexmoveApp.html#programmatic-application-usage",
-    "href": "hexmoveApp.html#programmatic-application-usage",
-    "title": "hexmoveApp (Shinylive)",
-    "section": "Programmatic Application Usage",
-    "text": "Programmatic Application Usage\nLaunch the interactive application natively in R:\nlibrary(ewing)\n\nhexmoveApp()"
+    "text": "This gallery showcases interactive spline tools, spatial projection utilities, and the central Systems Ethology platform from the ewing R package.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nIsleRoyaleApp (Isle Royale Wolf-Moose Platform)\n\n\nInteractive offline simulation platform exploring spatial predator-prey dynamics, wolf-moose movement over Isle Royale habitat features, age class distributions, and…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nfivePlotApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to study single parameter sensitivity of spline curves using five.plot().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nfiveShowApp (Shinylive)\n\n\nA serverless WebAssembly-powered target relative mean search explorer using five.show().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nhexmapApp (Hexagonal Watershed Explorer)\n\n\nInteractively identify USGS HUC12 subwatershed boundaries using Leaflet, isolate geographic landmass features (e.g., Isle Royale), and overlay spatial hexagonal substrate…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nhexmoveApp (Shinylive)\n\n\nAn interactive spatial organism movement simulator tracking host-parasite positions across triangular substrate grids.\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nsysetholApp (Systems Ethology Platform)\n\n\nThe central Systems Ethology platform orchestrating host-parasite individual-based simulations, age class distributions over time, spatial substrate networks, and parameter…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\ntempApp (Shinylive)\n\n\nAn interactive thermal regime explorer allowing real-time editing of daily temperature splines and degree-day accumulations.\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\ntriangleApp (Shinylive)\n\n\nAn interactive spatial substrate network explorer for tridiagonal coordinate systems and plant module layouts.\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "triangleApp.html",
@@ -84,11 +49,81 @@
     "text": "Programmatic Application Usage\nLaunch the interactive application natively in R:\nlibrary(ewing)\n\ntriangleApp()"
   },
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "ewing Demos Gallery",
+    "objectID": "hexmoveApp.html",
+    "href": "hexmoveApp.html",
+    "title": "hexmoveApp (Shinylive)",
     "section": "",
-    "text": "This gallery showcases interactive spline tools, spatial projection utilities, and the central Systems Ethology platform from the ewing R package.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nfivePlotApp (Shinylive)\n\n\nA serverless WebAssembly-powered explorer to study single parameter sensitivity of spline curves using five.plot().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nfiveShowApp (Shinylive)\n\n\nA serverless WebAssembly-powered target relative mean search explorer using five.show().\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nhexmapApp (Hexagonal Watershed Explorer)\n\n\nInteractively identify USGS HUC12 subwatershed boundaries using Leaflet, isolate geographic landmass features (e.g., Isle Royale), and overlay spatial hexagonal substrate…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nhexmoveApp (Shinylive)\n\n\nAn interactive spatial organism movement simulator tracking host-parasite positions across triangular substrate grids.\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\nsysetholApp (Systems Ethology Platform)\n\n\nThe central Systems Ethology platform orchestrating host-parasite individual-based simulations, age class distributions over time, spatial substrate networks, and parameter…\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\ntempApp (Shinylive)\n\n\nAn interactive thermal regime explorer allowing real-time editing of daily temperature splines and degree-day accumulations.\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\n\n\n\n\n\n\n\ntriangleApp (Shinylive)\n\n\nAn interactive spatial substrate network explorer for tridiagonal coordinate systems and plant module layouts.\n\n\n\nBrian S. Yandell\n\n\n\n\n\n\nNo matching items"
+    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can interactively step through simulation events (+1, +10, +100 steps), toggle species visibility (Host, Parasite), switch between Overlay (1 Map) and Separate (Adjacent Maps) view modes, and inspect organism positions on hexagonal substrate overlays."
+  },
+  {
+    "objectID": "hexmoveApp.html#programmatic-application-usage",
+    "href": "hexmoveApp.html#programmatic-application-usage",
+    "title": "hexmoveApp (Shinylive)",
+    "section": "Programmatic Application Usage",
+    "text": "Programmatic Application Usage\nLaunch the interactive application natively in R:\nlibrary(ewing)\n\nhexmoveApp()"
+  },
+  {
+    "objectID": "sysetholApp.html",
+    "href": "sysetholApp.html",
+    "title": "sysetholApp (Systems Ethology Platform)",
+    "section": "",
+    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). It provides a streamlined Systems Ethology platform (sysetholApp()) with clean sidebar controls (sysetholInput), dynamic conditional panels (Steps per click log-scale geometric slider when nsim = 1, Confidence Band when nsim &gt; 1), sidebar Run Engine & Reset buttons, and modular tabs (sysetholOutput: Dist Plots fine time-granularity step plots, Substrate Plots, Envelope Plots, and Input Data via inputApp)."
+  },
+  {
+    "objectID": "sysetholApp.html#programmatic-application-usage",
+    "href": "sysetholApp.html#programmatic-application-usage",
+    "title": "sysetholApp (Systems Ethology Platform)",
+    "section": "Programmatic Application Usage",
+    "text": "Programmatic Application Usage\nLaunch the Systems Ethology Platform natively in R using exported package functions:\nlibrary(ewing)\n\nsysetholApp()"
+  },
+  {
+    "objectID": "fivePlotApp.html",
+    "href": "fivePlotApp.html",
+    "title": "fivePlotApp (Shinylive)",
+    "section": "",
+    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). You can click directly on the baseline spline plot on the left to move individual nodes."
+  },
+  {
+    "objectID": "fivePlotApp.html#programmatic-application-usage",
+    "href": "fivePlotApp.html#programmatic-application-usage",
+    "title": "fivePlotApp (Shinylive)",
+    "section": "Programmatic Application Usage",
+    "text": "Programmatic Application Usage\nLaunch the interactive application natively in R:\nlibrary(ewing)\n\nfivePlotApp()"
+  },
+  {
+    "objectID": "IsleRoyaleApp.html",
+    "href": "IsleRoyaleApp.html",
+    "title": "IsleRoyaleApp (Isle Royale Wolf-Moose Platform)",
+    "section": "",
+    "text": "← Back to Demos Gallery\nThe IsleRoyaleApp() application provides an interactive 100% offline platform for exploring spatial wolf-moose predator-prey dynamics across the Isle Royale National Park landscape."
+  },
+  {
+    "objectID": "IsleRoyaleApp.html#programmatic-application-usage",
+    "href": "IsleRoyaleApp.html#programmatic-application-usage",
+    "title": "IsleRoyaleApp (Isle Royale Wolf-Moose Platform)",
+    "section": "Programmatic Application Usage",
+    "text": "Programmatic Application Usage\nLaunch the interactive application natively in R using exported package functions:\nlibrary(ewing)\n\n# Launch interactive offline Shiny app\nIsleRoyaleApp()"
+  },
+  {
+    "objectID": "IsleRoyaleApp.html#executable-workflow-isle-royale-spatial-predator-prey-model",
+    "href": "IsleRoyaleApp.html#executable-workflow-isle-royale-spatial-predator-prey-model",
+    "title": "IsleRoyaleApp (Isle Royale Wolf-Moose Platform)",
+    "section": "Executable Workflow: Isle Royale Spatial Predator-Prey Model",
+    "text": "Executable Workflow: Isle Royale Spatial Predator-Prey Model\nBelow is an executable simulation workflow displaying spatial individual organism distributions on the Isle Royale substrate map, step-by-step demographic tallies, and historical 40-year empirical census benchmarks (1980–2019).\n\nlibrary(ewing)\nlibrary(ggplot2)\n\n# 1. Initialize Isle Royale spatial simulation with 1980 baseline counts (664 Moose, 50 Wolves)\nsim &lt;- init_isle_royale_sim(year = 1980)\n\n# 2. Run simulation steps (e.g. 200 days)\nsim &lt;- run_isle_royale_sim(sim, nstep = 200)\n\n# 3. Visualize spatial landscape & benchmark trajectories\nggplot_isle_royale_sim(sim)"
+  },
+  {
+    "objectID": "IsleRoyaleApp.html#age-classes-demographic-dynamics",
+    "href": "IsleRoyaleApp.html#age-classes-demographic-dynamics",
+    "title": "IsleRoyaleApp (Isle Royale Wolf-Moose Platform)",
+    "section": "Age Classes Demographic Dynamics",
+    "text": "Age Classes Demographic Dynamics\n\n# Plot side-by-side per-species age class dynamics over time (days)\nautoplot(ewing_ageclass(sim), x_var = \"time\")"
+  },
+  {
+    "objectID": "IsleRoyaleApp.html#technical-features",
+    "href": "IsleRoyaleApp.html#technical-features",
+    "title": "IsleRoyaleApp (Isle Royale Wolf-Moose Platform)",
+    "section": "Technical Features",
+    "text": "Technical Features\n\n100% Offline GIS Substrate Mapping: Renders habitat features (lakes, bogs, shaded forests, waterways) and landmark POIs using pre-computed local sf layers (inst/extdata/isle_royale/) with 0 API calls.\nDynamic Habitat-Weighted Movement: Organisms evaluate adjacent hexagonal substrate cells, moving with probability proportional to habitat suitability scores.\nContinuous Demographic Stepping: Tallies births, aging (Calf \\(\\rightarrow\\) Yearling \\(\\rightarrow\\) Adult \\(\\rightarrow\\) Senior; Pup \\(\\rightarrow\\) Subadult \\(\\rightarrow\\) Adult), and wolf predation at micro-step increments.\nTab-Aware Sidebar Decluttering: Displays plot-specific controls (show_habitat, show_landmarks, norm, total, Steps vs Days) strictly when their target tab is active.\nShared Modular Architecture: Peer application wrapper composing step_controls, distPlotApp, inputApp, and substrateApp."
   },
   {
     "objectID": "hexmapApp.html",

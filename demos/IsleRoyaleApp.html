@@ -7,9 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Brian S. Yandell">
-<meta name="description" content="Interactively identify USGS HUC12 subwatershed boundaries using Leaflet, isolate geographic landmass features (e.g., Isle Royale), and overlay spatial hexagonal substrate networks.">
+<meta name="description" content="Interactive offline simulation platform exploring spatial predator-prey dynamics, wolf-moose movement over Isle Royale habitat features, age class distributions, and historical census benchmarks.">
 
-<title>hexmapApp (Hexagonal Watershed Explorer) – ewing Demos</title>
+<title>IsleRoyaleApp (Isle Royale Wolf-Moose Platform) – ewing Demos</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -111,6 +111,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 </head>
 
@@ -144,7 +173,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">sysetholApp</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./IsleRoyaleApp.html"> 
+    <a class="nav-link active" href="./IsleRoyaleApp.html" aria-current="page"> 
 <span class="menu-text">IsleRoyaleApp</span></a>
   </li>  
   <li class="nav-item">
@@ -164,7 +193,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">triangleApp</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="./hexmapApp.html" aria-current="page"> 
+    <a class="nav-link" href="./hexmapApp.html"> 
 <span class="menu-text">hexmapApp</span></a>
   </li>  
   <li class="nav-item">
@@ -194,8 +223,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul class="collapse">
-  <li><a href="#interactive-application-usage" id="toc-interactive-application-usage" class="nav-link active" data-scroll-target="#interactive-application-usage">Interactive Application Usage</a></li>
-  <li><a href="#workflow-example-isle-royale-watershed-projection" id="toc-workflow-example-isle-royale-watershed-projection" class="nav-link" data-scroll-target="#workflow-example-isle-royale-watershed-projection">Workflow Example: Isle Royale Watershed Projection</a></li>
+  <li><a href="#programmatic-application-usage" id="toc-programmatic-application-usage" class="nav-link active" data-scroll-target="#programmatic-application-usage">Programmatic Application Usage</a></li>
+  <li><a href="#executable-workflow-isle-royale-spatial-predator-prey-model" id="toc-executable-workflow-isle-royale-spatial-predator-prey-model" class="nav-link" data-scroll-target="#executable-workflow-isle-royale-spatial-predator-prey-model">Executable Workflow: Isle Royale Spatial Predator-Prey Model</a></li>
+  <li><a href="#age-classes-demographic-dynamics" id="toc-age-classes-demographic-dynamics" class="nav-link" data-scroll-target="#age-classes-demographic-dynamics">Age Classes Demographic Dynamics</a></li>
   <li><a href="#technical-features" id="toc-technical-features" class="nav-link" data-scroll-target="#technical-features">Technical Features</a></li>
   </ul>
 </nav>
@@ -205,12 +235,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">hexmapApp (Hexagonal Watershed Explorer)</h1>
+<h1 class="title">IsleRoyaleApp (Isle Royale Wolf-Moose Platform)</h1>
 </div>
 
 <div>
   <div class="description">
-    Interactively identify USGS HUC12 subwatershed boundaries using Leaflet, isolate geographic landmass features (e.g., Isle Royale), and overlay spatial hexagonal substrate networks.
+    Interactive offline simulation platform exploring spatial predator-prey dynamics, wolf-moose movement over Isle Royale habitat features, age class distributions, and historical census benchmarks.
   </div>
 </div>
 
@@ -234,41 +264,51 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p><a href="./index.html">← Back to Demos Gallery</a></p>
-<p>The <strong><code>hexmapApp()</code></strong> application provides an interactive interface for discovering USGS subwatersheds, isolating specific geographic features (such as island landmasses), and projecting spatial hexagonal substrate networks for quantitative population ethology simulations.</p>
-<section id="interactive-application-usage" class="level2">
-<h2 class="anchored" data-anchor-id="interactive-application-usage">Interactive Application Usage</h2>
-<p>You can launch the interactive application natively in R:</p>
+<p>The <strong><code>IsleRoyaleApp()</code></strong> application provides an interactive 100% offline platform for exploring spatial wolf-moose predator-prey dynamics across the Isle Royale National Park landscape.</p>
+<hr>
+<section id="programmatic-application-usage" class="level2">
+<h2 class="anchored" data-anchor-id="programmatic-application-usage">Programmatic Application Usage</h2>
+<p>Launch the interactive application natively in R using exported package functions:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ewing)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Launch interactive Shiny app</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">hexmapApp</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<blockquote class="blockquote">
-<p>[!NOTE] <strong>Live Deployment:</strong> The interactive application requires dynamic spatial intersection libraries (<code>sf</code>) and live USGS / OpenStreetMap API access. It is deployed live on <a href="https://connect.doit.wisc.edu/HexMap">Posit Connect (HexMap)</a>.</p>
-</blockquote>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Launch interactive offline Shiny app</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">IsleRoyaleApp</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <hr>
 </section>
-<section id="workflow-example-isle-royale-watershed-projection" class="level2">
-<h2 class="anchored" data-anchor-id="workflow-example-isle-royale-watershed-projection">Workflow Example: Isle Royale Watershed Projection</h2>
-<p>Below is an example showing how <code>get_watershed()</code> retrieves the USGS HUC12 subwatershed boundary (<code>041800000101</code>), clips it to the <strong>Isle Royale</strong> landmass using OpenStreetMap nominatim geometry (when <code>osmdata</code> is available), and overlays a spatial hexagonal grid (<code>add_watershed_hex_overlay</code>).</p>
+<section id="executable-workflow-isle-royale-spatial-predator-prey-model" class="level2">
+<h2 class="anchored" data-anchor-id="executable-workflow-isle-royale-spatial-predator-prey-model">Executable Workflow: Isle Royale Spatial Predator-Prey Model</h2>
+<p>Below is an executable simulation workflow displaying spatial individual organism distributions on the Isle Royale substrate map, step-by-step demographic tallies, and historical 40-year empirical census benchmarks (1980–2019).</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ewing)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if osmdata is installed for feature boundary restriction</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>feat_name <span class="ot">&lt;-</span> <span class="cf">if</span> (<span class="fu">requireNamespace</span>(<span class="st">"osmdata"</span>, <span class="at">quietly =</span> <span class="cn">TRUE</span>)) <span class="st">"Isle Royale"</span> <span class="cf">else</span> <span class="cn">NULL</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Initialize Isle Royale spatial simulation with 1980 baseline counts (664 Moose, 50 Wolves)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>sim <span class="ot">&lt;-</span> <span class="fu">init_isle_royale_sim</span>(<span class="at">year =</span> <span class="dv">1980</span>)</span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Fetch HUC12 boundary (optionally restricted to Isle Royale island landmass)</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>huc_info <span class="ot">&lt;-</span> <span class="fu">get_watershed</span>(<span class="st">"041800000101"</span>, <span class="at">feature_name =</span> feat_name)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Run simulation steps (e.g. 200 days)</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>sim <span class="ot">&lt;-</span> <span class="fu">run_isle_royale_sim</span>(sim, <span class="at">nstep =</span> <span class="dv">200</span>)</span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Construct spatial hexagonal overlay mesh (diameter = 0.01 degrees)</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>hex_obj <span class="ot">&lt;-</span> <span class="fu">add_watershed_hex_overlay</span>(huc_info, <span class="at">hex_diameter =</span> <span class="fl">0.01</span>)</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Visualize using autoplot</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>ggplot2<span class="sc">::</span><span class="fu">autoplot</span>(hex_obj)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Visualize spatial landscape &amp; benchmark trajectories</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot_isle_royale_sim</span>(sim)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="hexmapApp_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="768"></p>
+<p><img src="IsleRoyaleApp_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="864"></p>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+<section id="age-classes-demographic-dynamics" class="level2">
+<h2 class="anchored" data-anchor-id="age-classes-demographic-dynamics">Age Classes Demographic Dynamics</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot side-by-side per-species age class dynamics over time (days)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(<span class="fu">ewing_ageclass</span>(sim), <span class="at">x_var =</span> <span class="st">"time"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="IsleRoyaleApp_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="864"></p>
 </figure>
 </div>
 </div>
@@ -278,9 +318,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="technical-features" class="level2">
 <h2 class="anchored" data-anchor-id="technical-features">Technical Features</h2>
 <ol type="1">
-<li><strong>Leaflet Spatial Discovery</strong>: Click any location on North America or search landmark strings to reverse-geocode coordinates into USGS HUC12 subwatershed IDs (<code>get_huc_from_point</code>).</li>
-<li><strong>Feature Isolation</strong>: Clip large HUC boundaries covering open water to target landmasses (e.g.&nbsp;Isle Royale) using <code>osmdata::getbb()</code>.</li>
-<li><strong>Hexagonal Mesh Scaling</strong>: Parameterize cell extent diameter to scale spatial resolution dynamically.</li>
+<li><strong>100% Offline GIS Substrate Mapping</strong>: Renders habitat features (lakes, bogs, shaded forests, waterways) and landmark POIs using pre-computed local <code>sf</code> layers (<code>inst/extdata/isle_royale/</code>) with <strong>0 API calls</strong>.</li>
+<li><strong>Dynamic Habitat-Weighted Movement</strong>: Organisms evaluate adjacent hexagonal substrate cells, moving with probability proportional to habitat suitability scores.</li>
+<li><strong>Continuous Demographic Stepping</strong>: Tallies births, aging (Calf <span class="math inline">\(\rightarrow\)</span> Yearling <span class="math inline">\(\rightarrow\)</span> Adult <span class="math inline">\(\rightarrow\)</span> Senior; Pup <span class="math inline">\(\rightarrow\)</span> Subadult <span class="math inline">\(\rightarrow\)</span> Adult), and wolf predation at micro-step increments.</li>
+<li><strong>Tab-Aware Sidebar Decluttering</strong>: Displays plot-specific controls (<code>show_habitat</code>, <code>show_landmarks</code>, <code>norm</code>, <code>total</code>, <code>Steps</code> vs <code>Days</code>) strictly when their target tab is active.</li>
+<li><strong>Shared Modular Architecture</strong>: Peer application wrapper composing <code>step_controls</code>, <code>distPlotApp</code>, <code>inputApp</code>, and <code>substrateApp</code>.</li>
 </ol>
 
 

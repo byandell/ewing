@@ -5,6 +5,9 @@ identifiers, applies OpenStreetMap feature clipping, generates hexagonal
 substrate grid overlays, and discovers named geographical features
 within subwatersheds.
 
+Projects a mathematical hexagonal substrate grid overlay across an
+extracted watershed boundary.
+
 ## Usage
 
 ``` r
@@ -39,11 +42,11 @@ discover_watershed_features(
 
 - huc_info:
 
-  A watershed list returned from \`get_watershed()\`.
+  Watershed object returned from \`get_watershed()\`.
 
 - hex_diameter:
 
-  Numeric representing the diameter of the hexagons in CRS units.
+  Diameter of hexagonal grid cells in degrees (default = \`0.01\`).
 
 - object:
 
