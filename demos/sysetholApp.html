@@ -2625,8 +2625,10 @@ temp.lines &lt;- function( s, mult = 24, col = "red" )
 my.read &lt;- function(dataname, stringsAsFactors = TRUE)
 {
   switch(tools::file_ext(dataname),
-         "txt" =, "tsv" = read.table(dataname, stringsAsFactors = stringsAsFactors),
-         "csv" = read.csv(dataname, stringsAsFactors = stringsAsFactors),
+         "txt" =, "tsv" = read.table(dataname, fill = TRUE,
+                                     stringsAsFactors = stringsAsFactors),
+         "csv" = read.csv(dataname, fill = TRUE,
+                          stringsAsFactors = stringsAsFactors),
          "xls" = readxl::read_xls(dataname),
          "xlsx" = readxl::read_xlsx(dataname))
 }
@@ -6077,10 +6079,10 @@ inputAppServer &lt;- function(id, simres = shiny::reactiveVal(NULL), datafile = 
         # 0. Check direct file in datafile directory if points to folder
         if (is.character(dfile) &amp;&amp; dfile != "" &amp;&amp; dir.exists(dfile)) {
           txt_path &lt;- file.path(dfile, paste0(name, ".txt"))
-          if (file.exists(txt_path)) res &lt;- tryCatch(utils::read.table(txt_path, header = TRUE, sep = "\t", stringsAsFactors = FALSE), error = function(e) NULL)
+          if (file.exists(txt_path)) res &lt;- tryCatch(utils::read.table(txt_path, header = TRUE, sep = "\t", stringsAsFactors = FALSE, fill = TRUE), error = function(e) NULL)
           if (is.null(res)) {
             csv_path &lt;- file.path(dfile, paste0(name, ".csv"))
-            if (file.exists(csv_path)) res &lt;- tryCatch(utils::read.csv(csv_path, stringsAsFactors = FALSE), error = function(e) NULL)
+            if (file.exists(csv_path)) res &lt;- tryCatch(utils::read.csv(csv_path, fill = TRUE, stringsAsFactors = FALSE), error = function(e) NULL)
           }
         }
 
