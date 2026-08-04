@@ -27,12 +27,12 @@ render_standalone_app <- function(app_name, height = 800) {
   
   # Locate R and data directories robustly regardless of current working directory
   r_dir <- if (dir.exists("R")) "R" else if (dir.exists("../R")) "../R" else file.path("..", "..", "R")
-  data_dir <- if (dir.exists("data")) "data" else if (dir.exists("../data")) "../data" else file.path("..", "..", "data")
+  default_dir <- if (dir.exists("inst/extdata/default")) "inst/extdata/default" else if (dir.exists("../inst/extdata/default")) "../inst/extdata/default" else file.path("..", "..", "inst", "extdata", "default")
   ir_dir <- if (dir.exists("inst/extdata/isle_royale")) "inst/extdata/isle_royale" else if (dir.exists("../inst/extdata/isle_royale")) "../inst/extdata/isle_royale" else file.path("..", "..", "inst", "extdata", "isle_royale")
   
   # Auto-include default data tables for apps that require simulation datasets
   if (app_name %in% c("sysetholApp", "hexmoveApp", "tempApp")) {
-    data_files <- list.files(data_dir, pattern = "\\.txt$", full.names = TRUE)
+    data_files <- list.files(default_dir, pattern = "\\.txt$", full.names = TRUE)
     for (f in data_files) {
       tbl_name <- sub("\\.txt$", "", basename(f))
       df <- tryCatch(read.table(f, header = TRUE, fill = TRUE, check.names = FALSE, stringsAsFactors = FALSE), error = function(e) NULL)

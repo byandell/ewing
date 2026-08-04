@@ -66,8 +66,13 @@ The `IsleRoyaleApp()` function launches an interactive, 100% offline Shiny appli
   4. **Live Demographics**: Tabular summary of active living organisms grouped by age class that updates dynamically as simulation steps execute.
   5. **Input Data**: Composes `inputApp` to dynamically discover and view all input configuration tables (`organism.features`, `future.moose`, `future.wolf`, `moose.wolf`, `substrate.moose`, `substrate.wolf`, `substrate.substrate`, `isle_royale_features`, `isle_royale_landmarks`, and `wolf_moose` census data).
 
-- **Tab-Aware Sidebar Decluttering**: Displays plot-specific controls (`show_habitat`, `show_landmarks`, `norm`, `total`, **`Steps` vs `Days`**) strictly when their corresponding tab is active.
-- **Logarithmic Step Size Slider**: Step click choices: `1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000`.
+- **Streamlined Sidebar Controls & Layout**:
+  - **Top-Aligned Step Size Control**: Logarithmic **Steps per click** slider (`1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000`) positioned at the very top of the sidebar.
+  - **Single-Row Action Buttons**: Side-by-side **Run** and **Reset** buttons on a single horizontal row (`display: flex; gap: 8px;`).
+  - **Inlined Map Overlay Options**: Compact single-row flex checkboxes for **Moose Habitat** features and sighting **Landmarks**.
+  - **Bottom Baseline Year Selection**: **Baseline Year** selector (1980–2019 census start point) positioned at the bottom of the sidebar.
+  - **Ultra-Compact Whitespace Styling**: Injected CSS form group compression (`margin-bottom: 4px;`, `.irs-with-grid { height: 34px; }`) ensuring sidebar height matches main display panels cleanly without vertical scrolling.
+- **Tab-Aware Sidebar Decluttering**: Displays plot-specific controls (`Moose Habitat`, `Landmarks`, `norm`, `total`, **`Steps` vs `Days`**) strictly when their corresponding tab is active.
 
 ---
 

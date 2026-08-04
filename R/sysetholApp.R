@@ -33,54 +33,62 @@ sysetholApp <- function(title = "Systems Ethology Platform") {
 sysetholInput <- function(id) {
   ns <- shiny::NS(id)
   shiny::tagList(
+    shiny::tags$style(shiny::HTML(sprintf("
+      #%s .form-group { margin-bottom: 4px; }
+      #%s .irs { margin-bottom: 0px; }
+      #%s .irs-with-grid { height: 34px; }
+      #%s .checkbox { margin-top: 1px; margin-bottom: 2px; }
+      #%s .radio-inline, #%s .checkbox-inline { margin-right: 10px; }
+      #%s label { font-size: 0.82rem; margin-bottom: 1px; }
+      #%s div.shiny-options-group { margin-top: -2px; }
+    ", id, id, id, id, id, id, id, id))),
+
     shiny::div(
       style = "font-size: 0.85rem;",
-      shiny::h4("Simulation Setup", style = "font-size: 0.95rem; font-weight: 600; margin-bottom: 6px;"),
-      shiny::sliderInput(ns("n_host"), "Number of hosts:", min = 0, max = 500, value = 200, step = 20),
-      shiny::sliderInput(ns("n_parasite"), "Number of parasites:", min = 0, max = 500, value = 100, step = 20),
-      shiny::radioButtons(ns("nsim"), "Number of Simulations:", choices = c(1, 10, 20, 50, 100, 200), selected = 1, inline = TRUE),
       
-      # Conditional Control: Steps per click ONLY shown when nsim == 1 (Geometric log scale choices 1..2000)
+      # 1. Top Section: Step size slider (single-run) & Action buttons (Run / Reset on same line)
       shiny::conditionalPanel(
         condition = sprintf("input['%s'] == '1'", ns("nsim")),
         step_size_slider(ns("step_size"), "Steps per click:", selected = 50)
       ),
       
-      # Conditional Control: Total Simulation steps ONLY shown when nsim > 1
+      shiny::div(
+        style = "display: flex; gap: 8px; margin: 4px 0 6px 0;",
+        shiny::actionButton(ns("run_engine"), "Run", class = "btn-primary", style = "flex: 1; font-weight: 600; padding: 3px 6px; font-size: 0.85rem;"),
+        shiny::actionButton(ns("reset_engine"), "Reset", class = "btn-warning", style = "flex: 1; font-weight: 600; padding: 3px 6px; font-size: 0.85rem;")
+      ),
+      
+      # 2. Population & Simulation Counts
+      shiny::sliderInput(ns("n_host"), "Hosts:", min = 0, max = 500, value = 200, step = 20),
+      shiny::sliderInput(ns("n_parasite"), "Parasites:", min = 0, max = 500, value = 100, step = 20),
+      shiny::radioButtons(ns("nsim"), "Simulations:", choices = c(1, 10, 20, 50, 100, 200), selected = 1, inline = TRUE),
+      
+      # Total steps slider shown ONLY when nsim > 1
       shiny::conditionalPanel(
         condition = sprintf("input['%s'] != '1'", ns("nsim")),
-        shiny::sliderInput(ns("steps"), "Total Simulation steps:", min = 500, max = 5000, value = 1000, step = 500)
+        shiny::sliderInput(ns("steps"), "Total Steps:", min = 500, max = 5000, value = 1000, step = 500)
       ),
       
-      shiny::div(
-        style = "display: flex; gap: 6px; margin: 10px 0 8px 0;",
-        shiny::actionButton(ns("run_engine"), "Run Engine", class = "btn-sm btn-primary flex-fill", style = "font-weight: 600;"),
-        shiny::actionButton(ns("reset_engine"), "Reset", class = "btn-sm btn-outline-secondary")
-      ),
-      
-      # Conditional Controls for Substrate Plots (shown ONLY on Substrate Plots tab)
+      # 3. Conditional Substrate Plots Display Options
       shiny::conditionalPanel(
         condition = sprintf("input['%s'] == 'Substrate Plots'", ns("tabset")),
-        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
-        shiny::h4("Substrate Display Options", style = "font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;"),
+        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 4px 0 2px 0;"),
         axisUnitInput(ns("substrate_axis")),
         substrateInput(ns("substrate"))
       ),
       
-      # Conditional Controls for Age Classes (shown ONLY on Age Classes tab)
+      # 4. Conditional Age Classes Display Options
       shiny::conditionalPanel(
         condition = sprintf("input['%s'] == 'Age Classes'", ns("tabset")),
-        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
-        shiny::h4("Age Classes Display Options", style = "font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;"),
+        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 4px 0 2px 0;"),
         ageClassControlInput(ns("age_ctrls"))
       ),
       
-      # Conditional Controls for Envelope Plots (shown ONLY on Envelope Plots tab when nsim > 1)
+      # 5. Conditional Envelope Display Options
       shiny::conditionalPanel(
         condition = sprintf("input['%s'] == 'Envelope Plots' && input['%s'] != '1'", ns("tabset"), ns("nsim")),
-        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
-        shiny::h4("Envelope Display Options", style = "font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;"),
-        shiny::checkboxInput(ns("confidence"), "Confidence Band Envelope", TRUE)
+        shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 4px 0 2px 0;"),
+        shiny::checkboxInput(ns("confidence"), "Confidence Envelope", TRUE)
       )
     )
   )

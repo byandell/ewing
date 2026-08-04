@@ -306,6 +306,16 @@ getOrgData <- function(community, left, right,
       data_exists <- TRUE
     }
   }
+
+  if (!data_exists && (is.null(datafile) || datafile == "")) {
+    def_file <- get_site_cache_file(paste0(sheet, ".txt"), site = "default")
+    if (def_file != "" && file.exists(def_file)) {
+      datafile <- def_file
+      data_exists <- TRUE
+      sheet <- ""
+    }
+  }
+
   if(!data_exists) {
     # Load package data or get user-provided global data.
     mydata( sheet, getOrgInfo( community, "package" ), messages = messages)
