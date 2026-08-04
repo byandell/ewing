@@ -14,21 +14,30 @@ if (file.exists("R/habitat.R")) {
   source("R/habitat.R")
 }
 
-cat("1. Building Base Isle Royale Hexagonal Substrate Overlay...\n")
-hex_obj <- create_isle_royale_hex_overlay(hex_diameter = 0.01)
+cat("1. Extracting / Building Base Isle Royale Island Boundary Layer...\n")
+if (file.exists("R/watershed.R")) source("R/watershed.R")
+huc_info <- tryCatch(get_watershed("041800000101", feature_name = "Isle Royale"), error = function(e) NULL)
+layer_sf <- if (!is.null(huc_info)) huc_info$layer else NULL
+
+cat("2. Building Base Isle Royale Hexagonal Substrate Overlay...\n")
+hex_obj <- create_isle_royale_hex_overlay(hex_diameter = 0.01, layer = layer_sf)
 
 cat("3. Geocoding Moose Sighting Landmarks...\n")
-landmarks_sf <- get_moose_landmarks(hex_obj, use_cache = FALSE)
+landmarks_sf <- get_moose_landmarks(hex_obj, use_cache = TRUE)
 
 cat("4. Extracting / Constructing Moose Habitat Features (Lakes, Waterways, Forests, Bogs)...\n")
-habitat_sf <- get_habitat_features(hex_obj, use_cache = FALSE)
+habitat_sf <- get_habitat_features(hex_obj, use_cache = TRUE)
 
-cat("5. Saving Feature Datasets to inst/extdata/isle_royale/ ...\n")
+cat("5. Saving Datasets & Spatial Layers to inst/extdata/isle_royale/ ...\n")
 target_dir <- "inst/extdata/isle_royale"
 if (!dir.exists(target_dir)) {
   dir.create(target_dir, recursive = TRUE)
 }
 
+if (!is.null(layer_sf)) {
+  saveRDS(layer_sf, file.path(target_dir, "isle_royale_layer.rds"))
+  cat("   Saved:", file.path(target_dir, "isle_royale_layer.rds"), "\n")
+}
 saveRDS(landmarks_sf, file.path(target_dir, "isle_royale_landmarks.rds"))
 saveRDS(habitat_sf, file.path(target_dir, "isle_royale_features.rds"))
 cat("   Saved:", file.path(target_dir, "isle_royale_landmarks.rds"), "\n")

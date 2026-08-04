@@ -4,18 +4,25 @@
 \alias{habitat}
 \alias{get_habitat_features}
 \alias{get_moose_landmarks}
+\alias{create_isle_royale_hex_overlay}
 \alias{add_habitat_hex_overlay}
 \alias{autoplot.habitat_hex_overlay}
 \alias{add_leaflet_habitat_overlay}
 \title{Moose Habitat & Substrate Overlay Utilities}
 \usage{
 get_habitat_features(
-  watershed_obj,
+  watershed_obj = NULL,
   categories = c("lakes", "waterways", "forests", "bogs"),
   use_cache = TRUE
 )
 
-get_moose_landmarks(watershed_obj, use_cache = TRUE)
+get_moose_landmarks(watershed_obj = NULL, use_cache = TRUE)
+
+create_isle_royale_hex_overlay(
+  hex_diameter = 0.01,
+  features = NULL,
+  layer = NULL
+)
 
 add_habitat_hex_overlay(
   hex_obj,
@@ -36,6 +43,10 @@ add_leaflet_habitat_overlay(map, object)
 
 \item{use_cache}{Logical; if TRUE, uses pre-fetched local landmark definitions when available.}
 
+\item{hex_diameter}{Diameter of hexagonal grid cells in degrees (default = `0.01`).}
+
+\item{features}{Optional path or `sf` object containing habitat features.}
+
 \item{hex_obj}{An S3 object of class `watershed_hex_overlay`.}
 
 \item{habitat_sf}{Optional pre-extracted `sf` data frame of habitat features.}
@@ -51,9 +62,11 @@ add_leaflet_habitat_overlay(map, object)
 \item{map}{A `leaflet` map object.}
 }
 \value{
-`get_habitat_features`: An `sf` data frame of habitat features clipped to the watershed.
+`get_habitat_features`: An `sf` data frame of habitat features clipped to the target geometry.
 
 `get_moose_landmarks`: An `sf` object containing landmark point geometries and attributes.
+
+An S3 object of class `watershed_hex_overlay`.
 
 `add_habitat_hex_overlay`: An S3 object of class `habitat_hex_overlay`.
 
@@ -69,6 +82,10 @@ computing habitat suitability weights on hexagonal substrate grids, and visualiz
 
 Retrieves key moose sighting landmarks on Isle Royale (or customizable spatial targets):
 Washington Creek in Windigo, Ojibway Lake, Feldtmann Lake, and Hidden Lake in Tobin Harbor.
+
+Generates a spatial hexagonal grid across Isle Royale island geometry using
+pre-computed local habitat features (`isle_royale_features.rds`), without requiring
+external watershed GIS service calls.
 
 Intersects habitat features (lakes, waterways, forests, bogs) and sighting landmarks
 with a hexagonal substrate grid overlay, calculating habitat suitability weights per hex cell.

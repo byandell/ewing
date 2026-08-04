@@ -1,20 +1,3 @@
-#' Moose Habitat & Substrate Overlay Utilities
-#'
-#' Functions for extracting geographic habitat features that attract moose
-#' (inland lakes, beaver ponds, cool shaded forests, and bogs/wetlands),
-#' geocoding notable sighting landmarks (Washington Creek, Ojibway Lake, Feldtmann Lake, Hidden Lake),
-#' computing habitat suitability weights on hexagonal substrate grids, and visualizing overlays.
-#'
-#' @param watershed_obj A spatial object or list containing a `layer` geometry (optional).
-#' @param categories Character vector of habitat feature categories to extract.
-#' @param use_cache Logical; if TRUE, uses pre-fetched local feature data when available.
-#'
-#' @return `get_habitat_features`: An `sf` data frame of habitat features clipped to the target geometry.
-#' @export
-#' @name habitat
-#' @rdname habitat
-#'
-#' @importFrom sf st_transform st_crs st_intersection st_union st_geometry st_make_valid st_bbox st_as_sf st_intersects st_polygon st_sfc st_sf st_make_grid
 if (!exists("safe_st_intersects", mode = "function")) {
   safe_st_intersects <- function(x, y) {
     tryCatch(
@@ -30,9 +13,28 @@ if (!exists("safe_st_intersects", mode = "function")) {
   }
 }
 
+#' Moose Habitat & Substrate Overlay Utilities
+#'
+#' Functions for extracting geographic habitat features that attract moose
+#' (inland lakes, beaver ponds, cool shaded forests, and bogs/wetlands),
+#' geocoding notable sighting landmarks (Washington Creek, Ojibway Lake, Feldtmann Lake, Hidden Lake),
+#' computing habitat suitability weights on hexagonal substrate grids, and visualizing overlays.
+#'
+#' @param watershed_obj A spatial object or list containing a `layer` geometry (optional).
+#' @param categories Character vector of habitat feature categories to extract.
+#' @param use_cache Logical; if TRUE, uses pre-fetched local feature data when available.
+#' @param site Target simulation landscape/site folder name (default: `"isle_royale"`).
+#'
+#' @return `get_habitat_features`: An `sf` data frame of habitat features clipped to the target geometry.
+#' @name habitat
+#' @rdname habitat
+#' @export
+#'
+#' @importFrom sf st_transform st_crs st_intersection st_union st_geometry st_make_valid st_bbox st_as_sf st_intersects st_polygon st_sfc st_sf st_make_grid
 get_habitat_features <- function(watershed_obj = NULL, 
                                  categories = c("lakes", "waterways", "forests", "bogs"), 
-                                 use_cache = TRUE) {
+                                 use_cache = TRUE,
+                                 site = "isle_royale") {
   huc_layer <- if (is.null(watershed_obj)) {
     NULL
   } else if (inherits(watershed_obj, "sf") || inherits(watershed_obj, "sfc")) {
@@ -43,19 +45,19 @@ get_habitat_features <- function(watershed_obj = NULL,
     NULL
   }
   
-  # Check for pre-created cached data for Isle Royale
-  cache_dir <- system.file("extdata/isle_royale", package = "ewing")
-  if (cache_dir == "") cache_dir <- "inst/extdata/isle_royale"
-  cache_file <- file.path(cache_dir, "isle_royale_features.rds")
-  
   if (use_cache) {
     cached_sf <- NULL
-    if (exists("isle_royale_datasets") && is.list(isle_royale_datasets) && !is.null(isle_royale_datasets[["isle_royale_features"]])) {
-      cached_sf <- isle_royale_datasets[["isle_royale_features"]]
-    } else if (exists("isle_royale_features") && inherits(isle_royale_features, "sf")) {
-      cached_sf <- isle_royale_features
-    } else if (file.exists(cache_file)) {
-      cached_sf <- tryCatch(readRDS(cache_file), error = function(e) NULL)
+    feat_key <- paste0(site, "_features")
+    feat_file <- paste0(site, "_features.rds")
+    if (exists("isle_royale_datasets") && is.list(isle_royale_datasets) && !is.null(isle_royale_datasets[[feat_key]])) {
+      cached_sf <- isle_royale_datasets[[feat_key]]
+    } else if (exists(feat_key) && inherits(get(feat_key), "sf")) {
+      cached_sf <- get(feat_key)
+    } else {
+      cache_file <- get_site_cache_file(feat_file, site = site)
+      if (file.exists(cache_file)) {
+        cached_sf <- tryCatch(readRDS(cache_file), error = function(e) NULL)
+      }
     }
     
     if (!is.null(cached_sf) && inherits(cached_sf, "sf")) {
@@ -221,7 +223,7 @@ get_fallback_habitat_features <- function(huc_layer) {
 #' @return `get_moose_landmarks`: An `sf` object containing landmark point geometries and attributes.
 #' @export
 #' @rdname habitat
-get_moose_landmarks <- function(watershed_obj = NULL, use_cache = TRUE) {
+get_moose_landmarks <- function(watershed_obj = NULL, use_cache = TRUE, site = "isle_royale") {
   huc_layer <- if (is.null(watershed_obj)) {
     NULL
   } else if (inherits(watershed_obj, "sf") || inherits(watershed_obj, "sfc")) {
@@ -232,18 +234,19 @@ get_moose_landmarks <- function(watershed_obj = NULL, use_cache = TRUE) {
     NULL
   }
   
-  cache_dir <- system.file("extdata/isle_royale", package = "ewing")
-  if (cache_dir == "") cache_dir <- "inst/extdata/isle_royale"
-  cache_file <- file.path(cache_dir, "isle_royale_landmarks.rds")
-  
   if (use_cache) {
     cached_pts <- NULL
-    if (exists("isle_royale_datasets") && is.list(isle_royale_datasets) && !is.null(isle_royale_datasets[["isle_royale_landmarks"]])) {
-      cached_pts <- isle_royale_datasets[["isle_royale_landmarks"]]
-    } else if (exists("isle_royale_landmarks") && inherits(isle_royale_landmarks, "sf")) {
-      cached_pts <- isle_royale_landmarks
-    } else if (file.exists(cache_file)) {
-      cached_pts <- tryCatch(readRDS(cache_file), error = function(e) NULL)
+    lm_key <- paste0(site, "_landmarks")
+    lm_file <- paste0(site, "_landmarks.rds")
+    if (exists("isle_royale_datasets") && is.list(isle_royale_datasets) && !is.null(isle_royale_datasets[[lm_key]])) {
+      cached_pts <- isle_royale_datasets[[lm_key]]
+    } else if (exists(lm_key) && inherits(get(lm_key), "sf")) {
+      cached_pts <- get(lm_key)
+    } else {
+      cache_file <- get_site_cache_file(lm_file, site = site)
+      if (file.exists(cache_file)) {
+        cached_pts <- tryCatch(readRDS(cache_file), error = function(e) NULL)
+      }
     }
     
     if (!is.null(cached_pts) && inherits(cached_pts, "sf")) {
@@ -286,32 +289,58 @@ get_moose_landmarks <- function(watershed_obj = NULL, use_cache = TRUE) {
 #'
 #' @param hex_diameter Diameter of hexagonal grid cells in degrees (default = `0.01`).
 #' @param features Optional path or `sf` object containing habitat features.
+#' @param layer Optional path or `sf` boundary layer object.
+#' @param site Target simulation landscape/site folder name (default: `"isle_royale"`).
 #'
 #' @return An S3 object of class `watershed_hex_overlay`.
 #' @export
 #' @rdname habitat
-create_isle_royale_hex_overlay <- function(hex_diameter = 0.01, features = NULL) {
+create_isle_royale_hex_overlay <- function(hex_diameter = 0.01, features = NULL, layer = NULL, site = "isle_royale") {
+  boundary_layer <- layer
+  if (is.character(boundary_layer) && file.exists(boundary_layer)) {
+    boundary_layer <- tryCatch(readRDS(boundary_layer), error = function(e) NULL)
+  }
+  
+  layer_key <- paste0(site, "_layer")
+  layer_file <- paste0(site, "_layer.rds")
+  feat_key  <- paste0(site, "_features")
+  feat_file  <- paste0(site, "_features.rds")
+  
+  if (is.null(boundary_layer)) {
+    if (exists("isle_royale_datasets") && is.list(isle_royale_datasets) && !is.null(isle_royale_datasets[[layer_key]])) {
+      boundary_layer <- isle_royale_datasets[[layer_key]]
+    } else if (exists(layer_key) && inherits(get(layer_key), c("sf", "sfc"))) {
+      boundary_layer <- get(layer_key)
+    } else {
+      cache_file <- get_site_cache_file(layer_file, site = site)
+      if (file.exists(cache_file)) {
+        boundary_layer <- tryCatch(readRDS(cache_file), error = function(e) NULL)
+      }
+    }
+  }
+  
   habitat_sf <- features
   if (is.character(habitat_sf) && file.exists(habitat_sf)) {
     habitat_sf <- tryCatch(readRDS(habitat_sf), error = function(e) NULL)
   }
-  
   if (is.null(habitat_sf)) {
-    if (exists("isle_royale_datasets") && is.list(isle_royale_datasets) && !is.null(isle_royale_datasets[["isle_royale_features"]])) {
-      habitat_sf <- isle_royale_datasets[["isle_royale_features"]]
-    } else if (exists("isle_royale_features") && inherits(isle_royale_features, "sf")) {
-      habitat_sf <- isle_royale_features
+    if (exists("isle_royale_datasets") && is.list(isle_royale_datasets) && !is.null(isle_royale_datasets[[feat_key]])) {
+      habitat_sf <- isle_royale_datasets[[feat_key]]
+    } else if (exists(feat_key) && inherits(get(feat_key), "sf")) {
+      habitat_sf <- get(feat_key)
     } else {
-      cache_dir <- system.file("extdata/isle_royale", package = "ewing")
-      if (cache_dir == "") cache_dir <- "inst/extdata/isle_royale"
-      cache_file <- file.path(cache_dir, "isle_royale_features.rds")
+      cache_file <- get_site_cache_file(feat_file, site = site)
       if (file.exists(cache_file)) {
         habitat_sf <- tryCatch(readRDS(cache_file), error = function(e) NULL)
       }
     }
   }
   
-  if (is.null(habitat_sf) || !inherits(habitat_sf, "sf")) {
+  if (is.null(boundary_layer) && !is.null(habitat_sf) && inherits(habitat_sf, "sf")) {
+    boundary_layer <- suppressWarnings(sf::st_union(sf::st_geometry(habitat_sf)))
+  }
+  
+  if (is.null(boundary_layer)) {
     pts <- matrix(c(
       -89.17, 47.87,
       -88.48, 47.87,
@@ -320,8 +349,8 @@ create_isle_royale_hex_overlay <- function(hex_diameter = 0.01, features = NULL)
       -89.17, 47.87
     ), ncol = 2, byrow = TRUE)
     boundary_layer <- sf::st_sfc(sf::st_polygon(list(pts)), crs = 4326)
-  } else {
-    boundary_layer <- suppressWarnings(sf::st_union(sf::st_geometry(habitat_sf)))
+  } else if (inherits(boundary_layer, "sf")) {
+    boundary_layer <- sf::st_geometry(boundary_layer)
   }
   
   cent <- suppressWarnings(sf::st_centroid(boundary_layer))

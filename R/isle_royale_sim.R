@@ -413,3 +413,33 @@ ggplot_isle_royale_sim <- function(x, ...) {
 plot.isle_royale_sim <- function(x, ...) {
   print(ggplot_isle_royale_sim(x, ...))
 }
+
+#' Resolve Cached Spatial Site Datasets
+#'
+#' Resolves file paths for pre-computed spatial GIS datasets (`.rds`) for a target simulation site
+#' or landscape (e.g. `"isle_royale"`), checking installed package directories (`extdata/[site]`)
+#' and local development source trees (`inst/extdata/[site]`).
+#'
+#' @param filename File name string (e.g. `"isle_royale_layer.rds"`).
+#' @param site Target site/landscape directory name under `extdata/` (default: `"isle_royale"`).
+#'
+#' @return Path to target cached dataset file.
+#' @export
+#' @name get_site_cache_file
+#' @rdname get_site_cache_file
+get_site_cache_file <- function(filename, site = "isle_royale") {
+  pkg_dir <- system.file(file.path("extdata", site), package = "ewing")
+  if (pkg_dir != "") {
+    fp <- file.path(pkg_dir, filename)
+    if (file.exists(fp)) return(fp)
+  }
+  dev_fp <- file.path("inst", "extdata", site, filename)
+  if (file.exists(dev_fp)) return(dev_fp)
+  if (pkg_dir != "") file.path(pkg_dir, filename) else dev_fp
+}
+
+#' @export
+#' @rdname get_site_cache_file
+get_isle_royale_cache_file <- function(filename) {
+  get_site_cache_file(filename, site = "isle_royale")
+}

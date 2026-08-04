@@ -71,7 +71,38 @@ The `IsleRoyaleApp()` function launches an interactive, 100% offline Shiny appli
 
 ---
 
-## 5. Quickstart Simulation Workflow in R
+## 5. Offline GIS Architecture & Multi-Landscape Cache Engine
+
+### Standalone Local Hexagonal Grid Overlay (`create_isle_royale_hex_overlay`)
+
+The Isle Royale spatial grid system has been completely decoupled from live external web GIS services (USGS HUC12 API, OpenStreetMap Overpass API, `nhdplusTools`, `osmdata`). Hexagonal substrate grids and habitat suitability meshes are generated directly from local pre-computed `sf` spatial geometries stored in `inst/extdata/isle_royale/`:
+
+- **`isle_royale_layer.rds`**: Complete 1-feature MULTIPOLYGON boundary outline of the Isle Royale landmass.
+- **`isle_royale_features.rds`**: Inland lakes, streams, cool shaded forests, and bogs.
+- **`isle_royale_landmarks.rds`**: Geocoded landmark POIs (Windigo, Ojibway Lake, Feldtmann Lake, Tobin Harbor).
+
+### Generalized Site Cache Resolver (`get_site_cache_file`)
+
+Spatial datasets are resolved dynamically across both installed package environments (`library/ewing/extdata/[site]`) and active development source trees (`inst/extdata/[site]`) using the exported helper `get_site_cache_file()`:
+
+```r
+# Resolve cached spatial layer for any target simulation landscape (default: "isle_royale")
+layer_path <- get_site_cache_file("isle_royale_layer.rds", site = "isle_royale")
+features_path <- get_site_cache_file("isle_royale_features.rds", site = "isle_royale")
+
+# Isle Royale specific alias helper
+layer_path <- get_isle_royale_cache_file("isle_royale_layer.rds")
+```
+
+This generalized pattern allows `ewing` spatial simulations to easily scale to future landscapes (e.g. `site = "madeline_island"`, `site = "yellowstone"`) by placing corresponding `.rds` files under `extdata/[site]/`.
+
+### WebAssembly (Shinylive) Zero-Dependency Payload Serialization
+
+To enable serverless, 100% browser-side execution in Shinylive (`shinylive-r` code blocks), `shinylive_helpers.R` automatically inlines all `.txt` input tables and `.rds` spatial objects into client-side WebAssembly memory (`isle_royale_datasets`), ensuring instant startup without network latency or external API rate limits.
+
+---
+
+## 6. Quickstart Simulation Workflow in R
 
 ```r
 library(ewing)
@@ -94,7 +125,7 @@ IsleRoyaleApp()
 
 ---
 
-## 6. Interactive Demo Gallery & Technical References
+## 7. Interactive Demo Gallery & Technical References
 
 - **Interactive Shinylive WebAssembly Demo**: [demos/IsleRoyaleApp.qmd](file:///Users/brianyandell/Documents/Research/ewing/ewing/demos/IsleRoyaleApp.qmd)
 - **Developer Guide & Site Prototyping**: [DEVELOPER.md](file:///Users/brianyandell/Documents/Research/ewing/ewing/DEVELOPER.md)
