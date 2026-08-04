@@ -288,6 +288,8 @@ library(rlang)
 library(stats)
 library(graphics)
 
+# --- Auto-Included Isle Royale Datasets List ---
+isle_royale_datasets &lt;- list()
 # --- Auto-Included Data Table: future.moose ---
 future.moose &lt;- structure(list(current = c("calf", "yearling", "adult", "senior", 
 "adult", "death", "predated"), future = c("yearling", "adult", 
@@ -299,7 +301,7 @@ future.moose &lt;- structure(list(current = c("calf", "yearling", "adult", "seni
 "future", "future", "future", "birth", "death", "death"), init = c(50L, 
 50L, 400L, 100L, 50L, 0L, 0L)), class = "data.frame", row.names = c(NA, 
 -7L))
-
+isle_royale_datasets[['future.moose']] &lt;- future.moose
 
 # --- Auto-Included Data Table: future.wolf ---
 future.wolf &lt;- structure(list(current = c("pup", "subadult", "adult", "adult", 
@@ -310,27 +312,29 @@ future.wolf &lt;- structure(list(current = c("pup", "subadult", "adult", "adult"
 NA), event = c("future", "future", "future", "birth", "death"
 ), init = c(5L, 10L, 15L, 5L, 0L)), class = "data.frame", row.names = c(NA, 
 -5L))
-
+isle_royale_datasets[['future.wolf']] &lt;- future.wolf
 
 # --- Auto-Included Data Table: moose.wolf ---
-moose.wolf &lt;- structure(list(feed = c(8, 3, 1, 6, 0, 0), offspring = c(1.5, 
-1, 0.5, 1.2, 0, 0), male = c(NA, NA, NA, NA, NA, NA)), class = "data.frame", row.names = c("calf", 
-"yearling", "adult", "senior", "death", "predated"))
-
+moose.wolf &lt;- structure(list(c("calf", "yearling", "adult", "senior", "death", 
+"predated"), feed = c(8, 3, 1, 6, 0, 0), offspring = c(1.5, 1, 
+0.5, 1.2, 0, 0), male = c(NA, NA, NA, NA, NA, NA)), class = "data.frame", row.names = c(NA, 
+-6L))
+isle_royale_datasets[['moose.wolf']] &lt;- moose.wolf
 
 # --- Auto-Included Data Table: substrate.moose ---
-substrate.moose &lt;- structure(list(substrate = c(1.2, 1, 1, 0.8)), class = "data.frame", row.names = c("calf", 
-"yearling", "adult", "senior"))
-
+substrate.moose &lt;- structure(list(c("calf", "yearling", "adult", "senior"), substrate = c(1.2, 
+1, 1, 0.8)), class = "data.frame", row.names = c(NA, -4L))
+isle_royale_datasets[['substrate.moose']] &lt;- substrate.moose
 
 # --- Auto-Included Data Table: substrate.substrate ---
-substrate.substrate &lt;- structure(list(substrate = 1), class = "data.frame", row.names = "substrate")
-
+substrate.substrate &lt;- structure(list("substrate", substrate = 1), class = "data.frame", row.names = c(NA, 
+-1L))
+isle_royale_datasets[['substrate.substrate']] &lt;- substrate.substrate
 
 # --- Auto-Included Data Table: substrate.wolf ---
-substrate.wolf &lt;- structure(list(substrate = c(1, 1, 1)), class = "data.frame", row.names = c("pup", 
-"subadult", "adult"))
-
+substrate.wolf &lt;- structure(list(c("pup", "subadult", "adult"), substrate = c(1, 
+1, 1)), class = "data.frame", row.names = c(NA, -3L))
+isle_royale_datasets[['substrate.wolf']] &lt;- substrate.wolf
 
 # --- Auto-Included Historical Census Data: wolf_moose ---
 wolf_moose &lt;- structure(list(Year = 1980:2019, Wolves = c(50L, 30L, 14L, 23L, 
@@ -342,7 +346,7 @@ wolf_moose &lt;- structure(list(Year = 1980:2019, Wolves = c(50L, 30L, 14L, 23L,
 1000L, 900L, 750L, 540L, 385L, 450L, 650L, 530L, 510L, 515L, 
 750L, 975L, 1050L, 1250L, 1300L, 1600L, 1500L, 2060L)), class = "data.frame", row.names = c(NA, 
 -40L))
-
+isle_royale_datasets[['wolf_moose']] &lt;- wolf_moose
 
 # --- Source: spline.R ---
 ## $Id: spline.R,v 1.0 2002/12/09 yandell@stat.wisc.edu Exp $
@@ -5977,13 +5981,19 @@ discover_dataset_tables &lt;- function(datafile = "", sim = NULL) {
   if (!is.null(sim) &amp;&amp; !is.null(sim$datasets)) {
     found &lt;- unique(c(found, names(sim$datasets)))
   }
+  if (!is.null(sim) &amp;&amp; !is.null(sim$community) &amp;&amp; !is.null(sim$community$datasets)) {
+    found &lt;- unique(c(found, names(sim$community$datasets)))
+  }
+  if (exists("isle_royale_datasets") &amp;&amp; is.list(isle_royale_datasets)) {
+    found &lt;- unique(c(found, names(isle_royale_datasets)))
+  }
   
   # 3. Default fallback choices if nothing found
   if (length(found) == 0) {
     found &lt;- c(
-      "organism.features", "future.host", "future.parasite",
-      "substrate.host", "substrate.parasite", "substrate.substrate",
-      "host.parasite", "temperature.base", "temperature.par"
+      "organism.features", "future.moose", "future.wolf",
+      "substrate.moose", "substrate.wolf", "substrate.substrate",
+      "moose.wolf", "future.host", "future.parasite"
     )
   }
   
@@ -5993,9 +6003,9 @@ discover_dataset_tables &lt;- function(datafile = "", sim = NULL) {
 inputAppInput &lt;- function(id, choices = NULL) {
   ns &lt;- shiny::NS(id)
   default_choices &lt;- if (!is.null(choices)) choices else c(
-    "organism.features", "future.host", "future.parasite",
-    "substrate.host", "substrate.parasite", "substrate.substrate",
-    "host.parasite", "temperature.base", "temperature.par"
+    "organism.features", "future.moose", "future.wolf",
+    "substrate.moose", "substrate.wolf", "substrate.substrate",
+    "moose.wolf", "future.host", "future.parasite"
   )
   shiny::tagList(
     shiny::selectInput(ns("dataname"), "Select Dataset Table:",
@@ -6045,9 +6055,16 @@ inputAppServer &lt;- function(id, simres = shiny::reactiveVal(NULL), datafile = 
           }
         }
 
-        # 1. Check if dataset is stored in sim$datasets (e.g. injected in webR demo)
-        if (is.null(res) &amp;&amp; !is.null(sim) &amp;&amp; !is.null(sim$datasets) &amp;&amp; !is.null(sim$datasets[[name]])) {
-          res &lt;- sim$datasets[[name]]
+        # 1. Check if dataset is stored in sim$datasets or sim$community$datasets or global isle_royale_datasets
+        if (is.null(res) &amp;&amp; !is.null(sim)) {
+          if (!is.null(sim$datasets) &amp;&amp; !is.null(sim$datasets[[name]])) {
+            res &lt;- sim$datasets[[name]]
+          } else if (!is.null(sim$community) &amp;&amp; !is.null(sim$community$datasets) &amp;&amp; !is.null(sim$community$datasets[[name]])) {
+            res &lt;- sim$community$datasets[[name]]
+          }
+        }
+        if (is.null(res) &amp;&amp; exists("isle_royale_datasets") &amp;&amp; is.list(isle_royale_datasets) &amp;&amp; !is.null(isle_royale_datasets[[name]])) {
+          res &lt;- isle_royale_datasets[[name]]
         }
 
         # 2. Extract dynamically via getOrgDataSimple or getOrg* package routines
@@ -6790,6 +6807,22 @@ init_isle_royale_sim &lt;- function(year = 1980,
     stringsAsFactors = FALSE
   )
   
+  # Store datafile path and datasets list on return object
+  ds_list &lt;- list()
+  if (exists("isle_royale_datasets") &amp;&amp; is.list(isle_royale_datasets)) {
+    ds_list &lt;- isle_royale_datasets
+  } else if (is.character(datafile) &amp;&amp; datafile != "" &amp;&amp; dir.exists(datafile)) {
+    txt_files &lt;- list.files(datafile, pattern = "\\.(txt|csv)$", full.names = TRUE)
+    for (f in txt_files) {
+      tbl_name &lt;- tools::file_path_sans_ext(basename(f))
+      df_f &lt;- tryCatch({
+        if (endsWith(f, ".csv")) utils::read.csv(f, stringsAsFactors = FALSE)
+        else utils::read.table(f, header = TRUE, sep = "\t", check.names = FALSE, stringsAsFactors = FALSE)
+      }, error = function(e) NULL)
+      if (!is.null(df_f)) ds_list[[tbl_name]] &lt;- df_f
+    }
+  }
+  
   res &lt;- list(
     community = community,
     habitat_overlay = habitat_overlay,
@@ -6798,6 +6831,8 @@ init_isle_royale_sim &lt;- function(year = 1980,
     wolf_pop = wolf_df,
     historical_data = hist_data,
     history = hist_df,
+    datafile = datafile,
+    datasets = ds_list,
     nstep = 0
   )
   

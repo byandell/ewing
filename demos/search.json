@@ -67,7 +67,7 @@
     "href": "sysetholApp.html",
     "title": "sysetholApp (Systems Ethology Platform)",
     "section": "",
-    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). It provides a streamlined Systems Ethology platform (sysetholApp()) with clean sidebar controls (sysetholInput), dynamic conditional panels (Steps per click log-scale geometric slider when nsim = 1, Confidence Band when nsim &gt; 1), sidebar Run Engine & Reset buttons, and modular tabs (sysetholOutput: Dist Plots fine time-granularity step plots, Substrate Plots, Envelope Plots, and Input Data via inputApp)."
+    "text": "← Back to Demos Gallery\nThe live application below is running completely client-side in your browser using serverless Shinylive (WebAssembly). It provides a streamlined Systems Ethology platform (sysetholApp()) featuring tab-aware sidebar decluttering (step_controls.R), logarithmic step size slider (Steps per click when nsim = 1), display unit selection (Steps vs Time), sidebar Run Engine & Reset buttons, and modular output tabs (sysetholOutput: Substrate Plots, Age Classes population dynamics, Envelope Plots when nsim &gt; 1, and Input Data via inputApp)."
   },
   {
     "objectID": "sysetholApp.html#programmatic-application-usage",

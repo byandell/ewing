@@ -229,7 +229,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p><a href="./index.html">← Back to Demos Gallery</a></p>
-<p>The live application below is running completely client-side in your browser using serverless <strong>Shinylive</strong> (WebAssembly). It provides a streamlined <strong>Systems Ethology platform (<code>sysetholApp()</code>)</strong> with clean sidebar controls (<code>sysetholInput</code>), dynamic conditional panels (<code>Steps per click</code> log-scale geometric slider when <code>nsim = 1</code>, <code>Confidence Band</code> when <code>nsim &gt; 1</code>), sidebar <strong>Run Engine</strong> &amp; <strong>Reset</strong> buttons, and modular tabs (<code>sysetholOutput</code>: <strong>Dist Plots</strong> fine time-granularity step plots, <strong>Substrate Plots</strong>, <strong>Envelope Plots</strong>, and <strong>Input Data</strong> via <code>inputApp</code>).</p>
+<p>The live application below is running completely client-side in your browser using serverless <strong>Shinylive</strong> (WebAssembly). It provides a streamlined <strong>Systems Ethology platform (<code>sysetholApp()</code>)</strong> featuring tab-aware sidebar decluttering (<code>step_controls.R</code>), logarithmic step size slider (<code>Steps per click</code> when <code>nsim = 1</code>), display unit selection (<strong><code>Steps</code> vs <code>Time</code></strong>), sidebar <strong>Run Engine</strong> &amp; <strong>Reset</strong> buttons, and modular output tabs (<code>sysetholOutput</code>: <strong>Substrate Plots</strong>, <strong>Age Classes</strong> population dynamics, <strong>Envelope Plots</strong> when <code>nsim &gt; 1</code>, and <strong>Input Data</strong> via <code>inputApp</code>).</p>
 <pre class="shinylive-r" data-engine="r"><code>#| '!! shinylive warning !!': |
 #|   shinylive does not work in self-contained HTML documents.
 #|   Please set `embed-resources: false` in your metadata.
@@ -6010,13 +6010,19 @@ discover_dataset_tables &lt;- function(datafile = "", sim = NULL) {
   if (!is.null(sim) &amp;&amp; !is.null(sim$datasets)) {
     found &lt;- unique(c(found, names(sim$datasets)))
   }
+  if (!is.null(sim) &amp;&amp; !is.null(sim$community) &amp;&amp; !is.null(sim$community$datasets)) {
+    found &lt;- unique(c(found, names(sim$community$datasets)))
+  }
+  if (exists("isle_royale_datasets") &amp;&amp; is.list(isle_royale_datasets)) {
+    found &lt;- unique(c(found, names(isle_royale_datasets)))
+  }
   
   # 3. Default fallback choices if nothing found
   if (length(found) == 0) {
     found &lt;- c(
-      "organism.features", "future.host", "future.parasite",
-      "substrate.host", "substrate.parasite", "substrate.substrate",
-      "host.parasite", "temperature.base", "temperature.par"
+      "organism.features", "future.moose", "future.wolf",
+      "substrate.moose", "substrate.wolf", "substrate.substrate",
+      "moose.wolf", "future.host", "future.parasite"
     )
   }
   
@@ -6026,9 +6032,9 @@ discover_dataset_tables &lt;- function(datafile = "", sim = NULL) {
 inputAppInput &lt;- function(id, choices = NULL) {
   ns &lt;- shiny::NS(id)
   default_choices &lt;- if (!is.null(choices)) choices else c(
-    "organism.features", "future.host", "future.parasite",
-    "substrate.host", "substrate.parasite", "substrate.substrate",
-    "host.parasite", "temperature.base", "temperature.par"
+    "organism.features", "future.moose", "future.wolf",
+    "substrate.moose", "substrate.wolf", "substrate.substrate",
+    "moose.wolf", "future.host", "future.parasite"
   )
   shiny::tagList(
     shiny::selectInput(ns("dataname"), "Select Dataset Table:",
@@ -6078,9 +6084,16 @@ inputAppServer &lt;- function(id, simres = shiny::reactiveVal(NULL), datafile = 
           }
         }
 
-        # 1. Check if dataset is stored in sim$datasets (e.g. injected in webR demo)
-        if (is.null(res) &amp;&amp; !is.null(sim) &amp;&amp; !is.null(sim$datasets) &amp;&amp; !is.null(sim$datasets[[name]])) {
-          res &lt;- sim$datasets[[name]]
+        # 1. Check if dataset is stored in sim$datasets or sim$community$datasets or global isle_royale_datasets
+        if (is.null(res) &amp;&amp; !is.null(sim)) {
+          if (!is.null(sim$datasets) &amp;&amp; !is.null(sim$datasets[[name]])) {
+            res &lt;- sim$datasets[[name]]
+          } else if (!is.null(sim$community) &amp;&amp; !is.null(sim$community$datasets) &amp;&amp; !is.null(sim$community$datasets[[name]])) {
+            res &lt;- sim$community$datasets[[name]]
+          }
+        }
+        if (is.null(res) &amp;&amp; exists("isle_royale_datasets") &amp;&amp; is.list(isle_royale_datasets) &amp;&amp; !is.null(isle_royale_datasets[[name]])) {
+          res &lt;- isle_royale_datasets[[name]]
         }
 
         # 2. Extract dynamically via getOrgDataSimple or getOrg* package routines
