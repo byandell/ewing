@@ -35,7 +35,7 @@ render_standalone_app <- function(app_name, height = 800) {
     data_files <- list.files(data_dir, pattern = "\\.txt$", full.names = TRUE)
     for (f in data_files) {
       tbl_name <- sub("\\.txt$", "", basename(f))
-      df <- tryCatch(read.table(f, header = TRUE, check.names = FALSE, stringsAsFactors = FALSE), error = function(e) NULL)
+      df <- tryCatch(read.table(f, header = TRUE, fill = TRUE, check.names = FALSE, stringsAsFactors = FALSE), error = function(e) NULL)
       if (!is.null(df)) {
         cat(paste0("# --- Auto-Included Data Table: ", tbl_name, " ---\n"))
         cat(paste0(tbl_name, " <- "))
@@ -52,7 +52,7 @@ render_standalone_app <- function(app_name, height = 800) {
     ir_files <- list.files(ir_dir, pattern = "\\.txt$", full.names = TRUE)
     for (f in ir_files) {
       tbl_name <- sub("\\.txt$", "", basename(f))
-      df <- tryCatch(read.table(f, header = TRUE, sep = "\t", check.names = FALSE, stringsAsFactors = FALSE), error = function(e) NULL)
+      df <- tryCatch(read.table(f, header = TRUE, sep = "\t", fill = TRUE, check.names = FALSE, stringsAsFactors = FALSE), error = function(e) NULL)
       if (!is.null(df)) {
         cat(paste0("# --- Auto-Included Data Table: ", tbl_name, " ---\n"))
         cat(paste0(tbl_name, " <- "))
