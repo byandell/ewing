@@ -5,7 +5,7 @@
 \alias{init_isle_royale_sim}
 \alias{run_isle_royale_sim}
 \alias{ggplot_isle_royale_sim}
-\title{Isle Royale Wolf-Moose Predator-Prey Simulation}
+\title{Isle Royale Wolf-Moose Predator-Prey Simulation (Wrapper Shell)}
 \usage{
 init_isle_royale_sim(
   year = 1980,
@@ -30,32 +30,30 @@ ggplot_isle_royale_sim(x, ...)
 
 \item{hex_diameter}{Diameter of hexagonal substrate mesh (default: 0.01 degrees).}
 
-\item{features_rds}{Optional path or `sf` object for custom site habitat features (e.g. exported from `hexmapApp`).}
+\item{datafile}{Optional custom datafile directory path.}
 
-\item{landmarks_rds}{Optional path or `sf` object for custom site landmarks (e.g. exported from `hexmapApp`).}
+\item{features_rds}{Optional path or `sf` object for custom site habitat features.}
 
-\item{sim_obj}{An object of class `isle_royale_sim`.}
+\item{landmarks_rds}{Optional path or `sf` object for custom site landmarks.}
+
+\item{sim_obj}{An object of class `isle_royale_sim` or `ecosystem_sim`.}
 
 \item{nstep}{Number of simulation steps to run (default: 1000).}
 
-\item{refresh}{Step interval for progress reporting (default: 100).}
+\item{refresh}{Refresh step interval (default: 10).}
 
-\item{...}{Additional arguments.}
+\item{...}{Additional plot options.}
 
 \item{x}{An object of class `isle_royale_sim`.}
 }
 \value{
-`init_isle_royale_sim`: An S3 object of class `isle_royale_sim` containing the initialized `ewing` simulation community and spatial habitat metadata.
+`init_isle_royale_sim`: An S3 object of class `c("isle_royale_sim", "ecosystem_sim", "ewing")`.
 
-`run_isle_royale_sim`: Updated `isle_royale_sim` object.
+Updated simulation object.
 
-A `ggplot` object displaying spatial individual distributions and historical census benchmarking.
+A `ggplot` visualization.
 }
 \description{
-Initializes, runs, and visualizes an individual-based spatial predator-prey simulation
-model of wolves and moose on Isle Royale. Incorporates habitat preferences
-(inland lakes, beaver ponds, shaded forests, bogs), life stage transitions (Calf, Yearling, Adult, Senior),
-and empirical benchmarking against historical 1980-2019 annual census data.
-
-Executes simulation steps for the Isle Royale wolf-moose spatial model.
+Backward-compatible wrapper for initializing, running, and visualizing the Isle Royale
+wolf-moose spatial predator-prey model using the generalized `ecosystem_sim` engine.
 }

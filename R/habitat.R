@@ -385,7 +385,7 @@ create_isle_royale_hex_overlay <- function(hex_diameter = 0.01, features = NULL,
 #' @return `add_habitat_hex_overlay`: An S3 object of class `habitat_hex_overlay`.
 #' @export
 #' @rdname habitat
-add_habitat_hex_overlay <- function(hex_obj, habitat_sf = NULL, landmarks_sf = NULL, features = NULL, landmarks = NULL) {
+add_habitat_hex_overlay <- function(hex_obj, habitat_sf = NULL, landmarks_sf = NULL, features = NULL, landmarks = NULL, site = "isle_royale") {
   if (is.null(habitat_sf)) habitat_sf <- features
   if (is.null(landmarks_sf)) landmarks_sf <- landmarks
   
@@ -397,10 +397,10 @@ add_habitat_hex_overlay <- function(hex_obj, habitat_sf = NULL, landmarks_sf = N
   }
   
   if (is.null(habitat_sf)) {
-    habitat_sf <- get_habitat_features(hex_obj)
+    habitat_sf <- get_habitat_features(hex_obj, site = site)
   }
   if (is.null(landmarks_sf)) {
-    landmarks_sf <- get_moose_landmarks(hex_obj)
+    landmarks_sf <- get_moose_landmarks(hex_obj, site = site)
   }
   
   hex_mesh <- hex_obj$hex_overlay

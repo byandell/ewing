@@ -1,6 +1,6 @@
 # Isle Royale Wolf-Moose Ecological Case Study Guide
 
-This document provides a comprehensive user and case-study guide for the **Isle Royale Wolf-Moose Predator-Prey Model** in the `ewing` package.
+This document provides a technical case-study guide for the **Isle Royale Wolf-Moose Predator-Prey Model** in `ewing`.
 
 - [Isle Royale Wolf-Moose Study (NPS)](https://npshistory.com/series/fauna/7/sec5.htm)
 - [Where are the Moose (NPS)](https://www.nps.gov/isro/learn/nature/moose.htm)
@@ -9,131 +9,82 @@ This document provides a comprehensive user and case-study guide for the **Isle 
 
 ---
 
-## 1. Overview of Isle Royale Ecological System
+## 1. Ecological Framework & Temporal Scaling
 
-Isle Royale National Park (Lake Superior, Michigan) represents an isolated island predator-prey system tracked by continuous wildlife census research since 1958 ([NPS Fauna Series 7](https://npshistory.com/series/fauna/7/sec5.htm)).
+Isle Royale National Park (Lake Superior, Michigan) represents an isolated island predator-prey system tracked continuously since 1958.
 
-### Key Habitat Features & Sighting POIs
+### Life Cycle Age Classes
+- **Moose (`future.moose`)**: Calves (0–1 yr, highly vulnerable), Yearlings (1–2 yrs), Adults (2–9 yrs, prime cows), Seniors (10+ yrs, tooth wear/osteoarthritis; primary hunting targets).
+- **Wolves (`future.wolf`)**: Pups, Subadults, and Pack Adults. Selective attack rates (`moose.wolf.txt`) target Calves and Senior adults over prime Adults.
 
-- **Washington Creek in Windigo** (`lon = -89.146, lat = 47.923`): Stream and shaded forest feeding area.
-- **Ojibway Lake** (`lon = -88.618, lat = 48.113`): Inland lake with rich aquatic vegetation.
-- **Feldtmann Lake** (`lon = -88.961, lat = 47.876`): Major southwest inland lake habitat.
-- **Hidden Lake in Tobin Harbor** (`lon = -88.490, lat = 48.151`): Aquatic plant feeding area.
-
----
-
-## 2. Ecological Framework & Temporal Scaling Rules
-
-### Moose Life Cycle (`future.moose`)
-
-- **Calf (0–1 yr)**: High vulnerability to wolf predation and severe winter weather.
-- **Yearling (1–2 yrs)**: Transitional stage dispersing across habitat features.
-- **Adult (2–9 yrs)**: Prime reproductive cows (producing 1–2 calves/yr). Low natural vulnerability to wolf predation.
-- **Senior (10+ yrs)**: Aging adults with tooth wear and osteoarthritis; prime target for wolf pack hunting.
-
-### Wolf Life Cycle & Predation (`future.wolf`)
-
-- **Pups, Subadults, & Adults**: Pack structure with denning pups, roving subadults, and breeding pack adults.
-- **Predation Functional Response**: Wolf attack rates in competing risk tables (`moose.wolf.txt`) selectively target vulnerable Calves and Senior adults over prime Adults.
-
-### Time Units & Temporal Scaling
-
-- **1 Time Unit (1 Step) = 1 Day** (Degree-Day / daily unit increment).
-- **365 Time Units (Steps) = 1 Year**.
-- Annual reproduction occurs every `365` steps. Adult Moose lifespan = `2920` steps (**8 years**); Adult Wolf lifespan = `2555` steps (**7 years**).
-- Moose use Degree-Days (`units = DD`, 1 step = 1 daily fluctuation cycle); Wolves use clock hours (`units = hr`, 24 hours = 1 step / day).
+### Temporal Scaling & Step Calibration
+- **1 Step = 1 Day** (Degree-Day / daily unit increment); **365 Steps = 1 Year**.
+- Per-step demographic transition, predation, and mortality probabilities are calibrated for daily stepping so multi-step simulation runs (e.g. 200–2,000 steps per click) remain stable over multi-year trajectories.
 
 ---
 
-## 3. Historical Census Calibration (`wolf_moose.csv`)
+## 2. Historical Census Calibration (`wolf_moose.csv`)
 
 Simulations can be initialized from or dynamically benchmarked against the 40-year empirical census time series (1980–2019):
-
 - **1980 Baseline**: 664 Moose, 50 Wolves
 - **1995 Peak**: 2,400 Moose, 16 Wolves
 - **2018 Crash**: 1,500 Moose, 2 Wolves
 
 ---
 
-## 4. Interactive Offline Application (`IsleRoyaleApp()`)
+## 3. Interactive Offline Application (`IsleRoyaleApp()`)
 
-The `IsleRoyaleApp()` function launches an interactive, 100% offline Shiny application with **zero external web API dependencies**:
+`IsleRoyaleApp()` launches a 100% offline Shiny application built on the generalized `ecosystemApp()` architecture:
 
-- **5 Multi-View Output Panels**:
-  1. **Substrate Plot**: Native `ggplot2` spatial GIS substrate map using local `sf` layers displaying habitat features, landmark pins, hex grid, and active organism positions.
-  2. **Age Classes**: Side-by-side `cowplot` multi-panel plot displaying step-by-step population age-class dynamics over time/days (`ewing_ageclass(sim)`). Each species (Moose vs. Wolf) features a dedicated panel with an adjacent legend listing only its specific age-class states.
-  3. **Census Benchmarks**: High-resolution dual-panel `cowplot` grid rendering spatial organism positions alongside 40-year empirical census trajectory benchmarks (`wolf_moose.csv`).
-  4. **Live Demographics**: Tabular summary of active living organisms grouped by age class that updates dynamically as simulation steps execute.
-  5. **Input Data**: Composes `inputApp` to dynamically discover and view all input configuration tables (`organism.features`, `future.moose`, `future.wolf`, `moose.wolf`, `substrate.moose`, `substrate.wolf`, `substrate.substrate`, `isle_royale_features`, `isle_royale_landmarks`, and `wolf_moose` census data).
+- **5 Output Panels**:
+  1. **Substrate Plot**: Native `ggplot2` spatial substrate map displaying habitat features, landmark pins, hex mesh, and active organism positions.
+  2. **Age Classes**: Side-by-side `cowplot` multi-panel plot displaying step-by-step population dynamics (`ewing_ageclass(sim)`).
+  3. **Census Benchmarks**: Dual-panel grid rendering spatial positions alongside 40-year empirical census benchmark trajectories (`wolf_moose.csv`).
+  4. **Live Demographics**: Live tabular summary of active organisms grouped by age class.
+  5. **Input Data**: Composes `inputApp` to discover and inspect tabular configuration data (filtering out spatial `.rds` layers).
 
-- **Streamlined Sidebar Controls & Layout**:
-  - **Top-Aligned Step Size Control**: Logarithmic **Steps per click** slider (`1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000`) positioned at the very top of the sidebar.
-  - **Single-Row Action Buttons**: Side-by-side **Run** and **Reset** buttons on a single horizontal row (`display: flex; gap: 8px;`).
-  - **Inlined Map Overlay Options**: Compact single-row flex checkboxes for **Moose Habitat** features and sighting **Landmarks**.
-  - **Bottom Baseline Year Selection**: **Baseline Year** selector (1980–2019 census start point) positioned at the bottom of the sidebar.
-  - **Ultra-Compact Whitespace Styling**: Injected CSS form group compression (`margin-bottom: 4px;`, `.irs-with-grid { height: 34px; }`) ensuring sidebar height matches main display panels cleanly without vertical scrolling.
-- **Tab-Aware Sidebar Decluttering**: Displays plot-specific controls (`Moose Habitat`, `Landmarks`, `norm`, `total`, **`Steps` vs `Days`**) strictly when their corresponding tab is active.
+- **Streamlined Sidebar Layout**:
+  - Top-aligned **Steps per click** slider.
+  - Single-row **Run** & **Reset** buttons (`display: flex; gap: 8px;`).
+  - Inlined **Moose Habitat** & **Landmarks** map overlay checkboxes.
+  - Bottom-positioned **Baseline Year** selector (1980–2019).
+  - Compact CSS whitespace compression matching sidebar height to main display panels.
 
 ---
 
-## 5. Offline GIS Architecture & Multi-Landscape Cache Engine
+## 4. Offline GIS Architecture & Multi-Landscape Cache Engine
 
-### Standalone Local Hexagonal Grid Overlay (`create_isle_royale_hex_overlay`)
-
-The Isle Royale spatial grid system has been completely decoupled from live external web GIS services (USGS HUC12 API, OpenStreetMap Overpass API, `nhdplusTools`, `osmdata`). Hexagonal substrate grids and habitat suitability meshes are generated directly from local pre-computed `sf` spatial geometries stored in `inst/extdata/isle_royale/`:
-
-- **`isle_royale_layer.rds`**: Complete 1-feature MULTIPOLYGON boundary outline of the Isle Royale landmass.
+### Standalone Spatial Overlay
+Substrate grids and habitat suitability meshes are generated directly from local pre-computed `sf` spatial geometries stored in `inst/extdata/isle_royale/`:
+- **`isle_royale_layer.rds`**: Complete 1-feature MULTIPOLYGON boundary outline.
 - **`isle_royale_features.rds`**: Inland lakes, streams, cool shaded forests, and bogs.
 - **`isle_royale_landmarks.rds`**: Geocoded landmark POIs (Windigo, Ojibway Lake, Feldtmann Lake, Tobin Harbor).
 
 ### Generalized Site Cache Resolver (`get_site_cache_file`)
-
-Spatial datasets are resolved dynamically across both installed package environments (`library/ewing/extdata/[site]`) and active development source trees (`inst/extdata/[site]`) using the exported helper `get_site_cache_file()`:
+Spatial datasets and configuration folders are resolved dynamically across installed package environments (`library/ewing/extdata/[site]`) and source development trees (`inst/extdata/[site]`):
 
 ```r
-# Resolve cached spatial layer for any target simulation landscape (default: "isle_royale")
 layer_path <- get_site_cache_file("isle_royale_layer.rds", site = "isle_royale")
-features_path <- get_site_cache_file("isle_royale_features.rds", site = "isle_royale")
-
-# Isle Royale specific alias helper
-layer_path <- get_isle_royale_cache_file("isle_royale_layer.rds")
 ```
 
-This generalized pattern allows `ewing` spatial simulations to easily scale to future landscapes (e.g. `site = "madeline_island"`, `site = "yellowstone"`) by placing corresponding `.rds` files under `extdata/[site]/`.
-
-### WebAssembly (Shinylive) Zero-Dependency Payload Serialization
-
-To enable serverless, 100% browser-side execution in Shinylive (`shinylive-r` code blocks), `shinylive_helpers.R` automatically inlines all `.txt` input tables and `.rds` spatial objects into client-side WebAssembly memory (`isle_royale_datasets`), ensuring instant startup without network latency or external API rate limits.
+The underlying generalized engine (`init_ecosystem_sim`, `run_ecosystem_sim`, `ecosystemApp`) allows `ewing` to scale seamlessly to future landscapes (e.g. `site = "madeline_island"`, `site = "yellowstone"`), while `init_isle_royale_sim()` and `IsleRoyaleApp()` operate as 100% backward-compatible shell wrappers.
 
 ---
 
-## 6. Quickstart Simulation Workflow in R
+## 5. Quickstart R Workflow
 
 ```r
 library(ewing)
 
-# 1. Initialize Isle Royale spatial simulation with 1980 baseline counts (664 Moose, 50 Wolves)
+# 1. Initialize Isle Royale spatial simulation (1980 baseline)
 sim_obj <- init_isle_royale_sim(year = 1980)
 
 # 2. Run simulation steps (e.g. 200 days)
 sim_obj <- run_isle_royale_sim(sim_obj, nstep = 200)
 
-# 3. Visualize spatial landscape & 40-year empirical census benchmark trajectories
+# 3. Visualize spatial landscape & empirical census benchmarks
 ggplot_isle_royale_sim(sim_obj)
 
-# 4. Plot side-by-side per-species age class dynamics over time (days)
-autoplot(ewing_ageclass(sim_obj), x_var = "time")
-
-# 5. Launch interactive 100% offline Shiny application
+# 4. Launch interactive offline Shiny application
 IsleRoyaleApp()
 ```
-
----
-
-## 7. Interactive Demo Gallery & Technical References
-
-- **Interactive Shinylive WebAssembly Demo**: [demos/IsleRoyaleApp.qmd](file:///Users/brianyandell/Documents/Research/ewing/ewing/demos/IsleRoyaleApp.qmd)
-- **Developer Guide & Site Prototyping**: [DEVELOPER.md](file:///Users/brianyandell/Documents/Research/ewing/ewing/DEVELOPER.md)
-- **GIS Substrate Mesh Pipeline**: [vignettes/tech_guide/gis.Rmd](file:///Users/brianyandell/Documents/Research/ewing/ewing/vignettes/tech_guide/gis.Rmd)
-- **Simulation Engine Mechanics & Scaling**: [vignettes/tech_guide/engine.Rmd](file:///Users/brianyandell/Documents/Research/ewing/ewing/vignettes/tech_guide/engine.Rmd)
-- **Shiny UI Architecture & Module Design**: [vignettes/tech_guide/ui.Rmd](file:///Users/brianyandell/Documents/Research/ewing/ewing/vignettes/tech_guide/ui.Rmd)

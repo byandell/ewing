@@ -5,7 +5,7 @@
 \alias{IsleRoyaleInput}
 \alias{IsleRoyaleOutput}
 \alias{IsleRoyaleServer}
-\title{Isle Royale Wolf-Moose Simulation App}
+\title{Isle Royale Wolf-Moose Simulation App (Wrapper Shell)}
 \usage{
 IsleRoyaleApp(title = "Isle Royale Wolf-Moose Simulation Platform")
 
@@ -16,12 +16,11 @@ IsleRoyaleOutput(id)
 IsleRoyaleServer(id)
 }
 \arguments{
-\item{title}{Application title string}
+\item{title}{Application title string (default: `"Isle Royale Wolf-Moose Simulation Platform"`).}
 
-\item{id}{Module ID}
+\item{id}{Module ID string.}
 }
 \description{
-Interactive platform for exploring Isle Royale wolf-moose spatial predator-prey
-dynamics over real-world island geography, habitat suitability features,
-life stage age classes, and historical 1980-2019 census benchmarks.
+Backward-compatible wrapper for launching the Isle Royale wolf-moose spatial predator-prey
+simulation application using the generalized `ecosystemApp` platform.
 }

@@ -35,7 +35,8 @@ add_habitat_hex_overlay(
   habitat_sf = NULL,
   landmarks_sf = NULL,
   features = NULL,
-  landmarks = NULL
+  landmarks = NULL,
+  site = "isle_royale"
 )
 
 \method{autoplot}{habitat_hex_overlay}(object, show_landmarks = TRUE, ...)
