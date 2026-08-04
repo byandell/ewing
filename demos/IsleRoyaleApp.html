@@ -6112,12 +6112,32 @@ inputAppServer &lt;- function(id, simres = shiny::reactiveVal(NULL), datafile = 
 }
 
 # --- Source: habitat.R ---
-get_habitat_features &lt;- function(watershed_obj, 
+if (!exists("safe_st_intersects", mode = "function")) {
+  safe_st_intersects &lt;- function(x, y) {
+    tryCatch(
+      sf::st_intersects(x, y),
+      error = function(e) {
+        old_s2 &lt;- sf::sf_use_s2(FALSE)
+        on.exit(sf::sf_use_s2(old_s2), add = TRUE)
+        x_val &lt;- tryCatch(sf::st_make_valid(x), error = function(e2) x)
+        y_val &lt;- tryCatch(sf::st_make_valid(y), error = function(e2) y)
+        sf::st_intersects(x_val, y_val)
+      }
+    )
+  }
+}
+
+get_habitat_features &lt;- function(watershed_obj = NULL, 
                                  categories = c("lakes", "waterways", "forests", "bogs"), 
                                  use_cache = TRUE) {
-  huc_layer &lt;- watershed_obj$layer
-  if (is.null(huc_layer)) {
-    stop("Invalid watershed_obj: layer component is required.")
+  huc_layer &lt;- if (is.null(watershed_obj)) {
+    NULL
+  } else if (inherits(watershed_obj, "sf") || inherits(watershed_obj, "sfc")) {
+    watershed_obj
+  } else if (is.list(watershed_obj) &amp;&amp; "layer" %in% names(watershed_obj)) {
+    watershed_obj$layer
+  } else {
+    NULL
   }
   
   # Check for pre-created cached data for Isle Royale
@@ -6128,9 +6148,11 @@ get_habitat_features &lt;- function(watershed_obj,
   if (use_cache &amp;&amp; file.exists(cache_file)) {
     cached_sf &lt;- tryCatch(readRDS(cache_file), error = function(e) NULL)
     if (!is.null(cached_sf) &amp;&amp; inherits(cached_sf, "sf")) {
+      if (is.null(huc_layer)) return(cached_sf)
       cached_sf &lt;- sf::st_transform(cached_sf, sf::st_crs(huc_layer))
       clipped &lt;- suppressWarnings(sf::st_intersection(cached_sf, huc_layer))
       if (nrow(clipped) &gt; 0) return(clipped)
+      return(cached_sf)
     }
   }
   
@@ -6275,8 +6297,16 @@ get_fallback_habitat_features &lt;- function(huc_layer) {
   return(clipped)
 }
 
-get_moose_landmarks &lt;- function(watershed_obj, use_cache = TRUE) {
-  huc_layer &lt;- watershed_obj$layer
+get_moose_landmarks &lt;- function(watershed_obj = NULL, use_cache = TRUE) {
+  huc_layer &lt;- if (is.null(watershed_obj)) {
+    NULL
+  } else if (inherits(watershed_obj, "sf") || inherits(watershed_obj, "sfc")) {
+    watershed_obj
+  } else if (is.list(watershed_obj) &amp;&amp; "layer" %in% names(watershed_obj)) {
+    watershed_obj$layer
+  } else {
+    NULL
+  }
   
   cache_dir &lt;- system.file("extdata/isle_royale", package = "ewing")
   if (cache_dir == "") cache_dir &lt;- "inst/extdata/isle_royale"
@@ -6285,6 +6315,7 @@ get_moose_landmarks &lt;- function(watershed_obj, use_cache = TRUE) {
   if (use_cache &amp;&amp; file.exists(cache_file)) {
     cached_pts &lt;- tryCatch(readRDS(cache_file), error = function(e) NULL)
     if (!is.null(cached_pts) &amp;&amp; inherits(cached_pts, "sf")) {
+      if (is.null(huc_layer)) return(cached_pts)
       return(sf::st_transform(cached_pts, sf::st_crs(huc_layer)))
     }
   }
@@ -6309,8 +6340,58 @@ get_moose_landmarks &lt;- function(watershed_obj, use_cache = TRUE) {
   )
   
   pts_sf &lt;- sf::st_as_sf(df, coords = c("lon", "lat"), crs = 4326)
-  pts_sf &lt;- sf::st_transform(pts_sf, sf::st_crs(huc_layer))
+  if (!is.null(huc_layer)) {
+    pts_sf &lt;- sf::st_transform(pts_sf, sf::st_crs(huc_layer))
+  }
   return(pts_sf)
+}
+
+create_isle_royale_hex_overlay &lt;- function(hex_diameter = 0.01, features = NULL) {
+  habitat_sf &lt;- features
+  if (is.character(habitat_sf) &amp;&amp; file.exists(habitat_sf)) {
+    habitat_sf &lt;- tryCatch(readRDS(habitat_sf), error = function(e) NULL)
+  }
+  
+  if (is.null(habitat_sf)) {
+    cache_dir &lt;- system.file("extdata/isle_royale", package = "ewing")
+    if (cache_dir == "") cache_dir &lt;- "inst/extdata/isle_royale"
+    cache_file &lt;- file.path(cache_dir, "isle_royale_features.rds")
+    if (file.exists(cache_file)) {
+      habitat_sf &lt;- tryCatch(readRDS(cache_file), error = function(e) NULL)
+    }
+  }
+  
+  if (is.null(habitat_sf) || !inherits(habitat_sf, "sf")) {
+    pts &lt;- matrix(c(
+      -89.17, 47.87,
+      -88.48, 47.87,
+      -88.48, 48.16,
+      -89.17, 48.16,
+      -89.17, 47.87
+    ), ncol = 2, byrow = TRUE)
+    boundary_layer &lt;- sf::st_sfc(sf::st_polygon(list(pts)), crs = 4326)
+  } else {
+    boundary_layer &lt;- suppressWarnings(sf::st_union(sf::st_geometry(habitat_sf)))
+  }
+  
+  cent &lt;- suppressWarnings(sf::st_centroid(boundary_layer))
+  coords &lt;- sf::st_coordinates(cent)
+  
+  hex_mesh &lt;- sf::st_make_grid(boundary_layer, square = FALSE, cellsize = c(hex_diameter, hex_diameter))
+  hex_overlay &lt;- hex_mesh[lengths(safe_st_intersects(hex_mesh, boundary_layer)) &gt; 0]
+  
+  res &lt;- list(
+    huc_id = "Isle Royale",
+    feature_name = "Isle Royale",
+    lon = as.numeric(coords[1, "X"]),
+    lat = as.numeric(coords[1, "Y"]),
+    layer = boundary_layer,
+    hex_overlay = hex_overlay,
+    hex_diameter = hex_diameter
+  )
+  
+  class(res) &lt;- "watershed_hex_overlay"
+  return(res)
 }
 
 add_habitat_hex_overlay &lt;- function(hex_obj, habitat_sf = NULL, landmarks_sf = NULL, features = NULL, landmarks = NULL) {
@@ -6463,251 +6544,6 @@ add_leaflet_habitat_overlay &lt;- function(map, object) {
   return(map)
 }
 
-# --- Source: watershed.R ---
-get_watershed &lt;- function(huc_id, feature_name = NULL, huc_layer = NULL) {
-  # Standardize huc_id input (support comma-separated string or character vector)
-  if (is.character(huc_id) &amp;&amp; length(huc_id) == 1 &amp;&amp; grepl(",", huc_id)) {
-    huc_id &lt;- trimws(unlist(strsplit(huc_id, ",")))
-  }
-  
-  # Get HUC12 sf object (queries USGS WBD if layer not provided)
-  if (is.null(huc_layer)) {
-    huc_layer &lt;- nhdplusTools::get_huc(id = huc_id, type = "huc12")
-  }
-  
-  if (is.null(huc_layer) || nrow(huc_layer) == 0) {
-    stop("Invalid HUC12 ID or could not retrieve watershed data from USGS.")
-  }
-  
-  # Track individual component HUCs if multi-HUC
-  individual_hucs &lt;- huc_layer
-  actual_huc_ids &lt;- if ("huc12" %in% names(huc_layer)) unique(huc_layer$huc12) else huc_id
-  
-  if (!is.null(feature_name)) {
-    if (!requireNamespace("osmdata", quietly = TRUE)) {
-      stop("The 'osmdata' package is required to filter geographic features by name. Install it using install.packages('osmdata')")
-    }
-    
-    # Try querying OpenStreetMap nominatim for the geographic feature boundary
-    feature_geom &lt;- tryCatch({
-      osmdata::getbb(feature_name, format_out = "sf_polygon", limit = 1)
-    }, error = function(e) {
-      warning(paste("osmdata could not find a valid polygon for feature:", feature_name, "- Generating whole HUC region instead."))
-      return(NULL)
-    })
-    
-    if (!is.null(feature_geom)) {
-      # Formats may vary (list containing polygon/multipolygon, or an sf object directly)
-      feature_sf &lt;- NULL
-      if (inherits(feature_geom, "sf") || inherits(feature_geom, "sfc")) {
-        feature_sf &lt;- feature_geom
-      } else if (is.list(feature_geom)) {
-        if (!is.null(feature_geom$multipolygon)) {
-          feature_sf &lt;- feature_geom$multipolygon
-        } else if (!is.null(feature_geom$polygon)) {
-          feature_sf &lt;- feature_geom$polygon
-        } else if (length(feature_geom) &gt; 0) {
-          feature_sf &lt;- feature_geom[[1]]
-        }
-      } 
-      
-      if (!is.null(feature_sf)) {
-        # Project to HUC's CRS and spatially intersect to restrict bounds
-        feature_sf &lt;- sf::st_transform(feature_sf, sf::st_crs(huc_layer))
-        clipped_layer &lt;- suppressWarnings(sf::st_intersection(huc_layer, feature_sf))
-        
-        # If intersection yields valid geometries, use it; otherwise fallback to full HUC
-        if (nrow(clipped_layer) &gt; 0) {
-           huc_layer &lt;- clipped_layer
-        } else {
-           warning(paste("Feature", feature_name, "does not overlap with specified HUC region - Generating whole HUC region instead."))
-        }
-      } else {
-        warning(paste("osmdata could not extract a valid polygon for feature:", feature_name, "- Generating whole HUC region instead."))
-      }
-    }
-  }
-  
-  # Aggregate multiple HUC12 polygons into a single combined region geometry via sf::st_union
-  unified_layer &lt;- if (nrow(huc_layer) &gt; 1) {
-    suppressWarnings(sf::st_union(huc_layer))
-  } else {
-    huc_layer
-  }
-  
-  # Calculate geographic centroid of the final geometry
-  centroid &lt;- suppressWarnings(sf::st_centroid(sf::st_geometry(unified_layer)))
-  coords &lt;- sf::st_coordinates(centroid)
-  
-  list(
-    huc_id = actual_huc_ids,
-    feature_name = feature_name,
-    lon = as.numeric(coords[1, "X"]),
-    lat = as.numeric(coords[1, "Y"]),
-    individual_hucs = individual_hucs,
-    layer = unified_layer
-  )
-}
-
-safe_st_intersects &lt;- function(x, y) {
-  tryCatch(
-    sf::st_intersects(x, y),
-    error = function(e) {
-      old_s2 &lt;- sf::sf_use_s2(FALSE)
-      on.exit(sf::sf_use_s2(old_s2), add = TRUE)
-      x_val &lt;- tryCatch(sf::st_make_valid(x), error = function(e2) x)
-      y_val &lt;- tryCatch(sf::st_make_valid(y), error = function(e2) y)
-      sf::st_intersects(x_val, y_val)
-    }
-  )
-}
-
-add_watershed_hex_overlay &lt;- function(huc_info, hex_diameter = 0.01) {
-  huc_layer &lt;- huc_info$layer
-  
-  # Use sf::st_make_grid with square = FALSE to mathematically build a spatial hex mesh atop the bounding box
-  hex_mesh &lt;- sf::st_make_grid(huc_layer, square = FALSE, cellsize = c(hex_diameter, hex_diameter))
-  
-  # Filter the generated mesh to only retain hexagons crossing the actual geographical feature
-  # (lengths &gt; 0 signifies the hexagon touches the island geometry)
-  hex_overlay &lt;- hex_mesh[lengths(safe_st_intersects(hex_mesh, huc_layer)) &gt; 0]
-  
-  huc_info$hex_overlay &lt;- hex_overlay
-  huc_info$hex_diameter &lt;- hex_diameter
-  
-  class(huc_info) &lt;- "watershed_hex_overlay"
-  return(huc_info)
-}
-
-autoplot.watershed_hex_overlay &lt;- function(object, ...) {
-  huc_str &lt;- if (length(object$huc_id) &gt; 1) {
-    paste0(length(object$huc_id), " Combined HUC12s")
-  } else {
-    paste("Watershed:", object$huc_id)
-  }
-  
-  title_txt &lt;- paste("Geographic Hexagonal Grid (", huc_str, ")", 
-                     "\nHexagon Extent Diameter:", object$hex_diameter)
-  if (!is.null(object$feature_name) &amp;&amp; object$feature_name != "") {
-    title_txt &lt;- paste0(title_txt, " - Restricted to: ", object$feature_name)
-  }
-  
-  p &lt;- ggplot2::ggplot()
-  
-  # Display individual component HUC boundaries if multi-HUC
-  if (!is.null(object$individual_hucs) &amp;&amp; nrow(object$individual_hucs) &gt; 1) {
-    p &lt;- p + ggplot2::geom_sf(data = object$individual_hucs, fill = NA, color = "purple", linetype = "dashed", linewidth = 0.4)
-  }
-  
-  p +
-    # Represents underlying restricted outline
-    ggplot2::geom_sf(data = object$layer, fill = "lightblue", alpha = 0.3, color = "blue", linewidth = 0.7) +
-    # Overlay our spatial hexagons
-    ggplot2::geom_sf(data = object$hex_overlay, fill = NA, color = "darkred", linewidth = 0.7) +
-    ggplot2::theme_minimal() +
-    ggplot2::ggtitle(title_txt) +
-    ggplot2::labs(x = "Longitude", y = "Latitude")
-}
-
-discover_watershed_features &lt;- function(huc_id, feature_types = c("natural", "waterway", "leisure")) {
-  # Get HUC12 sf object to establish the tight bounding limit
-  huc_layer &lt;- nhdplusTools::get_huc(id = huc_id, type = "huc12")
-  
-  if (is.null(huc_layer) || nrow(huc_layer) == 0) {
-    stop("Invalid HUC12 ID or could not retrieve watershed data from USGS.")
-  }
-  
-  if (!requireNamespace("osmdata", quietly = TRUE)) {
-    stop("The 'osmdata' package is required to execute dynamic feature discovery. Install it using install.packages('osmdata')")
-  }
-  
-  # Map coordinates to WGS84 for the public Overpass API interface
-  bbox &lt;- sf::st_bbox(sf::st_transform(huc_layer, 4326))
-  bbox_str &lt;- paste(bbox["ymin"], bbox["xmin"], bbox["ymax"], bbox["xmax"], sep = ",")
-  
-  # Construct raw Overpass QL to execute a UNION (OR) query natively
-  ql_union_body &lt;- paste(
-    sapply(feature_types, function(key) {
-      paste0(
-        "  node[\"", key, "\"](", bbox_str, ");\n",
-        "  way[\"", key, "\"](", bbox_str, ");\n",
-        "  relation[\"", key, "\"](", bbox_str, ");\n"
-      )
-    }), collapse = ""
-  )
-  
-  ql_query &lt;- paste0(
-    "[out:xml][timeout:60];\n(\n",
-    ql_union_body,
-    ");\n",
-    "out body;\n&gt;;\nout skel qt;\n"
-  )
-  
-  discovered_names &lt;- c()
-  
-  # Temporarily reroute to the lz4 alternative Overpass Mirror to dodge IP bans on main branch
-  old_url &lt;- osmdata::get_overpass_url()
-  osmdata::set_overpass_url("https://lz4.overpass-api.de/api/interpreter")
-  
-  tryCatch({
-    # Temporarily disable standard S2 spherical tracking to bypass OSM topological boundary crashes 
-    old_s2 &lt;- sf::sf_use_s2()
-    sf::sf_use_s2(FALSE)
-    
-    # Send the raw, unified union query into the osmdata parser
-    osm_res &lt;- osmdata::osmdata_sf(ql_query)
-    
-    # Extract polygons (Lakes, Parks)
-    if (!is.null(osm_res$osm_polygons) &amp;&amp; "name" %in% colnames(osm_res$osm_polygons)) {
-      poly_sf &lt;- osm_res$osm_polygons[!is.na(osm_res$osm_polygons$name), ]
-      if (nrow(poly_sf) &gt; 0) {
-        poly_sf &lt;- sf::st_transform(poly_sf, sf::st_crs(huc_layer))
-        poly_sf &lt;- suppressWarnings(sf::st_make_valid(poly_sf))
-        inter &lt;- suppressWarnings(lengths(sf::st_intersects(poly_sf, huc_layer))) &gt; 0
-        discovered_names &lt;- c(discovered_names, poly_sf$name[inter])
-      }
-    }
-    
-    # Extract multipolygons (Great Lakes, large reserves)
-    if (!is.null(osm_res$osm_multipolygons) &amp;&amp; "name" %in% colnames(osm_res$osm_multipolygons)) {
-      mpoly_sf &lt;- osm_res$osm_multipolygons[!is.na(osm_res$osm_multipolygons$name), ]
-      if (nrow(mpoly_sf) &gt; 0) {
-        mpoly_sf &lt;- sf::st_transform(mpoly_sf, sf::st_crs(huc_layer))
-        mpoly_sf &lt;- suppressWarnings(sf::st_make_valid(mpoly_sf))
-        inter &lt;- suppressWarnings(lengths(sf::st_intersects(mpoly_sf, huc_layer))) &gt; 0
-        discovered_names &lt;- c(discovered_names, mpoly_sf$name[inter])
-      }
-    }
-    
-    # Extract linestrings (Dams, Rivers)
-    if (!is.null(osm_res$osm_lines) &amp;&amp; "name" %in% colnames(osm_res$osm_lines)) {
-      line_sf &lt;- osm_res$osm_lines[!is.na(osm_res$osm_lines$name), ]
-      if (nrow(line_sf) &gt; 0) {
-        line_sf &lt;- sf::st_transform(line_sf, sf::st_crs(huc_layer))
-        line_sf &lt;- suppressWarnings(sf::st_make_valid(line_sf))
-        inter &lt;- suppressWarnings(lengths(sf::st_intersects(line_sf, huc_layer))) &gt; 0
-        discovered_names &lt;- c(discovered_names, line_sf$name[inter])
-      }
-    }
-    
-    # Reset standard mapping state
-    sf::sf_use_s2(old_s2)
-    
-  }, error = function(e) {
-    if (exists("old_s2")) sf::sf_use_s2(old_s2)
-    warning(paste("Raw OSM Extraction timeout or failure:", e$message))
-  })
-  
-  # Return sanitized unique list 
-  clean_names &lt;- unique(discovered_names)
-  clean_names &lt;- sort(clean_names[!is.na(clean_names) &amp; trimws(clean_names) != ""])
-  
-  # Reset the API routing mirror
-  osmdata::set_overpass_url(old_url)
-  
-  return(clean_names)
-}
-
 # --- Source: isle_royale_sim.R ---
 init_isle_royale_sim &lt;- function(year = 1980, 
                                 n_moose = NULL, 
@@ -6737,8 +6573,7 @@ init_isle_royale_sim &lt;- function(year = 1980,
   if (is.null(n_wolves)) n_wolves &lt;- 50
   
   # 1. Initialize Base Spatial Geography &amp; Habitat Overlay
-  huc_info &lt;- get_watershed("041800000101", feature_name = "Isle Royale")
-  hex_obj &lt;- add_watershed_hex_overlay(huc_info, hex_diameter = hex_diameter)
+  hex_obj &lt;- create_isle_royale_hex_overlay(hex_diameter = hex_diameter, features = features_rds)
   habitat_overlay &lt;- add_habitat_hex_overlay(hex_obj, features = features_rds, landmarks = landmarks_rds)
   
   # 2. Setup Configuration Data Directory
