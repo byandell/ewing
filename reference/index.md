@@ -91,6 +91,7 @@
   : GGplot of Ewing multiple envelopes
 - [`get_habitat_features()`](https://byandell.github.io/ewing/reference/habitat.md)
   [`get_moose_landmarks()`](https://byandell.github.io/ewing/reference/habitat.md)
+  [`create_isle_royale_hex_overlay()`](https://byandell.github.io/ewing/reference/habitat.md)
   [`add_habitat_hex_overlay()`](https://byandell.github.io/ewing/reference/habitat.md)
   [`autoplot(`*`<habitat_hex_overlay>`*`)`](https://byandell.github.io/ewing/reference/habitat.md)
   [`add_leaflet_habitat_overlay()`](https://byandell.github.io/ewing/reference/habitat.md)

@@ -10,6 +10,11 @@ Retrieves key moose sighting landmarks on Isle Royale (or customizable
 spatial targets): Washington Creek in Windigo, Ojibway Lake, Feldtmann
 Lake, and Hidden Lake in Tobin Harbor.
 
+Generates a spatial hexagonal grid across Isle Royale island geometry
+using pre-computed local habitat features
+(\`isle_royale_features.rds\`), without requiring external watershed GIS
+service calls.
+
 Intersects habitat features (lakes, waterways, forests, bogs) and
 sighting landmarks with a hexagonal substrate grid overlay, calculating
 habitat suitability weights per hex cell.
@@ -18,12 +23,18 @@ habitat suitability weights per hex cell.
 
 ``` r
 get_habitat_features(
-  watershed_obj,
+  watershed_obj = NULL,
   categories = c("lakes", "waterways", "forests", "bogs"),
   use_cache = TRUE
 )
 
-get_moose_landmarks(watershed_obj, use_cache = TRUE)
+get_moose_landmarks(watershed_obj = NULL, use_cache = TRUE)
+
+create_isle_royale_hex_overlay(
+  hex_diameter = 0.01,
+  features = NULL,
+  layer = NULL
+)
 
 add_habitat_hex_overlay(
   hex_obj,
@@ -53,6 +64,14 @@ add_leaflet_habitat_overlay(map, object)
 
   Logical; if TRUE, uses pre-fetched local landmark definitions when
   available.
+
+- hex_diameter:
+
+  Diameter of hexagonal grid cells in degrees (default = \`0.01\`).
+
+- features:
+
+  Optional path or \`sf\` object containing habitat features.
 
 - hex_obj:
 
@@ -85,10 +104,12 @@ add_leaflet_habitat_overlay(map, object)
 ## Value
 
 \`get_habitat_features\`: An \`sf\` data frame of habitat features
-clipped to the watershed.
+clipped to the target geometry.
 
 \`get_moose_landmarks\`: An \`sf\` object containing landmark point
 geometries and attributes.
+
+An S3 object of class \`watershed_hex_overlay\`.
 
 \`add_habitat_hex_overlay\`: An S3 object of class
 \`habitat_hex_overlay\`.
