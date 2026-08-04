@@ -47,8 +47,7 @@ init_isle_royale_sim <- function(year = 1980,
   if (is.null(n_wolves)) n_wolves <- 50
   
   # 1. Initialize Base Spatial Geography & Habitat Overlay
-  huc_info <- get_watershed("041800000101", feature_name = "Isle Royale")
-  hex_obj <- add_watershed_hex_overlay(huc_info, hex_diameter = hex_diameter)
+  hex_obj <- create_isle_royale_hex_overlay(hex_diameter = hex_diameter, features = features_rds)
   habitat_overlay <- add_habitat_hex_overlay(hex_obj, features = features_rds, landmarks = landmarks_rds)
   
   # 2. Setup Configuration Data Directory

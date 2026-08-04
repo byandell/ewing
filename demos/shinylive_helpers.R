@@ -103,7 +103,7 @@ render_standalone_app <- function(app_name, height = 800) {
     ),
     IsleRoyaleApp = c(
       sim_core_files, "step_controls.R", "initParApp.R", "initApp.R", "substrateApp.R", "distPlotApp.R",
-      "multApp.R", "inputApp.R", "habitat.R", "watershed.R", "isle_royale_sim.R", "IsleRoyaleApp.R"
+      "multApp.R", "inputApp.R", "habitat.R", "isle_royale_sim.R", "IsleRoyaleApp.R"
     )
   )
   

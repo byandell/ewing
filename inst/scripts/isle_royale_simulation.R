@@ -12,7 +12,6 @@ suppressPackageStartupMessages({
 
 # Load local development R files if present
 if (file.exists("R/isle_royale_sim.R")) {
-  source("R/watershed.R")
   source("R/habitat.R")
   source("R/isle_royale_sim.R")
 }

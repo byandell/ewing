@@ -11,15 +11,11 @@ suppressPackageStartupMessages({
 
 # Load local R functions if developing locally
 if (file.exists("R/habitat.R")) {
-  source("R/watershed.R")
   source("R/habitat.R")
 }
 
-cat("1. Extracting Isle Royale Watershed Boundary...\n")
-huc_info <- get_watershed("041800000101", feature_name = "Isle Royale")
-
-cat("2. Building Hexagonal Substrate Mesh...\n")
-hex_obj <- add_watershed_hex_overlay(huc_info, hex_diameter = 0.01)
+cat("1. Building Base Isle Royale Hexagonal Substrate Overlay...\n")
+hex_obj <- create_isle_royale_hex_overlay(hex_diameter = 0.01)
 
 cat("3. Geocoding Moose Sighting Landmarks...\n")
 landmarks_sf <- get_moose_landmarks(hex_obj, use_cache = FALSE)

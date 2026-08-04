@@ -5,22 +5,42 @@
 #' geocoding notable sighting landmarks (Washington Creek, Ojibway Lake, Feldtmann Lake, Hidden Lake),
 #' computing habitat suitability weights on hexagonal substrate grids, and visualizing overlays.
 #'
-#' @param watershed_obj A list object returned by `get_watershed()`.
+#' @param watershed_obj A spatial object or list containing a `layer` geometry (optional).
 #' @param categories Character vector of habitat feature categories to extract.
 #' @param use_cache Logical; if TRUE, uses pre-fetched local feature data when available.
 #'
-#' @return `get_habitat_features`: An `sf` data frame of habitat features clipped to the watershed.
+#' @return `get_habitat_features`: An `sf` data frame of habitat features clipped to the target geometry.
 #' @export
 #' @name habitat
 #' @rdname habitat
 #'
-#' @importFrom sf st_transform st_crs st_intersection st_union st_geometry st_make_valid st_bbox st_as_sf st_intersects st_polygon st_sfc st_sf
-get_habitat_features <- function(watershed_obj, 
+#' @importFrom sf st_transform st_crs st_intersection st_union st_geometry st_make_valid st_bbox st_as_sf st_intersects st_polygon st_sfc st_sf st_make_grid
+if (!exists("safe_st_intersects", mode = "function")) {
+  safe_st_intersects <- function(x, y) {
+    tryCatch(
+      sf::st_intersects(x, y),
+      error = function(e) {
+        old_s2 <- sf::sf_use_s2(FALSE)
+        on.exit(sf::sf_use_s2(old_s2), add = TRUE)
+        x_val <- tryCatch(sf::st_make_valid(x), error = function(e2) x)
+        y_val <- tryCatch(sf::st_make_valid(y), error = function(e2) y)
+        sf::st_intersects(x_val, y_val)
+      }
+    )
+  }
+}
+
+get_habitat_features <- function(watershed_obj = NULL, 
                                  categories = c("lakes", "waterways", "forests", "bogs"), 
                                  use_cache = TRUE) {
-  huc_layer <- watershed_obj$layer
-  if (is.null(huc_layer)) {
-    stop("Invalid watershed_obj: layer component is required.")
+  huc_layer <- if (is.null(watershed_obj)) {
+    NULL
+  } else if (inherits(watershed_obj, "sf") || inherits(watershed_obj, "sfc")) {
+    watershed_obj
+  } else if (is.list(watershed_obj) && "layer" %in% names(watershed_obj)) {
+    watershed_obj$layer
+  } else {
+    NULL
   }
   
   # Check for pre-created cached data for Isle Royale
@@ -31,9 +51,11 @@ get_habitat_features <- function(watershed_obj,
   if (use_cache && file.exists(cache_file)) {
     cached_sf <- tryCatch(readRDS(cache_file), error = function(e) NULL)
     if (!is.null(cached_sf) && inherits(cached_sf, "sf")) {
+      if (is.null(huc_layer)) return(cached_sf)
       cached_sf <- sf::st_transform(cached_sf, sf::st_crs(huc_layer))
       clipped <- suppressWarnings(sf::st_intersection(cached_sf, huc_layer))
       if (nrow(clipped) > 0) return(clipped)
+      return(cached_sf)
     }
   }
   
@@ -191,8 +213,16 @@ get_fallback_habitat_features <- function(huc_layer) {
 #' @return `get_moose_landmarks`: An `sf` object containing landmark point geometries and attributes.
 #' @export
 #' @rdname habitat
-get_moose_landmarks <- function(watershed_obj, use_cache = TRUE) {
-  huc_layer <- watershed_obj$layer
+get_moose_landmarks <- function(watershed_obj = NULL, use_cache = TRUE) {
+  huc_layer <- if (is.null(watershed_obj)) {
+    NULL
+  } else if (inherits(watershed_obj, "sf") || inherits(watershed_obj, "sfc")) {
+    watershed_obj
+  } else if (is.list(watershed_obj) && "layer" %in% names(watershed_obj)) {
+    watershed_obj$layer
+  } else {
+    NULL
+  }
   
   cache_dir <- system.file("extdata/isle_royale", package = "ewing")
   if (cache_dir == "") cache_dir <- "inst/extdata/isle_royale"
@@ -201,6 +231,7 @@ get_moose_landmarks <- function(watershed_obj, use_cache = TRUE) {
   if (use_cache && file.exists(cache_file)) {
     cached_pts <- tryCatch(readRDS(cache_file), error = function(e) NULL)
     if (!is.null(cached_pts) && inherits(cached_pts, "sf")) {
+      if (is.null(huc_layer)) return(cached_pts)
       return(sf::st_transform(cached_pts, sf::st_crs(huc_layer)))
     }
   }
@@ -225,8 +256,70 @@ get_moose_landmarks <- function(watershed_obj, use_cache = TRUE) {
   )
   
   pts_sf <- sf::st_as_sf(df, coords = c("lon", "lat"), crs = 4326)
-  pts_sf <- sf::st_transform(pts_sf, sf::st_crs(huc_layer))
+  if (!is.null(huc_layer)) {
+    pts_sf <- sf::st_transform(pts_sf, sf::st_crs(huc_layer))
+  }
   return(pts_sf)
+}
+
+#' Construct Base Isle Royale Spatial Hexagonal Overlay
+#'
+#' Generates a spatial hexagonal grid across Isle Royale island geometry using
+#' pre-computed local habitat features (`isle_royale_features.rds`), without requiring
+#' external watershed GIS service calls.
+#'
+#' @param hex_diameter Diameter of hexagonal grid cells in degrees (default = `0.01`).
+#' @param features Optional path or `sf` object containing habitat features.
+#'
+#' @return An S3 object of class `watershed_hex_overlay`.
+#' @export
+#' @rdname habitat
+create_isle_royale_hex_overlay <- function(hex_diameter = 0.01, features = NULL) {
+  habitat_sf <- features
+  if (is.character(habitat_sf) && file.exists(habitat_sf)) {
+    habitat_sf <- tryCatch(readRDS(habitat_sf), error = function(e) NULL)
+  }
+  
+  if (is.null(habitat_sf)) {
+    cache_dir <- system.file("extdata/isle_royale", package = "ewing")
+    if (cache_dir == "") cache_dir <- "inst/extdata/isle_royale"
+    cache_file <- file.path(cache_dir, "isle_royale_features.rds")
+    if (file.exists(cache_file)) {
+      habitat_sf <- tryCatch(readRDS(cache_file), error = function(e) NULL)
+    }
+  }
+  
+  if (is.null(habitat_sf) || !inherits(habitat_sf, "sf")) {
+    pts <- matrix(c(
+      -89.17, 47.87,
+      -88.48, 47.87,
+      -88.48, 48.16,
+      -89.17, 48.16,
+      -89.17, 47.87
+    ), ncol = 2, byrow = TRUE)
+    boundary_layer <- sf::st_sfc(sf::st_polygon(list(pts)), crs = 4326)
+  } else {
+    boundary_layer <- suppressWarnings(sf::st_union(sf::st_geometry(habitat_sf)))
+  }
+  
+  cent <- suppressWarnings(sf::st_centroid(boundary_layer))
+  coords <- sf::st_coordinates(cent)
+  
+  hex_mesh <- sf::st_make_grid(boundary_layer, square = FALSE, cellsize = c(hex_diameter, hex_diameter))
+  hex_overlay <- hex_mesh[lengths(safe_st_intersects(hex_mesh, boundary_layer)) > 0]
+  
+  res <- list(
+    huc_id = "Isle Royale",
+    feature_name = "Isle Royale",
+    lon = as.numeric(coords[1, "X"]),
+    lat = as.numeric(coords[1, "Y"]),
+    layer = boundary_layer,
+    hex_overlay = hex_overlay,
+    hex_diameter = hex_diameter
+  )
+  
+  class(res) <- "watershed_hex_overlay"
+  return(res)
 }
 
 #' Construct Moose Habitat & Substrate Overlay Object
