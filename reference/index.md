@@ -78,6 +78,9 @@
   [`futureInput()`](https://byandell.github.io/ewing/reference/futureApp.md)
   [`futureOutput()`](https://byandell.github.io/ewing/reference/futureApp.md)
   : Ewing Future Events App
+- [`get_site_cache_file()`](https://byandell.github.io/ewing/reference/get_site_cache_file.md)
+  [`get_isle_royale_cache_file()`](https://byandell.github.io/ewing/reference/get_site_cache_file.md)
+  : Resolve Cached Spatial Site Datasets
 - [`get_substrate_grid()`](https://byandell.github.io/ewing/reference/get_substrate_grid.md)
   : Generate a Substrate Abstract Grid
 - [`ggplot_ewing()`](https://byandell.github.io/ewing/reference/ggplot_ewing.md)

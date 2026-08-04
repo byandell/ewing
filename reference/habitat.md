@@ -25,15 +25,21 @@ habitat suitability weights per hex cell.
 get_habitat_features(
   watershed_obj = NULL,
   categories = c("lakes", "waterways", "forests", "bogs"),
-  use_cache = TRUE
+  use_cache = TRUE,
+  site = "isle_royale"
 )
 
-get_moose_landmarks(watershed_obj = NULL, use_cache = TRUE)
+get_moose_landmarks(
+  watershed_obj = NULL,
+  use_cache = TRUE,
+  site = "isle_royale"
+)
 
 create_isle_royale_hex_overlay(
   hex_diameter = 0.01,
   features = NULL,
-  layer = NULL
+  layer = NULL,
+  site = "isle_royale"
 )
 
 add_habitat_hex_overlay(
@@ -65,6 +71,11 @@ add_leaflet_habitat_overlay(map, object)
   Logical; if TRUE, uses pre-fetched local landmark definitions when
   available.
 
+- site:
+
+  Target simulation landscape/site folder name (default:
+  \`"isle_royale"\`).
+
 - hex_diameter:
 
   Diameter of hexagonal grid cells in degrees (default = \`0.01\`).
@@ -72,6 +83,10 @@ add_leaflet_habitat_overlay(map, object)
 - features:
 
   Optional path or \`sf\` object containing habitat features.
+
+- layer:
+
+  Optional path or \`sf\` boundary layer object.
 
 - hex_obj:
 

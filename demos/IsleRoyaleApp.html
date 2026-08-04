@@ -12777,39 +12777,57 @@ IsleRoyaleInput &lt;- function(id) {
   }
 
   shiny::tagList(
-    shiny::h4("Isle Royale Controls", style = "font-size: 1.0rem; font-weight: 600;"),
-    shiny::selectInput(ns("start_year"), "Historical Baseline Year:", choices = years, selected = 1980),
-    shiny::sliderInput(ns("n_moose"), "Initial Moose Count:", min = 50, max = 3000, value = 664, step = 50),
-    shiny::sliderInput(ns("n_wolves"), "Initial Wolf Count:", min = 0, max = 60, value = 50, step = 2),
-    shiny::sliderInput(ns("hex_diameter"), "Hexagon Extent Diameter (Degrees):", min = 0.005, max = 0.03, value = 0.01, step = 0.001),
+    shiny::tags$style(shiny::HTML(sprintf("
+      #%s .form-group { margin-bottom: 4px; }
+      #%s .irs { margin-bottom: 0px; }
+      #%s .irs-with-grid { height: 34px; }
+      #%s .checkbox { margin-top: 1px; margin-bottom: 2px; }
+      #%s .radio-inline, #%s .checkbox-inline { margin-right: 10px; }
+      #%s label { font-size: 0.82rem; margin-bottom: 1px; }
+      #%s div.shiny-options-group { margin-top: -2px; }
+    ", id, id, id, id, id, id, id, id))),
 
-    # Conditional Spatial Overlay Controls (shown ONLY on Substrate Plot &amp; Census Benchmarks)
-    shiny::conditionalPanel(
-      condition = sprintf("input['%s'] == 'Substrate Plot' || input['%s'] == 'Census Benchmarks'", ns("tabset"), ns("tabset")),
-      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
-      shiny::h4("Map Overlay Options", style = "font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;"),
-      shiny::checkboxInput(ns("show_habitat"), "Overlay Moose Habitat Features", value = TRUE),
-      shiny::checkboxInput(ns("show_landmarks"), "Show Moose Sighting Landmarks", value = TRUE)
+    # 1. Top Section: Step size &amp; Action Buttons (Run / Reset on same line)
+    step_size_slider(ns("step_size"), "Steps per click:", selected = 200),
+    shiny::div(
+      style = "display: flex; gap: 8px; margin: 4px 0 6px 0;",
+      shiny::actionButton(ns("step_sim"), "Run", class = "btn-primary", style = "flex: 1; font-weight: 600; padding: 3px 6px; font-size: 0.85rem;"),
+      shiny::actionButton(ns("reset_sim"), "Reset", class = "btn-warning", style = "flex: 1; font-weight: 600; padding: 3px 6px; font-size: 0.85rem;")
     ),
 
-    # Conditional Substrate Plot Axis Units
+    # 2. Population &amp; Hexagon Extent Sliders
+    shiny::sliderInput(ns("n_moose"), "Initial Moose:", min = 50, max = 3000, value = 664, step = 50),
+    shiny::sliderInput(ns("n_wolves"), "Initial Wolves:", min = 0, max = 60, value = 50, step = 2),
+    shiny::sliderInput(ns("hex_diameter"), "Hex Diameter:", min = 0.005, max = 0.03, value = 0.01, step = 0.001),
+
+    # 3. Conditional Map Overlay Options (Substrate Plot &amp; Census Benchmarks)
+    shiny::conditionalPanel(
+      condition = sprintf("input['%s'] == 'Substrate Plot' || input['%s'] == 'Census Benchmarks'", ns("tabset"), ns("tabset")),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 4px 0 2px 0;"),
+      shiny::div(
+        style = "display: flex; gap: 12px; align-items: center; margin-bottom: 2px;",
+        shiny::checkboxInput(ns("show_habitat"), "Moose Habitat", value = TRUE),
+        shiny::checkboxInput(ns("show_landmarks"), "Landmarks", value = TRUE)
+      )
+    ),
+
+    # 4. Conditional Substrate Plot Axis Units
     shiny::conditionalPanel(
       condition = sprintf("input['%s'] == 'Substrate Plot'", ns("tabset")),
       axisUnitInput(ns("substrate_axis"), time_label = "Days")
     ),
 
-    # Conditional Age Classes Display Controls (shown ONLY on Age Classes tab)
+    # 5. Conditional Age Classes Options (Age Classes tab)
     shiny::conditionalPanel(
       condition = sprintf("input['%s'] == 'Age Classes'", ns("tabset")),
-      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 6px 0;"),
-      shiny::h4("Age Classes Options", style = "font-size: 0.9rem; font-weight: 600; margin-bottom: 4px;"),
+      shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 4px 0 2px 0;"),
       ageClassControlInput(ns("age_ctrls"), time_label = "Days")
     ),
-    shiny::HTML("&lt;hr style='margin: 10px 0;'/&gt;"),
-    shiny::actionButton(ns("reset_sim"), "Reset Simulation", class = "btn-warning", style = "margin-bottom: 6px; width: 100%;"),
-    step_size_slider(ns("step_size"), "Steps per click:", selected = 200),
-    shiny::actionButton(ns("step_sim"), "Run Simulation Steps", class = "btn-primary", style = "width: 100%;"),
-    shiny::br(), shiny::br(),
+
+    shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 4px 0 2px 0;"),
+
+    # 6. Bottom Section: Baseline Year &amp; Status
+    shiny::selectInput(ns("start_year"), "Baseline Year:", choices = years, selected = 1980),
     shiny::uiOutput(ns("status"))
   )
 }

@@ -91,15 +91,21 @@ with a hexagonal substrate grid overlay, calculating habitat suitability weights
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_habitat_features</span><span class="op">(</span></span>
 <span>  watershed_obj <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  categories <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lakes"</span>, <span class="st">"waterways"</span>, <span class="st">"forests"</span>, <span class="st">"bogs"</span><span class="op">)</span>,</span>
-<span>  use_cache <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  use_cache <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  site <span class="op">=</span> <span class="st">"isle_royale"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">get_moose_landmarks</span><span class="op">(</span>watershed_obj <span class="op">=</span> <span class="cn">NULL</span>, use_cache <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu">get_moose_landmarks</span><span class="op">(</span></span>
+<span>  watershed_obj <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  use_cache <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  site <span class="op">=</span> <span class="st">"isle_royale"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">create_isle_royale_hex_overlay</span><span class="op">(</span></span>
 <span>  hex_diameter <span class="op">=</span> <span class="fl">0.01</span>,</span>
 <span>  features <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  layer <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  layer <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  site <span class="op">=</span> <span class="st">"isle_royale"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">add_habitat_hex_overlay</span><span class="op">(</span></span>
@@ -132,12 +138,20 @@ with a hexagonal substrate grid overlay, calculating habitat suitability weights
 <dd><p>Logical; if TRUE, uses pre-fetched local landmark definitions when available.</p></dd>
 
 
+<dt id="arg-site">site<a class="anchor" aria-label="anchor" href="#arg-site"></a></dt>
+<dd><p>Target simulation landscape/site folder name (default: `"isle_royale"`).</p></dd>
+
+
 <dt id="arg-hex-diameter">hex_diameter<a class="anchor" aria-label="anchor" href="#arg-hex-diameter"></a></dt>
 <dd><p>Diameter of hexagonal grid cells in degrees (default = `0.01`).</p></dd>
 
 
 <dt id="arg-features">features<a class="anchor" aria-label="anchor" href="#arg-features"></a></dt>
 <dd><p>Optional path or `sf` object containing habitat features.</p></dd>
+
+
+<dt id="arg-layer">layer<a class="anchor" aria-label="anchor" href="#arg-layer"></a></dt>
+<dd><p>Optional path or `sf` boundary layer object.</p></dd>
 
 
 <dt id="arg-hex-obj">hex_obj<a class="anchor" aria-label="anchor" href="#arg-hex-obj"></a></dt>
