@@ -119,6 +119,22 @@ init_isle_royale_sim <- function(year = 1980,
     stringsAsFactors = FALSE
   )
   
+  # Store datafile path and datasets list on return object
+  ds_list <- list()
+  if (exists("isle_royale_datasets") && is.list(isle_royale_datasets)) {
+    ds_list <- isle_royale_datasets
+  } else if (is.character(datafile) && datafile != "" && dir.exists(datafile)) {
+    txt_files <- list.files(datafile, pattern = "\\.(txt|csv)$", full.names = TRUE)
+    for (f in txt_files) {
+      tbl_name <- tools::file_path_sans_ext(basename(f))
+      df_f <- tryCatch({
+        if (endsWith(f, ".csv")) utils::read.csv(f, stringsAsFactors = FALSE)
+        else utils::read.table(f, header = TRUE, sep = "\t", check.names = FALSE, stringsAsFactors = FALSE)
+      }, error = function(e) NULL)
+      if (!is.null(df_f)) ds_list[[tbl_name]] <- df_f
+    }
+  }
+  
   res <- list(
     community = community,
     habitat_overlay = habitat_overlay,
@@ -127,6 +143,8 @@ init_isle_royale_sim <- function(year = 1980,
     wolf_pop = wolf_df,
     historical_data = hist_data,
     history = hist_df,
+    datafile = datafile,
+    datasets = ds_list,
     nstep = 0
   )
   

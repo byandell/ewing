@@ -54,7 +54,7 @@ The `IsleRoyaleApp()` function launches an interactive, 100% offline Shiny appli
   2. **Age Classes**: Side-by-side `cowplot` multi-panel plot displaying step-by-step population age-class dynamics over time/days (`ewing_ageclass(sim)`). Each species (Moose vs. Wolf) features a dedicated panel with an adjacent legend listing only its specific age-class states.
   3. **Census Benchmarks**: High-resolution dual-panel `cowplot` grid rendering spatial organism positions alongside 40-year empirical census trajectory benchmarks (`wolf_moose.csv`).
   4. **Live Demographics**: Tabular summary of active living organisms grouped by age class that updates dynamically as simulation steps execute.
-  5. **Input Data**: Composes `inputApp` to dynamically discover and view input configuration tables (`organism.features`, `future.moose`, `future.wolf`, `moose.wolf`, `substrate.moose`, `substrate.wolf`, `substrate.substrate`, `isle_royale_features`, `isle_royale_landmarks`, and `wolf_moose` census data).
+  5. **Input Data**: Composes `inputApp` to dynamically discover and view all input configuration tables (`organism.features`, `future.moose`, `future.wolf`, `moose.wolf`, `substrate.moose`, `substrate.wolf`, `substrate.substrate`, `isle_royale_features`, `isle_royale_landmarks`, and `wolf_moose` census data).
 
 - **Tab-Aware Sidebar Decluttering**: Displays plot-specific controls (`show_habitat`, `show_landmarks`, `norm`, `total`, **`Steps` vs `Days`**) strictly when their corresponding tab is active.
 - **Logarithmic Step Size Slider**: Step click choices: `1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000`.
@@ -86,8 +86,8 @@ IsleRoyaleApp()
 
 ## 6. Interactive Demo Gallery & Technical References
 
-- **Interactive Shinylive WebAssembly Demo**: [`demos/IsleRoyaleApp.qmd`](../../demos/IsleRoyaleApp.qmd)
-- **Developer Guide & Site Prototyping**: [DEVELOPER.md](../../DEVELOPER.md)
-- **GIS Substrate Mesh Pipeline**: Vignette [`vignettes/tech_guide/gis.Rmd`](../../vignettes/tech_guide/gis.Rmd)
-- **Simulation Engine Mechanics & Scaling**: Vignette [`vignettes/tech_guide/engine.Rmd`](../../vignettes/tech_guide/engine.Rmd)
-- **Shiny UI Architecture & Module Design**: Vignette [`vignettes/tech_guide/ui.Rmd`](../../vignettes/tech_guide/ui.Rmd)
+- **Interactive Shinylive WebAssembly Demo**: [demos/IsleRoyaleApp.qmd](file:///Users/brianyandell/Documents/Research/ewing/ewing/demos/IsleRoyaleApp.qmd)
+- **Developer Guide & Site Prototyping**: [DEVELOPER.md](file:///Users/brianyandell/Documents/Research/ewing/ewing/DEVELOPER.md)
+- **GIS Substrate Mesh Pipeline**: [vignettes/tech_guide/gis.Rmd](file:///Users/brianyandell/Documents/Research/ewing/ewing/vignettes/tech_guide/gis.Rmd)
+- **Simulation Engine Mechanics & Scaling**: [vignettes/tech_guide/engine.Rmd](file:///Users/brianyandell/Documents/Research/ewing/ewing/vignettes/tech_guide/engine.Rmd)
+- **Shiny UI Architecture & Module Design**: [vignettes/tech_guide/ui.Rmd](file:///Users/brianyandell/Documents/Research/ewing/ewing/vignettes/tech_guide/ui.Rmd)

@@ -55,13 +55,19 @@ discover_dataset_tables <- function(datafile = "", sim = NULL) {
   if (!is.null(sim) && !is.null(sim$datasets)) {
     found <- unique(c(found, names(sim$datasets)))
   }
+  if (!is.null(sim) && !is.null(sim$community) && !is.null(sim$community$datasets)) {
+    found <- unique(c(found, names(sim$community$datasets)))
+  }
+  if (exists("isle_royale_datasets") && is.list(isle_royale_datasets)) {
+    found <- unique(c(found, names(isle_royale_datasets)))
+  }
   
   # 3. Default fallback choices if nothing found
   if (length(found) == 0) {
     found <- c(
-      "organism.features", "future.host", "future.parasite",
-      "substrate.host", "substrate.parasite", "substrate.substrate",
-      "host.parasite", "temperature.base", "temperature.par"
+      "organism.features", "future.moose", "future.wolf",
+      "substrate.moose", "substrate.wolf", "substrate.substrate",
+      "moose.wolf", "future.host", "future.parasite"
     )
   }
   
@@ -76,9 +82,9 @@ discover_dataset_tables <- function(datafile = "", sim = NULL) {
 inputAppInput <- function(id, choices = NULL) {
   ns <- shiny::NS(id)
   default_choices <- if (!is.null(choices)) choices else c(
-    "organism.features", "future.host", "future.parasite",
-    "substrate.host", "substrate.parasite", "substrate.substrate",
-    "host.parasite", "temperature.base", "temperature.par"
+    "organism.features", "future.moose", "future.wolf",
+    "substrate.moose", "substrate.wolf", "substrate.substrate",
+    "moose.wolf", "future.host", "future.parasite"
   )
   shiny::tagList(
     shiny::selectInput(ns("dataname"), "Select Dataset Table:",
@@ -137,9 +143,16 @@ inputAppServer <- function(id, simres = shiny::reactiveVal(NULL), datafile = shi
           }
         }
 
-        # 1. Check if dataset is stored in sim$datasets (e.g. injected in webR demo)
-        if (is.null(res) && !is.null(sim) && !is.null(sim$datasets) && !is.null(sim$datasets[[name]])) {
-          res <- sim$datasets[[name]]
+        # 1. Check if dataset is stored in sim$datasets or sim$community$datasets or global isle_royale_datasets
+        if (is.null(res) && !is.null(sim)) {
+          if (!is.null(sim$datasets) && !is.null(sim$datasets[[name]])) {
+            res <- sim$datasets[[name]]
+          } else if (!is.null(sim$community) && !is.null(sim$community$datasets) && !is.null(sim$community$datasets[[name]])) {
+            res <- sim$community$datasets[[name]]
+          }
+        }
+        if (is.null(res) && exists("isle_royale_datasets") && is.list(isle_royale_datasets) && !is.null(isle_royale_datasets[[name]])) {
+          res <- isle_royale_datasets[[name]]
         }
 
         # 2. Extract dynamically via getOrgDataSimple or getOrg* package routines

@@ -47,15 +47,17 @@ render_standalone_app <- function(app_name, height = 800) {
   
   # Auto-include Isle Royale data tables for IsleRoyaleApp
   if (app_name == "IsleRoyaleApp") {
+    cat("# --- Auto-Included Isle Royale Datasets List ---\n")
+    cat("isle_royale_datasets <- list()\n")
     ir_files <- list.files(ir_dir, pattern = "\\.txt$", full.names = TRUE)
     for (f in ir_files) {
       tbl_name <- sub("\\.txt$", "", basename(f))
-      df <- tryCatch(read.table(f, header = TRUE, check.names = FALSE, stringsAsFactors = FALSE), error = function(e) NULL)
+      df <- tryCatch(read.table(f, header = TRUE, sep = "\t", check.names = FALSE, stringsAsFactors = FALSE), error = function(e) NULL)
       if (!is.null(df)) {
         cat(paste0("# --- Auto-Included Data Table: ", tbl_name, " ---\n"))
         cat(paste0(tbl_name, " <- "))
         dput(df)
-        cat("\n\n")
+        cat(paste0("isle_royale_datasets[['", tbl_name, "']] <- ", tbl_name, "\n\n"))
       }
     }
     
@@ -67,7 +69,7 @@ render_standalone_app <- function(app_name, height = 800) {
         cat("# --- Auto-Included Historical Census Data: wolf_moose ---\n")
         cat("wolf_moose <- ")
         dput(df_wm)
-        cat("\n\n")
+        cat("isle_royale_datasets[['wolf_moose']] <- wolf_moose\n\n")
       }
     }
   }
