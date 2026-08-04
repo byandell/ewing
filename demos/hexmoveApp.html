@@ -318,25 +318,6 @@ NA, NA), substrate = c("substrate", "substrate", NA), deplete = c(100L,
 "parasite", "substrate"))
 
 
-# --- Auto-Included Data Table: redscale ---
-redscale &lt;- structure(list(DD = c(-5L, 0L, 0L, 55L, 147L, 195L, 225L, 255L, 
-307L, 355L, 410L, 465L, 560L, 650L, 651L), aphytis.feed = c(0L, 
-0L, 0L, 5L, 2L, 5L, 2L, 1L, 0L, 0L, 0L, 0L, 0L, 0L, 0L), aphytis = c(0L, 
-0L, 0L, 0L, 0L, 0L, 3L, 4L, 2L, 3L, 5L, 5L, 2L, 0L, 0L), comperiella = c(0, 
-0, 0, 3, 3, 2, 2, 3, 4, 5, 5, 5, 3.5, 0, 0), encarsia = c(0, 
-0, 0, 4, 3.5, 5, 5, 5, 4.5, 4.5, 4, 3, 3, 0, 0), gender = c("either", 
-"either", "neuter", "neuter", "neuter", "neuter", "neuter", "neuter", 
-"female", "female", "female", "female", "female", "female", "female"
-), pch = c("P", "P", "0", "1", "1", "2", "2", "2", "2", "3", 
-"3", "3", "V", "G", "D"), color = c("white", "white", "brown", 
-"green", "green", "turquoise", "turquoise", "turquoise", "turquoise", 
-"blue", "blue", "blue", "violet", "black", "red"), stage = c("parasite", 
-"parasite", "crawler", "first.instar", "first.molt", "second.1", 
-"second.2", "second.3", "second.molt", "third.1", "third.2", 
-"third.3", "virgin", "gravid", "death")), class = "data.frame", row.names = c(NA, 
--15L))
-
-
 # --- Auto-Included Data Table: substrate.host ---
 substrate.host &lt;- structure(list(substrate = c("fruit", "fruit", "fruit", "fruit", 
 "twig", "leaf", "leaf"), side = c("1", "2", "3", "4", NA, "top", 
@@ -2631,7 +2612,7 @@ temp.lines &lt;- function( s, mult = 24, col = "red" )
 my.read &lt;- function(dataname, stringsAsFactors = TRUE)
 {
   switch(tools::file_ext(dataname),
-         "txt" =, "tsv" = read.table(dataname, fill = TRUE,
+         "txt" =, "tsv" = read.table(dataname, header = TRUE, fill = TRUE,
                                      stringsAsFactors = stringsAsFactors),
          "csv" = read.csv(dataname, fill = TRUE,
                           stringsAsFactors = stringsAsFactors),
@@ -2985,6 +2966,16 @@ getOrgData &lt;- function(community, left, right,
       data_exists &lt;- TRUE
     }
   }
+
+  if (!data_exists &amp;&amp; (is.null(datafile) || datafile == "")) {
+    def_file &lt;- get_site_cache_file(paste0(sheet, ".txt"), site = "default")
+    if (def_file != "" &amp;&amp; file.exists(def_file)) {
+      datafile &lt;- def_file
+      data_exists &lt;- TRUE
+      sheet &lt;- ""
+    }
+  }
+
   if(!data_exists) {
     # Load package data or get user-provided global data.
     mydata( sheet, getOrgInfo( community, "package" ), messages = messages)

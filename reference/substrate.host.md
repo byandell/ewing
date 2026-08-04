@@ -106,6 +106,9 @@ contains 0s and 1s, with positions directly connected (1) or not (0).
 ``` r
 
 data(substrate.host)
+#> Warning: data set ‘substrate.host’ not found
 data(substrate.parasite)
+#> Warning: data set ‘substrate.parasite’ not found
 data(substrate.substrate)
+#> Warning: data set ‘substrate.substrate’ not found
 ```

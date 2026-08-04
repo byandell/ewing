@@ -84,5 +84,7 @@ That is, when and individual appears at the top of the event queue.
 ``` r
 
 data(future.host)
+#> Warning: data set ‘future.host’ not found
 data(future.parasite)
+#> Warning: data set ‘future.parasite’ not found
 ```

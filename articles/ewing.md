@@ -25,10 +25,7 @@ rather than hiding things as I have done in the past. Now you do
 ``` r
 
 mysim <- init.simulation(interact = FALSE)
-#> Data organism.features already loaded
 #> Initializing Temperature Profile ...
-#> Data temperature.par already loaded
-#> Data temperature.base already loaded
 #> Base daily temperature fluctuation:
 #> Temperature set for days 0 to 202 
 #> Daily low temperature range: 68 to 77 
@@ -40,12 +37,6 @@ mysim <- init.simulation(interact = FALSE)
 #> Creating simulation organism set using species:
 #>  host, parasite 
 #> 
-#> Data future.host already loaded
-#> Data substrate.host already loaded
-#> Data future.parasite already loaded
-#> Data host.parasite already loaded
-#> Data substrate.parasite already loaded
-#> Data substrate.substrate already loaded
 #> 
 #> Initialize host at size 200...
 #> Initializing events for host with 200 individuals

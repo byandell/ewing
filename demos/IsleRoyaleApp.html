@@ -8361,7 +8361,7 @@ temp.lines &lt;- function( s, mult = 24, col = "red" )
 my.read &lt;- function(dataname, stringsAsFactors = TRUE)
 {
   switch(tools::file_ext(dataname),
-         "txt" =, "tsv" = read.table(dataname, fill = TRUE,
+         "txt" =, "tsv" = read.table(dataname, header = TRUE, fill = TRUE,
                                      stringsAsFactors = stringsAsFactors),
          "csv" = read.csv(dataname, fill = TRUE,
                           stringsAsFactors = stringsAsFactors),
@@ -8715,6 +8715,16 @@ getOrgData &lt;- function(community, left, right,
       data_exists &lt;- TRUE
     }
   }
+
+  if (!data_exists &amp;&amp; (is.null(datafile) || datafile == "")) {
+    def_file &lt;- get_site_cache_file(paste0(sheet, ".txt"), site = "default")
+    if (def_file != "" &amp;&amp; file.exists(def_file)) {
+      datafile &lt;- def_file
+      data_exists &lt;- TRUE
+      sheet &lt;- ""
+    }
+  }
+
   if(!data_exists) {
     # Load package data or get user-provided global data.
     mydata( sheet, getOrgInfo( community, "package" ), messages = messages)

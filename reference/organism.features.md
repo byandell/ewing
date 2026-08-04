@@ -68,4 +68,5 @@ Lisa D. Forster and Robert F. Luck, Entomology, UC Riverside.
 ``` r
 
 data(organism.features)
+#> Warning: data set ‘organism.features’ not found
 ```

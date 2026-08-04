@@ -37,6 +37,7 @@ These tables are internalized via `init.simulation`.
 ``` r
 
 data(host.parasite)
+#> Warning: data set ‘host.parasite’ not found
 data(host.comperiella)
 #> Warning: data set ‘host.comperiella’ not found
 data(host.encarsia)
