@@ -61,15 +61,20 @@
 ├── R/                          # R source functions (60+ files)
 │   ├── step_controls.R         # Logarithmic step slider, axis units (Steps vs Time/Days), age class controls
 │   ├── distPlotApp.R           # Population age-class distribution Shiny module
-│   ├── inputApp.R              # Dataset table discovery and viewer Shiny module
+│   ├── inputApp.R              # Tabular dataset discovery &amp; viewer module (excluding .rds layers)
 │   ├── substrateApp.R          # Substrate network rendering Shiny module
-│   ├── IsleRoyaleApp.R         # Isle Royale peer application wrapper
+│   ├── ecosystem_sim.R         # Generalized multi-landscape simulation engine &amp; get_site_cache_file()
+│   ├── ecosystemApp.R          # Generalized multi-landscape Shiny app platform
+│   ├── isle_royale_sim.R       # Isle Royale backward-compatible wrapper shell
+│   ├── IsleRoyaleApp.R         # Isle Royale Shiny app backward-compatible wrapper shell
 │   ├── sysetholApp.R           # Systems Ethology peer application wrapper
-│   ├── isle_royale_sim.R       # Isle Royale spatial simulation engine &amp; S3 methods
 │   ├── ewing_ageclass.R        # Age class S3 tallying &amp; cowplot multi-panel visualization
 │   └── ewing_substrate.R       # Spatial GIS substrate rendering S3 methods
 ├── inst/
-│   ├── extdata/isle_royale/    # Isle Royale prototype site dataset tables &amp; spatial RDS files
+│   ├── extdata/
+│   │   ├── default/            # Core default simulation organism tables (organism.features.txt, etc.)
+│   │   ├── isle_royale/        # Isle Royale prototype site dataset tables &amp; spatial RDS files
+│   │   └── watershed/          # HUC-12 watershed spatial features CSV
 │   ├── doc/isle_royale/        # Isle Royale ecological case study documentation &amp; census CSV
 │   └── scripts/                # Utility scripts (isle_royale_habitat.R, watershedApp.R)
 ├── vignettes/
@@ -78,51 +83,54 @@
 └── DEVELOPER.md                # High-level developer documentation</code></pre>
 <hr></div>
 <div class="section level2">
-<h2 id="id_2-site-prototyping-architecture">2. Site Prototyping Architecture<a class="anchor" aria-label="anchor" href="#id_2-site-prototyping-architecture"></a></h2>
-<p>Isle Royale serves as the prototype template for creating new GIS-based simulation sites. To instantiate a new simulation site (e.g. Madeline Island or custom watersheds):</p>
+<h2 id="id_2-multi-landscape-site-prototyping-architecture">2. Multi-Landscape Site Prototyping Architecture<a class="anchor" aria-label="anchor" href="#id_2-multi-landscape-site-prototyping-architecture"></a></h2>
+<p><code><a href="reference/ecosystem_sim.html">init_ecosystem_sim()</a></code> and <code><a href="reference/ecosystemApp.html">ecosystemApp()</a></code> provide a generalized framework for building GIS-based simulation sites. Isle Royale serves as the primary prototype template (<code>ecosystem = "isle_royale"</code>).</p>
 <div class="section level3">
-<h3 id="id_1-interactive-site-discovery--feature-export">1. Interactive Site Discovery &amp; Feature Export<a class="anchor" aria-label="anchor" href="#id_1-interactive-site-discovery--feature-export"></a></h3>
-<p>Use <code><a href="reference/hexmapApp.html">hexmapApp()</a></code> to interactively select a study region via NHD watershed boundaries (HUC-8 / HUC-10 / HUC-12): - Extracts OpenStreetMap spatial feature polygons/lines (lakes, bogs, forests). - Geocodes landmark POIs. - Builds a hexagonal substrate mesh (<code>add_habitat_hex_overlay</code>). - Exports custom site features (<code>site_features.rds</code>) and landmarks (<code>site_landmarks.rds</code>).</p>
+<h3 id="id_1-spatial--tabular-asset-placement">1. Spatial &amp; Tabular Asset Placement<a class="anchor" aria-label="anchor" href="#id_1-spatial--tabular-asset-placement"></a></h3>
+<p>To instantiate a new simulation site (e.g. <code>ecosystem = "yellowstone"</code> or <code>ecosystem = "madeline_island"</code>), place site assets in <code>inst/extdata/[ecosystem]/</code>: - <strong>Organism &amp; Transition Tables</strong>: <code>organism.features.txt</code>, <code>future.[species1].txt</code>, <code>future.[species2].txt</code>, <code>[species1].[species2].txt</code>, <code>substrate.[species].txt</code>. - <strong>Spatial GIS Boundary Layers</strong>: <code>[ecosystem]_layer.rds</code> (boundary outline), <code>[ecosystem]_features.rds</code> (habitat polygons), <code>[ecosystem]_landmarks.rds</code> (sighting POIs).</p>
 </div>
 <div class="section level3">
-<h3 id="id_2-custom-site-initializer-parameterization">2. Custom Site Initializer Parameterization<a class="anchor" aria-label="anchor" href="#id_2-custom-site-initializer-parameterization"></a></h3>
-<p>Pass exported custom RDS files or <code>sf</code> objects into <code><a href="reference/isle_royale_sim.html">init_isle_royale_sim()</a></code> or site initializers:</p>
+<h3 id="id_2-multi-landscape-site-resolver-get_site_cache_file">2. Multi-Landscape Site Resolver (<code>get_site_cache_file</code>)<a class="anchor" aria-label="anchor" href="#id_2-multi-landscape-site-resolver-get_site_cache_file"></a></h3>
+<p>File and folder paths under <code>extdata/[site]</code> are resolved dynamically across installed package paths (<code>library/ewing/extdata/[site]</code>) and development source trees (<code>inst/extdata/[site]</code>):</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">my_sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/isle_royale_sim.html">init_isle_royale_sim</a></span><span class="op">(</span></span>
-<span>  year <span class="op">=</span> <span class="fl">2020</span>,</span>
-<span>  n_moose <span class="op">=</span> <span class="fl">500</span>,</span>
-<span>  n_wolves <span class="op">=</span> <span class="fl">30</span>,</span>
-<span>  features_rds <span class="op">=</span> <span class="st">"path/to/site_features.rds"</span>,</span>
-<span>  landmarks_rds <span class="op">=</span> <span class="st">"path/to/site_landmarks.rds"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># Resolve file or directory path for any site</span></span>
+<span><span class="va">data_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/get_site_cache_file.html">get_site_cache_file</a></span><span class="op">(</span><span class="st">""</span>, site <span class="op">=</span> <span class="st">"yellowstone"</span><span class="op">)</span></span>
+<span><span class="va">layer_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/get_site_cache_file.html">get_site_cache_file</a></span><span class="op">(</span><span class="st">"yellowstone_layer.rds"</span>, site <span class="op">=</span> <span class="st">"yellowstone"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="id_3-simulation--app-execution">3. Simulation &amp; App Execution<a class="anchor" aria-label="anchor" href="#id_3-simulation--app-execution"></a></h3>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Run simulation for custom ecosystem</span></span>
+<span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ecosystem_sim.html">init_ecosystem_sim</a></span><span class="op">(</span>ecosystem <span class="op">=</span> <span class="st">"yellowstone"</span>, n_hosts <span class="op">=</span> <span class="fl">400</span>, n_predators <span class="op">=</span> <span class="fl">25</span><span class="op">)</span></span>
+<span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ecosystem_sim.html">run_ecosystem_sim</a></span><span class="op">(</span><span class="va">sim</span>, nstep <span class="op">=</span> <span class="fl">200</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Launch interactive Shiny app</span></span>
+<span><span class="fu"><a href="reference/ecosystemApp.html">ecosystemApp</a></span><span class="op">(</span>ecosystem <span class="op">=</span> <span class="st">"yellowstone"</span>, title <span class="op">=</span> <span class="st">"Yellowstone Simulation Platform"</span><span class="op">)</span></span></code></pre></div>
 <hr></div>
 </div>
 <div class="section level2">
-<h2 id="id_3-shared-shiny-sub-module-architecture">3. Shared Shiny Sub-Module Architecture<a class="anchor" aria-label="anchor" href="#id_3-shared-shiny-sub-module-architecture"></a></h2>
-<p><code>IsleRoyaleApp.R</code> and <code>sysetholApp.R</code> are peer application wrappers composing shared, modular Shiny components:</p>
+<h2 id="id_3-shared-shiny-module-standards--ux-layout">3. Shared Shiny Module Standards &amp; UX Layout<a class="anchor" aria-label="anchor" href="#id_3-shared-shiny-module-standards--ux-layout"></a></h2>
+<p><code>IsleRoyaleApp.R</code> and <code>sysetholApp.R</code> delegate to <code>ecosystemApp.R</code> and <code>sysetholApp.R</code> using standard modular components:</p>
 <ol style="list-style-type: decimal"><li>
 <strong><code>step_controls</code> (<a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/R/step_controls.R">R/step_controls.R</a>)</strong>:
 <ul><li>
 <code><a href="reference/step_controls.html">step_size_slider()</a></code>: Logarithmic step slider (1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000).</li>
-<li>
-<code><a href="reference/step_controls.html">parse_step_size()</a></code>: Safely converts slider indices and direct step counts.</li>
 <li>
 <code><a href="reference/step_controls.html">axisUnitInput()</a></code> / <code><a href="reference/step_controls.html">axisUnitServer()</a></code>: Display units selector (<code>Steps</code> vs <code>Time</code> / <code>Days</code>).</li>
 <li>
 <code><a href="reference/step_controls.html">ageClassControlInput()</a></code> / <code><a href="reference/step_controls.html">ageClassControlServer()</a></code>: Age class display controls (<code>x_var</code>, <code>norm</code>, <code>total</code>).</li>
 </ul></li>
 <li>
-<strong><code>distPlotApp</code> (<a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/R/distPlotApp.R">R/distPlotApp.R</a>)</strong>:
-<ul><li>Renders age-class population dynamics over simulation steps or time/days.</li>
-</ul></li>
-<li>
 <strong><code>inputApp</code> (<a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/R/inputApp.R">R/inputApp.R</a>)</strong>:
 <ul><li>
-<code><a href="reference/inputApp.html">discover_dataset_tables()</a></code>: Dynamically scans input folders or Excel sheets to populate dataset table selectors with zero hardcoded table names.</li>
+<code><a href="reference/inputApp.html">discover_dataset_tables()</a></code>: Dynamically scans input folders (<code>.txt</code>, <code>.csv</code>, <code>.tsv</code>), explicitly excluding spatial <code>.rds</code> layers so <code>inputApp</code> shows only clean data tables.</li>
 </ul></li>
 <li>
-<strong>Tab-Aware Sidebar Decluttering</strong>:
-<ul><li>Both peer apps utilize <code>conditionalPanel</code> bound to <code>input.tabset</code> to display plot-specific controls strictly when their corresponding tab is active.</li>
+<strong>Streamlined Sidebar Layout Standards</strong>:
+<ul><li>Top-positioned <code>Steps per click:</code> slider when <code>nsim = 1</code>.</li>
+<li>Single-row flex container for <strong>Run</strong> and <strong>Reset</strong> action buttons (<code>display: flex; gap: 8px;</code>).</li>
+<li>Bottom-positioned historical baseline year selector.</li>
+<li>Compact CSS form group compression (<code>margin-bottom: 4px;</code>, <code>.irs-with-grid { height: 34px; }</code>) ensuring sidebar height matches main display panels cleanly without vertical scrolling.</li>
 </ul></li>
 </ol><hr></div>
 <div class="section level2">

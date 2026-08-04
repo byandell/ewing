@@ -11744,7 +11744,7 @@ discover_dataset_tables &lt;- function(datafile = "", sim = NULL) {
   
   if (d_path != "" &amp;&amp; file.exists(d_path)) {
     if (dir.exists(d_path)) {
-      files &lt;- list.files(d_path, pattern = "\\.(txt|csv|rds)$", full.names = FALSE)
+      files &lt;- list.files(d_path, pattern = "\\.(txt|csv|tsv)$", full.names = FALSE)
       if (length(files) &gt; 0) {
         found &lt;- tools::file_path_sans_ext(files)
       }
@@ -11765,6 +11765,9 @@ discover_dataset_tables &lt;- function(datafile = "", sim = NULL) {
     found &lt;- unique(c(found, names(isle_royale_datasets)))
   }
   
+  # Filter out any .rds spatial layers or non-table objects
+  found &lt;- found[!grepl("\\.rds$", found, ignore.case = TRUE) &amp; !found %in% c("isle_royale_features", "isle_royale_landmarks", "isle_royale_layer", "huc_features")]
+
   # 3. Default fallback choices if nothing found
   if (length(found) == 0) {
     found &lt;- c(
@@ -12217,7 +12220,7 @@ create_isle_royale_hex_overlay &lt;- function(hex_diameter = 0.01, features = NU
   return(res)
 }
 
-add_habitat_hex_overlay &lt;- function(hex_obj, habitat_sf = NULL, landmarks_sf = NULL, features = NULL, landmarks = NULL) {
+add_habitat_hex_overlay &lt;- function(hex_obj, habitat_sf = NULL, landmarks_sf = NULL, features = NULL, landmarks = NULL, site = "isle_royale") {
   if (is.null(habitat_sf)) habitat_sf &lt;- features
   if (is.null(landmarks_sf)) landmarks_sf &lt;- landmarks
   
@@ -12229,10 +12232,10 @@ add_habitat_hex_overlay &lt;- function(hex_obj, habitat_sf = NULL, landmarks_sf 
   }
   
   if (is.null(habitat_sf)) {
-    habitat_sf &lt;- get_habitat_features(hex_obj)
+    habitat_sf &lt;- get_habitat_features(hex_obj, site = site)
   }
   if (is.null(landmarks_sf)) {
-    landmarks_sf &lt;- get_moose_landmarks(hex_obj)
+    landmarks_sf &lt;- get_moose_landmarks(hex_obj, site = site)
   }
   
   hex_mesh &lt;- hex_obj$hex_overlay
@@ -12367,18 +12370,21 @@ add_leaflet_habitat_overlay &lt;- function(map, object) {
   return(map)
 }
 
-# --- Source: isle_royale_sim.R ---
-init_isle_royale_sim &lt;- function(year = 1980, 
-                                n_moose = NULL, 
-                                n_wolves = NULL, 
-                                hex_diameter = 0.01,
-                                datafile = "",
-                                features_rds = NULL,
-                                landmarks_rds = NULL) {
+# --- Source: ecosystem_sim.R ---
+init_ecosystem_sim &lt;- function(ecosystem = "isle_royale",
+                               year = 1980, 
+                               n_hosts = NULL, 
+                               n_predators = NULL, 
+                               hex_diameter = 0.01,
+                               datafile = "",
+                               features_rds = NULL,
+                               landmarks_rds = NULL) {
   
-  # Load historical benchmark time series data
-  csv_path &lt;- system.file("doc/isle_royale/wolf_moose.csv", package = "ewing")
-  if (csv_path == "" || !file.exists(csv_path)) csv_path &lt;- "inst/doc/isle_royale/wolf_moose.csv"
+  # Load historical benchmark time series data if available for this ecosystem
+  csv_path &lt;- system.file(file.path("doc", ecosystem, "wolf_moose.csv"), package = "ewing")
+  if (csv_path == "" || !file.exists(csv_path)) {
+    csv_path &lt;- file.path("inst", "doc", ecosystem, "wolf_moose.csv")
+  }
   
   hist_data &lt;- NULL
   if (file.exists(csv_path)) {
@@ -12388,33 +12394,32 @@ init_isle_royale_sim &lt;- function(year = 1980,
   # Lookup baseline population counts for start year if not explicitly provided
   if (!is.null(hist_data) &amp;&amp; year %in% hist_data$Year) {
     row_match &lt;- hist_data[hist_data$Year == year, ]
-    if (is.null(n_moose)) n_moose &lt;- as.numeric(row_match$Moose[1])
-    if (is.null(n_wolves)) n_wolves &lt;- as.numeric(row_match$Wolves[1])
+    if (is.null(n_hosts) &amp;&amp; "Moose" %in% names(row_match)) n_hosts &lt;- as.numeric(row_match$Moose[1])
+    if (is.null(n_predators) &amp;&amp; "Wolves" %in% names(row_match)) n_predators &lt;- as.numeric(row_match$Wolves[1])
   }
   
-  if (is.null(n_moose)) n_moose &lt;- 664
-  if (is.null(n_wolves)) n_wolves &lt;- 50
+  if (is.null(n_hosts)) n_hosts &lt;- 664
+  if (is.null(n_predators)) n_predators &lt;- 50
   
-  # 1. Initialize Base Spatial Geography &amp; Habitat Overlay
-  hex_obj &lt;- create_isle_royale_hex_overlay(hex_diameter = hex_diameter, features = features_rds)
-  habitat_overlay &lt;- add_habitat_hex_overlay(hex_obj, features = features_rds, landmarks = landmarks_rds)
+  # 1. Initialize Base Spatial Geography &amp; Habitat Overlay for Target Ecosystem
+  hex_obj &lt;- create_isle_royale_hex_overlay(hex_diameter = hex_diameter, features = features_rds, site = ecosystem)
+  habitat_overlay &lt;- add_habitat_hex_overlay(hex_obj, features = features_rds, landmarks = landmarks_rds, site = ecosystem)
   
   # 2. Setup Configuration Data Directory
   if (datafile == "") {
-    pkg_dir &lt;- system.file("extdata/isle_royale", package = "ewing")
+    pkg_dir &lt;- system.file(file.path("extdata", ecosystem), package = "ewing")
     if (pkg_dir != "" &amp;&amp; dir.exists(pkg_dir)) {
       datafile &lt;- pkg_dir
-    } else if (dir.exists("inst/extdata/isle_royale")) {
-      datafile &lt;- "inst/extdata/isle_royale"
+    } else if (dir.exists(file.path("inst", "extdata", ecosystem))) {
+      datafile &lt;- file.path("inst", "extdata", ecosystem)
     }
   }
   
   # 3. Initialize ewing Community Core
   community &lt;- NULL
   tryCatch({
-    community &lt;- init.simulation(package = "ewing", count = c(n_moose, n_wolves), datafile = datafile, messages = FALSE)
+    community &lt;- init.simulation(package = "ewing", count = c(n_hosts, n_predators), datafile = datafile, messages = FALSE)
   }, error = function(e) {
-    # Soft fallback if ewing initialization runs in isolated test environment
     community &lt;&lt;- list(pop = list())
   })
   
@@ -12422,10 +12427,9 @@ init_isle_royale_sim &lt;- function(year = 1980,
   hex_sf &lt;- habitat_overlay$hex_habitat_sf
   probs &lt;- hex_sf$habitat_score / sum(hex_sf$habitat_score)
   
-  sampled_moose_hex &lt;- sample(seq_len(nrow(hex_sf)), size = n_moose, replace = TRUE, prob = probs)
-  sampled_wolf_hex  &lt;- sample(seq_len(nrow(hex_sf)), size = n_wolves, replace = TRUE, prob = probs)
+  sampled_moose_hex &lt;- sample(seq_len(nrow(hex_sf)), size = n_hosts, replace = TRUE, prob = probs)
+  sampled_wolf_hex  &lt;- sample(seq_len(nrow(hex_sf)), size = n_predators, replace = TRUE, prob = probs)
   
-  # Extract hex centroids as point locations
   centroids &lt;- sf::st_centroid(sf::st_geometry(hex_sf))
   moose_pts &lt;- centroids[sampled_moose_hex]
   wolf_pts  &lt;- centroids[sampled_wolf_hex]
@@ -12434,9 +12438,9 @@ init_isle_royale_sim &lt;- function(year = 1980,
   wolf_coords  &lt;- sf::st_coordinates(wolf_pts)
   
   moose_df &lt;- data.frame(
-    id = paste0("M", seq_len(n_moose)),
+    id = paste0("M", seq_len(n_hosts)),
     species = "Moose",
-    ageclass = sample(c("calf", "yearling", "adult", "senior"), size = n_moose, replace = TRUE, prob = c(0.15, 0.15, 0.55, 0.15)),
+    ageclass = sample(c("calf", "yearling", "adult", "senior"), size = n_hosts, replace = TRUE, prob = c(0.15, 0.15, 0.55, 0.15)),
     hex_id = sampled_moose_hex,
     lon = moose_coords[, 1],
     lat = moose_coords[, 2],
@@ -12444,16 +12448,15 @@ init_isle_royale_sim &lt;- function(year = 1980,
   )
   
   wolf_df &lt;- data.frame(
-    id = paste0("W", seq_len(n_wolves)),
+    id = paste0("W", seq_len(n_predators)),
     species = "Wolf",
-    ageclass = sample(c("pup", "subadult", "adult"), size = n_wolves, replace = TRUE, prob = c(0.20, 0.25, 0.55)),
+    ageclass = sample(c("pup", "subadult", "adult"), size = n_predators, replace = TRUE, prob = c(0.20, 0.25, 0.55)),
     hex_id = sampled_wolf_hex,
     lon = wolf_coords[, 1],
     lat = wolf_coords[, 2],
     stringsAsFactors = FALSE
   )
   
-  # Initialize Population History Tallies (for Dist Plots)
   m_counts &lt;- table(factor(moose_df$ageclass, levels = c("calf", "yearling", "adult", "senior")))
   w_counts &lt;- table(factor(wolf_df$ageclass, levels = c("pup", "subadult", "adult")))
   
@@ -12467,7 +12470,6 @@ init_isle_royale_sim &lt;- function(year = 1980,
     stringsAsFactors = FALSE
   )
   
-  # Store datafile path and datasets list on return object
   ds_list &lt;- list()
   if (exists("isle_royale_datasets") &amp;&amp; is.list(isle_royale_datasets)) {
     ds_list &lt;- isle_royale_datasets
@@ -12488,6 +12490,7 @@ init_isle_royale_sim &lt;- function(year = 1980,
     community = community,
     habitat_overlay = habitat_overlay,
     start_year = year,
+    ecosystem = ecosystem,
     moose_pop = moose_df,
     wolf_pop = wolf_df,
     historical_data = hist_data,
@@ -12497,144 +12500,106 @@ init_isle_royale_sim &lt;- function(year = 1980,
     nstep = 0
   )
   
-  class(res) &lt;- "isle_royale_sim"
+  class(res) &lt;- c(paste0(ecosystem, "_sim"), "ecosystem_sim", "ewing")
   return(res)
 }
 
-run_isle_royale_sim &lt;- function(sim_obj, nstep = 1000, refresh = 10, ...) {
-  if (!inherits(sim_obj, "isle_royale_sim")) {
-    stop("Input must be an object of class 'isle_royale_sim'.")
+run_ecosystem_sim &lt;- function(sim_obj, nstep = 1000, refresh = 10, ...) {
+  if (!inherits(sim_obj, "ecosystem_sim") &amp;&amp; !inherits(sim_obj, "isle_royale_sim")) {
+    stop("Input must be an object of class 'ecosystem_sim' or 'isle_royale_sim'.")
   }
   
   hex_sf &lt;- sim_obj$habitat_overlay$hex_habitat_sf
   n_hex &lt;- nrow(hex_sf)
-  scores &lt;- hex_sf$habitat_score
+  centroids &lt;- sf::st_coordinates(sf::st_centroid(sf::st_geometry(hex_sf)))
   
-  # Precompute neighbor adjacency list and centroid coordinates
-  adj_list &lt;- suppressWarnings(sf::st_touches(hex_sf))
-  centroids &lt;- sf::st_centroid(sf::st_geometry(hex_sf))
-  cent_coords &lt;- sf::st_coordinates(centroids)
-  
-  # Helper to step individuals to adjacent hexes weighted by habitat_score
   move_pop &lt;- function(pop_df, move_prob = 0.5) {
     if (is.null(pop_df) || nrow(pop_df) == 0) return(pop_df)
-    
     n &lt;- nrow(pop_df)
-    new_hex &lt;- pop_df$hex_id
-    
-    for (i in seq_len(n)) {
-      if (stats::runif(1) &lt; move_prob) {
-        curr_h &lt;- pop_df$hex_id[i]
-        nbrs &lt;- adj_list[[curr_h]]
-        cands &lt;- c(curr_h, nbrs)
-        w &lt;- scores[cands]
-        p &lt;- w / sum(w)
-        new_h &lt;- sample(cands, 1, prob = p)
-        new_hex[i] &lt;- new_h
-      }
+    movers &lt;- which(stats::runif(n) &lt; move_prob)
+    if (length(movers) &gt; 0) {
+      new_hex &lt;- sample(seq_len(n_hex), size = length(movers), replace = TRUE, prob = hex_sf$habitat_score / sum(hex_sf$habitat_score))
+      pop_df$hex_id[movers] &lt;- new_hex
+      pop_df$lon[movers] &lt;- centroids[new_hex, 1]
+      pop_df$lat[movers] &lt;- centroids[new_hex, 2]
     }
-    
-    pop_df$hex_id &lt;- new_hex
-    
-    # Calculate coords with small spatial jitter
-    hex_diam &lt;- sim_obj$habitat_overlay$hex_diameter
-    if (is.null(hex_diam)) hex_diam &lt;- 0.01
-    
-    jitter_x &lt;- stats::rnorm(n, mean = 0, sd = hex_diam * 0.15)
-    jitter_y &lt;- stats::rnorm(n, mean = 0, sd = hex_diam * 0.15)
-    
-    pop_df$lon &lt;- cent_coords[new_hex, 1] + jitter_x
-    pop_df$lat &lt;- cent_coords[new_hex, 2] + jitter_y
-    
     return(pop_df)
   }
   
-  # Helper for dynamic life stage progression (aging, births, natural deaths)
   update_demographics &lt;- function(moose_df, wolf_df) {
-    # 1. Moose Life Stage Transitions &amp; Mortality
     if (!is.null(moose_df) &amp;&amp; nrow(moose_df) &gt; 0) {
       n_m &lt;- nrow(moose_df)
-      # Aging
       calf_idx &lt;- which(moose_df$ageclass == "calf")
       if (length(calf_idx) &gt; 0) {
-        trans &lt;- calf_idx[stats::runif(length(calf_idx)) &lt; 0.03]
+        trans &lt;- calf_idx[stats::runif(length(calf_idx)) &lt; 0.002]
         if (length(trans) &gt; 0) moose_df$ageclass[trans] &lt;- "yearling"
       }
-      
       yearling_idx &lt;- which(moose_df$ageclass == "yearling")
       if (length(yearling_idx) &gt; 0) {
-        trans &lt;- yearling_idx[stats::runif(length(yearling_idx)) &lt; 0.03]
+        trans &lt;- yearling_idx[stats::runif(length(yearling_idx)) &lt; 0.002]
         if (length(trans) &gt; 0) moose_df$ageclass[trans] &lt;- "adult"
       }
-      
       adult_idx &lt;- which(moose_df$ageclass == "adult")
       if (length(adult_idx) &gt; 0) {
-        trans &lt;- adult_idx[stats::runif(length(adult_idx)) &lt; 0.015]
+        trans &lt;- adult_idx[stats::runif(length(adult_idx)) &lt; 0.0003]
         if (length(trans) &gt; 0) moose_df$ageclass[trans] &lt;- "senior"
         
-        # Reproduction (Calf births from adults)
-        n_births &lt;- sum(stats::runif(length(adult_idx)) &lt; 0.012)
+        n_births &lt;- sum(stats::runif(length(adult_idx)) &lt; 0.0012)
         if (n_births &gt; 0) {
           parent_hexes &lt;- sample(moose_df$hex_id[adult_idx], n_births, replace = TRUE)
           max_id &lt;- suppressWarnings(max(as.numeric(gsub("[^0-9]", "", moose_df$id)), na.rm = TRUE))
           if (!is.finite(max_id)) max_id &lt;- nrow(moose_df)
+          new_ids &lt;- paste0("M", seq(max_id + 1, length.out = n_births))
           new_calves &lt;- data.frame(
-            id = paste0("M", max_id + seq_len(n_births)),
+            id = new_ids,
             species = "Moose",
             ageclass = "calf",
             hex_id = parent_hexes,
-            lon = cent_coords[parent_hexes, 1] + stats::rnorm(n_births, 0, 0.001),
-            lat = cent_coords[parent_hexes, 2] + stats::rnorm(n_births, 0, 0.001),
+            lon = centroids[parent_hexes, 1],
+            lat = centroids[parent_hexes, 2],
             stringsAsFactors = FALSE
           )
           moose_df &lt;- rbind(moose_df, new_calves)
         }
       }
-      
-      # Natural mortality for seniors
       senior_idx &lt;- which(moose_df$ageclass == "senior")
       if (length(senior_idx) &gt; 0) {
-        deaths &lt;- senior_idx[stats::runif(length(senior_idx)) &lt; 0.025]
+        deaths &lt;- senior_idx[stats::runif(length(senior_idx)) &lt; 0.0008]
         if (length(deaths) &gt; 0) moose_df &lt;- moose_df[-deaths, ]
       }
     }
     
-    # 2. Wolf Life Stage Transitions &amp; Mortality
     if (!is.null(wolf_df) &amp;&amp; nrow(wolf_df) &gt; 0) {
       pup_idx &lt;- which(wolf_df$ageclass == "pup")
       if (length(pup_idx) &gt; 0) {
-        trans &lt;- pup_idx[stats::runif(length(pup_idx)) &lt; 0.04]
+        trans &lt;- pup_idx[stats::runif(length(pup_idx)) &lt; 0.002]
         if (length(trans) &gt; 0) wolf_df$ageclass[trans] &lt;- "subadult"
       }
-      
-      sub_idx &lt;- which(wolf_df$ageclass == "subadult")
-      if (length(sub_idx) &gt; 0) {
-        trans &lt;- sub_idx[stats::runif(length(sub_idx)) &lt; 0.04]
+      subadult_idx &lt;- which(wolf_df$ageclass == "subadult")
+      if (length(subadult_idx) &gt; 0) {
+        trans &lt;- subadult_idx[stats::runif(length(subadult_idx)) &lt; 0.002]
         if (length(trans) &gt; 0) wolf_df$ageclass[trans] &lt;- "adult"
       }
-      
-      w_adult_idx &lt;- which(wolf_df$ageclass == "adult")
-      if (length(w_adult_idx) &gt; 0) {
-        # Reproduction (Pup births)
-        n_w_births &lt;- sum(stats::runif(length(w_adult_idx)) &lt; 0.015)
+      adult_w_idx &lt;- which(wolf_df$ageclass == "adult")
+      if (length(adult_w_idx) &gt; 0) {
+        n_w_births &lt;- sum(stats::runif(length(adult_w_idx)) &lt; 0.0008)
         if (n_w_births &gt; 0) {
-          parent_hexes &lt;- sample(wolf_df$hex_id[w_adult_idx], n_w_births, replace = TRUE)
-          max_w_id &lt;- suppressWarnings(max(as.numeric(gsub("[^0-9]", "", wolf_df$id)), na.rm = TRUE))
-          if (!is.finite(max_w_id)) max_w_id &lt;- nrow(wolf_df)
+          p_hexes &lt;- sample(wolf_df$hex_id[adult_w_idx], n_w_births, replace = TRUE)
+          max_wid &lt;- suppressWarnings(max(as.numeric(gsub("[^0-9]", "", wolf_df$id)), na.rm = TRUE))
+          if (!is.finite(max_wid)) max_wid &lt;- nrow(wolf_df)
+          new_wids &lt;- paste0("W", seq(max_wid + 1, length.out = n_w_births))
           new_pups &lt;- data.frame(
-            id = paste0("W", max_w_id + seq_len(n_w_births)),
+            id = new_wids,
             species = "Wolf",
             ageclass = "pup",
-            hex_id = parent_hexes,
-            lon = cent_coords[parent_hexes, 1] + stats::rnorm(n_w_births, 0, 0.001),
-            lat = cent_coords[parent_hexes, 2] + stats::rnorm(n_w_births, 0, 0.001),
+            hex_id = p_hexes,
+            lon = centroids[p_hexes, 1],
+            lat = centroids[p_hexes, 2],
             stringsAsFactors = FALSE
           )
           wolf_df &lt;- rbind(wolf_df, new_pups)
         }
-        
-        # Natural adult wolf mortality
-        w_deaths &lt;- w_adult_idx[stats::runif(length(w_adult_idx)) &lt; 0.01]
+        w_deaths &lt;- adult_w_idx[stats::runif(length(adult_w_idx)) &lt; 0.0005]
         if (length(w_deaths) &gt; 0) wolf_df &lt;- wolf_df[-w_deaths, ]
       }
     }
@@ -12642,89 +12607,81 @@ run_isle_royale_sim &lt;- function(sim_obj, nstep = 1000, refresh = 10, ...) {
     list(moose = moose_df, wolf = wolf_df)
   }
   
-  # Micro-step execution loop (recording history continuously as changes happen)
-  step_chunk &lt;- max(1, min(10, refresh))
-  steps_left &lt;- nstep
-  
-  while (steps_left &gt; 0) {
-    chunk &lt;- min(step_chunk, steps_left)
-    steps_left &lt;- steps_left - chunk
-    
-    # 1. Underlying ewing simulation engine step if present
-    if (!is.null(sim_obj$community) &amp;&amp; inherits(sim_obj$community, "ewing")) {
-      sim_obj$community &lt;- tryCatch({
-        future.events(sim_obj$community, nstep = chunk, refresh = chunk, plotit = FALSE, ...)
-      }, error = function(e) sim_obj$community)
-    }
-    
-    # 2. Update Spatial Movement
+  curr_step &lt;- sim_obj$nstep
+  for (s in seq_len(nstep)) {
+    curr_step &lt;- curr_step + 1
     sim_obj$moose_pop &lt;- move_pop(sim_obj$moose_pop, move_prob = 0.6)
-    sim_obj$wolf_pop  &lt;- move_pop(sim_obj$wolf_pop, move_prob = 0.75)
+    sim_obj$wolf_pop  &lt;- move_pop(sim_obj$wolf_pop, move_prob = 0.8)
     
-    # 3. Process Wolf Predation on Vulnerable Moose
     if (!is.null(sim_obj$wolf_pop) &amp;&amp; !is.null(sim_obj$moose_pop) &amp;&amp; nrow(sim_obj$wolf_pop) &gt; 0 &amp;&amp; nrow(sim_obj$moose_pop) &gt; 0) {
       wolf_hexes &lt;- unique(sim_obj$wolf_pop$hex_id)
       vulnerable_idx &lt;- which(sim_obj$moose_pop$hex_id %in% wolf_hexes &amp; sim_obj$moose_pop$ageclass %in% c("calf", "senior"))
       if (length(vulnerable_idx) &gt; 0) {
-        n_predated &lt;- min(length(vulnerable_idx), max(1, round(nrow(sim_obj$wolf_pop) * 0.02)))
-        pred_remove &lt;- sample(vulnerable_idx, n_predated)
-        sim_obj$moose_pop &lt;- sim_obj$moose_pop[-pred_remove, ]
+        pred_remove &lt;- vulnerable_idx[stats::runif(length(vulnerable_idx)) &lt; 0.0015]
+        if (length(pred_remove) &gt; 0) {
+          sim_obj$moose_pop &lt;- sim_obj$moose_pop[-pred_remove, ]
+        }
       }
     }
     
-    # 4. Process Life Stage Transitions &amp; Demographics
     demog_res &lt;- update_demographics(sim_obj$moose_pop, sim_obj$wolf_pop)
     sim_obj$moose_pop &lt;- demog_res$moose
     sim_obj$wolf_pop  &lt;- demog_res$wolf
     
-    sim_obj$nstep &lt;- sim_obj$nstep + chunk
-    
-    # 5. Append Micro-step History Tally (for continuous Dist Plot step curves)
     m_curr &lt;- table(factor(sim_obj$moose_pop$ageclass, levels = c("calf", "yearling", "adult", "senior")))
     w_curr &lt;- table(factor(sim_obj$wolf_pop$ageclass, levels = c("pup", "subadult", "adult")))
     
-    step_hist &lt;- data.frame(
-      step = sim_obj$nstep,
-      time = sim_obj$nstep,
+    step_df &lt;- data.frame(
+      step = curr_step,
+      time = curr_step,
       Species = c(rep("moose", 4), rep("wolf", 3)),
       State = c(names(m_curr), names(w_curr)),
       Type = "ageclass",
       Count = c(as.numeric(m_curr), as.numeric(w_curr)),
       stringsAsFactors = FALSE
     )
-    
-    sim_obj$history &lt;- rbind(sim_obj$history, step_hist)
+    sim_obj$history &lt;- rbind(sim_obj$history, step_df)
   }
   
+  sim_obj$nstep &lt;- curr_step
   return(sim_obj)
 }
 
-ggplot_isle_royale_sim &lt;- function(x, ...) {
-  # 1. Spatial Landscape Plot
-  p_map &lt;- autoplot(x$habitat_overlay, show_landmarks = TRUE)
+ggplot_ecosystem_sim &lt;- function(x, ...) {
+  if (!inherits(x, "ecosystem_sim") &amp;&amp; !inherits(x, "isle_royale_sim")) {
+    stop("Input must be an object of class 'ecosystem_sim' or 'isle_royale_sim'.")
+  }
   
-  # Prepare spatial organism data frames
-  moose_sf &lt;- sf::st_as_sf(x$moose_pop, coords = c("lon", "lat"), crs = sf::st_crs(x$habitat_overlay$layer))
-  wolf_sf  &lt;- sf::st_as_sf(x$wolf_pop, coords = c("lon", "lat"), crs = sf::st_crs(x$habitat_overlay$layer))
+  p_map &lt;- autoplot(x$habitat_overlay, ...)
   
-  p_map &lt;- p_map +
-    ggplot2::geom_sf(data = moose_sf, color = "#27ae60", shape = 21, fill = NA, stroke = 1.0, size = 0.8, alpha = 0.85) +
-    ggplot2::geom_sf(data = wolf_sf, color = "#e74c3c", shape = 21, fill = NA, stroke = 1.4, size = 1.5, alpha = 0.95) +
-    ggplot2::ggtitle(paste0("Isle Royale Wolf-Moose Spatial Landscape (Year ", x$start_year, ")"))
+  if (!is.null(x$moose_pop) &amp;&amp; nrow(x$moose_pop) &gt; 0) {
+    moose_sf &lt;- sf::st_as_sf(x$moose_pop, coords = c("lon", "lat"), crs = sf::st_crs(x$habitat_overlay$layer))
+    p_map &lt;- p_map +
+      ggplot2::geom_sf(data = moose_sf, color = "#27ae60", shape = 21, fill = NA, stroke = 1.0, size = 0.8, alpha = 0.85) +
+      ggplot2::geom_sf(data = moose_sf, color = "#27ae60", alpha = 0.4, size = 0.5)
+  }
   
-  # 2. Historical Benchmark Trajectory Plot
-  if (!is.null(x$historical_data) &amp;&amp; nrow(x$historical_data) &gt; 0) {
+  if (!is.null(x$wolf_pop) &amp;&amp; nrow(x$wolf_pop) &gt; 0) {
+    wolf_sf &lt;- sf::st_as_sf(x$wolf_pop, coords = c("lon", "lat"), crs = sf::st_crs(x$habitat_overlay$layer))
+    p_map &lt;- p_map +
+      ggplot2::geom_sf(data = wolf_sf, color = "#e74c3c", shape = 24, fill = "#e74c3c", size = 1.2, alpha = 0.9)
+  }
+  
+  eco_title &lt;- if (!is.null(x$ecosystem)) paste0(toupper(substr(x$ecosystem, 1, 1)), substring(x$ecosystem, 2)) else "Ecosystem"
+  p_map &lt;- p_map + ggplot2::ggtitle(paste(eco_title, "Simulation (Step", x$nstep, ")"))
+  
+  if (!is.null(x$historical_data)) {
     df_hist &lt;- x$historical_data
     p_hist &lt;- ggplot2::ggplot(df_hist, ggplot2::aes(x = .data$Year)) +
       ggplot2::geom_line(ggplot2::aes(y = .data$Moose, color = "Historical Moose"), linewidth = 1.0) +
       ggplot2::geom_line(ggplot2::aes(y = .data$Wolves * 40, color = "Historical Wolves (x40)"), linewidth = 1.0, linetype = "dashed") +
       ggplot2::scale_color_manual(
-        name = "Empirical Time Series",
+        name = "Empirical Benchmarks",
         values = c("Historical Moose" = "#27ae60", "Historical Wolves (x40)" = "#e74c3c")
       ) +
       ggplot2::theme_minimal() +
       ggplot2::labs(
-        title = "Isle Royale Empirical Census Benchmarks (1980 - 2019)",
+        title = paste(eco_title, "Census Trajectories"),
         x = "Year", y = "Moose Abundance (Wolves x40)"
       )
     
@@ -12736,18 +12693,18 @@ ggplot_isle_royale_sim &lt;- function(x, ...) {
   return(p_map)
 }
 
-plot.isle_royale_sim &lt;- function(x, ...) {
-  print(ggplot_isle_royale_sim(x, ...))
+plot.ecosystem_sim &lt;- function(x, ...) {
+  print(ggplot_ecosystem_sim(x, ...))
 }
 
 get_site_cache_file &lt;- function(filename, site = "isle_royale") {
   pkg_dir &lt;- system.file(file.path("extdata", site), package = "ewing")
   if (pkg_dir != "") {
-    fp &lt;- file.path(pkg_dir, filename)
-    if (file.exists(fp)) return(fp)
+    fp &lt;- if (filename == "") pkg_dir else file.path(pkg_dir, filename)
+    if (file.exists(fp) || dir.exists(fp)) return(fp)
   }
-  dev_fp &lt;- file.path("inst", "extdata", site, filename)
-  if (file.exists(dev_fp)) return(dev_fp)
+  dev_fp &lt;- if (filename == "") file.path("inst", "extdata", site) else file.path("inst", "extdata", site, filename)
+  if (file.exists(dev_fp) || dir.exists(dev_fp)) return(dev_fp)
   if (pkg_dir != "") file.path(pkg_dir, filename) else dev_fp
 }
 
@@ -12755,30 +12712,35 @@ get_isle_royale_cache_file &lt;- function(filename) {
   get_site_cache_file(filename, site = "isle_royale")
 }
 
-# --- Source: IsleRoyaleApp.R ---
-IsleRoyaleApp &lt;- function(title = "Isle Royale Wolf-Moose Simulation Platform") {
+# --- Source: ecosystemApp.R ---
+ecosystemApp &lt;- function(ecosystem = "isle_royale", title = NULL) {
+  if (is.null(title)) {
+    title &lt;- paste(paste0(toupper(substr(ecosystem, 1, 1)), substring(ecosystem, 2)), "Predator-Prey Simulation Platform")
+  }
+  
   ui &lt;- bslib::page_sidebar(
     title = title,
     sidebar = bslib::sidebar(
       width = 340,
-      IsleRoyaleInput("isleroyale")
+      ecosystemInput("eco", ecosystem = ecosystem)
     ),
-    IsleRoyaleOutput("isleroyale")
+    ecosystemOutput("eco")
   )
 
   server &lt;- function(input, output, session) {
-    IsleRoyaleServer("isleroyale")
+    ecosystemServer("eco", ecosystem = ecosystem)
   }
 
   shiny::shinyApp(ui = ui, server = server)
 }
 
-IsleRoyaleInput &lt;- function(id) {
+ecosystemInput &lt;- function(id, ecosystem = "isle_royale") {
   ns &lt;- shiny::NS(id)
 
-  # Fetch available years from wolf_moose.csv if available
-  csv_path &lt;- system.file("doc/isle_royale/wolf_moose.csv", package = "ewing")
-  if (csv_path == "" || !file.exists(csv_path)) csv_path &lt;- "inst/doc/isle_royale/wolf_moose.csv"
+  csv_path &lt;- system.file(file.path("doc", ecosystem, "wolf_moose.csv"), package = "ewing")
+  if (csv_path == "" || !file.exists(csv_path)) {
+    csv_path &lt;- file.path("inst", "doc", ecosystem, "wolf_moose.csv")
+  }
 
   years &lt;- 1980:2019
   if (file.exists(csv_path)) {
@@ -12806,8 +12768,8 @@ IsleRoyaleInput &lt;- function(id) {
     ),
 
     # 2. Population &amp; Hexagon Extent Sliders
-    shiny::sliderInput(ns("n_moose"), "Initial Moose:", min = 50, max = 3000, value = 664, step = 50),
-    shiny::sliderInput(ns("n_wolves"), "Initial Wolves:", min = 0, max = 60, value = 50, step = 2),
+    shiny::sliderInput(ns("n_hosts"), "Initial Hosts:", min = 50, max = 3000, value = 664, step = 50),
+    shiny::sliderInput(ns("n_predators"), "Initial Predators:", min = 0, max = 60, value = 50, step = 2),
     shiny::sliderInput(ns("hex_diameter"), "Hex Diameter:", min = 0.005, max = 0.03, value = 0.01, step = 0.001),
 
     # 3. Conditional Map Overlay Options (Substrate Plot &amp; Census Benchmarks)
@@ -12816,7 +12778,7 @@ IsleRoyaleInput &lt;- function(id) {
       shiny::div(style = "border-top: 1px solid rgba(0,0,0,0.1); margin: 4px 0 2px 0;"),
       shiny::div(
         style = "display: flex; gap: 12px; align-items: center; margin-bottom: 2px;",
-        shiny::checkboxInput(ns("show_habitat"), "Moose Habitat", value = TRUE),
+        shiny::checkboxInput(ns("show_habitat"), "Habitat Features", value = TRUE),
         shiny::checkboxInput(ns("show_landmarks"), "Landmarks", value = TRUE)
       )
     ),
@@ -12842,7 +12804,7 @@ IsleRoyaleInput &lt;- function(id) {
   )
 }
 
-IsleRoyaleOutput &lt;- function(id) {
+ecosystemOutput &lt;- function(id) {
   ns &lt;- shiny::NS(id)
   shiny::tagList(
     shiny::tabsetPanel(
@@ -12876,7 +12838,7 @@ IsleRoyaleOutput &lt;- function(id) {
   )
 }
 
-IsleRoyaleServer &lt;- function(id) {
+ecosystemServer &lt;- function(id, ecosystem = "isle_royale") {
   shiny::moduleServer(id, function(input, output, session) {
     ns &lt;- session$ns
 
@@ -12885,80 +12847,75 @@ IsleRoyaleServer &lt;- function(id) {
     sub_x_var &lt;- axisUnitServer("substrate_axis")
     age_ctrls &lt;- ageClassControlServer("age_ctrls")
 
-    # Auto-update initial population slider defaults when baseline year changes
     shiny::observeEvent(input$start_year, {
       yr &lt;- as.numeric(input$start_year)
-      csv_path &lt;- system.file("doc/isle_royale/wolf_moose.csv", package = "ewing")
-      if (csv_path == "" || !file.exists(csv_path)) csv_path &lt;- "inst/doc/isle_royale/wolf_moose.csv"
+      csv_path &lt;- system.file(file.path("doc", ecosystem, "wolf_moose.csv"), package = "ewing")
+      if (csv_path == "" || !file.exists(csv_path)) {
+        csv_path &lt;- file.path("inst", "doc", ecosystem, "wolf_moose.csv")
+      }
 
       if (file.exists(csv_path)) {
         df &lt;- tryCatch(utils::read.csv(csv_path), error = function(e) NULL)
         if (!is.null(df) &amp;&amp; "Year" %in% names(df) &amp;&amp; yr %in% df$Year) {
           row_match &lt;- df[df$Year == yr, ]
-          shiny::updateSliderInput(session, "n_moose", value = as.numeric(row_match$Moose[1]))
-          shiny::updateSliderInput(session, "n_wolves", value = as.numeric(row_match$Wolves[1]))
+          if ("Moose" %in% names(row_match)) shiny::updateSliderInput(session, "n_hosts", value = as.numeric(row_match$Moose[1]))
+          if ("Wolves" %in% names(row_match)) shiny::updateSliderInput(session, "n_predators", value = as.numeric(row_match$Wolves[1]))
         }
       }
     })
 
-    # Initialize / Reset Simulation with Default Initial Steps (Matching sysetholApp behavior)
     shiny::observeEvent(list(input$reset_sim, input$start_year),
       {
         yr &lt;- as.numeric(input$start_year)
-        nm &lt;- input$n_moose
-        nw &lt;- input$n_wolves
+        nh &lt;- input$n_hosts
+        np &lt;- input$n_predators
         hd &lt;- input$hex_diameter
 
-        shiny::req(yr, nm, nw, hd)
+        shiny::req(yr, nh, np, hd)
 
-        sim &lt;- init_isle_royale_sim(
+        sim &lt;- init_ecosystem_sim(
+          ecosystem = ecosystem,
           year = yr,
-          n_moose = nm,
-          n_wolves = nw,
+          n_hosts = nh,
+          n_predators = np,
           hex_diameter = hd
         )
 
-        # Run initial default simulation steps (matching sysetholApp.R)
         steps &lt;- parse_step_size(input$step_size)
         if (is.null(steps) || steps &lt;= 0) steps &lt;- 200
-        sim &lt;- run_isle_royale_sim(sim, nstep = steps)
+        sim &lt;- run_ecosystem_sim(sim, nstep = steps)
 
         sim_state(sim)
-        status_msg(paste0("&lt;div style='color:green;'&gt;&lt;b&gt;Simulation Initialized:&lt;/b&gt; Year ", yr, " with ", nm, " Moose and ", nw, " Wolves (Executed ", steps, " initial steps).&lt;/div&gt;"))
+        status_msg(paste0("&lt;div style='color:green;'&gt;&lt;b&gt;Simulation Initialized:&lt;/b&gt; Year ", yr, " with ", nh, " Hosts and ", np, " Predators (Executed ", steps, " initial steps).&lt;/div&gt;"))
       },
       ignoreNULL = FALSE
     )
 
-    # Step Simulation Execution
     shiny::observeEvent(input$step_sim, {
       sim &lt;- sim_state()
       shiny::req(sim)
       steps &lt;- parse_step_size(input$step_size)
       if (is.null(steps) || steps &lt;= 0) steps &lt;- 200
 
-      updated_sim &lt;- run_isle_royale_sim(sim, nstep = steps)
+      updated_sim &lt;- run_ecosystem_sim(sim, nstep = steps)
       sim_state(updated_sim)
       status_msg(paste0("&lt;div style='color:blue;'&gt;&lt;b&gt;Executed ", steps, " steps:&lt;/b&gt; Total Steps = ", updated_sim$nstep, "&lt;/div&gt;"))
     })
 
-    # Render Offline Isle Royale Substrate Plot (0 API calls!)
     output$substrate_plot &lt;- shiny::renderPlot({
       sim &lt;- sim_state()
       shiny::req(sim)
       ewing_substrate(sim, x_var = sub_x_var())
     })
 
-    # Compose Dist Plot Module for Age Classes
     distPlotServer("dist_plot", simres = sim_state, x_var = age_ctrls$x_var, total = age_ctrls$total, norm = age_ctrls$norm)
 
-    # Render ggplot autoplot (Dual-panel benchmark plot)
     output$autoplot &lt;- shiny::renderPlot({
       sim &lt;- sim_state()
       shiny::req(sim)
-      ggplot_isle_royale_sim(sim)
+      ggplot_ecosystem_sim(sim)
     })
 
-    # Render Summary Table
     output$summary_table &lt;- shiny::renderTable({
       sim &lt;- sim_state()
       shiny::req(sim)
@@ -12983,16 +12940,62 @@ IsleRoyaleServer &lt;- function(id) {
       rbind(df_moose, df_wolf)
     })
 
-    # Compose Input Data App Module for Input Table Inspection
-    pkg_dir &lt;- system.file("extdata/isle_royale", package = "ewing")
-    if (pkg_dir == "" || !dir.exists(pkg_dir)) pkg_dir &lt;- "inst/extdata/isle_royale"
+    pkg_dir &lt;- get_site_cache_file("", site = ecosystem)
     inputAppServer("input_data", simres = sim_state, datafile = shiny::reactiveVal(pkg_dir))
 
-    # Output status message
     output$status &lt;- shiny::renderUI({
       shiny::HTML(status_msg())
     })
   })
+}
+
+# --- Source: isle_royale_sim.R ---
+init_isle_royale_sim &lt;- function(year = 1980, 
+                                n_moose = NULL, 
+                                n_wolves = NULL, 
+                                hex_diameter = 0.01,
+                                datafile = "",
+                                features_rds = NULL,
+                                landmarks_rds = NULL) {
+  init_ecosystem_sim(
+    ecosystem = "isle_royale",
+    year = year,
+    n_hosts = n_moose,
+    n_predators = n_wolves,
+    hex_diameter = hex_diameter,
+    datafile = datafile,
+    features_rds = features_rds,
+    landmarks_rds = landmarks_rds
+  )
+}
+
+run_isle_royale_sim &lt;- function(sim_obj, nstep = 1000, refresh = 10, ...) {
+  run_ecosystem_sim(sim_obj = sim_obj, nstep = nstep, refresh = refresh, ...)
+}
+
+ggplot_isle_royale_sim &lt;- function(x, ...) {
+  ggplot_ecosystem_sim(x, ...)
+}
+
+plot.isle_royale_sim &lt;- function(x, ...) {
+  print(ggplot_isle_royale_sim(x, ...))
+}
+
+# --- Source: IsleRoyaleApp.R ---
+IsleRoyaleApp &lt;- function(title = "Isle Royale Wolf-Moose Simulation Platform") {
+  ecosystemApp(ecosystem = "isle_royale", title = title)
+}
+
+IsleRoyaleInput &lt;- function(id) {
+  ecosystemInput(id, ecosystem = "isle_royale")
+}
+
+IsleRoyaleOutput &lt;- function(id) {
+  ecosystemOutput(id)
+}
+
+IsleRoyaleServer &lt;- function(id) {
+  ecosystemServer(id, ecosystem = "isle_royale")
 }
 
 # --- Launch Application ---

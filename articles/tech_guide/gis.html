@@ -758,6 +758,25 @@ exports <code>site_features.rds</code> and
 with zero API calls.</li>
 </ul>
 </li>
+<li>
+<strong>Offline Spatial Architecture &amp; Multi-Landscape Cache
+Engine (<code>get_site_cache_file</code>)</strong>:
+<ul>
+<li>
+<code>get_site_cache_file(filename, site)</code> dynamically
+resolves pre-computed <code>.rds</code> spatial boundary layers
+(<code>[site]_layer.rds</code>, <code>[site]_features.rds</code>,
+<code>[site]_landmarks.rds</code>) across installed package directories
+(<code>library/ewing/extdata/[site]</code>) and development source trees
+(<code>inst/extdata/[site]</code>).</li>
+<li>Supports folder resolution (<code>filename = ""</code>) with
+<code><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.exists()</a></code> validation.</li>
+<li>Allows <code>ewing</code> spatial simulations to scale to future
+landscapes (e.g. <code>site = "yellowstone"</code>,
+<code>site = "madeline_island"</code>) by placing spatial
+<code>.rds</code> objects in <code>extdata/[site]/</code>.</li>
+</ul>
+</li>
 </ol>
 <hr>
 </div>

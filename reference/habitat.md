@@ -47,7 +47,8 @@ add_habitat_hex_overlay(
   habitat_sf = NULL,
   landmarks_sf = NULL,
   features = NULL,
-  landmarks = NULL
+  landmarks = NULL,
+  site = "isle_royale"
 )
 
 # S3 method for class 'habitat_hex_overlay'

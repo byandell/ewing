@@ -536,6 +536,19 @@ primary simulation setup and step execution controls.
   in the sidebar and plots the X-axis labeled **`"days"`**, while
   `sysetholApp` displays **`Steps` vs `Time`**.
 
+### D. Streamlined Sidebar UX & Compact CSS Layout
+
+- **Single-Row Flex Action Buttons**: **Run** and **Reset** buttons sit
+  side-by-side on a single flex line
+  (`display: flex; gap: 8px; margin: 4px 0 6px 0;`).
+- **Vertical Ordering**: Top-aligned **Steps per click** slider,
+  followed by population sliders, conditional map options, and
+  bottom-positioned **Baseline Year** select input.
+- **CSS Whitespace Compression**: Custom CSS rules
+  (`.form-group { margin-bottom: 4px; }`,
+  `.irs-with-grid { height: 34px; }`) compress vertical padding so
+  sidebar height matches main output panel cards without scrolling.
+
 ------------------------------------------------------------------------
 
 ## 4. Engineering Prompt History

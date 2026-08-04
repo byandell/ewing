@@ -5996,7 +5996,7 @@ discover_dataset_tables &lt;- function(datafile = "", sim = NULL) {
   
   if (d_path != "" &amp;&amp; file.exists(d_path)) {
     if (dir.exists(d_path)) {
-      files &lt;- list.files(d_path, pattern = "\\.(txt|csv|rds)$", full.names = FALSE)
+      files &lt;- list.files(d_path, pattern = "\\.(txt|csv|tsv)$", full.names = FALSE)
       if (length(files) &gt; 0) {
         found &lt;- tools::file_path_sans_ext(files)
       }
@@ -6017,6 +6017,9 @@ discover_dataset_tables &lt;- function(datafile = "", sim = NULL) {
     found &lt;- unique(c(found, names(isle_royale_datasets)))
   }
   
+  # Filter out any .rds spatial layers or non-table objects
+  found &lt;- found[!grepl("\\.rds$", found, ignore.case = TRUE) &amp; !found %in% c("isle_royale_features", "isle_royale_landmarks", "isle_royale_layer", "huc_features")]
+
   # 3. Default fallback choices if nothing found
   if (length(found) == 0) {
     found &lt;- c(

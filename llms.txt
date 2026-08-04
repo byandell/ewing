@@ -113,7 +113,7 @@ Reference: B Ewing, BS Yandell, JF Barbieri, and RF Luck (2002)
   [`IsleRoyaleInput()`](https://byandell.github.io/ewing/reference/IsleRoyaleApp.md)
   [`IsleRoyaleOutput()`](https://byandell.github.io/ewing/reference/IsleRoyaleApp.md)
   [`IsleRoyaleServer()`](https://byandell.github.io/ewing/reference/IsleRoyaleApp.md)
-  : Isle Royale Wolf-Moose Simulation App
+  : Isle Royale Wolf-Moose Simulation App (Wrapper Shell)
 - [`TemperatureBase`](https://byandell.github.io/ewing/reference/TemperatureBase.md)
   [`TemperaturePar`](https://byandell.github.io/ewing/reference/TemperatureBase.md)
   : temperature data tables for simulation
@@ -132,6 +132,15 @@ Reference: B Ewing, BS Yandell, JF Barbieri, and RF Luck (2002)
   [`downloadServer()`](https://byandell.github.io/ewing/reference/downloadApp.md)
   [`downloadInput()`](https://byandell.github.io/ewing/reference/downloadApp.md)
   : Download File App
+- [`ecosystemApp()`](https://byandell.github.io/ewing/reference/ecosystemApp.md)
+  [`ecosystemInput()`](https://byandell.github.io/ewing/reference/ecosystemApp.md)
+  [`ecosystemOutput()`](https://byandell.github.io/ewing/reference/ecosystemApp.md)
+  [`ecosystemServer()`](https://byandell.github.io/ewing/reference/ecosystemApp.md)
+  : Generalized Ecosystem Simulation App
+- [`init_ecosystem_sim()`](https://byandell.github.io/ewing/reference/ecosystem_sim.md)
+  [`run_ecosystem_sim()`](https://byandell.github.io/ewing/reference/ecosystem_sim.md)
+  [`ggplot_ecosystem_sim()`](https://byandell.github.io/ewing/reference/ecosystem_sim.md)
+  : Generalized Ecosystem Spatial Predator-Prey Simulation
 - [`envPlotApp()`](https://byandell.github.io/ewing/reference/envPlotApp.md)
   [`envPlotServer()`](https://byandell.github.io/ewing/reference/envPlotApp.md)
   [`envPlotInput()`](https://byandell.github.io/ewing/reference/envPlotApp.md)
@@ -245,7 +254,7 @@ Reference: B Ewing, BS Yandell, JF Barbieri, and RF Luck (2002)
 - [`init_isle_royale_sim()`](https://byandell.github.io/ewing/reference/isle_royale_sim.md)
   [`run_isle_royale_sim()`](https://byandell.github.io/ewing/reference/isle_royale_sim.md)
   [`ggplot_isle_royale_sim()`](https://byandell.github.io/ewing/reference/isle_royale_sim.md)
-  : Isle Royale Wolf-Moose Predator-Prey Simulation
+  : Isle Royale Wolf-Moose Predator-Prey Simulation (Wrapper Shell)
 - [`build_base_map()`](https://byandell.github.io/ewing/reference/leaflet.md)
   [`get_huc_from_point()`](https://byandell.github.io/ewing/reference/leaflet.md)
   [`get_hucs_from_polygon()`](https://byandell.github.io/ewing/reference/leaflet.md)

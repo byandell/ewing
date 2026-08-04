@@ -538,6 +538,18 @@ regional domain.
       ([`init_isle_royale_sim()`](https://byandell.github.io/ewing/reference/isle_royale_sim.md),
       [`ewing_substrate()`](https://byandell.github.io/ewing/reference/ewing_substrate.md))
       with zero API calls.
+7.  **Offline Spatial Architecture & Multi-Landscape Cache Engine
+    (`get_site_cache_file`)**:
+    - `get_site_cache_file(filename, site)` dynamically resolves
+      pre-computed `.rds` spatial boundary layers (`[site]_layer.rds`,
+      `[site]_features.rds`, `[site]_landmarks.rds`) across installed
+      package directories (`library/ewing/extdata/[site]`) and
+      development source trees (`inst/extdata/[site]`).
+    - Supports folder resolution (`filename = ""`) with
+      [`dir.exists()`](https://rdrr.io/r/base/files2.html) validation.
+    - Allows `ewing` spatial simulations to scale to future landscapes
+      (e.g. `site = "yellowstone"`, `site = "madeline_island"`) by
+      placing spatial `.rds` objects in `extdata/[site]/`.
 
 ------------------------------------------------------------------------
 

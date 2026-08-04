@@ -1,9 +1,8 @@
-# Isle Royale Wolf-Moose Simulation App
+# Isle Royale Wolf-Moose Simulation App (Wrapper Shell)
 
-Interactive platform for exploring Isle Royale wolf-moose spatial
-predator-prey dynamics over real-world island geography, habitat
-suitability features, life stage age classes, and historical 1980-2019
-census benchmarks.
+Backward-compatible wrapper for launching the Isle Royale wolf-moose
+spatial predator-prey simulation application using the generalized
+\`ecosystemApp\` platform.
 
 ## Usage
 
@@ -21,8 +20,9 @@ IsleRoyaleServer(id)
 
 - title:
 
-  Application title string
+  Application title string (default: \`"Isle Royale Wolf-Moose
+  Simulation Platform"\`).
 
 - id:
 
-  Module ID
+  Module ID string.

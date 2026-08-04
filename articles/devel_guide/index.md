@@ -54,18 +54,19 @@ For detailed information on state matrices, see
 
 ### Input Configurations (Excel & Text files)
 
-The default parameters and connectivity tables are stored under the
-`data/` folder: -
+The default parameters and connectivity tables are stored under
+`inst/extdata/` and `data/`: -
+[inst/extdata/default/](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/extdata/default):
+Core default simulation organism tables (`organism.features.txt`,
+`future.host.txt`, `future.parasite.txt`, `host.parasite.txt`,
+`substrate.host.txt`, `substrate.parasite.txt`,
+`substrate.substrate.txt`, `temperature.base.txt`,
+`temperature.par.txt`). -
 [default.xlsx](file:///Users/brianyandell/Documents/Research/ewing/ewing/data/default.xlsx):
-The complete baseline spreadsheet containing all configuration
-parameters (features, risks, transitions, substrates, and temperature
-splines). -
+Baseline Excel spreadsheet containing all configuration parameter
+sheets. -
 [simdata.rda](file:///Users/brianyandell/Documents/Research/ewing/ewing/data/simdata.rda):
-Pre-computed discrete simulation runs used for envelope testing. - Flat
-`.txt` files: Single-sheet tabular versions of all parameters used for
-automated unit tests
-(e.g. [organism.features.txt](file:///Users/brianyandell/Documents/Research/ewing/ewing/data/organism.features.txt),
-[future.host.txt](file:///Users/brianyandell/Documents/Research/ewing/ewing/data/future.host.txt)).
+Pre-computed discrete simulation runs used for envelope testing.
 
 ------------------------------------------------------------------------
 
@@ -104,12 +105,16 @@ codebase:
 
 ## 3. Complete File & Module Index
 
-Below is an index of all Shiny app files inside the `R/` directory,
-mapped to their design roles:
+Below is an index of all Shiny app and simulation engine files inside
+the `R/` directory, mapped to their design roles:
 
 | Source File | Module Server / Entry Point | UI Hooks | Primary Classification | Description |
 |----|----|----|----|----|
 | [ewingApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ewingApp.R) | [ewingServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ewingApp.R#L31) | [`ewingInput()`](https://byandell.github.io/ewing/reference/ewingApp.md), [`ewingOutput()`](https://byandell.github.io/ewing/reference/ewingApp.md) | Primary Shiny Entry Point | Orchestrates overall dashboard panels and handles reactive dynamic tabs switching between `nsim = 1` and `nsim > 1` modes. |
+| [ecosystem_sim.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ecosystem_sim.R) | [`init_ecosystem_sim()`](https://byandell.github.io/ewing/reference/ecosystem_sim.md) | [`ggplot_ecosystem_sim()`](https://byandell.github.io/ewing/reference/ecosystem_sim.md) | Generalized Engine | Multi-landscape spatial simulation engine, stepping loops, and [`get_site_cache_file()`](https://byandell.github.io/ewing/reference/get_site_cache_file.md) site cache resolver. |
+| [ecosystemApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ecosystemApp.R) | [`ecosystemServer()`](https://byandell.github.io/ewing/reference/ecosystemApp.md) | [`ecosystemInput()`](https://byandell.github.io/ewing/reference/ecosystemApp.md), [`ecosystemOutput()`](https://byandell.github.io/ewing/reference/ecosystemApp.md) | Generalized App Module | Interactive multi-landscape simulation platform supporting dynamic site asset resolution. |
+| [isle_royale_sim.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/isle_royale_sim.R) | [`init_isle_royale_sim()`](https://byandell.github.io/ewing/reference/isle_royale_sim.md) | [`ggplot_isle_royale_sim()`](https://byandell.github.io/ewing/reference/isle_royale_sim.md) | Wrapper Shell | Isle Royale backward-compatible wrapper delegating to `ecosystem_sim.R`. |
+| [IsleRoyaleApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/IsleRoyaleApp.R) | [`IsleRoyaleServer()`](https://byandell.github.io/ewing/reference/IsleRoyaleApp.md) | [`IsleRoyaleInput()`](https://byandell.github.io/ewing/reference/IsleRoyaleApp.md), [`IsleRoyaleOutput()`](https://byandell.github.io/ewing/reference/IsleRoyaleApp.md) | Wrapper Shell | Isle Royale Shiny app backward-compatible wrapper delegating to `ecosystemApp.R`. |
 | [initParApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/initParApp.R) | [initParServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/initParApp.R#L29) | [`initParInput()`](https://byandell.github.io/ewing/reference/initParApp.md), [`initParOutput()`](https://byandell.github.io/ewing/reference/initParApp.md) | Configuration/Data Selector | Reads default metadata, manages XLSX uploads, and renders HTML summaries of species attributes. |
 | [simApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/simApp.R) | [simServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/simApp.R#L31) | [`simInput()`](https://byandell.github.io/ewing/reference/simApp.md), [`simUI()`](https://byandell.github.io/ewing/reference/simApp.md) | Simulation Orchestrator | Renders control sliders for simulation bounds, tracks the `nsim` toggle, and runs step-wise stochastic iterations. |
 | [distPlotApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/distPlotApp.R) | [distPlotServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/distPlotApp.R#L30) | [`distPlotInput()`](https://byandell.github.io/ewing/reference/distPlotApp.md), [`distPlotOutput()`](https://byandell.github.io/ewing/reference/distPlotApp.md) | Graphical Visualizer | Computes and plots age class distribution overlays over runtime steps. |

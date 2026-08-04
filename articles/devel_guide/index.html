@@ -146,15 +146,17 @@ and logs.</p>
 <div class="section level3">
 <h3 id="input-configurations-excel-text-files">Input Configurations (Excel &amp; Text files)<a class="anchor" aria-label="anchor" href="#input-configurations-excel-text-files"></a>
 </h3>
-<p>The default parameters and connectivity tables are stored under the
-<code>data/</code> folder: - <a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/data/default.xlsx">default.xlsx</a>:
-The complete baseline spreadsheet containing all configuration
-parameters (features, risks, transitions, substrates, and temperature
-splines). - <a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/data/simdata.rda">simdata.rda</a>:
-Pre-computed discrete simulation runs used for envelope testing. - Flat
-<code>.txt</code> files: Single-sheet tabular versions of all parameters
-used for automated unit tests (e.g. <a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/data/organism.features.txt">organism.features.txt</a>,
-<a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/data/future.host.txt">future.host.txt</a>).</p>
+<p>The default parameters and connectivity tables are stored under
+<code>inst/extdata/</code> and <code>data/</code>: - <a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/extdata/default">inst/extdata/default/</a>:
+Core default simulation organism tables
+(<code>organism.features.txt</code>, <code>future.host.txt</code>,
+<code>future.parasite.txt</code>, <code>host.parasite.txt</code>,
+<code>substrate.host.txt</code>, <code>substrate.parasite.txt</code>,
+<code>substrate.substrate.txt</code>, <code>temperature.base.txt</code>,
+<code>temperature.par.txt</code>). - <a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/data/default.xlsx">default.xlsx</a>:
+Baseline Excel spreadsheet containing all configuration parameter
+sheets. - <a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/data/simdata.rda">simdata.rda</a>:
+Pre-computed discrete simulation runs used for envelope testing.</p>
 <hr>
 </div>
 </div>
@@ -190,8 +192,8 @@ and developer test applications (<code>futureApp</code>,
 <div class="section level2">
 <h2 id="complete-file-module-index">3. Complete File &amp; Module Index<a class="anchor" aria-label="anchor" href="#complete-file-module-index"></a>
 </h2>
-<p>Below is an index of all Shiny app files inside the <code>R/</code>
-directory, mapped to their design roles:</p>
+<p>Below is an index of all Shiny app and simulation engine files inside
+the <code>R/</code> directory, mapped to their design roles:</p>
 <table class="table">
 <colgroup>
 <col width="20%">
@@ -218,6 +220,42 @@ directory, mapped to their design roles:</p>
 <td>Orchestrates overall dashboard panels and handles reactive dynamic
 tabs switching between <code>nsim = 1</code> and
 <code>nsim &gt; 1</code> modes.</td>
+</tr>
+<tr class="even">
+<td><a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ecosystem_sim.R">ecosystem_sim.R</a></td>
+<td><code><a href="../../reference/ecosystem_sim.html">init_ecosystem_sim()</a></code></td>
+<td><code><a href="../../reference/ecosystem_sim.html">ggplot_ecosystem_sim()</a></code></td>
+<td>Generalized Engine</td>
+<td>Multi-landscape spatial simulation engine, stepping loops, and
+<code><a href="../../reference/get_site_cache_file.html">get_site_cache_file()</a></code> site cache resolver.</td>
+</tr>
+<tr class="odd">
+<td><a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/R/ecosystemApp.R">ecosystemApp.R</a></td>
+<td><code><a href="../../reference/ecosystemApp.html">ecosystemServer()</a></code></td>
+<td>
+<code><a href="../../reference/ecosystemApp.html">ecosystemInput()</a></code>, <code><a href="../../reference/ecosystemApp.html">ecosystemOutput()</a></code>
+</td>
+<td>Generalized App Module</td>
+<td>Interactive multi-landscape simulation platform supporting dynamic
+site asset resolution.</td>
+</tr>
+<tr class="even">
+<td><a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/R/isle_royale_sim.R">isle_royale_sim.R</a></td>
+<td><code><a href="../../reference/isle_royale_sim.html">init_isle_royale_sim()</a></code></td>
+<td><code><a href="../../reference/isle_royale_sim.html">ggplot_isle_royale_sim()</a></code></td>
+<td>Wrapper Shell</td>
+<td>Isle Royale backward-compatible wrapper delegating to
+<code>ecosystem_sim.R</code>.</td>
+</tr>
+<tr class="odd">
+<td><a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/R/IsleRoyaleApp.R">IsleRoyaleApp.R</a></td>
+<td><code><a href="../../reference/IsleRoyaleApp.html">IsleRoyaleServer()</a></code></td>
+<td>
+<code><a href="../../reference/IsleRoyaleApp.html">IsleRoyaleInput()</a></code>, <code><a href="../../reference/IsleRoyaleApp.html">IsleRoyaleOutput()</a></code>
+</td>
+<td>Wrapper Shell</td>
+<td>Isle Royale Shiny app backward-compatible wrapper delegating to
+<code>ecosystemApp.R</code>.</td>
 </tr>
 <tr class="even">
 <td><a href="file:///Users/brianyandell/Documents/Research/ewing/ewing/R/initParApp.R">initParApp.R</a></td>
