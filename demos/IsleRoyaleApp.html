@@ -181,29 +181,36 @@ window.Quarto = {
     <a class="nav-link active" href="./IsleRoyaleApp.html" aria-current="page"> 
 <span class="menu-text">IsleRoyaleApp</span></a>
   </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./fivePlotApp.html"> 
-<span class="menu-text">fivePlotApp</span></a>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-tools" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Tools</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-tools">    
+        <li>
+    <a class="dropdown-item" href="./fivePlotApp.html">
+ <span class="dropdown-text">fivePlotApp</span></a>
   </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./fiveShowApp.html"> 
-<span class="menu-text">fiveShowApp</span></a>
+        <li>
+    <a class="dropdown-item" href="./fiveShowApp.html">
+ <span class="dropdown-text">fiveShowApp</span></a>
   </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./tempApp.html"> 
-<span class="menu-text">tempApp</span></a>
+        <li>
+    <a class="dropdown-item" href="./tempApp.html">
+ <span class="dropdown-text">tempApp</span></a>
   </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./triangleApp.html"> 
-<span class="menu-text">triangleApp</span></a>
+        <li>
+    <a class="dropdown-item" href="./triangleApp.html">
+ <span class="dropdown-text">triangleApp</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="./hexmoveApp.html">
+ <span class="dropdown-text">hexmoveApp</span></a>
+  </li>  
+    </ul>
+  </li>
   <li class="nav-item">
     <a class="nav-link" href="./hexmapApp.html"> 
 <span class="menu-text">hexmapApp</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./hexmoveApp.html"> 
-<span class="menu-text">hexmoveApp</span></a>
   </li>  
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
@@ -356,6 +363,303 @@ wolf_moose &lt;- structure(list(Year = 1980:2019, Wolves = c(50L, 30L, 14L, 23L,
 750L, 975L, 1050L, 1250L, 1300L, 1600L, 1500L, 2060L)), class = "data.frame", row.names = c(NA, 
 -40L))
 isle_royale_datasets[['wolf_moose']] &lt;- wolf_moose
+
+# --- Auto-Included Spatial RDS Object: isle_royale_features ---
+isle_royale_features &lt;- structure(list(habitat_type = c("Lake/Pond", "Lake/Pond", "Lake/Pond", 
+"Forest", "Bog/Wetland"), id = c("041800000101", "041800000101", 
+"041800000101", "041800000101", "041800000101"), objectid = c(40556L, 
+40556L, 40556L, 40556L, 40556L), tnmid = c("{DB09E061-2929-491A-86D2-74A4F730D113}", 
+"{DB09E061-2929-491A-86D2-74A4F730D113}", "{DB09E061-2929-491A-86D2-74A4F730D113}", 
+"{DB09E061-2929-491A-86D2-74A4F730D113}", "{DB09E061-2929-491A-86D2-74A4F730D113}"
+), metasourceid = c("{511D2AC8-11BA-45FC-AB98-F69D693D4C44}", 
+"{511D2AC8-11BA-45FC-AB98-F69D693D4C44}", "{511D2AC8-11BA-45FC-AB98-F69D693D4C44}", 
+"{511D2AC8-11BA-45FC-AB98-F69D693D4C44}", "{511D2AC8-11BA-45FC-AB98-F69D693D4C44}"
+), sourcedatadesc = c("Watershed Boundary Dataset (WBD)", "Watershed Boundary Dataset (WBD)", 
+"Watershed Boundary Dataset (WBD)", "Watershed Boundary Dataset (WBD)", 
+"Watershed Boundary Dataset (WBD)"), sourceoriginator = c("Natural Resources and Conservation Service and U.S. Geological Survey", 
+"Natural Resources and Conservation Service and U.S. Geological Survey", 
+"Natural Resources and Conservation Service and U.S. Geological Survey", 
+"Natural Resources and Conservation Service and U.S. Geological Survey", 
+"Natural Resources and Conservation Service and U.S. Geological Survey"
+), sourcefeatureid = c(NA_character_, NA_character_, NA_character_, 
+NA_character_, NA_character_), loaddate = structure(c(1723704945, 
+1723704945, 1723704945, 1723704945, 1723704945), class = c("POSIXct", 
+"POSIXt"), tzone = ""), referencegnis_ids = c("1618306", "1618306", 
+"1618306", "1618306", "1618306"), areaacres = c(424470.78, 424470.78, 
+424470.78, 424470.78, 424470.78), areasqkm = c(1717.77, 1717.77, 
+1717.77, 1717.77, 1717.77), states = c("CN,MI,MN,WI", "CN,MI,MN,WI", 
+"CN,MI,MN,WI", "CN,MI,MN,WI", "CN,MI,MN,WI"), huc12 = c("041800000101", 
+"041800000101", "041800000101", "041800000101", "041800000101"
+), name = c("Isle Royale", "Isle Royale", "Isle Royale", "Isle Royale", 
+"Isle Royale"), hutype = c("I", "I", "I", "I", "I"), humod = c("NM", 
+"NM", "NM", "NM", "NM"), tohuc = c("041800000200", "041800000200", 
+"041800000200", "041800000200", "041800000200"), noncontributingareaacres = c(NA_character_, 
+NA_character_, NA_character_, NA_character_, NA_character_), 
+    noncontributingareasqkm = c(NA_character_, NA_character_, 
+    NA_character_, NA_character_, NA_character_), globalid = c("{DB09E061-2929-491A-86D2-74A4F730D113}", 
+    "{DB09E061-2929-491A-86D2-74A4F730D113}", "{DB09E061-2929-491A-86D2-74A4F730D113}", 
+    "{DB09E061-2929-491A-86D2-74A4F730D113}", "{DB09E061-2929-491A-86D2-74A4F730D113}"
+    ), place_id = c(374449614L, 374449614L, 374449614L, 374449614L, 
+    374449614L), licence = c("Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright", 
+    "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright", 
+    "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright", 
+    "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright", 
+    "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright"
+    ), osm_type = c("relation", "relation", "relation", "relation", 
+    "relation"), osm_id = c(3671688L, 3671688L, 3671688L, 3671688L, 
+    3671688L), lat = c("48.0073825", "48.0073825", "48.0073825", 
+    "48.0073825", "48.0073825"), lon = c("-88.8289875", "-88.8289875", 
+    "-88.8289875", "-88.8289875", "-88.8289875"), class = c("place", 
+    "place", "place", "place", "place"), type = c("island", "island", 
+    "island", "island", "island"), place_rank = c(17L, 17L, 17L, 
+    17L, 17L), importance = c(0.377565444769677, 0.377565444769677, 
+    0.377565444769677, 0.377565444769677, 0.377565444769677), 
+    addresstype = c("island", "island", "island", "island", "island"
+    ), name.1 = c("Isle Royale", "Isle Royale", "Isle Royale", 
+    "Isle Royale", "Isle Royale"), display_name = c("Isle Royale, Keweenaw County, Michigan, United States", 
+    "Isle Royale, Keweenaw County, Michigan, United States", 
+    "Isle Royale, Keweenaw County, Michigan, United States", 
+    "Isle Royale, Keweenaw County, Michigan, United States", 
+    "Isle Royale, Keweenaw County, Michigan, United States"), 
+    geometry = structure(list(structure(list(structure(c(-88.63, 
+    -88.606, -88.606, -88.63, -88.63, 48.121, 48.121, 48.105, 
+    48.105, 48.121), dim = c(5L, 2L))), class = c("XY", "POLYGON", 
+    "sfg")), structure(list(structure(c(-88.979, -88.943, -88.943, 
+    -88.9433622602565, -88.9438542189297, -88.9441232, -88.94467, 
+    -88.9451531, -88.945332686448, -88.9475116225945, -88.9476445, 
+    -88.9479796912414, -88.9487743948966, -88.9499234618492, 
+    -88.9500551864452, -88.9499397, -88.9501555, -88.9502561, 
+    -88.9502871751257, -88.9511948621786, -88.95197739572, -88.9538438618706, 
+    -88.9556614644776, -88.9572914639086, -88.957601063993, -88.9580081241565, 
+    -88.9583678, -88.9588852, -88.9591942, -88.9592331684753, 
+    -88.9592390643652, -88.9598177978466, -88.960795663728, -88.9624908652599, 
+    -88.963892665655, -88.9661255985688, -88.9695646005501, -88.9714760677375, 
+    -88.9719976678786, -88.9735376682912, -88.974262801805, -88.9747436019369, 
+    -88.9759006689158, -88.9765932024271, -88.9775138036827, 
+    -88.979, -88.979, 47.886, 47.886, 47.8826923302761, 47.8825617007096, 
+    47.8822554279141, 47.8821825, 47.8819868, 47.8816809, 47.8815879124797, 
+    47.8807115497066, 47.8806678, 47.8805232843974, 47.8802036333453, 
+    47.8797594332051, 47.8797173770424, 47.8798274, 47.879811, 
+    47.8796975, 47.87964330869, 47.8793534997283, 47.879139499645, 
+    47.8788212994731, 47.8785906993166, 47.8784040991791, 47.878332699148, 
+    47.8781173779748, 47.8779821, 47.8777288, 47.8775051, 47.8774693511414, 
+    47.877466232249, 47.8772686321819, 47.8769778320746, 47.8767746319303, 
+    47.8765386318016, 47.87611583159, 47.8753418979137, 47.8749014977217, 
+    47.8747752310018, 47.8743744308407, 47.8740944974189, 47.8739902307048, 
+    47.8737046305859, 47.8734740971732, 47.873018697047, 47.8726972025853, 
+    47.886), dim = c(47L, 2L))), class = c("XY", "POLYGON", "sfg"
+    )), structure(list(list(structure(c(-88.4933202160596, -88.4931645, 
+    -88.4929165, -88.4927962590975, -88.4923744932598, -88.4917765608072, 
+    -88.4917385487709, -88.4915538, -88.4913661, -88.4911689, 
+    -88.4911019, -88.49113, -88.4911783, -88.491291, -88.4913310469136, 
+    -88.4913431597606, -88.4912699663266, -88.4912298, -88.4910844, 
+    -88.490953, -88.4907961, -88.4906217, -88.4902961, -88.4901913, 
+    -88.4901734, -88.4901822267746, -88.4901801594747, -88.4902796195098, 
+    -88.4902718, -88.490243873488, -88.49022129389, -88.4900157598636, 
+    -88.4900048, -88.4900303, -88.489978, -88.4899083, -88.489862, 
+    -88.48982665944, -88.4897948945572, -88.4897475, -88.4895971, 
+    -88.4895301, -88.4894845, -88.4894899, -88.4896441, -88.4897836, 
+    -88.4898238, -88.4898131, -88.4897889, -88.4896655, -88.4894657, 
+    -88.4892337, -88.4889346, -88.4886302, -88.4883191, -88.4879382, 
+    -88.4875748, -88.4872355, -88.4870155, -88.4868385, -88.4865497, 
+    -88.4862712, -88.4862021, -88.4859263, -88.485276, -88.4849305, 
+    -88.4836221, -88.4821869, -88.4814489, -88.4808247, -88.48, 
+    -88.48, -88.4800685573278, -88.4803553573974, -88.4806747574821, 
+    -88.480936957545, -88.4814036920129, -88.4815991545039, -88.4816127, 
+    -88.4818452, -88.4819193538607, -88.4819360911102, -88.4819363111558, 
+    -88.4820376, -88.4819406957911, -88.4819438215351, -88.4819643731899, 
+    -88.4820599941843, -88.4822130077488, -88.4824522912651, 
+    -88.4826080913158, -88.482697958002, -88.4826486912859, -88.4827795579647, 
+    -88.4829280461775, -88.4830001, -88.4830817545922, -88.4852937033422, 
+    -88.4851012, -88.4849167, -88.4846833, -88.4843776, -88.4840974, 
+    -88.483876, -88.4836621, -88.4836653662082, -88.4836074916037, 
+    -88.4835584916036, -88.4835995583013, -88.4837059583434, 
+    -88.4839844611778, -88.4840852, -88.4844393, -88.4844475872462, 
+    -88.484583157636, -88.4847881587637, -88.4849602921596, -88.4853698922839, 
+    -88.4858204924077, -88.4861070935189, -88.4866313323734, 
+    -88.4867245, -88.4868157, -88.4868974, -88.4870604, -88.4871799, 
+    -88.4873055, -88.4875227, -88.487552, -88.4875788, -88.4876154, 
+    -88.4876955, -88.4877236, -88.4877142, -88.4877704, -88.4878162, 
+    -88.4878631, -88.4878685, -88.4878604, -88.4880106, -88.4879932, 
+    -88.4880388, -88.4880643, -88.4880637674483, -88.4933202160596, 
+    48.145, 48.145085, 48.1451959, 48.145231414186, 48.1453201012287, 
+    48.1454793679581, 48.145498625033, 48.1455324, 48.1456049, 
+    48.1457427, 48.1458697, 48.1460594, 48.1461972, 48.1462778, 
+    48.1462972580214, 48.1463295681052, 48.1463371209873, 48.1463318, 
+    48.1463449, 48.1463735, 48.1464702, 48.146565, 48.1466612, 
+    48.1467073, 48.1468093, 48.1468134840662, 48.1468181015853, 
+    48.1469204236519, 48.1469629, 48.1469882173427, 48.1469989682741, 
+    48.1469634951192, 48.1469274, 48.146863, 48.1468397, 48.1469086, 
+    48.1469685, 48.1470015278956, 48.1470198059496, 48.1470344, 
+    48.1470455, 48.1470437, 48.1470017, 48.1469534, 48.1468684, 
+    48.1468218, 48.1467494, 48.1466858, 48.1466321, 48.1466008, 
+    48.1466008, 48.146633, 48.1466885, 48.146735, 48.1468111, 
+    48.1469301, 48.1470384, 48.1471717, 48.1473032, 48.1474115, 
+    48.1475346, 48.1476298, 48.1476278, 48.1476924, 48.147974, 
+    48.1481903, 48.1490216, 48.1496873, 48.1499688, 48.1502282, 
+    48.1506344383766, 48.1464965097649, 48.1464495022235, 48.1463233021865, 
+    48.1462299688185, 48.146109168784, 48.1457691020384, 48.1456696697607, 
+    48.1456636, 48.1456362, 48.1456017054256, 48.1455989019786, 
+    48.1455938172908, 48.1455467, 48.1454924994098, 48.1454202710932, 
+    48.1454104792073, 48.145400911376, 48.1454194967365, 48.1455657686056, 
+    48.1455821019305, 48.1455273019169, 48.1453025018891, 48.1451159685211, 
+    48.1450272742566, 48.1450321, 48.145, 48.145, 48.1452167, 
+    48.1452505, 48.1452935, 48.145272, 48.1452582, 48.1452881, 
+    48.1453437, 48.1454003868823, 48.1454391685093, 48.1455379018597, 
+    48.1456585685402, 48.1457187685413, 48.1458244721321, 48.1458733, 
+    48.1460093, 48.1460103729073, 48.1461297018716, 48.1462777018781, 
+    48.1463379018747, 48.1463213018445, 48.1462169017993, 48.1460907017624, 
+    48.1457922801428, 48.1457883, 48.1457847, 48.1457783, 48.145714, 
+    48.1456408, 48.1455832, 48.1455235, 48.145502, 48.145476, 
+    48.1454784, 48.1454527, 48.1454304, 48.1453829, 48.1453813, 
+    48.1453749, 48.145357, 48.1453131, 48.1452693, 48.1451941, 
+    48.1451494, 48.1450832, 48.1450143, 48.145, 48.145), dim = c(145L, 
+    2L))), list(structure(c(-88.5, -88.48, -88.48, -88.4801162919402, 
+    -88.4804930920344, -88.4805403657046, -88.4806134, -88.4807446062768, 
+    -88.4810583578086, -88.4814678933171, -88.4818610934022, 
+    -88.4822133601554, -88.4829916926465, -88.4837124928213, 
+    -88.4843187596332, -88.4846217597037, -88.4848346930846, 
+    -88.4851131598225, -88.4853590921837, -88.4856375599624, 
+    -88.4859897610823, -88.486505760167, -88.4871856947, -88.4877671604668, 
+    -88.4880702938715, -88.489601960919, -88.4904129611235, -88.4910028946195, 
+    -88.491371560357, -88.4917894948673, -88.4923466950366, -88.492502361743, 
+    -88.4926579617795, -88.4927069617738, -88.4928298941028, 
+    -88.4930676952448, -88.4931496942277, -88.4932233619505, 
+    -88.4933134963492, -88.4934609620274, -88.4935757620763, 
+    -88.4936905621144, -88.4939282965622, -88.4942066955917, 
+    -88.4955990959278, -88.4956595174421, -88.4958568, -88.4958924143864, 
+    -88.4959346959925, -88.495934652055, -88.495952, -88.4959345735406, 
+    -88.4959345626365, -88.4958934959405, -88.4958892996846, 
+    -88.4958867, -88.4950259, -88.4949023936406, -88.4949340955515, 
+    -88.4950240955677, -88.4953681623151, -88.4957039624066, 
+    -88.4961707635611, -88.4966703626424, -88.4970552950191, 
+    -88.4978578962542, -88.4988241621158, -88.4991353632296, 
+    -88.4992828965952, -88.4995530966614, -88.5, -88.5, 48.157, 
+    48.157, 48.1548285519563, 48.1547569700347, 48.1546087033219, 
+    48.1545944694915, 48.1545999, 48.1545329735159, 48.1544385032598, 
+    48.1542081032001, 48.1539665698066, 48.1538185030955, 48.1535439030045, 
+    48.1532257029114, 48.1529457028314, 48.1527921027895, 48.152671369425, 
+    48.1525725027257, 48.1525285693695, 48.1524243026695, 48.152221169284, 
+    48.1520015692185, 48.1516559024578, 48.1514033690499, 48.1512551690088, 
+    48.1506403021528, 48.150332902055, 48.1502009686633, 48.1501899019699, 
+    48.1502281019467, 48.1502059019056, 48.1501509685541, 48.1500741018662, 
+    48.1499369685106, 48.1499313685014, 48.1501067685095, 48.1501013018365, 
+    48.1500463684905, 48.1500189684805, 48.1500681684773, 48.1501559018149, 
+    48.1501723018094, 48.1501667017924, 48.1500679017598, 48.1494421015784, 
+    48.1493956634536, 48.1492852, 48.1492166649145, 48.1491841681865, 
+    48.1491353839639, 48.149102, 48.1490482084308, 48.1490361014994, 
+    48.1489265014871, 48.1489246325065, 48.1489177, 48.1485343, 
+    48.148451742789, 48.1483237681359, 48.1482469014525, 48.1480767680722, 
+    48.1479943680379, 48.1477857679773, 48.1475771012477, 48.1473521011904, 
+    48.1469897677522, 48.1465779676295, 48.1464187675863, 48.1463309675641, 
+    48.1462157008631, 48.1459812545951, 48.157), dim = c(72L, 
+    2L)))), class = c("XY", "MULTIPOLYGON", "sfg")), structure(list(
+        structure(c(-89.171, -89.121, -89.121, -89.1620425960668, 
+        -89.161838, -89.161534, -89.1610828, -89.1608106, -89.1604918, 
+        -89.1602907, -89.1601706, -89.1600136, -89.1599204, -89.1597481, 
+        -89.1596388, -89.1595019, -89.1592955, -89.1590863, -89.1589099, 
+        -89.1587937, -89.1587418, -89.1586354, -89.1584804, -89.1583451, 
+        -89.158222, -89.1581527, -89.1581284, -89.1580365, -89.1579073, 
+        -89.1578502, -89.1577747, -89.1576458, -89.157551, -89.1574435, 
+        -89.1573308, -89.15731, -89.157281, -89.1572354, -89.1571765, 
+        -89.1571799, -89.1571319, -89.1571234, -89.1571162, -89.1569243, 
+        -89.1568605, -89.1568017, -89.1566153, -89.1563211, -89.1561445, 
+        -89.1561151, -89.1562279, -89.1562818, -89.1565957, -89.1569341, 
+        -89.1571597, -89.1573412, -89.1573804, -89.157454, -89.157351, 
+        -89.1570077, -89.1567590496996, -89.1560280641033, -89.1548943304196, 
+        -89.1541684635419, -89.1533351527743, -89.1530395, -89.1527348, 
+        -89.1524779, -89.1524172, -89.1524614, -89.1525212, -89.1526317, 
+        -89.1528342359029, -89.152691929813, -89.1525612631296, 
+        -89.1525692631513, -89.1526263298472, -89.1527242632164, 
+        -89.1529689299289, -89.153238263334, -89.1545270637028, 
+        -89.1546921037537, -89.1550999, -89.1559287, -89.1562279, 
+        -89.1565663, -89.1568164, -89.1572302, -89.1575521, -89.1581308, 
+        -89.1585329, -89.1589057, -89.1592195, -89.1595923, -89.1599405, 
+        -89.1601661, -89.1605094, -89.1610341, -89.1615491, -89.1618434, 
+        -89.1621376, -89.162628, -89.1631087, -89.1636825, -89.1642023, 
+        -89.1646781, -89.1647576101403, -89.1647628659153, -89.1656030661272, 
+        -89.165872334938, -89.1661333339463, -89.166329333958, 
+        -89.1664274672236, -89.1663844508349, -89.1663848, -89.1663259, 
+        -89.1661984, -89.1661757741975, -89.166150467055, -89.1661097336774, 
+        -89.1661261336465, -89.1662240669873, -89.166419867029, 
+        -89.1670398671867, -89.1676596673484, -89.1679370674068, 
+        -89.1680920674276, -89.1683369341033, -89.1686144674725, 
+        -89.1687960331566, -89.168886, -89.1693323, -89.1697737, 
+        -89.1699990252447, -89.1704663344708, -89.1708659345758, 
+        -89.171, -89.171, 47.938, 47.938, 47.908, 47.908, 47.9080693, 
+        47.9081301, 47.9081498, 47.9081958, 47.908329, 47.9084753, 
+        47.9086906, 47.9090243, 47.9093431, 47.9096377, 47.9098539, 
+        47.9100724, 47.9102735, 47.9104584, 47.9106454, 47.9107622, 
+        47.9108692, 47.9109897, 47.9111292, 47.9113129, 47.9114581, 
+        47.9115616, 47.9116418, 47.9116801, 47.9118319, 47.9118986, 
+        47.9119939, 47.9121853, 47.912274, 47.9124332, 47.9126099, 
+        47.9126982, 47.912809, 47.9128563, 47.912876, 47.9129109, 
+        47.9130256, 47.9130414, 47.9130547, 47.9133696, 47.9135832, 
+        47.9139119, 47.9142275, 47.9144938, 47.9146976, 47.914977, 
+        47.9152268, 47.915493, 47.915848, 47.9160814, 47.9162819, 
+        47.9164035, 47.9165711, 47.9167815, 47.9168966, 47.9169229, 
+        47.9169109504792, 47.9167856241725, 47.9167690242483, 
+        47.9168454909756, 47.9170071743006, 47.9170285, 47.917028, 
+        47.9171293, 47.9172647, 47.9173271, 47.9172707, 47.9172064, 
+        47.9171656229079, 47.9172232911295, 47.9173768911597, 
+        47.9175028911765, 47.9175796911832, 47.9176180911817, 
+        47.9174262911384, 47.91735509111, 47.9171800243304, 47.9171745115341, 
+        47.9171957, 47.9172976, 47.9173764, 47.9174455, 47.9175244, 
+        47.9175647, 47.9175375, 47.9174093, 47.9172581, 47.9172154, 
+        47.9172121, 47.9171825, 47.9172318, 47.9173337, 47.9173896, 
+        47.9175934, 47.9177807, 47.9179615, 47.9180503, 47.9180305, 
+        47.9180601, 47.9180798, 47.9180568, 47.9179549, 47.9179232778767, 
+        47.9179226237277, 47.9176212236281, 47.9174786902566, 
+        47.9172812902113, 47.9169634234872, 47.9163218900585, 
+        47.9162255024711, 47.9162227, 47.9160157, 47.9158316, 
+        47.9158213291009, 47.9157736233352, 47.9155652233092, 
+        47.9153294899422, 47.915181489915, 47.9150608898848, 
+        47.914847223146, 47.9146608897442, 47.9144854897008, 
+        47.9143100896659, 47.9138770229226, 47.9135534895254, 
+        47.91336122275, 47.9133466, 47.9130047, 47.9126201, 47.912339149265, 
+        47.9120020891835, 47.9118870891401, 47.9118585814401, 
+        47.938), dim = c(138L, 2L))), class = c("XY", "POLYGON", 
+    "sfg")), structure(list(structure(c(-88.77, -88.73, -88.73, 
+    -88.77, -88.77, 48.032, 48.032, 48.008, 48.008, 48.032), dim = c(5L, 
+    2L))), class = c("XY", "POLYGON", "sfg"))), n_empty = 0L, crs = structure(list(
+        input = "EPSG:4326", wkt = "GEOGCRS[\"WGS 84\",\n    ENSEMBLE[\"World Geodetic System 1984 ensemble\",\n        MEMBER[\"World Geodetic System 1984 (Transit)\"],\n        MEMBER[\"World Geodetic System 1984 (G730)\"],\n        MEMBER[\"World Geodetic System 1984 (G873)\"],\n        MEMBER[\"World Geodetic System 1984 (G1150)\"],\n        MEMBER[\"World Geodetic System 1984 (G1674)\"],\n        MEMBER[\"World Geodetic System 1984 (G1762)\"],\n        MEMBER[\"World Geodetic System 1984 (G2139)\"],\n        MEMBER[\"World Geodetic System 1984 (G2296)\"],\n        ELLIPSOID[\"WGS 84\",6378137,298.257223563,\n            LENGTHUNIT[\"metre\",1]],\n        ENSEMBLEACCURACY[2.0]],\n    PRIMEM[\"Greenwich\",0,\n        ANGLEUNIT[\"degree\",0.0174532925199433]],\n    CS[ellipsoidal,2],\n        AXIS[\"geodetic latitude (Lat)\",north,\n            ORDER[1],\n            ANGLEUNIT[\"degree\",0.0174532925199433]],\n        AXIS[\"geodetic longitude (Lon)\",east,\n            ORDER[2],\n            ANGLEUNIT[\"degree\",0.0174532925199433]],\n    USAGE[\n        SCOPE[\"Horizontal component of 3D system.\"],\n        AREA[\"World.\"],\n        BBOX[-90,-180,90,180]],\n    ID[\"EPSG\",4326]]"), class = "crs"), class = c("sfc_GEOMETRY", 
+    "sfc"), precision = 0, bbox = structure(c(xmin = -89.171, 
+    ymin = 47.8726972025853, xmax = -88.48, ymax = 48.157), class = "bbox"), classes = c("POLYGON", 
+    "POLYGON", "MULTIPOLYGON", "POLYGON", "POLYGON"))), row.names = c(NA, 
+5L), class = c("sf", "data.frame"), sf_column = "geometry", agr = structure(c(habitat_type = NA_integer_, 
+id = NA_integer_, objectid = NA_integer_, tnmid = NA_integer_, 
+metasourceid = NA_integer_, sourcedatadesc = NA_integer_, sourceoriginator = NA_integer_, 
+sourcefeatureid = NA_integer_, loaddate = NA_integer_, referencegnis_ids = NA_integer_, 
+areaacres = NA_integer_, areasqkm = NA_integer_, states = NA_integer_, 
+huc12 = NA_integer_, name = NA_integer_, hutype = NA_integer_, 
+humod = NA_integer_, tohuc = NA_integer_, noncontributingareaacres = NA_integer_, 
+noncontributingareasqkm = NA_integer_, globalid = NA_integer_, 
+place_id = NA_integer_, licence = NA_integer_, osm_type = NA_integer_, 
+osm_id = NA_integer_, lat = NA_integer_, lon = NA_integer_, class = NA_integer_, 
+type = NA_integer_, place_rank = NA_integer_, importance = NA_integer_, 
+addresstype = NA_integer_, name.1 = NA_integer_, display_name = NA_integer_
+), class = "factor", levels = c("constant", "aggregate", "identity"
+)))
+isle_royale_datasets[['isle_royale_features']] &lt;- isle_royale_features
+
+# --- Auto-Included Spatial RDS Object: isle_royale_landmarks ---
+isle_royale_landmarks &lt;- structure(list(name = c("Washington Creek (Windigo)", "Ojibway Lake", 
+"Feldtmann Lake", "Hidden Lake (Tobin Harbor)"), location = c("Windigo", 
+"Ojibway", "Feldtmann", "Tobin Harbor"), description = c("Feeding area along stream &amp; forest cover", 
+"Aquatic vegetation feeding lake", "Major southwest inland lake habitat", 
+"Aquatic plant feeding area near Tobin Harbor"), geometry = structure(list(
+    structure(c(-89.146, 47.923), class = c("XY", "POINT", "sfg"
+    )), structure(c(-88.618, 48.113), class = c("XY", "POINT", 
+    "sfg")), structure(c(-88.961, 47.876), class = c("XY", "POINT", 
+    "sfg")), structure(c(-88.49, 48.151), class = c("XY", "POINT", 
+    "sfg"))), n_empty = 0L, crs = structure(list(input = "EPSG:4326", 
+    wkt = "GEOGCRS[\"WGS 84\",\n    ENSEMBLE[\"World Geodetic System 1984 ensemble\",\n        MEMBER[\"World Geodetic System 1984 (Transit)\"],\n        MEMBER[\"World Geodetic System 1984 (G730)\"],\n        MEMBER[\"World Geodetic System 1984 (G873)\"],\n        MEMBER[\"World Geodetic System 1984 (G1150)\"],\n        MEMBER[\"World Geodetic System 1984 (G1674)\"],\n        MEMBER[\"World Geodetic System 1984 (G1762)\"],\n        MEMBER[\"World Geodetic System 1984 (G2139)\"],\n        MEMBER[\"World Geodetic System 1984 (G2296)\"],\n        ELLIPSOID[\"WGS 84\",6378137,298.257223563,\n            LENGTHUNIT[\"metre\",1]],\n        ENSEMBLEACCURACY[2.0]],\n    PRIMEM[\"Greenwich\",0,\n        ANGLEUNIT[\"degree\",0.0174532925199433]],\n    CS[ellipsoidal,2],\n        AXIS[\"geodetic latitude (Lat)\",north,\n            ORDER[1],\n            ANGLEUNIT[\"degree\",0.0174532925199433]],\n        AXIS[\"geodetic longitude (Lon)\",east,\n            ORDER[2],\n            ANGLEUNIT[\"degree\",0.0174532925199433]],\n    USAGE[\n        SCOPE[\"Horizontal component of 3D system.\"],\n        AREA[\"World.\"],\n        BBOX[-90,-180,90,180]],\n    ID[\"EPSG\",4326]]"), class = "crs"), class = c("sfc_POINT", 
+"sfc"), precision = 0, bbox = structure(c(xmin = -89.146, ymin = 47.876, 
+xmax = -88.49, ymax = 48.151), class = "bbox"))), row.names = c(NA, 
+4L), sf_column = "geometry", agr = structure(c(name = NA_integer_, 
+location = NA_integer_, description = NA_integer_), class = "factor", levels = c("constant", 
+"aggregate", "identity")), class = c("sf", "data.frame"))
+isle_royale_datasets[['isle_royale_landmarks']] &lt;- isle_royale_landmarks
 
 # --- Source: spline.R ---
 ## $Id: spline.R,v 1.0 2002/12/09 yandell@stat.wisc.edu Exp $
@@ -6154,8 +6458,16 @@ get_habitat_features &lt;- function(watershed_obj = NULL,
   if (cache_dir == "") cache_dir &lt;- "inst/extdata/isle_royale"
   cache_file &lt;- file.path(cache_dir, "isle_royale_features.rds")
   
-  if (use_cache &amp;&amp; file.exists(cache_file)) {
-    cached_sf &lt;- tryCatch(readRDS(cache_file), error = function(e) NULL)
+  if (use_cache) {
+    cached_sf &lt;- NULL
+    if (exists("isle_royale_datasets") &amp;&amp; is.list(isle_royale_datasets) &amp;&amp; !is.null(isle_royale_datasets[["isle_royale_features"]])) {
+      cached_sf &lt;- isle_royale_datasets[["isle_royale_features"]]
+    } else if (exists("isle_royale_features") &amp;&amp; inherits(isle_royale_features, "sf")) {
+      cached_sf &lt;- isle_royale_features
+    } else if (file.exists(cache_file)) {
+      cached_sf &lt;- tryCatch(readRDS(cache_file), error = function(e) NULL)
+    }
+    
     if (!is.null(cached_sf) &amp;&amp; inherits(cached_sf, "sf")) {
       if (is.null(huc_layer)) return(cached_sf)
       cached_sf &lt;- sf::st_transform(cached_sf, sf::st_crs(huc_layer))
@@ -6321,8 +6633,16 @@ get_moose_landmarks &lt;- function(watershed_obj = NULL, use_cache = TRUE) {
   if (cache_dir == "") cache_dir &lt;- "inst/extdata/isle_royale"
   cache_file &lt;- file.path(cache_dir, "isle_royale_landmarks.rds")
   
-  if (use_cache &amp;&amp; file.exists(cache_file)) {
-    cached_pts &lt;- tryCatch(readRDS(cache_file), error = function(e) NULL)
+  if (use_cache) {
+    cached_pts &lt;- NULL
+    if (exists("isle_royale_datasets") &amp;&amp; is.list(isle_royale_datasets) &amp;&amp; !is.null(isle_royale_datasets[["isle_royale_landmarks"]])) {
+      cached_pts &lt;- isle_royale_datasets[["isle_royale_landmarks"]]
+    } else if (exists("isle_royale_landmarks") &amp;&amp; inherits(isle_royale_landmarks, "sf")) {
+      cached_pts &lt;- isle_royale_landmarks
+    } else if (file.exists(cache_file)) {
+      cached_pts &lt;- tryCatch(readRDS(cache_file), error = function(e) NULL)
+    }
+    
     if (!is.null(cached_pts) &amp;&amp; inherits(cached_pts, "sf")) {
       if (is.null(huc_layer)) return(cached_pts)
       return(sf::st_transform(cached_pts, sf::st_crs(huc_layer)))
@@ -6362,11 +6682,17 @@ create_isle_royale_hex_overlay &lt;- function(hex_diameter = 0.01, features = NU
   }
   
   if (is.null(habitat_sf)) {
-    cache_dir &lt;- system.file("extdata/isle_royale", package = "ewing")
-    if (cache_dir == "") cache_dir &lt;- "inst/extdata/isle_royale"
-    cache_file &lt;- file.path(cache_dir, "isle_royale_features.rds")
-    if (file.exists(cache_file)) {
-      habitat_sf &lt;- tryCatch(readRDS(cache_file), error = function(e) NULL)
+    if (exists("isle_royale_datasets") &amp;&amp; is.list(isle_royale_datasets) &amp;&amp; !is.null(isle_royale_datasets[["isle_royale_features"]])) {
+      habitat_sf &lt;- isle_royale_datasets[["isle_royale_features"]]
+    } else if (exists("isle_royale_features") &amp;&amp; inherits(isle_royale_features, "sf")) {
+      habitat_sf &lt;- isle_royale_features
+    } else {
+      cache_dir &lt;- system.file("extdata/isle_royale", package = "ewing")
+      if (cache_dir == "") cache_dir &lt;- "inst/extdata/isle_royale"
+      cache_file &lt;- file.path(cache_dir, "isle_royale_features.rds")
+      if (file.exists(cache_file)) {
+        habitat_sf &lt;- tryCatch(readRDS(cache_file), error = function(e) NULL)
+      }
     }
   }
   
