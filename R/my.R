@@ -7,8 +7,10 @@
 my.read <- function(dataname, stringsAsFactors = TRUE)
 {
   switch(tools::file_ext(dataname),
-         "txt" =, "tsv" = read.table(dataname, stringsAsFactors = stringsAsFactors),
-         "csv" = read.csv(dataname, stringsAsFactors = stringsAsFactors),
+         "txt" =, "tsv" = read.table(dataname, fill = TRUE,
+                                     stringsAsFactors = stringsAsFactors),
+         "csv" = read.csv(dataname, fill = TRUE,
+                          stringsAsFactors = stringsAsFactors),
          "xls" = readxl::read_xls(dataname),
          "xlsx" = readxl::read_xlsx(dataname))
 }

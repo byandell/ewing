@@ -136,10 +136,10 @@ inputAppServer <- function(id, simres = shiny::reactiveVal(NULL), datafile = shi
         # 0. Check direct file in datafile directory if points to folder
         if (is.character(dfile) && dfile != "" && dir.exists(dfile)) {
           txt_path <- file.path(dfile, paste0(name, ".txt"))
-          if (file.exists(txt_path)) res <- tryCatch(utils::read.table(txt_path, header = TRUE, sep = "\t", stringsAsFactors = FALSE), error = function(e) NULL)
+          if (file.exists(txt_path)) res <- tryCatch(utils::read.table(txt_path, header = TRUE, sep = "\t", stringsAsFactors = FALSE, fill = TRUE), error = function(e) NULL)
           if (is.null(res)) {
             csv_path <- file.path(dfile, paste0(name, ".csv"))
-            if (file.exists(csv_path)) res <- tryCatch(utils::read.csv(csv_path, stringsAsFactors = FALSE), error = function(e) NULL)
+            if (file.exists(csv_path)) res <- tryCatch(utils::read.csv(csv_path, fill = TRUE, stringsAsFactors = FALSE), error = function(e) NULL)
           }
         }
 

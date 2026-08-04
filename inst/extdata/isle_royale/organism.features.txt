@@ -1,4 +1,4 @@
 	units	offspring	attack	birth	substrate	deplete	subclass	parasite	move
 moose	DD	1.2	NA	adult	substrate	100	moose	NA	adult
 wolf	hr	moose	moose	NA	substrate	48	adult	ecto	adult
-substrate	NA	NA	NA	NA	NA	NA	NA	NA
+substrate	NA

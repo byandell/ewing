@@ -2,6 +2,11 @@
 
 This document provides a comprehensive user and case-study guide for the **Isle Royale Wolf-Moose Predator-Prey Model** in the `ewing` package.
 
+- [Isle Royale Wolf-Moose Study (NPS)](https://npshistory.com/series/fauna/7/sec5.htm)
+- [Where are the Moose (NPS)](https://www.nps.gov/isro/learn/nature/moose.htm)
+- [Population Dynamics (Wolf Center)](https://www.isleroyalewolf.org/population-dynamics)
+- [dsem package (James Thorson, NOAA)](https://github.com/James-Thorson-NOAA/dsem)
+
 ---
 
 ## 1. Overview of Isle Royale Ecological System
@@ -9,6 +14,7 @@ This document provides a comprehensive user and case-study guide for the **Isle 
 Isle Royale National Park (Lake Superior, Michigan) represents an isolated island predator-prey system tracked by continuous wildlife census research since 1958 ([NPS Fauna Series 7](https://npshistory.com/series/fauna/7/sec5.htm)).
 
 ### Key Habitat Features & Sighting POIs
+
 - **Washington Creek in Windigo** (`lon = -89.146, lat = 47.923`): Stream and shaded forest feeding area.
 - **Ojibway Lake** (`lon = -88.618, lat = 48.113`): Inland lake with rich aquatic vegetation.
 - **Feldtmann Lake** (`lon = -88.961, lat = 47.876`): Major southwest inland lake habitat.
@@ -19,16 +25,19 @@ Isle Royale National Park (Lake Superior, Michigan) represents an isolated islan
 ## 2. Ecological Framework & Temporal Scaling Rules
 
 ### Moose Life Cycle (`future.moose`)
+
 - **Calf (0–1 yr)**: High vulnerability to wolf predation and severe winter weather.
 - **Yearling (1–2 yrs)**: Transitional stage dispersing across habitat features.
 - **Adult (2–9 yrs)**: Prime reproductive cows (producing 1–2 calves/yr). Low natural vulnerability to wolf predation.
 - **Senior (10+ yrs)**: Aging adults with tooth wear and osteoarthritis; prime target for wolf pack hunting.
 
 ### Wolf Life Cycle & Predation (`future.wolf`)
+
 - **Pups, Subadults, & Adults**: Pack structure with denning pups, roving subadults, and breeding pack adults.
 - **Predation Functional Response**: Wolf attack rates in competing risk tables (`moose.wolf.txt`) selectively target vulnerable Calves and Senior adults over prime Adults.
 
 ### Time Units & Temporal Scaling
+
 - **1 Time Unit (1 Step) = 1 Day** (Degree-Day / daily unit increment).
 - **365 Time Units (Steps) = 1 Year**.
 - Annual reproduction occurs every `365` steps. Adult Moose lifespan = `2920` steps (**8 years**); Adult Wolf lifespan = `2555` steps (**7 years**).
@@ -39,6 +48,7 @@ Isle Royale National Park (Lake Superior, Michigan) represents an isolated islan
 ## 3. Historical Census Calibration (`wolf_moose.csv`)
 
 Simulations can be initialized from or dynamically benchmarked against the 40-year empirical census time series (1980–2019):
+
 - **1980 Baseline**: 664 Moose, 50 Wolves
 - **1995 Peak**: 2,400 Moose, 16 Wolves
 - **2018 Crash**: 1,500 Moose, 2 Wolves

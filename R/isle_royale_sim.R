@@ -129,7 +129,8 @@ init_isle_royale_sim <- function(year = 1980,
       tbl_name <- tools::file_path_sans_ext(basename(f))
       df_f <- tryCatch({
         if (endsWith(f, ".csv")) utils::read.csv(f, stringsAsFactors = FALSE)
-        else utils::read.table(f, header = TRUE, sep = "\t", check.names = FALSE, stringsAsFactors = FALSE)
+        else utils::read.table(f, header = TRUE, sep = "\t", fill = TRUE,
+                               check.names = FALSE, stringsAsFactors = FALSE)
       }, error = function(e) NULL)
       if (!is.null(df_f)) ds_list[[tbl_name]] <- df_f
     }
