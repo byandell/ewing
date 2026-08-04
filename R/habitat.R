@@ -48,8 +48,16 @@ get_habitat_features <- function(watershed_obj = NULL,
   if (cache_dir == "") cache_dir <- "inst/extdata/isle_royale"
   cache_file <- file.path(cache_dir, "isle_royale_features.rds")
   
-  if (use_cache && file.exists(cache_file)) {
-    cached_sf <- tryCatch(readRDS(cache_file), error = function(e) NULL)
+  if (use_cache) {
+    cached_sf <- NULL
+    if (exists("isle_royale_datasets") && is.list(isle_royale_datasets) && !is.null(isle_royale_datasets[["isle_royale_features"]])) {
+      cached_sf <- isle_royale_datasets[["isle_royale_features"]]
+    } else if (exists("isle_royale_features") && inherits(isle_royale_features, "sf")) {
+      cached_sf <- isle_royale_features
+    } else if (file.exists(cache_file)) {
+      cached_sf <- tryCatch(readRDS(cache_file), error = function(e) NULL)
+    }
+    
     if (!is.null(cached_sf) && inherits(cached_sf, "sf")) {
       if (is.null(huc_layer)) return(cached_sf)
       cached_sf <- sf::st_transform(cached_sf, sf::st_crs(huc_layer))
@@ -228,8 +236,16 @@ get_moose_landmarks <- function(watershed_obj = NULL, use_cache = TRUE) {
   if (cache_dir == "") cache_dir <- "inst/extdata/isle_royale"
   cache_file <- file.path(cache_dir, "isle_royale_landmarks.rds")
   
-  if (use_cache && file.exists(cache_file)) {
-    cached_pts <- tryCatch(readRDS(cache_file), error = function(e) NULL)
+  if (use_cache) {
+    cached_pts <- NULL
+    if (exists("isle_royale_datasets") && is.list(isle_royale_datasets) && !is.null(isle_royale_datasets[["isle_royale_landmarks"]])) {
+      cached_pts <- isle_royale_datasets[["isle_royale_landmarks"]]
+    } else if (exists("isle_royale_landmarks") && inherits(isle_royale_landmarks, "sf")) {
+      cached_pts <- isle_royale_landmarks
+    } else if (file.exists(cache_file)) {
+      cached_pts <- tryCatch(readRDS(cache_file), error = function(e) NULL)
+    }
+    
     if (!is.null(cached_pts) && inherits(cached_pts, "sf")) {
       if (is.null(huc_layer)) return(cached_pts)
       return(sf::st_transform(cached_pts, sf::st_crs(huc_layer)))
@@ -281,11 +297,17 @@ create_isle_royale_hex_overlay <- function(hex_diameter = 0.01, features = NULL)
   }
   
   if (is.null(habitat_sf)) {
-    cache_dir <- system.file("extdata/isle_royale", package = "ewing")
-    if (cache_dir == "") cache_dir <- "inst/extdata/isle_royale"
-    cache_file <- file.path(cache_dir, "isle_royale_features.rds")
-    if (file.exists(cache_file)) {
-      habitat_sf <- tryCatch(readRDS(cache_file), error = function(e) NULL)
+    if (exists("isle_royale_datasets") && is.list(isle_royale_datasets) && !is.null(isle_royale_datasets[["isle_royale_features"]])) {
+      habitat_sf <- isle_royale_datasets[["isle_royale_features"]]
+    } else if (exists("isle_royale_features") && inherits(isle_royale_features, "sf")) {
+      habitat_sf <- isle_royale_features
+    } else {
+      cache_dir <- system.file("extdata/isle_royale", package = "ewing")
+      if (cache_dir == "") cache_dir <- "inst/extdata/isle_royale"
+      cache_file <- file.path(cache_dir, "isle_royale_features.rds")
+      if (file.exists(cache_file)) {
+        habitat_sf <- tryCatch(readRDS(cache_file), error = function(e) NULL)
+      }
     }
   }
   

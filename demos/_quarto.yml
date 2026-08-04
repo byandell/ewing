@@ -16,18 +16,20 @@ website:
         text: sysetholApp
       - href: IsleRoyaleApp.qmd
         text: IsleRoyaleApp
-      - href: fivePlotApp.qmd
-        text: fivePlotApp
-      - href: fiveShowApp.qmd
-        text: fiveShowApp
-      - href: tempApp.qmd
-        text: tempApp
-      - href: triangleApp.qmd
-        text: triangleApp
+      - text: Tools
+        menu:
+          - href: fivePlotApp.qmd
+            text: fivePlotApp
+          - href: fiveShowApp.qmd
+            text: fiveShowApp
+          - href: tempApp.qmd
+            text: tempApp
+          - href: triangleApp.qmd
+            text: triangleApp
+          - href: hexmoveApp.qmd
+            text: hexmoveApp
       - href: hexmapApp.qmd
         text: hexmapApp
-      - href: hexmoveApp.qmd
-        text: hexmoveApp
     right:
       - icon: github
         href: https://github.com/byandell/ewing

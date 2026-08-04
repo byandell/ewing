@@ -72,6 +72,19 @@ render_standalone_app <- function(app_name, height = 800) {
         cat("isle_royale_datasets[['wolf_moose']] <- wolf_moose\n\n")
       }
     }
+    
+    # Auto-include spatial sf objects (isle_royale_features.rds, isle_royale_landmarks.rds)
+    rds_files <- list.files(ir_dir, pattern = "\\.rds$", full.names = TRUE)
+    for (f in rds_files) {
+      tbl_name <- sub("\\.rds$", "", basename(f))
+      obj <- tryCatch(readRDS(f), error = function(e) NULL)
+      if (!is.null(obj)) {
+        cat(paste0("# --- Auto-Included Spatial RDS Object: ", tbl_name, " ---\n"))
+        cat(paste0(tbl_name, " <- "))
+        dput(obj)
+        cat(paste0("isle_royale_datasets[['", tbl_name, "']] <- ", tbl_name, "\n\n"))
+      }
+    }
   }
   
   # Standard core simulation engine source files (excluding sf/leaflet GIS files)

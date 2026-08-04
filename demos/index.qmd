@@ -11,8 +11,8 @@ listing:
     - fiveShowApp.qmd
     - tempApp.qmd
     - triangleApp.qmd
-    - hexmapApp.qmd
     - hexmoveApp.qmd
+    - hexmapApp.qmd
   type: grid
   categories: false
 ---
