@@ -16,9 +16,7 @@ Includes:
     stringr, purrr, readxl, tibble, tidyr, tools, utils
 Suggests: 
     knitr,
-    rmarkdown,
-    osmdata,
-    hexmap
+    rmarkdown
 VignetteBuilder: knitr
 Depends: 
     R (>= 2.10)

@@ -1,18 +1,18 @@
 # Cleanup to remove `hexmap` repo from `ewing`
 
-The **`ewing`** repository has been cleaned up by removing extracted interactive Leaflet/hexmap Shiny app code, adding **[`hexmap`](https://github.com/byandell/hexmap)** under **`Suggests`**, and preserving offline spatial hex substrate overlays for zero-dependency simulation runs.
+The **`ewing`** repository has been cleaned up by removing extracted interactive Leaflet/hexmap Shiny app code, citing **[`hexmap`](https://github.com/byandell/hexmap)** in documentation vignettes, and preserving offline spatial hex substrate overlays for zero-dependency simulation runs.
 
-## Prompt
+## Prompts
 
 - We have created hexmap and it is commited and pushed to GitHub. Now clean up this repo so that it removes `leaflet` and `hexmap` code. Where needed, cite the new package. Develop a plan for this.
 - I want to keep the hex overlay in this package so that users can overlay hex grid on surface possibly derived other than with `hexmap`. How would that modify the plan? It might mean some modest code duplication in `hexmap` and this repo, but might be cleaner. It would be nice to not depend on `hexmap` if possible.
+- Why do we need `osmdata`? I removed `osmdata`. Please update `hexmap_cleanup.md`.
 
 ## Key Changes Made
 
 ### 1. Independence & `DESCRIPTION` / `NAMESPACE` Updates
 
-- Added `hexmap` under **`Suggests`** in [`DESCRIPTION`](file:///Users/brianyandell/Documents/Research/ewing/ewing/DESCRIPTION) (`Suggests: hexmap`).
-- Removed `leaflet`, `leaflet.extras`, and `nhdplusTools` from direct `Imports`, reducing `ewing`'s core package dependency footprint.
+- Removed `hexmap`, `leaflet`, `leaflet.extras`, `nhdplusTools`, and `osmdata` from [`DESCRIPTION`](file:///Users/brianyandell/Documents/Research/ewing/ewing/DESCRIPTION) so GitHub Pages / GitHub Actions builds with zero external GIS API dependency installation. `ewing` spatial simulations rely 100% on local pre-computed `.rds` landscape files (`inst/extdata/isle_royale/`).
 - Updated [`NAMESPACE`](file:///Users/brianyandell/Documents/Research/ewing/ewing/NAMESPACE) to remove exports for interactive Leaflet discovery modules and watershed lookup utilities (`hexmapApp*`, `leafletApp*`, `build_base_map`, `get_watershed`).
 
 ### 2. R Code Cleanup (`R/`)
@@ -43,9 +43,9 @@ The **`ewing`** repository has been cleaned up by removing extracted interactive
 
 1. **Offline Spatial Overlay Test**:
    Ran `create_isle_royale_hex_overlay(0.02)` and `add_habitat_hex_overlay()` in R:
-   - Generated **275 hex cells** and computed **275 habitat suitability scores** offline in `ewing` with zero external API calls or Leaflet package dependencies.
-2. **Quarto Demos Compilation**:
+   - Generated **275 hex cells** and computed **275 habitat suitability scores** offline in `ewing` with zero external API calls or Leaflet/osmdata package dependencies.
+2. **Dependency Resolution**:
+   Ran `pak::local_install_deps()` — confirmed `hexmap` and `osmdata` are not requested as build dependencies.
+3. **Quarto Demos Compilation**:
    Ran `quarto render demos/` across the 7 remaining demonstration applications:
    - Successfully rendered all demo pages and updated `docs/demos/index.html`.
-3. **Documentation & Namespace Generation**:
-   Re-generated namespace via `devtools::document()` with 0 warnings or missing exports.
