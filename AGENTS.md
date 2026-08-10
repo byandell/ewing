@@ -152,3 +152,9 @@ Optional GIS extension: `hexmap` (`byandell/hexmap`).
 - **Navbar Structure:** Main `_pkgdown.yml` site structure puts `demos`
   before `articles` (Guides). `demos/_quarto.yml` `Home` tab points to
   `../index.html` (the pkgdown homepage).
+- **Relative Link Hygiene in Markdown Documentation:** All markdown
+  documents in `inst/doc/` and `vignettes/` MUST use relative file paths
+  (e.g. `[DESCRIPTION](../../DESCRIPTION)` or
+  `[tech_guide.md](tech_guide.md)`) rather than absolute `file:///` file
+  URIs to ensure links work when viewed on GitHub and rendered by
+  pkgdown.

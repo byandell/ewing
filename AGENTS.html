@@ -210,6 +210,8 @@
 <strong>GitHub Pages Deployment:</strong> Always include <code>touch docs/.nojekyll</code> and <code>mkdir -p docs/demos</code> in <code>.github/workflows/pkgdown.yaml</code> before deploying to <code>gh-pages</code> so GitHub Pages serves WebAssembly static assets properly.</li>
 <li>
 <strong>Navbar Structure:</strong> Main <code>_pkgdown.yml</code> site structure puts <code>demos</code> before <code>articles</code> (Guides). <code>demos/_quarto.yml</code> <code>Home</code> tab points to <code>../index.html</code> (the pkgdown homepage).</li>
+<li>
+<strong>Relative Link Hygiene in Markdown Documentation:</strong> All markdown documents in <code>inst/doc/</code> and <code>vignettes/</code> MUST use relative file paths (e.g. <code>[DESCRIPTION](../../DESCRIPTION)</code> or <code>[tech_guide.md](tech_guide.md)</code>) rather than absolute <code>file:///</code> file URIs to ensure links work when viewed on GitHub and rendered by pkgdown.</li>
 </ul></div>
 </div>
 
