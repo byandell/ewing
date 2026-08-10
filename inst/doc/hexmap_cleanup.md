@@ -12,8 +12,8 @@ The **`ewing`** repository has been cleaned up by removing extracted interactive
 
 ### 1. Independence & `DESCRIPTION` / `NAMESPACE` Updates
 
-- Removed `hexmap`, `leaflet`, `leaflet.extras`, `nhdplusTools`, and `osmdata` from [`DESCRIPTION`](file:///Users/brianyandell/Documents/Research/ewing/ewing/DESCRIPTION) so GitHub Pages / GitHub Actions builds with zero external GIS API dependency installation. `ewing` spatial simulations rely 100% on local pre-computed `.rds` landscape files (`inst/extdata/isle_royale/`).
-- Updated [`NAMESPACE`](file:///Users/brianyandell/Documents/Research/ewing/ewing/NAMESPACE) to remove exports for interactive Leaflet discovery modules and watershed lookup utilities (`hexmapApp*`, `leafletApp*`, `build_base_map`, `get_watershed`).
+- Removed `hexmap`, `leaflet`, `leaflet.extras`, `nhdplusTools`, and `osmdata` from [`DESCRIPTION`](../../DESCRIPTION) so GitHub Pages / GitHub Actions builds with zero external GIS API dependency installation. `ewing` spatial simulations rely 100% on local pre-computed `.rds` landscape files (`inst/extdata/isle_royale/`).
+- Updated [`NAMESPACE`](../../NAMESPACE) to remove exports for interactive Leaflet discovery modules and watershed lookup utilities (`hexmapApp*`, `leafletApp*`, `build_base_map`, `get_watershed`).
 
 ### 2. R Code Cleanup (`R/`)
 
@@ -29,12 +29,12 @@ The **`ewing`** repository has been cleaned up by removing extracted interactive
 
 ### 3. Documentation & Vignette Citations
 
-- **Vignettes & Technical Guides**: Updated [`vignettes/tech_guide/gis.Rmd`](file:///Users/brianyandell/Documents/Research/ewing/ewing/vignettes/tech_guide/gis.Rmd) and [`inst/doc/tech_guide.md`](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/doc/tech_guide.md) to cite [`byandell/hexmap`](https://github.com/byandell/hexmap) for live USGS watershed lookup and interactive Leaflet map discovery.
-- **Developer Guide & Architecture Tables**: Updated [`vignettes/devel_guide/index.Rmd`](file:///Users/brianyandell/Documents/Research/ewing/ewing/vignettes/devel_guide/index.Rmd), [`inst/doc/demo_guide.md`](file:///Users/brianyandell/Documents/Research/ewing/ewing/inst/doc/demo_guide.md), and [`AGENTS.md`](file:///Users/brianyandell/Documents/Research/ewing/ewing/AGENTS.md).
+- **Vignettes & Technical Guides**: Updated [`vignettes/tech_guide/gis.Rmd`](../../vignettes/tech_guide/gis.Rmd) and [`inst/doc/tech_guide.md`](tech_guide.md) to cite [`byandell/hexmap`](https://github.com/byandell/hexmap) for live USGS watershed lookup and interactive Leaflet map discovery.
+- **Developer Guide & Architecture Tables**: Updated [`vignettes/devel_guide/index.Rmd`](../../vignettes/devel_guide/index.Rmd), [`inst/doc/demo_guide.md`](demo_guide.md), and [`AGENTS.md`](../../AGENTS.md).
 
 ### 4. Quarto Demos & Website Navigation
 
-- Removed `demos/hexmapApp.qmd` from [`demos/_quarto.yml`](file:///Users/brianyandell/Documents/Research/ewing/ewing/demos/_quarto.yml) and [`demos/index.qmd`](file:///Users/brianyandell/Documents/Research/ewing/ewing/demos/index.qmd).
+- Removed `demos/hexmapApp.qmd` from [`demos/_quarto.yml`](../../demos/_quarto.yml) and [`demos/index.qmd`](../../demos/index.qmd).
 - Removed obsolete manual pages (`man/hexmapApp.Rd`, `man/leafletApp.Rd`, `man/leaflet.Rd`, `man/watershed.Rd`).
 
 ---

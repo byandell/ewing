@@ -117,4 +117,5 @@ Key packages: `dplyr`, `tidyr`, `ggplot2`, `tibble`, `rlang`, `purrr`, `readxl`,
 - **Git Hygiene:** Local Quarto build folders (`demos/site_libs/`, `demos/_extensions/`, `demos/.quarto/`) must be listed in `.gitignore` and never committed.
 - **GitHub Pages Deployment:** Always include `touch docs/.nojekyll` and `mkdir -p docs/demos` in `.github/workflows/pkgdown.yaml` before deploying to `gh-pages` so GitHub Pages serves WebAssembly static assets properly.
 - **Navbar Structure:** Main `_pkgdown.yml` site structure puts `demos` before `articles` (Guides). `demos/_quarto.yml` `Home` tab points to `../index.html` (the pkgdown homepage).
+- **Relative Link Hygiene in Markdown Documentation:** All markdown documents in `inst/doc/` and `vignettes/` MUST use relative file paths (e.g. `[DESCRIPTION](../../DESCRIPTION)` or `[tech_guide.md](tech_guide.md)`) rather than absolute `file:///` file URIs to ensure links work when viewed on GitHub and rendered by pkgdown.
 
