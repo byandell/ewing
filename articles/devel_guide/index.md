@@ -96,10 +96,10 @@ codebase:
 4.  **[Utility & Companion
     Modules](https://byandell.github.io/ewing/articles/devel_guide/utilities.md)**
     Explore file exports
-    ([downloadApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/downloadApp.R)),
-    Leaflet GIS explorers
-    ([leafletApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/leafletApp.R)),
+    ([downloadApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/downloadApp.R))
     and developer test applications (`futureApp`, `initApp`).
+    Interactive Leaflet GIS exploration is provided by the standalone
+    [`hexmap`](https://github.com/byandell/hexmap) package.
 
 ------------------------------------------------------------------------
 
@@ -126,6 +126,5 @@ the `R/` directory, mapped to their design roles:
 | [fiveShowApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/fiveShowApp.R) | [`fiveShowApp()`](https://byandell.github.io/ewing/reference/fiveShowApp.md) | (Standalone) | Mini App / Explorer Tool | Shiny explorer for 5-parameter goal search adjustments with click-to-move interactive baseline splines. |
 | [fivetimeApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/fivetimeApp.R) | [`fivetimeApp()`](https://byandell.github.io/ewing/reference/fivetimeApp.md) | (Standalone) | Mini App / Explorer Tool | Shiny explorer showing parameter sensitivity and multi-parameter binary search target goal curves. |
 | [initApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/initApp.R) | [initServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/initApp.R#L35) | `initInput()`, [`initOutput()`](https://byandell.github.io/ewing/reference/initApp.md) | Mini App / Debug Tool | Visualizes starting substrate coordinate layouts and species statistics immediately upon initialization. |
-| [leafletApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/leafletApp.R) | [leafletServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/leafletApp.R#L34) | `leafletInput()`, [`leafletOutput()`](https://byandell.github.io/ewing/reference/leafletApp.md) | GIS Companion App | Provides interactive map click tracking, connecting dynamically with USGS boundary layers. |
 | [origEwingApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/origEwingApp.R) | [origEwingServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/origEwingApp.R#L30) | [`origEwingInput()`](https://byandell.github.io/ewing/reference/origEwingApp.md), [`origEwingOutput()`](https://byandell.github.io/ewing/reference/origEwingApp.md) | Legacy Code (Deprecated) | The original monolithic dashboard version preserved for historic regression validation. |
 | [multApp.R](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/multApp.R) | [multServer()](file:///Users/brianyandell/Documents/Research/ewing/ewing/R/multApp.R#L35) | [`multInput()`](https://byandell.github.io/ewing/reference/multApp.md), [`multOutput()`](https://byandell.github.io/ewing/reference/multApp.md) | Legacy Code (Deprecated) | Original multi-run app wrapper before modularization. |

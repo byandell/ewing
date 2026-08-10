@@ -113,16 +113,15 @@ connectivity - `temperature.base`, `temperature.par` — thermal regime
 - `R/` — 60+ source files; key ones: `ewingApp.R`, `initApp.R`,
   `ewing_substrate.R`, `ewing_ageclass.R`, `distPlotApp.R`, `multApp.R`
 - `inst/shinyApp/app.R` — standalone Shiny app entry point
-- `inst/scripts/` — utility scripts including `watershedApp.R`,
-  `watershed_overlay.R`
+- `inst/scripts/` — utility scripts for simulation scenarios
 - `inst/doc/datasets.md` — dataset documentation
 - `vignettes/ewing.Rmd` — main tutorial
 
 ## Dependencies
 
 Key packages: `dplyr`, `tidyr`, `ggplot2`, `tibble`, `rlang`, `purrr`,
-`readxl`, `shiny`, `bslib`, `patchwork`, `leaflet`, `GET`, `sf`,
-`splines`, `DT`
+`readxl`, `shiny`, `bslib`, `patchwork`, `GET`, `sf`, `splines`, `DT`.
+Optional GIS extension: `hexmap` (`byandell/hexmap`).
 
 ## Shinylive & Development Guidelines
 

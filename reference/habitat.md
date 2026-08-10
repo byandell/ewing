@@ -6,18 +6,14 @@ geocoding notable sighting landmarks (Washington Creek, Ojibway Lake,
 Feldtmann Lake, Hidden Lake), computing habitat suitability weights on
 hexagonal substrate grids, and visualizing overlays.
 
-Retrieves key moose sighting landmarks on Isle Royale (or customizable
-spatial targets): Washington Creek in Windigo, Ojibway Lake, Feldtmann
-Lake, and Hidden Lake in Tobin Harbor.
+Retrieves notable moose sighting locations (Washington Creek, Ojibway
+Lake, Feldtmann Lake, Hidden Lake).
 
-Generates a spatial hexagonal grid across Isle Royale island geometry
-using pre-computed local habitat features
-(\`isle_royale_features.rds\`), without requiring external watershed GIS
-service calls.
+Projects a mathematical hexagonal substrate grid overlay across an
+extracted watershed or landscape boundary.
 
-Intersects habitat features (lakes, waterways, forests, bogs) and
-sighting landmarks with a hexagonal substrate grid overlay, calculating
-habitat suitability weights per hex cell.
+Standalone utility to construct the Isle Royale spatial hexagonal
+substrate grid.
 
 ## Usage
 
@@ -29,11 +25,18 @@ get_habitat_features(
   site = "isle_royale"
 )
 
+get_fallback_habitat_features(huc_layer = NULL)
+
 get_moose_landmarks(
   watershed_obj = NULL,
   use_cache = TRUE,
   site = "isle_royale"
 )
+
+add_watershed_hex_overlay(huc_info, hex_diameter = 0.01)
+
+# S3 method for class 'watershed_hex_overlay'
+autoplot(object, ...)
 
 create_isle_royale_hex_overlay(
   hex_diameter = 0.01,
@@ -53,15 +56,13 @@ add_habitat_hex_overlay(
 
 # S3 method for class 'habitat_hex_overlay'
 autoplot(object, show_landmarks = TRUE, ...)
-
-add_leaflet_habitat_overlay(map, object)
 ```
 
 ## Arguments
 
 - watershed_obj:
 
-  Watershed object from \`get_watershed()\`.
+  Target spatial watershed or landscape object.
 
 - categories:
 
@@ -69,67 +70,81 @@ add_leaflet_habitat_overlay(map, object)
 
 - use_cache:
 
-  Logical; if TRUE, uses pre-fetched local landmark definitions when
-  available.
+  Logical; if TRUE, uses local pre-fetched dataset when available.
 
 - site:
 
   Target simulation landscape/site folder name (default:
   \`"isle_royale"\`).
 
+- huc_layer:
+
+  An \`sf\` polygon representation of the region.
+
+- huc_info:
+
+  Watershed object or list containing a \`layer\` geometry.
+
 - hex_diameter:
 
-  Diameter of hexagonal grid cells in degrees (default = \`0.01\`).
-
-- features:
-
-  Optional path or \`sf\` object containing habitat features.
-
-- layer:
-
-  Optional path or \`sf\` boundary layer object.
-
-- hex_obj:
-
-  An S3 object of class \`watershed_hex_overlay\`.
-
-- habitat_sf:
-
-  Optional pre-extracted \`sf\` data frame of habitat features.
-
-- landmarks_sf:
-
-  Optional pre-geocoded \`sf\` points of sighting landmarks.
+  Hexagon extent diameter in degrees (default: \`0.01\`).
 
 - object:
 
   An S3 object of class \`habitat_hex_overlay\`.
 
-- show_landmarks:
-
-  Logical; whether to draw moose sighting POIs.
-
 - ...:
 
   Additional arguments passed to plotting functions.
 
-- map:
+- features:
 
-  A \`leaflet\` map object.
+  Deprecated alias for \`habitat_sf\`.
+
+- layer:
+
+  Optional sf object of landscape boundary layer.
+
+- hex_obj:
+
+  S3 object returned from \`add_watershed_hex_overlay()\` or
+  \`create_isle_royale_hex_overlay()\`.
+
+- habitat_sf:
+
+  Optional sf object of habitat features.
+
+- landmarks_sf:
+
+  Optional sf object of sighting landmarks.
+
+- landmarks:
+
+  Deprecated alias for \`landmarks_sf\`.
+
+- show_landmarks:
+
+  Logical; if TRUE, renders moose sighting landmarks on map.
 
 ## Value
 
 \`get_habitat_features\`: An \`sf\` data frame of habitat features
 clipped to the target geometry.
 
-\`get_moose_landmarks\`: An \`sf\` object containing landmark point
-geometries and attributes.
+Fallback \`sf\` data frame of habitat features.
+
+An \`sf\` data frame of point landmark geometries.
+
+\`add_watershed_hex_overlay\`: An S3 object of class
+\`watershed_hex_overlay\` containing the original geometry plus the hex
+layer.
+
+\`autoplot.watershed_hex_overlay\`: A \`ggplot\` object representing the
+spatial mesh.
 
 An S3 object of class \`watershed_hex_overlay\`.
 
 \`add_habitat_hex_overlay\`: An S3 object of class
 \`habitat_hex_overlay\`.
 
-A \`ggplot\` visualization of the Isle Royale Moose Habitat Overlay.
-
-An updated \`leaflet\` map.
+A \`ggplot\` object.

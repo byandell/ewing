@@ -102,17 +102,14 @@
 - [`ggplot_ewing_envelopes()`](https://byandell.github.io/ewing/reference/ggplot_ewing_envelopes.md)
   : GGplot of Ewing multiple envelopes
 - [`get_habitat_features()`](https://byandell.github.io/ewing/reference/habitat.md)
+  [`get_fallback_habitat_features()`](https://byandell.github.io/ewing/reference/habitat.md)
   [`get_moose_landmarks()`](https://byandell.github.io/ewing/reference/habitat.md)
+  [`add_watershed_hex_overlay()`](https://byandell.github.io/ewing/reference/habitat.md)
+  [`autoplot(`*`<watershed_hex_overlay>`*`)`](https://byandell.github.io/ewing/reference/habitat.md)
   [`create_isle_royale_hex_overlay()`](https://byandell.github.io/ewing/reference/habitat.md)
   [`add_habitat_hex_overlay()`](https://byandell.github.io/ewing/reference/habitat.md)
   [`autoplot(`*`<habitat_hex_overlay>`*`)`](https://byandell.github.io/ewing/reference/habitat.md)
-  [`add_leaflet_habitat_overlay()`](https://byandell.github.io/ewing/reference/habitat.md)
   : Moose Habitat & Substrate Overlay Utilities
-- [`hexmapInput()`](https://byandell.github.io/ewing/reference/hexmapApp.md)
-  [`hexmapOutput()`](https://byandell.github.io/ewing/reference/hexmapApp.md)
-  [`hexmapServer()`](https://byandell.github.io/ewing/reference/hexmapApp.md)
-  [`hexmapApp()`](https://byandell.github.io/ewing/reference/hexmapApp.md)
-  : Interactive Hexagonal Watershed Mapping UI (Input)
 - [`hexmoveAppInput()`](https://byandell.github.io/ewing/reference/hexmoveApp.md)
   [`hexmoveAppOutput()`](https://byandell.github.io/ewing/reference/hexmoveApp.md)
   [`hexmoveAppServer()`](https://byandell.github.io/ewing/reference/hexmoveApp.md)
@@ -148,15 +145,6 @@
   [`run_isle_royale_sim()`](https://byandell.github.io/ewing/reference/isle_royale_sim.md)
   [`ggplot_isle_royale_sim()`](https://byandell.github.io/ewing/reference/isle_royale_sim.md)
   : Isle Royale Wolf-Moose Predator-Prey Simulation (Wrapper Shell)
-- [`build_base_map()`](https://byandell.github.io/ewing/reference/leaflet.md)
-  [`get_huc_from_point()`](https://byandell.github.io/ewing/reference/leaflet.md)
-  [`get_hucs_from_polygon()`](https://byandell.github.io/ewing/reference/leaflet.md)
-  [`add_leaflet_hex_overlay()`](https://byandell.github.io/ewing/reference/leaflet.md)
-  : Interactive Leaflet Geographic Utilities
-- [`leafletOutput()`](https://byandell.github.io/ewing/reference/leafletApp.md)
-  [`leafletServer()`](https://byandell.github.io/ewing/reference/leafletApp.md)
-  [`leafletApp()`](https://byandell.github.io/ewing/reference/leafletApp.md)
-  : Interactive Leaflet Mapping UI (Output)
 - [`multApp()`](https://byandell.github.io/ewing/reference/multApp.md)
   [`multServer()`](https://byandell.github.io/ewing/reference/multApp.md)
   [`multInput()`](https://byandell.github.io/ewing/reference/multApp.md)
@@ -214,8 +202,3 @@
   Interactive Daily Temperature Design Explorer App
 - [`triangleApp()`](https://byandell.github.io/ewing/reference/triangleApp.md)
   : Interactive Tridiagonal Substrate Network Explorer App
-- [`get_watershed()`](https://byandell.github.io/ewing/reference/watershed.md)
-  [`add_watershed_hex_overlay()`](https://byandell.github.io/ewing/reference/watershed.md)
-  [`autoplot(`*`<watershed_hex_overlay>`*`)`](https://byandell.github.io/ewing/reference/watershed.md)
-  [`discover_watershed_features()`](https://byandell.github.io/ewing/reference/watershed.md)
-  : Watershed Boundary & Hexagonal Substrate Utilities

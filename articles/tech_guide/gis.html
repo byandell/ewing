@@ -77,7 +77,7 @@
                         <h4 data-toc-skip class="author">Brian S.
 Yandell</h4>
             
-            <h4 data-toc-skip class="date">04 August 2026</h4>
+            <h4 data-toc-skip class="date">10 August 2026</h4>
       
 
       <div class="d-none name"><code>gis.Rmd</code></div>
@@ -86,784 +86,100 @@ Yandell</h4>
     
     
 <p>This document details the spatial integration of simulation grids
-with geographic features, USGS HUC12 subwatershed boundary discovery,
-spatial polygon overlays (<code>watershed_overlay</code>), and
-deployment architectures.</p>
+with geographic features, spatial polygon overlays
+(<code>add_watershed_hex_overlay</code>), Moose habitat suitability
+scoring, and the separation of interactive Leaflet GIS discovery into
+the standalone <strong><a href="https://github.com/byandell/hexmap" class="external-link"><code>hexmap</code></a></strong>
+package.</p>
 <hr>
 <div class="section level2">
-<h2 id="interactive-geographic-feature-search-leaflet-discovery">1. Interactive Geographic Feature Search &amp; Leaflet
-Discovery<a class="anchor" aria-label="anchor" href="#interactive-geographic-feature-search-leaflet-discovery"></a>
+<h2 id="spatial-hexagonal-substrate-grid-habitat-overlays">1. Spatial Hexagonal Substrate Grid &amp; Habitat Overlays<a class="anchor" aria-label="anchor" href="#spatial-hexagonal-substrate-grid-habitat-overlays"></a>
 </h2>
-<p>To interactively look up and spatially identify geographic features
-(like Isle Royale, Yellowstone, or specific lakes) natively within R,
-you generally need to combine a <strong>Geocoding Engine</strong> (to
-translate text to coordinates) with an <strong>Interactive Mapping
-Canvas</strong>.</p>
-<p>Here are the most efficient, modern R packages designed to accomplish
-this, starting with tools heavily optimized for OpenStreetMap and North
-American datasets.</p>
-</div>
-<div class="section level2">
-<h2 id="longer-strategy">Longer Strategy<a class="anchor" aria-label="anchor" href="#longer-strategy"></a>
-</h2>
-<p>The <code><a href="../../reference/leafletApp.html">leafletApp()</a></code> interactively finds the HUC12
-sub-watershed(s) that contains the feature of interest. Now we want to
-isolate the geographic feature and overlay with hexagon. Note that some
-code is temporarily in <code>inst/scripts/</code> and probably should be
-moved back to <code>R/</code>. Ultimately we want to connect this with
-predator-prey systems discussed in <code>inst/doc/datasets.md</code>;
-that is, pick a dataset, find the geographic region, overly hexagons (at
-appropriate scale) and place organisms on the region.</p>
-</div>
-<div class="section level2">
-<h2 id="the-interactive-canvases">1. The Interactive Canvases<a class="anchor" aria-label="anchor" href="#the-interactive-canvases"></a>
-</h2>
-<p>To explore geography interactively (zooming, panning, and clicking),
-these are the gold standard packages:</p>
-<ul>
-<li>
-<strong><code>leaflet</code></strong>: The foundational package for
-interactive mapping in R. It bindings directly to the JavaScript Leaflet
-library, allowing you to build highly customized, interactive HTML maps
-that work gracefully inside Shiny apps or the RStudio Viewer.</li>
-<li>
-<strong><code>mapview</code></strong>: Built on top of
-<code>leaflet</code>, this is the “power user” tool for spatial data
-scientists. Simply passing any spatial object (<code>sf</code>,
-<code>raster</code>, etc.) into <code>mapview(my_data)</code> instantly
-generates a fully interactive, layered map without writing complex
-leaflet configuration code.</li>
-</ul>
-</div>
-<div class="section level2">
-<h2 id="live-search-selection-plugins-interactive-tools">2. Live Search &amp; Selection Plugins (Interactive Tools)<a class="anchor" aria-label="anchor" href="#live-search-selection-plugins-interactive-tools"></a>
-</h2>
-<p>If you want the ability to type “Isle Royale” into a search bar
-<em>on the map itself</em> and have the camera fly to the location:</p>
-<ul>
-<li>
-<strong><code>leaflet.extras</code></strong>: An expansion package
-for <code>leaflet</code>. It contains a magical function called
-<strong><code>addSearchOSM()</code></strong>. If you pipe a leaflet map
-into this function, it embeds a live OpenStreetMap search bar into the
-corner of your map widget. Users can type any North American landmark,
-and the map will instantly autoselect it.</li>
-<li>
-<strong><code>mapedit</code></strong>: If your goal is to visually
-explore a map, find a boundary, and then <em>extract its coordinates
-back into R</em>, <code>mapedit</code> allows you to click, draw
-polygons, or select features on a leaflet map. When you finish, it
-returns the exact spatial coordinates (bounding boxes) back into your R
-session as an <code>sf</code> object.</li>
-</ul>
-</div>
-<div class="section level2">
-<h2 id="programmatic-geocoders-text-to-geography">3. Programmatic Geocoders (Text-to-Geography)<a class="anchor" aria-label="anchor" href="#programmatic-geocoders-text-to-geography"></a>
-</h2>
-<p>If you need to programmatically search text strings to validate their
-existence before mapping them:</p>
-<ul>
-<li>
-<strong><code>tidygeocoder</code></strong>: The absolute best modern
-package for address/landmark routing. It provides a unified, tidy
-interface (<code>geocode()</code>) to query powerful North American
-databases like the US Census API, Nominatim (OSM), or ArcGIS, returning
-exact longitudes/latitudes for geographic terms.</li>
-<li>
-<strong><code>osmdata</code> (<code>getbb()</code>)</strong>: As
-utilized in our pipeline, <code>getbb("Isle Royale")</code> is fantastic
-for grabbing raw OpenStreetMap bounding polygons simply by feeding it an
-explicit text string.</li>
-</ul>
-</div>
-<div class="section level2">
-<h2 id="recommended-experimental-workflow">Recommended Experimental Workflow<a class="anchor" aria-label="anchor" href="#recommended-experimental-workflow"></a>
-</h2>
-<p>If you eventually want to move away from manually editing static CSVs
-(<code>huc_features.csv</code>), the ultimate interactive UI flow
-combines these tools:</p>
-<ol style="list-style-type: decimal">
-<li>Render a <code>leaflet</code> basemap in your Shiny App.</li>
-<li>Add <code><a href="https://rdrr.io/pkg/leaflet.extras/man/search-geocoding.html" class="external-link">leaflet.extras::addSearchOSM()</a></code> so the user gets a
-physical search bar interface over the map.</li>
-<li>The user types “Yellowstone River” into the map’s search box. The
-interactive map zooms to it.</li>
-<li>You capture the map’s current bounding box coordinates via Shiny
-(<code>input$map_bounds</code>) and pass those bounds strictly into our
-<code><a href="../../reference/watershed.html">discover_watershed_features()</a></code> utility to pull the exact
-topographical intersection!</li>
-</ol>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="interactive-spatial-discovery-implementation">Interactive Spatial Discovery Implementation<a class="anchor" aria-label="anchor" href="#interactive-spatial-discovery-implementation"></a>
-</h2>
-<p><strong>Prompt</strong>: Develop an R/leafletApp.R shiny app to
-interactively look for geographic features (combining search and click
-methodologies). Collect functions in R/leaflet.R (documented using
-Roxygen2). Modify inst/doc/refactor/leaflet.md with the prompt and
-walkthrough when done.</p>
+<p>The <strong><code>ewing</code></strong> package provides an
+offline-capable spatial substrate engine that constructs continuous
+hexagonal grid meshes across custom landscapes (such as Isle
+Royale).</p>
 <div class="section level3">
-<h3 id="architecture-walkthrough">Architecture Walkthrough<a class="anchor" aria-label="anchor" href="#architecture-walkthrough"></a>
+<h3 id="hexagonal-mesh-generation-autoplotting">1. Hexagonal Mesh Generation &amp; Autoplotting<a class="anchor" aria-label="anchor" href="#hexagonal-mesh-generation-autoplotting"></a>
 </h3>
-<p>We designed a unified dual-workflow interface that empowers users to
-both search via text and interactively click on regions to automatically
-fetch topographies.</p>
-<div class="section level4">
-<h4 id="backend-spatial-adapters-rleaflet-r">1. Backend Spatial Adapters (<code>R/leaflet.R</code>)<a class="anchor" aria-label="anchor" href="#backend-spatial-adapters-rleaflet-r"></a>
-</h4>
-<p>We formalized two backend utilities heavily documented using
-Roxygen2:</p>
 <ul>
 <li>
-<code><a href="../../reference/leaflet.html">build_base_map()</a></code>: Wraps the <code>leaflet</code> map
-rendering API. We initialized a default view zoomed out over North
-America, cleanly overlaying standard map tiles. Crucially, we embedded
-the <code>leaflet.extras::searchOSM()</code> widget directly here,
-enabling instantaneous global geographic string lookups <em>(Option A
-paradigm)</em> without requiring custom API hooks.</li>
+<strong><code>create_isle_royale_hex_overlay(hex_diameter)</code></strong>:
+Builds an S3 spatial substrate mesh (<code>watershed_hex_overlay</code>)
+across the Isle Royale boundary, reading pre-computed <code>.rds</code>
+layers from <code>inst/extdata/isle_royale/</code>.</li>
 <li>
-<code>get_huc_from_point(lng, lat)</code>: A bridging wrapper that
-safely ingests decimal geographic coordinates. We utilized
-<code><a href="https://r-spatial.github.io/sf/reference/st.html" class="external-link">sf::st_point()</a></code> to geometrically project the decimals into
-strict <code>epsg=4326</code> CRS bounds, allowing us to flawlessly
-query point intersections against the
-<code><a href="https://doi-usgs.github.io/nhdplusTools/reference/get_huc.html" class="external-link">nhdplusTools::get_huc()</a></code> subwatershed matrix <em>(Option B
-paradigm)</em>.</li>
+<strong><code>add_habitat_hex_overlay(hex_obj)</code></strong>:
+Intersects habitat features (lakes, waterways, bogs, forests) with hex
+cells, assigning habitat suitability scores and movement weights.</li>
+<li>
+<strong><code><a href="../../reference/habitat.html">autoplot.watershed_hex_overlay()</a></code> &amp;
+<code><a href="../../reference/habitat.html">autoplot.habitat_hex_overlay()</a></code></strong>: Generates static
+<code>ggplot2</code> autoplots of the hexagonal substrate mesh and
+habitat suitability overlays.</li>
 </ul>
-</div>
-<div class="section level4">
-<h4 id="the-interactive-shiny-application-rleafletapp-r">2. The Interactive Shiny Application
-(<code>R/leafletApp.R</code>)<a class="anchor" aria-label="anchor" href="#the-interactive-shiny-application-rleafletapp-r"></a>
-</h4>
-<p>Using our standardized modular paradigm, we constructed
-<code><a href="../../reference/leafletApp.html">leafletApp()</a></code> across 4 core blocks:</p>
-<ul>
-<li>
-<strong><code>leafletInput(id)</code></strong>: Binds the visual
-<code>leafletOutput</code> UI element and prepares a text UI bridge
-(<code>huc_status</code>) to echo the intersection results to the user
-interactively.</li>
-<li>
-<strong><code>leafletOutput(id)</code></strong>: Left blank
-currently, preparing structural space if data table breakdowns are ever
-desired downstream.</li>
-<li>
-<strong><code>leafletServer(id)</code></strong>: The reactive core
-handling map telemetry.
-<ul>
-<li>We map <code>mapper</code> directly to
-<code><a href="../../reference/leaflet.html">build_base_map()</a></code>, rendering the interactive element
-locally.</li>
-<li>We implement a reactive listener explicitly against
-<code>input$mapper_click</code>. If a user interacts with the map
-(either after searching for “Isle Royale” or simply scrolling), the
-underlying Javascript fires an event block.</li>
-<li>Shiny parses the lat/long, renders an interactive HTML status block,
-and executes <code><a href="../../reference/leaflet.html">get_huc_from_point()</a></code>.</li>
-<li>Automatically, if a USGS boundary mapping is mathematically
-returned, we execute a reverse <code>leafletProxy</code> call, drawing a
-semi-transparent <code>addPolygons()</code> boundary on the exact map
-the user clicked natively!</li>
-</ul>
-</li>
-</ul>
-</div>
-<div class="section level4">
-<h4 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
-</h4>
-<p>Users are now fully equipped to discover subwatersheds entirely
-decoupled from string dictionaries! They can launch
-<code><a href="../../reference/leafletApp.html">leafletApp()</a></code>, search for a landmark on the provided widget,
-click the physical body of water on the map, and instantly extract the
-underlying USGS HUC12 mapping configurations required for the
-<code>ewing</code> ecosystem simulations locally.</p>
-<p>Furthermore, <code><a href="../../reference/leafletApp.html">leafletServer()</a></code> returns a reactive list
-(<code>huc</code>, <code>status</code>, <code>click</code>), making it
-an adaptable spatial selector module. <code><a href="../../reference/hexmapApp.html">hexmapApp()</a></code>
-(<code>R/hexmapApp.R</code>) composes <code>leafletInput</code> /
-<code>leafletOutput</code> / <code>leafletServer</code> directly,
-coupling map discovery with <code><a href="../../reference/watershed.html">add_watershed_hex_overlay()</a></code>,
-feature area restriction (e.g. “Isle Royale”), and dynamic
-Leaflet/ggplot hexagonal substrate rendering without duplicating
-code.</p>
 <hr>
 </div>
 </div>
-</div>
 <div class="section level2">
-<h2 id="huc12-watershed-spatial-projection-polygon-overlay">2. HUC12 Watershed Spatial Projection &amp; Polygon Overlay<a class="anchor" aria-label="anchor" href="#huc12-watershed-spatial-projection-polygon-overlay"></a>
+<h2 id="decoupled-interactive-mapping-the-hexmap-package">2. Decoupled Interactive Mapping: The <code>hexmap</code>
+Package<a class="anchor" aria-label="anchor" href="#decoupled-interactive-mapping-the-hexmap-package"></a>
 </h2>
+<p>To keep <code>ewing</code> lightweight and independent of heavy
+interactive Leaflet dependencies (<code>leaflet</code>,
+<code>leaflet.extras</code>, <code>nhdplusTools</code>), all live USGS
+HUC subwatershed lookup, OpenStreetMap feature clipping, and interactive
+Leaflet mapping applications have been refactored into the standalone
+<strong><a href="https://github.com/byandell/hexmap" class="external-link"><code>hexmap</code></a></strong>
+package.</p>
+<div class="section level3">
+<h3 id="package-citation-installation">Package Citation &amp; Installation<a class="anchor" aria-label="anchor" href="#package-citation-installation"></a>
+</h3>
+<p>Users wishing to interactively explore USGS subwatersheds on Leaflet
+maps or download custom HUC boundaries can install
+<code>hexmap</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
+<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"byandell/hexmap"</span><span class="op">)</span></span></code></pre></div>
 </div>
-<div class="section level2">
-<h2 id="prompt">Prompt<a class="anchor" aria-label="anchor" href="#prompt"></a>
-</h2>
-<ul>
-<li>
-<strong>Context</strong>: The <code>ewing</code> predator-prey
-simulation uses an abstract tridiagonal coordinate system. This needs to
-be spatially projected onto real-world geography utilizing the <a href="https://resilience.climate.gov/datasets/esri::watershed-boundary-dataset-huc-12s/about" class="external-link">Watershed
-Boundary Dataset (HUC 12s)</a>. Our specific target is Isle Royale in
-Lake Superior (HUC12: <code>041800000101</code>).</li>
-<li>
-<strong>Role</strong>: Expert R Developer and Spatial
-Integrator.</li>
-<li>
-<strong>Action</strong>: Review prior work
-(<code>inst/doc/refactor/triangle.md</code>,
-<code>inst/scripts/substrate_triangle.R</code>) to execute two
-foundational steps:
+<div class="section level3">
+<h3 id="hexmap-interactive-application-features">
+<code>hexmap</code> Interactive Application Features<a class="anchor" aria-label="anchor" href="#hexmap-interactive-application-features"></a>
+</h3>
 <ol style="list-style-type: decimal">
 <li>
-<strong>Algebraic Refactoring</strong>: Architect a more elegant,
-object-oriented S3 methodology to simplify tri-coordinate math
-(i.e. replacing item-by-item grid manipulations).</li>
+<strong>Leaflet Map Discovery</strong>: Interactive
+reverse-geocoding and landmark search (<code>get_huc_from_point</code>,
+<code>get_hucs_from_polygon</code>).</li>
 <li>
-<strong>Subwatershed Overlay pipeline</strong>: Develop actionable
-scripts (e.g., <code>inst/scripts/watershed_overlay.R</code>) to
-programmatically fetch HUC12 boundaries, intersect them with specific
-geographic features (like Isle Royale), and overlay a scalable spatial
-hexagonal grid using standard bounding frameworks.</li>
+<strong>Dynamic Feature Isolation</strong>: Polygon clipping
+(<code><a href="https://docs.ropensci.org/osmdata/reference/getbb.html" class="external-link">osmdata::getbb()</a></code>) for restricting watersheds to island
+landmasses.</li>
+<li>
+<strong>Interactive Hex Mapping</strong>: <code>hexmapApp()</code>
+provides interactive Leaflet controls, slider extent scaling, and
+<code>.rds</code> spatial dataset downloads.</li>
 </ol>
-</li>
-<li>
-<strong>Format</strong>: Tracked feedback and architectural
-outlines.</li>
-<li>
-<strong>Tone</strong>: Professional, constructive, and
-encouraging.</li>
-</ul>
-<div class="section level3">
-<h3 id="projection-reframing">Projection Reframing<a class="anchor" aria-label="anchor" href="#projection-reframing"></a>
-</h3>
-<p>Modify the CRAFT prompt above to begin by finding a geographic
-feature, such as Isle Royale, of interest to user from an efficient
-geographic map. After this is identified, find the HUC12
-sub-watershed(s) that contains this feature to define the
-projection.</p>
-</div>
-<div class="section level3">
-<h3 id="huc-references">HUC References<a class="anchor" aria-label="anchor" href="#huc-references"></a>
-</h3>
-<ul>
-<li><a href="https://resilience.climate.gov/datasets/esri::watershed-boundary-dataset-huc-12s/about" class="external-link">Watershed
-Boundary Dataset (HUC 12s)</a></li>
-<li><a href="https://www.usgs.gov/media/images/regional-hydrologic-unit-map" class="external-link">Regional
-Hydrologic Unit Map</a></li>
-<li><a href="https://www.usgs.gov/media/images/watershed-boundary-dataset-structure-visualization" class="external-link">Watershed
-Boundary Dataset Structure Visualization</a></li>
-</ul>
+<hr>
 </div>
 </div>
 <div class="section level2">
-<h2 id="expert-review-proposed-architecture">Expert Review &amp; Proposed Architecture<a class="anchor" aria-label="anchor" href="#expert-review-proposed-architecture"></a>
+<h2 id="offline-spatial-architecture-multi-landscape-cache-engine-get_site_cache_file">3. Offline Spatial Architecture &amp; Multi-Landscape Cache Engine
+(<code>get_site_cache_file</code>)<a class="anchor" aria-label="anchor" href="#offline-spatial-architecture-multi-landscape-cache-engine-get_site_cache_file"></a>
 </h2>
-<p>This is a fantastic application of the <code>ewing</code> package’s
-tridiagonal infrastructure. Transitioning from abstract ecological
-topologies (like plant substrates) to geographic spatial datasets (like
-HUC12 boundaries) heavily benefits from object-oriented refinement.</p>
-<p>Here are the tracked changes and design propositions required to
-elegantly construct this overlay:</p>
-<div class="section level3">
-<h3 id="refactoring-tri-coordinate-algebra-via-s3-classes">1. Refactoring Tri-Coordinate Algebra via S3 Classes<a class="anchor" aria-label="anchor" href="#refactoring-tri-coordinate-algebra-via-s3-classes"></a>
-</h3>
-<p>Addressing the <code>(a, b, c)</code> coordinate vectors item-by-item
-is brittle and mathematically verbose. By wrapping coordinates into a
-standardized <code>tricoord</code> S3 class structure in
-<code>R/triangle.R</code>, we can implement operator overloading. This
-empowers R to apply spatial topology translations natively to
-data.frames and vectors containing these coordinates utilizing elegant
-<code>var1 + var2</code> syntax!</p>
-<p><strong>Feedback Tracked Details
-(<code>inst/scripts/substrate_triangle.R</code>):</strong></p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>  # Apply geometric offset</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>  o_a &lt;- cfg$offset[1]</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  o_b &lt;- cfg$offset[2]</span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  o_c &lt;- cfg$offset[3]</span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>  </span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="st">- grid$a &lt;- grid$a + o_a</span></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="st">- grid$b &lt;- grid$b + o_b</span></span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="st">- grid$c &lt;- grid$c + o_c</span></span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="va">+ grid &lt;- grid + cfg$offset</span></span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>  </span>
-<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>  # Map to Cartesian Coordinates</span>
-<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="st">- car_pts &lt;- tri2car(rbind(grid$a, grid$b, grid$c))</span></span>
-<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="va">+ car_pts &lt;- tri2car(grid)</span></span></code></pre></div>
-<p><em>Explanation: We extract the raw scalar math and matrix
-transpositions into the base class logic, significantly reducing visual
-noise and the likelihood of matrix dimension errors (which historically
-occurred with <code>rbind</code>/<code>cbind</code>
-mismatches).</em></p>
-</div>
-<div class="section level3">
-<h3 id="developing-overlay-projections-for-huc12-subwatersheds">2. Developing Overlay Projections for HUC12 Subwatersheds<a class="anchor" aria-label="anchor" href="#developing-overlay-projections-for-huc12-subwatersheds"></a>
-</h3>
-<p>To project the tridiagonal substrate network atop HUC12 polygon data
-(like Isle Royale <code>041800000101</code>), we require a
-transformation pipeline converting mathematical
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo>,</mo><mi>c</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(a, b, c)</annotation></semantics></math>
-bounds securely into the <code>sf</code> package’s CRS (Coordinate
-Reference Systems):</p>
-<blockquote>
-<p>[!TIP] <strong>Suggested Geographic Projection Pipeline:</strong></p>
-<ol style="list-style-type: decimal">
-<li>
-<strong>Data Acquisition &amp; Restriction</strong>: Utilize
-<code>nhdplusTools</code> to fetch the base watershed boundary
-(<code>get_huc</code>). If targeting a specific geographic entity (like
-an island or national park), use <code><a href="https://docs.ropensci.org/osmdata/reference/getbb.html" class="external-link">osmdata::getbb()</a></code> to
-download its bounds and spatially clip the HUC layer using
-<code><a href="https://r-spatial.github.io/sf/reference/geos_binary_ops.html" class="external-link">sf::st_intersection()</a></code>, removing unrelated landmasses.</li>
-<li>
-<strong>Hexagonal Mesh Generation</strong>: Calculate the restricted
-bounds and pass the layer to
-<code>sf::st_make_grid(square = FALSE, cellsize = c(diameter, diameter))</code>
-to generate a mathematically uniform spatial hexagonal grid natively
-spanning the Coordinate Reference System.</li>
-<li>
-<strong>Topology Filtering</strong>: Drop redundant/empty hexagons
-extending into the water by checking bounding box intersections via
-<code>st_intersects()</code>.</li>
-<li>
-<strong>Spatial Geometry Overlays</strong>: Render both the base map
-constraints and the generated hexagonal mesh into one figure utilizing
-<code><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">ggplot2::geom_sf()</a></code>, laying the groundwork for spatial agent
-dispersion.</li>
-</ol>
-</blockquote>
-</div>
-<div class="section level3">
-<h3 id="implementation-of-the-geographic-pipeline">3. Implementation of the Geographic Pipeline<a class="anchor" aria-label="anchor" href="#implementation-of-the-geographic-pipeline"></a>
-</h3>
-<p>The script <code>inst/scripts/watershed_overlay.R</code> implements
-this advanced pipeline for the target Isle Royale HUC12. It successfully
-pairs <code><a href="https://doi-usgs.github.io/nhdplusTools/reference/get_huc.html" class="external-link">nhdplusTools::get_huc()</a></code> with <code>osmdata</code>
-named feature filtering (<code>getbb("Isle Royale")</code>) to isolate
-the exact island landmass via spatial intersection
-(<code>st_intersection</code>).</p>
-<p>Crucially, it replaces the theoretical plant linkage grid with a true
-spatial implementation: generating a parameterized <code>0.01</code>
-degree hexagonal grid across the island layout using
-<code><a href="https://r-spatial.github.io/sf/reference/st_make_grid.html" class="external-link">sf::st_make_grid()</a></code>. Only segments physically touching the
-island are retained, completing a scalable architectural foundation for
-mapping localized continuous movement across arbitrary geographical
-topologies!</p>
-</div>
-<div class="section level3">
-<h3 id="object-oriented-hexagonal-overlay-refactoring">4. Object-Oriented Hexagonal Overlay Refactoring<a class="anchor" aria-label="anchor" href="#object-oriented-hexagonal-overlay-refactoring"></a>
-</h3>
-<p>Reflecting the broader repository migration towards reusable,
-programmatic components, the structural functions powering
-<code>inst/scripts/watershed_overlay.R</code> have been fully formalized
-and abstracted into the central package architecture within
-<code>R/watershed.R</code>. Former legacy bridging code routing to the
-<code>substrate_triangle.R</code> routines has been fully purged in
-favor of strict, native spatial math:</p>
+<p><code>ewing</code> resolves pre-computed <code>.rds</code> spatial
+datasets (<code>[site]_layer.rds</code>,
+<code>[site]_features.rds</code>, <code>[site]_landmarks.rds</code>)
+using <code>get_site_cache_file(filename, site)</code>:</p>
 <ul>
-<li>
-<code>get_watershed(huc_id, feature_name)</code>: Upgraded to
-globally preserve spatial bindings within the data, tracking and
-returning embedded parameter IDs back along with parsed
-<code>$layer</code>, <code>$lon</code>, and <code>$lat</code> traits for
-downstream processing intact.</li>
-<li>
-<code>add_watershed_hex_overlay(huc_info, hex_diameter = 0.01)</code>:
-A dedicated data constructor. It mathematically generates the
-<code>st_make_grid</code> configurations overlaying bounding
-restrictions securely against dynamic hex parameters. Emits an S3 target
-of <code>class = "watershed_hex_overlay"</code>.</li>
-<li>
-<code>autoplot.watershed_hex_overlay(object)</code>: Translates
-abstract topology data automatically via <code>ggplot2</code>. Rendering
-geographically mapped interactions is now as intuitive as simply running
-<code>autoplot(hex_obj)</code>.</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="shiny-application-interface-watershedapp-r">5. Shiny Application Interface (<code>watershedApp.R</code>)<a class="anchor" aria-label="anchor" href="#shiny-application-interface-watershedapp-r"></a>
-</h3>
-<p>We migrated the static mapping logic originally housed in
-<code>inst/scripts/watershed_overlay.R</code> into a dedicated modular
-Shiny application at <code>R/watershedApp.R</code>.</p>
-<p>Following the <code>ewing</code> package’s UI conventions
-(<code>ewingApp.R</code>), this modular application decoupled into four
-canonical chunks:</p>
-<ol style="list-style-type: decimal">
-<li>
-<code>watershedApp()</code>: The macro-wrapper establishing the UI
-shell and bridging the server invocation.</li>
-<li>
-<code>watershedInput(id)</code>: A generic UI controller block
-holding basic <code>textInput</code> parameters for
-<code>huc12_id</code> and the <code>feature_name</code>. Crucially, an
-<code>actionButton</code> was bound to explicitly submit queries,
-preventing rapid API polling against NHD and OpenStreetMap on standard
-keystrokes.</li>
-<li>
-<code>watershedOutput(id)</code>: The UI view wrapper strictly
-defining the resulting <code>plotOutput</code> plane.</li>
-<li>
-<code>watershedServer(id)</code>: Generates reactive bounds that
-intercept the click events, calling the generalized
-<code><a href="../../reference/watershed.html">ewing::get_watershed</a></code> API integrations, establishing the
-geometry via <code><a href="../../reference/watershed.html">ewing::add_watershed_hex_overlay</a></code>, and
-visualizing via generic <code>autoplot</code>.</li>
-</ol>
-<div class="section level4">
-<h4 id="geographic-dictionary-expansion">Geographic Dictionary Expansion<a class="anchor" aria-label="anchor" href="#geographic-dictionary-expansion"></a>
-</h4>
-<p>We developed a UI dictionary component handling internal lookups for
-standard HUC12 IDs and listing out dynamically corresponding sub-feature
-geometries bounds constraints. This utilizes a static CSV lookup table
-(<code>inst/extdata/watershed/huc_features.csv</code>) matching target
-HUC bounds to known physical string inputs natively. Challenge is
-finding names to populate this, noting that common names may be
-ambiguous and need to be resolved to specific geographic location
-(county, state).</p>
-<p><strong>Dynamic GIS Discovery (Option B):</strong> To facilitate
-populating this static dictionary algorithmically, we implemented a
-standalone backend utility
-<code>discover_watershed_features(huc_id)</code> natively inside
-<code>R/watershed.R</code>. By pulling the USGS HUC12 bounding box map
-and piping it directly into <code>osmdata</code>, it dynamically
-executes a raw Overpass XML QL union query across targets like
-<code>natural</code>, <code>waterway</code>, and <code>leisure</code>.
-This should bypass strict API rate limits, but it seems to generate
-timeout failures.</p>
-<p><strong>Geometry Repair &amp; Caching Optimizations:</strong> Two
-critical reliability structures were implemented to guarantee mapping
-backend stability:</p>
-<ol style="list-style-type: decimal">
-<li>
-<strong>Topological Fixes</strong>: Because public OpenStreetMap
-vectors are notoriously ill-formatted (possessing self-intersecting
-loops that naturally crash intersection logic), the spatial pipeline now
-securely disables Google’s strict spherical geometry engine
-(<code>sf::sf_use_s2(FALSE)</code>) and patches incoming structural
-bounds natively via <code><a href="https://r-spatial.github.io/sf/reference/valid.html" class="external-link">sf::st_make_valid()</a></code> prior to
-topological rendering.</li>
-<li>
-<strong>Reactive API Caching</strong>: The Shiny UI was decoupled to
-drastically reduce network payloads to the USGS grid. By formally
-adapting <code><a href="../../reference/watershed.html">get_watershed()</a></code> to intercept pre-fetched shapes,
-we extracted <code><a href="https://doi-usgs.github.io/nhdplusTools/reference/get_huc.html" class="external-link">nhdplusTools::get_huc()</a></code> into a dedicated
-generic <code>base_huc</code> reactive. Now, modifying the overlay
-feature name simply pulls the identical map topographical foundation
-from internal memory rather than executing sequential 5-second internet
-fetches!</li>
-</ol>
-</div>
-</div>
-<div class="section level3">
-<h3 id="interactive-hexagonal-watershed-app-rhexmapapp-r">6. Interactive Hexagonal Watershed App
-(<code>R/hexmapApp.R</code>)<a class="anchor" aria-label="anchor" href="#interactive-hexagonal-watershed-app-rhexmapapp-r"></a>
-</h3>
-<p>Combining <code>inst/scripts/watershed_overlay.R</code> with
-<code>R/leafletApp.R</code>, we developed <code>R/hexmapApp.R</code>
-using <strong>Shiny Module Composition</strong> to provide a unified
-pipeline connecting interactive Leaflet feature discovery with HUC12
-boundary lookup, feature area restriction clipping, and hexagonal
-substrate grid overlays.</p>
-<div class="section level4">
-<h4 id="key-features-architecture">Key Features &amp; Architecture<a class="anchor" aria-label="anchor" href="#key-features-architecture"></a>
-</h4>
-<ol style="list-style-type: decimal">
-<li>
-<strong>Modular Shiny Composition</strong>:
-<ul>
-<li>Rather than duplicating map handling, <code>hexmapApp.R</code>
-composes the <code>leafletInput()</code>, <code><a href="../../reference/leafletApp.html">leafletOutput()</a></code>,
-and <code><a href="../../reference/leafletApp.html">leafletServer()</a></code> modules from
-<code>R/leafletApp.R</code>.</li>
-<li>
-<code><a href="../../reference/leafletApp.html">leafletServer()</a></code> returns a reactive list
-(<code>huc</code>, <code>status</code>, <code>click</code>), allowing
-<code><a href="../../reference/hexmapApp.html">hexmapServer()</a></code> to seamlessly receive the user’s clicked
-watershed boundary.</li>
-</ul>
-</li>
-<li>
-<strong>Feature Isolation &amp; Polygon Clipping</strong>:
-<ul>
-<li>For HUCs containing extensive open water or surrounding land (e.g.,
-Isle Royale HUC <code>041800000101</code>),
-<code>get_watershed(huc_id, feature_name)</code> uses
-<code>osmdata::getbb(feature_name)</code> to download the feature
-boundary (e.g. island polygon) and intersects it
-(<code>st_intersection</code>) with the HUC12 boundary.</li>
-<li>Only the restricted geographic feature geometry is retained for
-hexagonal substrate generation.</li>
-</ul>
-</li>
-<li>
-<strong>Hexagonal Mesh Generation &amp; Multi-View
-Rendering</strong>:
-<ul>
-<li>Calculates spatial hexagonal grid via
-<code>add_watershed_hex_overlay(huc_info, hex_diameter)</code>.</li>
-<li>Renders interactive vector polygons dynamically on the Leaflet map
-canvas via <code>leafletProxy</code> and
-<code><a href="../../reference/leaflet.html">add_leaflet_hex_overlay()</a></code>.</li>
-<li>Simultaneously renders static <code>ggplot2</code> autoplots via
-<code><a href="../../reference/watershed.html">autoplot.watershed_hex_overlay()</a></code>.</li>
-</ul>
-</li>
-<li>
-<strong>Modular Package Export</strong>:
-<ul>
-<li>Exported as <code><a href="../../reference/hexmapApp.html">hexmapApp()</a></code>, with modular functions
-<code><a href="../../reference/hexmapApp.html">hexmapInput()</a></code>, <code><a href="../../reference/hexmapApp.html">hexmapOutput()</a></code>, and
-<code><a href="../../reference/hexmapApp.html">hexmapServer()</a></code>.</li>
-</ul>
-</li>
-</ol>
-</div>
-</div>
-<div class="section level3">
-<h3 id="multi-huc-regional-aggregation-rubberband-polygon-selection">7. Multi-HUC Regional Aggregation &amp; Rubberband Polygon
-Selection<a class="anchor" aria-label="anchor" href="#multi-huc-regional-aggregation-rubberband-polygon-selection"></a>
-</h3>
-<p>Building on individual HUC12 selection, we implemented user-defined
-spatial region selection via interactive rubberband polygon drawing,
-enabling the combination of adjacent subwatersheds into an aggregated
-regional domain.</p>
-<div class="section level4">
-<h4 id="architecture-workflow">Architecture &amp; Workflow<a class="anchor" aria-label="anchor" href="#architecture-workflow"></a>
-</h4>
-<ol style="list-style-type: decimal">
-<li>
-<strong>Interactive Rubberband Polygon Drawing &amp; Toggle Control
-(<code>R/leaflet.R</code> &amp; <code>R/leafletApp.R</code>)</strong>:
-<ul>
-<li>Integrated <code><a href="https://rdrr.io/pkg/leaflet.extras/man/draw.html" class="external-link">leaflet.extras::addDrawToolbar()</a></code> into
-<code><a href="../../reference/leaflet.html">build_base_map()</a></code>, providing intuitive polygon and rectangle
-draw tools on the Leaflet map widget.</li>
-<li>
-<strong>Drawing Mode State Tracking
-(<code>is_drawing</code>)</strong>: <code><a href="../../reference/leafletApp.html">leafletServer()</a></code>
-monitors <code>input$mapper_draw_start</code> and
-<code>input$mapper_draw_stop</code> events via an
-<code>is_drawing</code> reactive flag. This suppresses single-point
-reverse-geocoding (<code>input$mapper_click</code>) while placing vertex
-points, preventing duplicate progress bar triggers during drawing.</li>
-<li>
-<strong>Inline Control Layout &amp; Region Hiding</strong>:
-<strong>“Search Watersheds in Region”</strong>, <strong>“Clear
-Region”</strong>, and <strong>“Hide Drawn Region”</strong> controls are
-aligned on a single flex horizontal line. Checking <strong>“Hide Drawn
-Region”</strong> toggles visibility of the drawn region polygon without
-losing boundary coordinates.</li>
-</ul>
-</li>
-<li>
-<strong>Reverse-Geocoding &amp; Auto-Scaling HUC Hierarchy
-(<code>get_hucs_from_polygon</code>)</strong>:
-<ul>
-<li>
-<code>get_hucs_from_polygon(polygon_sf, max_hucs = 10)</code>
-projects the drawn rubberband region into WGS84 coordinates and queries
-<code>nhdplusTools::get_huc(AOI = poly, type = "huc12")</code>.</li>
-<li>
-<strong>Dynamic HUC Scaling (HUC12
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\rightarrow</annotation></semantics></math>
-HUC10
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\rightarrow</annotation></semantics></math>
-HUC8)</strong>: If the drawn region covers more than
-<code>max_hucs</code> (10) subwatersheds, the engine automatically
-scales up the USGS query from <code>huc12</code> to broader
-<code>huc10</code> or <code>huc8</code> levels. This guarantees scalable
-regional aggregation without overwhelming server memory or API
-limits.</li>
-</ul>
-</li>
-<li>
-<strong>Smooth Layer Group Updating &amp; Bi-directional
-Syncing</strong>:
-<ul>
-<li>
-<strong>Explicit Layer Purging &amp; Group Redrawing</strong>:
-Updates invoke <code>leafletProxy</code> with
-<code>removeShape(layerId = ids)</code> and
-<code>clearGroup("huc_polygons")</code>. This explicitly purges existing
-SVG shapes from Leaflet JS internal memory, allowing instant style
-re-rendering (solid purple vs bold crimson red <code>#C0392B</code>
-dashed <code>"6,6"</code>) when adding back or removing HUCs.</li>
-<li>
-<strong>Robust Bi-directional Sidebar Syncing
-(<code>R/hexmapApp.R</code>)</strong>: Populates a dynamic
-<code>selectizeInput(multiple = TRUE)</code> in the “Watershed Controls”
-input panel. Choices update with human-readable HUC IDs and feature
-names (e.g. <code>041800000101 (Isle Royale East)</code>). Observer
-logic uses <code>setequal(unname(as.character(...)))</code> to eliminate
-race conditions between dropdown updates and map shape events: adding or
-removing watershed tags in the sidebar dropdown instantly updates
-Leaflet map shape renderings, while clicking map shapes dynamically adds
-or removes tags in the sidebar dropdown.</li>
-</ul>
-</li>
-<li>
-<strong>Regional Aggregation &amp; Topological Unioning
-(<code>R/watershed.R</code>)</strong>:
-<ul>
-<li>
-<code><a href="../../reference/watershed.html">get_watershed()</a></code> natively accepts single HUC IDs,
-character vectors of HUC IDs, or pre-fetched multi-HUC <code>sf</code>
-layers.</li>
-<li>For multi-HUC regions, <code><a href="https://r-spatial.github.io/sf/reference/geos_combine.html" class="external-link">sf::st_union()</a></code> merges adjacent
-included component subwatershed polygons into a unified boundary
-representation (<code>$layer</code>), while preserving individual
-component HUC metadata (<code>$individual_hucs</code>).</li>
-</ul>
-</li>
-<li>
-<strong>Continuous Substrate Mesh Generation &amp; Multi-View
-Rendering</strong>:
-<ul>
-<li>
-<code><a href="../../reference/watershed.html">add_watershed_hex_overlay()</a></code> generates a continuous
-hexagonal substrate grid spanning the aggregated multi-HUC regional
-polygon.</li>
-<li>
-<code><a href="../../reference/leaflet.html">add_leaflet_hex_overlay()</a></code> renders component HUC
-boundaries in dashed lines, outer combined region boundaries in solid
-blue, and the unified hex mesh.</li>
-<li>
-<code><a href="../../reference/watershed.html">autoplot.watershed_hex_overlay()</a></code> renders static
-<code>ggplot2</code> autoplots featuring dashed component HUC boundaries
-and continuous regional hex overlays.</li>
-</ul>
-</li>
-<li>
-<strong>Site Prototyping &amp; GIS Feature Pipeline (Isle Royale
-Prototype Template)</strong>:
-<ul>
-<li>
-<strong>OpenStreetMap Feature Extraction</strong>:
-<code><a href="../../reference/habitat.html">get_habitat_features()</a></code> extracts OpenStreetMap polygon/line
-features (lakes, bogs, waterways, shaded forests).</li>
-<li>
-<strong>Landmark Geocoding</strong>:
-<code><a href="../../reference/habitat.html">get_moose_landmarks()</a></code> geocodes landmark POIs (Windigo,
-Ojibway Lake, Feldtmann Lake, Tobin Harbor).</li>
-<li>
-<strong>Hexagon Habitat Suitability Scoring</strong>:
-<code><a href="../../reference/habitat.html">add_habitat_hex_overlay()</a></code> intersects habitat polygons with
-hex cells, calculating suitability scores / movement weight vectors per
-hexagon.</li>
-<li>
-<strong>RDS Feature Export</strong>: <code><a href="../../reference/hexmapApp.html">hexmapApp()</a></code>
-exports <code>site_features.rds</code> and
-<code>site_landmarks.rds</code> allowing offline simulation execution
-(<code><a href="../../reference/isle_royale_sim.html">init_isle_royale_sim()</a></code>, <code><a href="../../reference/ewing_substrate.html">ewing_substrate()</a></code>)
-with zero API calls.</li>
-</ul>
-</li>
-<li>
-<strong>Offline Spatial Architecture &amp; Multi-Landscape Cache
-Engine (<code>get_site_cache_file</code>)</strong>:
-<ul>
-<li>
-<code>get_site_cache_file(filename, site)</code> dynamically
-resolves pre-computed <code>.rds</code> spatial boundary layers
-(<code>[site]_layer.rds</code>, <code>[site]_features.rds</code>,
-<code>[site]_landmarks.rds</code>) across installed package directories
-(<code>library/ewing/extdata/[site]</code>) and development source trees
+<li>Resolves dataset paths dynamically across installed package
+directories (<code>extdata/[site]</code>) and development source trees
 (<code>inst/extdata/[site]</code>).</li>
-<li>Supports folder resolution (<code>filename = ""</code>) with
-<code><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.exists()</a></code> validation.</li>
-<li>Allows <code>ewing</code> spatial simulations to scale to future
-landscapes (e.g. <code>site = "yellowstone"</code>,
-<code>site = "madeline_island"</code>) by placing spatial
-<code>.rds</code> objects in <code>extdata/[site]/</code>.</li>
+<li>Enables <code>ewing</code> spatial simulations to scale to
+additional landscapes (e.g. <code>site = "yellowstone"</code>,
+<code>site = "madeline_island"</code>) with zero network API
+dependency.</li>
 </ul>
-</li>
-</ol>
-<hr>
-</div>
-</div>
-</div>
-<div class="section level2">
-<h2 id="quarto-shinylive-posit-connect-deployment-architectures">3. Quarto Shinylive &amp; Posit Connect Deployment
-Architectures<a class="anchor" aria-label="anchor" href="#quarto-shinylive-posit-connect-deployment-architectures"></a>
-</h2>
-</div>
-<div class="section level2">
-<h2 id="prompt-1">Prompt<a class="anchor" aria-label="anchor" href="#prompt-1"></a>
-</h2>
-<ul>
-<li>
-<strong>User Request</strong>: Can we create a
-<code>demos/hexmapApp.qmd</code>? Will it publish with GitHub Pages or
-do we need to use Posit Connect?</li>
-</ul>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="response-architecture-overview">Response &amp; Architecture Overview<a class="anchor" aria-label="anchor" href="#response-architecture-overview"></a>
-</h2>
-<p>Yes, we created <code>demos/hexmapApp.qmd</code> and integrated it
-into the demo gallery navbar (<a href="../../demos/_quarto.yml"><code>demos/_quarto.yml</code></a>) and
-gallery index (<a href="../../demos/index.qmd"><code>demos/index.qmd</code></a>).</p>
-<div class="section level3">
-<h3 id="publishing-architecture-breakdown">Publishing Architecture Breakdown<a class="anchor" aria-label="anchor" href="#publishing-architecture-breakdown"></a>
-</h3>
-<div class="section level4">
-<h4 id="github-pages-static-quarto-website">1. GitHub Pages (Static Quarto Website)<a class="anchor" aria-label="anchor" href="#github-pages-static-quarto-website"></a>
-</h4>
-<ul>
-<li>
-<strong>Publishing Outcome</strong>: <strong>Yes,
-<code>demos/hexmapApp.qmd</code> publishes cleanly on GitHub
-Pages!</strong>
-</li>
-<li>
-<strong>Mechanism</strong>: Running <code>quarto render</code>
-compiles <code>demos/hexmapApp.qmd</code> into static HTML
-(<code>docs/demos/hexmapApp.html</code>), rendering workflow tutorials,
-code snippets, static <code>ggplot2</code> autoplots, and embedded
-links.</li>
-<li>
-<strong>Client-Side Shinylive Comparison</strong>:
-<ul>
-<li>Other demos in <code>demos/</code> (such as
-<code>triangleApp.qmd</code>, <code>fivePlotApp.qmd</code>,
-<code>tempApp.qmd</code>) utilize <strong>Shinylive</strong> (serverless
-WebAssembly/webR running R code completely client-side in the
-browser).</li>
-<li>However, <code>hexmapApp</code> relies on compiled C++ spatial
-libraries (<code>sf</code> / GDAL / GEOS) and makes live HTTP network
-requests to external USGS (<code>nhdplusTools</code>) and OpenStreetMap
-(<code>osmdata</code>) APIs. Because browser WebAssembly sandboxes
-restrict arbitrary CORS API queries and native C++ GIS drivers, the live
-Shiny app cannot run client-side via Shinylive alone on GitHub
-Pages.</li>
-</ul>
-</li>
-</ul>
-</div>
-<div class="section level4">
-<h4 id="posit-connect-live-interactive-application">2. Posit Connect (Live Interactive Application)<a class="anchor" aria-label="anchor" href="#posit-connect-live-interactive-application"></a>
-</h4>
-<ul>
-<li>
-<strong>Publishing Outcome</strong>: <strong>Required for hosting
-the live, interactive server application.</strong>
-</li>
-<li>
-<strong>Mechanism</strong>: The live interactive Shiny application
-(<code><a href="../../reference/hexmapApp.html">hexmapApp()</a></code>) runs on <strong>Posit Connect</strong> (e.g.,
-<a href="https://connect.doit.wisc.edu/SystemsEthology" class="external-link">SystemsEthology</a>)
-or <strong>shinyapps.io</strong>, where an R server process executes
-spatial intersections (<code>sf</code>) and fetches live USGS /
-OpenStreetMap data over HTTP.</li>
-<li>
-<strong>Integration</strong>: <code>demos/hexmapApp.qmd</code> links
-directly to the live Posit Connect deployment so users reading the
-GitHub Pages documentation can seamlessly launch the interactive
-app.</li>
-</ul>
-</div>
-</div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

@@ -68,8 +68,7 @@ graph LR
 
 ### Key Functions
 
-- [`build_base_map()`](https://byandell.github.io/ewing/reference/leaflet.md):
-  Spawns the default OpenStreetMap layer.
+- `build_base_map()`: Spawns the default OpenStreetMap layer.
 - `get_huc_from_point(lng, lat)`: Accesses external USGS Web Feature
   Services to fetch the local HUC12 shapefile.
 - `leafletProxy("mapper")`: Redraws and clears polygons dynamically

@@ -3,23 +3,15 @@
 (inland lakes, beaver ponds, cool shaded forests, and bogs/wetlands),
 geocoding notable sighting landmarks (Washington Creek, Ojibway Lake, Feldtmann Lake, Hidden Lake),
 computing habitat suitability weights on hexagonal substrate grids, and visualizing overlays.
-Retrieves key moose sighting landmarks on Isle Royale (or customizable spatial targets):
-Washington Creek in Windigo, Ojibway Lake, Feldtmann Lake, and Hidden Lake in Tobin Harbor.
-Generates a spatial hexagonal grid across Isle Royale island geometry using
-pre-computed local habitat features (`isle_royale_features.rds`), without requiring
-external watershed GIS service calls.
-Intersects habitat features (lakes, waterways, forests, bogs) and sighting landmarks
-with a hexagonal substrate grid overlay, calculating habitat suitability weights per hex cell."><meta property="og:description" content="Functions for extracting geographic habitat features that attract moose
+Retrieves notable moose sighting locations (Washington Creek, Ojibway Lake, Feldtmann Lake, Hidden Lake).
+Projects a mathematical hexagonal substrate grid overlay across an extracted watershed or landscape boundary.
+Standalone utility to construct the Isle Royale spatial hexagonal substrate grid."><meta property="og:description" content="Functions for extracting geographic habitat features that attract moose
 (inland lakes, beaver ponds, cool shaded forests, and bogs/wetlands),
 geocoding notable sighting landmarks (Washington Creek, Ojibway Lake, Feldtmann Lake, Hidden Lake),
 computing habitat suitability weights on hexagonal substrate grids, and visualizing overlays.
-Retrieves key moose sighting landmarks on Isle Royale (or customizable spatial targets):
-Washington Creek in Windigo, Ojibway Lake, Feldtmann Lake, and Hidden Lake in Tobin Harbor.
-Generates a spatial hexagonal grid across Isle Royale island geometry using
-pre-computed local habitat features (`isle_royale_features.rds`), without requiring
-external watershed GIS service calls.
-Intersects habitat features (lakes, waterways, forests, bogs) and sighting landmarks
-with a hexagonal substrate grid overlay, calculating habitat suitability weights per hex cell."><script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script><style>
+Retrieves notable moose sighting locations (Washington Creek, Ojibway Lake, Feldtmann Lake, Hidden Lake).
+Projects a mathematical hexagonal substrate grid overlay across an extracted watershed or landscape boundary.
+Standalone utility to construct the Isle Royale spatial hexagonal substrate grid."><script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script><style>
   pre.mermaid {
     background: transparent !important;
     border: none !important;
@@ -77,13 +69,9 @@ with a hexagonal substrate grid overlay, calculating habitat suitability weights
 (inland lakes, beaver ponds, cool shaded forests, and bogs/wetlands),
 geocoding notable sighting landmarks (Washington Creek, Ojibway Lake, Feldtmann Lake, Hidden Lake),
 computing habitat suitability weights on hexagonal substrate grids, and visualizing overlays.</p>
-<p>Retrieves key moose sighting landmarks on Isle Royale (or customizable spatial targets):
-Washington Creek in Windigo, Ojibway Lake, Feldtmann Lake, and Hidden Lake in Tobin Harbor.</p>
-<p>Generates a spatial hexagonal grid across Isle Royale island geometry using
-pre-computed local habitat features (`isle_royale_features.rds`), without requiring
-external watershed GIS service calls.</p>
-<p>Intersects habitat features (lakes, waterways, forests, bogs) and sighting landmarks
-with a hexagonal substrate grid overlay, calculating habitat suitability weights per hex cell.</p>
+<p>Retrieves notable moose sighting locations (Washington Creek, Ojibway Lake, Feldtmann Lake, Hidden Lake).</p>
+<p>Projects a mathematical hexagonal substrate grid overlay across an extracted watershed or landscape boundary.</p>
+<p>Standalone utility to construct the Isle Royale spatial hexagonal substrate grid.</p>
     </div>
 
     <div class="section level2">
@@ -95,11 +83,18 @@ with a hexagonal substrate grid overlay, calculating habitat suitability weights
 <span>  site <span class="op">=</span> <span class="st">"isle_royale"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
+<span><span class="fu">get_fallback_habitat_features</span><span class="op">(</span>huc_layer <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span></span>
 <span><span class="fu">get_moose_landmarks</span><span class="op">(</span></span>
 <span>  watershed_obj <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  use_cache <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  site <span class="op">=</span> <span class="st">"isle_royale"</span></span>
 <span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">add_watershed_hex_overlay</span><span class="op">(</span><span class="va">huc_info</span>, hex_diameter <span class="op">=</span> <span class="fl">0.01</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'watershed_hex_overlay'</span></span>
+<span><span class="fu">autoplot</span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">create_isle_royale_hex_overlay</span><span class="op">(</span></span>
 <span>  hex_diameter <span class="op">=</span> <span class="fl">0.01</span>,</span>
@@ -118,9 +113,7 @@ with a hexagonal substrate grid overlay, calculating habitat suitability weights
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'habitat_hex_overlay'</span></span>
-<span><span class="fu">autoplot</span><span class="op">(</span><span class="va">object</span>, show_landmarks <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">...</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu">add_leaflet_habitat_overlay</span><span class="op">(</span><span class="va">map</span>, <span class="va">object</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">autoplot</span><span class="op">(</span><span class="va">object</span>, show_landmarks <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -128,7 +121,7 @@ with a hexagonal substrate grid overlay, calculating habitat suitability weights
 
 
 <dl><dt id="arg-watershed-obj">watershed_obj<a class="anchor" aria-label="anchor" href="#arg-watershed-obj"></a></dt>
-<dd><p>Watershed object from `get_watershed()`.</p></dd>
+<dd><p>Target spatial watershed or landscape object.</p></dd>
 
 
 <dt id="arg-categories">categories<a class="anchor" aria-label="anchor" href="#arg-categories"></a></dt>
@@ -136,61 +129,71 @@ with a hexagonal substrate grid overlay, calculating habitat suitability weights
 
 
 <dt id="arg-use-cache">use_cache<a class="anchor" aria-label="anchor" href="#arg-use-cache"></a></dt>
-<dd><p>Logical; if TRUE, uses pre-fetched local landmark definitions when available.</p></dd>
+<dd><p>Logical; if TRUE, uses local pre-fetched dataset when available.</p></dd>
 
 
 <dt id="arg-site">site<a class="anchor" aria-label="anchor" href="#arg-site"></a></dt>
 <dd><p>Target simulation landscape/site folder name (default: `"isle_royale"`).</p></dd>
 
 
+<dt id="arg-huc-layer">huc_layer<a class="anchor" aria-label="anchor" href="#arg-huc-layer"></a></dt>
+<dd><p>An `sf` polygon representation of the region.</p></dd>
+
+
+<dt id="arg-huc-info">huc_info<a class="anchor" aria-label="anchor" href="#arg-huc-info"></a></dt>
+<dd><p>Watershed object or list containing a `layer` geometry.</p></dd>
+
+
 <dt id="arg-hex-diameter">hex_diameter<a class="anchor" aria-label="anchor" href="#arg-hex-diameter"></a></dt>
-<dd><p>Diameter of hexagonal grid cells in degrees (default = `0.01`).</p></dd>
-
-
-<dt id="arg-features">features<a class="anchor" aria-label="anchor" href="#arg-features"></a></dt>
-<dd><p>Optional path or `sf` object containing habitat features.</p></dd>
-
-
-<dt id="arg-layer">layer<a class="anchor" aria-label="anchor" href="#arg-layer"></a></dt>
-<dd><p>Optional path or `sf` boundary layer object.</p></dd>
-
-
-<dt id="arg-hex-obj">hex_obj<a class="anchor" aria-label="anchor" href="#arg-hex-obj"></a></dt>
-<dd><p>An S3 object of class `watershed_hex_overlay`.</p></dd>
-
-
-<dt id="arg-habitat-sf">habitat_sf<a class="anchor" aria-label="anchor" href="#arg-habitat-sf"></a></dt>
-<dd><p>Optional pre-extracted `sf` data frame of habitat features.</p></dd>
-
-
-<dt id="arg-landmarks-sf">landmarks_sf<a class="anchor" aria-label="anchor" href="#arg-landmarks-sf"></a></dt>
-<dd><p>Optional pre-geocoded `sf` points of sighting landmarks.</p></dd>
+<dd><p>Hexagon extent diameter in degrees (default: `0.01`).</p></dd>
 
 
 <dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
 <dd><p>An S3 object of class `habitat_hex_overlay`.</p></dd>
 
 
-<dt id="arg-show-landmarks">show_landmarks<a class="anchor" aria-label="anchor" href="#arg-show-landmarks"></a></dt>
-<dd><p>Logical; whether to draw moose sighting POIs.</p></dd>
-
-
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments passed to plotting functions.</p></dd>
 
 
-<dt id="arg-map">map<a class="anchor" aria-label="anchor" href="#arg-map"></a></dt>
-<dd><p>A `leaflet` map object.</p></dd>
+<dt id="arg-features">features<a class="anchor" aria-label="anchor" href="#arg-features"></a></dt>
+<dd><p>Deprecated alias for `habitat_sf`.</p></dd>
+
+
+<dt id="arg-layer">layer<a class="anchor" aria-label="anchor" href="#arg-layer"></a></dt>
+<dd><p>Optional sf object of landscape boundary layer.</p></dd>
+
+
+<dt id="arg-hex-obj">hex_obj<a class="anchor" aria-label="anchor" href="#arg-hex-obj"></a></dt>
+<dd><p>S3 object returned from `add_watershed_hex_overlay()` or `create_isle_royale_hex_overlay()`.</p></dd>
+
+
+<dt id="arg-habitat-sf">habitat_sf<a class="anchor" aria-label="anchor" href="#arg-habitat-sf"></a></dt>
+<dd><p>Optional sf object of habitat features.</p></dd>
+
+
+<dt id="arg-landmarks-sf">landmarks_sf<a class="anchor" aria-label="anchor" href="#arg-landmarks-sf"></a></dt>
+<dd><p>Optional sf object of sighting landmarks.</p></dd>
+
+
+<dt id="arg-landmarks">landmarks<a class="anchor" aria-label="anchor" href="#arg-landmarks"></a></dt>
+<dd><p>Deprecated alias for `landmarks_sf`.</p></dd>
+
+
+<dt id="arg-show-landmarks">show_landmarks<a class="anchor" aria-label="anchor" href="#arg-show-landmarks"></a></dt>
+<dd><p>Logical; if TRUE, renders moose sighting landmarks on map.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>`get_habitat_features`: An `sf` data frame of habitat features clipped to the target geometry.</p>
-<p>`get_moose_landmarks`: An `sf` object containing landmark point geometries and attributes.</p>
+<p>Fallback `sf` data frame of habitat features.</p>
+<p>An `sf` data frame of point landmark geometries.</p>
+<p>`add_watershed_hex_overlay`: An S3 object of class `watershed_hex_overlay` containing the original geometry plus the hex layer.</p>
+<p>`autoplot.watershed_hex_overlay`: A `ggplot` object representing the spatial mesh.</p>
 <p>An S3 object of class `watershed_hex_overlay`.</p>
 <p>`add_habitat_hex_overlay`: An S3 object of class `habitat_hex_overlay`.</p>
-<p>A `ggplot` visualization of the Isle Royale Moose Habitat Overlay.</p>
-<p>An updated `leaflet` map.</p>
+<p>A `ggplot` object.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
