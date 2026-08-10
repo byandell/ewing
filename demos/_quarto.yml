@@ -13,21 +13,21 @@ website:
       - href: index.qmd
         text: Gallery
       - href: sysetholApp.qmd
-        text: sysetholApp
+        text: sysethol
       - href: IsleRoyaleApp.qmd
-        text: IsleRoyaleApp
+        text: IsleRoyale
       - text: Tools
         menu:
           - href: fivePlotApp.qmd
-            text: fivePlotApp
+            text: fivePlot
           - href: fiveShowApp.qmd
-            text: fiveShowApp
+            text: fiveShow
           - href: tempApp.qmd
-            text: tempApp
+            text: temp
           - href: triangleApp.qmd
-            text: triangleApp
+            text: triangle
           - href: hexmoveApp.qmd
-            text: hexmoveApp
+            text: hexmove
     right:
       - icon: github
         href: https://github.com/byandell/ewing
