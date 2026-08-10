@@ -99,14 +99,14 @@ get_habitat_features <- function(watershed_obj = NULL,
       ");\nout body;\n>;\nout skel qt;\n"
     )
     res_lakes <- tryCatch(osmdata::osmdata_sf(ql_lakes), error = function(e) NULL)
-    if (!is.null(res_lakes) && !is.null(res_lakes$osm_polygons) && nrow(res_lakes$osm_polygons) > 0) {
+    if (!is.null(res_lakes$osm_polygons) && nrow(res_lakes$osm_polygons) > 0) {
       poly <- res_lakes$osm_polygons
       poly$habitat_type <- "Lake/Pond"
-      features_list$lakes <- poly[, c("habitat_type", "geometry")]
+      features_list$lakes <- poly[, "habitat_type"]
     }
   }
   
-  # Extract Waterways & Beaver Ponds
+  # Extract Waterways & Streams
   if ("waterways" %in% categories) {
     ql_water <- paste0(
       "[out:xml][timeout:30];\n(\n",
@@ -116,111 +116,61 @@ get_habitat_features <- function(watershed_obj = NULL,
       ");\nout body;\n>;\nout skel qt;\n"
     )
     res_water <- tryCatch(osmdata::osmdata_sf(ql_water), error = function(e) NULL)
-    if (!is.null(res_water) && !is.null(res_water$osm_lines) && nrow(res_water$osm_lines) > 0) {
-      lines <- res_water$osm_lines
-      lines$habitat_type <- "Waterway"
-      features_list$waterways <- lines[, c("habitat_type", "geometry")]
+    if (!is.null(res_water$osm_lines) && nrow(res_water$osm_lines) > 0) {
+      line <- res_water$osm_lines
+      line$habitat_type <- "Waterway"
+      features_list$waterways <- line[, "habitat_type"]
     }
   }
   
-  # Extract Cool Shaded Forests
-  if ("forests" %in% categories) {
-    ql_forest <- paste0(
-      "[out:xml][timeout:30];\n(\n",
-      "  landuse[\"forest\"](", bbox_str, ");\n",
-      "  natural[\"wood\"](", bbox_str, ");\n",
-      ");\nout body;\n>;\nout skel qt;\n"
-    )
-    res_forest <- tryCatch(osmdata::osmdata_sf(ql_forest), error = function(e) NULL)
-    if (!is.null(res_forest) && !is.null(res_forest$osm_polygons) && nrow(res_forest$osm_polygons) > 0) {
-      poly <- res_forest$osm_polygons
-      poly$habitat_type <- "Forest"
-      features_list$forests <- poly[, c("habitat_type", "geometry")]
-    }
-  }
-  
-  # Extract Bogs & Wetlands
-  if ("bogs" %in% categories) {
-    ql_bogs <- paste0(
-      "[out:xml][timeout:30];\n(\n",
-      "  natural[\"wetland\"](", bbox_str, ");\n",
-      "  wetland[\"bog\"](", bbox_str, ");\n",
-      "  wetland[\"marsh\"](", bbox_str, ");\n",
-      ");\nout body;\n>;\nout skel qt;\n"
-    )
-    res_bogs <- tryCatch(osmdata::osmdata_sf(ql_bogs), error = function(e) NULL)
-    if (!is.null(res_bogs) && !is.null(res_bogs$osm_polygons) && nrow(res_bogs$osm_polygons) > 0) {
-      poly <- res_bogs$osm_polygons
-      poly$habitat_type <- "Bog/Wetland"
-      features_list$bogs <- poly[, c("habitat_type", "geometry")]
-    }
-  }
-  
+  # Combine extracted geometries
   if (length(features_list) == 0) {
     return(get_fallback_habitat_features(huc_layer))
   }
   
   combined <- do.call(rbind, features_list)
-  combined <- sf::st_transform(combined, sf::st_crs(huc_layer))
-  combined <- suppressWarnings(sf::st_make_valid(combined))
-  clipped <- suppressWarnings(sf::st_intersection(combined, huc_layer))
-  
-  if (nrow(clipped) == 0) {
+  if (is.null(combined) || nrow(combined) == 0) {
     return(get_fallback_habitat_features(huc_layer))
   }
   
-  return(clipped)
+  combined <- sf::st_transform(combined, sf::st_crs(huc_layer))
+  clipped <- suppressWarnings(sf::st_intersection(combined, huc_layer))
+  if (nrow(clipped) > 0) return(clipped)
+  return(combined)
 }
 
-#' Internal Fallback Builder for Isle Royale Moose Habitat Features
-#' @noRd
-get_fallback_habitat_features <- function(huc_layer) {
-  crs_target <- sf::st_crs(huc_layer)
-  
-  # Landmark reference coordinates (WGS84)
-  # Washington Creek Windigo (-89.146, 47.923)
-  # Ojibway Lake (-88.618, 48.113)
-  # Feldtmann Lake (-88.961, 47.876)
-  # Hidden Lake (-88.490, 48.151)
-  
-  mk_poly <- function(lon, lat, dx = 0.015, dy = 0.01) {
-    pts <- matrix(c(
-      lon - dx, lat - dy,
-      lon + dx, lat - dy,
-      lon + dx, lat + dy,
-      lon - dx, lat + dy,
-      lon - dx, lat - dy
-    ), ncol = 2, byrow = TRUE)
-    sf::st_polygon(list(pts))
+#' Fallback Habitat Geometries
+#'
+#' @param huc_layer An `sf` polygon representation of the region.
+#' @return Fallback `sf` data frame of habitat features.
+#' @export
+#' @rdname habitat
+get_fallback_habitat_features <- function(huc_layer = NULL) {
+  if (is.null(huc_layer)) {
+    pts <- matrix(c(-89.17, 47.87, -88.48, 47.87, -88.48, 48.16, -89.17, 48.16, -89.17, 47.87), ncol = 2, byrow = TRUE)
+    huc_layer <- sf::st_sfc(sf::st_polygon(list(pts)), crs = 4326)
   }
   
-  p_ojibway <- mk_poly(-88.618, 48.113, 0.012, 0.008)
-  p_feldtmann <- mk_poly(-88.961, 47.876, 0.018, 0.010)
-  p_hidden <- mk_poly(-88.490, 48.151, 0.010, 0.006)
-  p_wash_forest <- mk_poly(-89.146, 47.923, 0.025, 0.015)
-  p_bog <- mk_poly(-88.750, 48.020, 0.020, 0.012)
+  bbox <- sf::st_bbox(huc_layer)
+  xmin <- bbox["xmin"]; xmax <- bbox["xmax"]
+  ymin <- bbox["ymin"]; ymax <- bbox["ymax"]
   
-  geom_sfc <- sf::st_sfc(p_ojibway, p_feldtmann, p_hidden, p_wash_forest, p_bog, crs = 4326)
-  df <- data.frame(
-    habitat_type = c("Lake/Pond", "Lake/Pond", "Lake/Pond", "Forest", "Bog/Wetland"),
-    stringsAsFactors = FALSE
-  )
+  l1 <- sf::st_polygon(list(matrix(c(xmin+0.1, ymin+0.1, xmin+0.15, ymin+0.1, xmin+0.15, ymin+0.15, xmin+0.1, ymin+0.15, xmin+0.1, ymin+0.1), ncol=2, byrow=TRUE)))
+  l2 <- sf::st_polygon(list(matrix(c(xmax-0.2, ymax-0.1, xmax-0.1, ymax-0.1, xmax-0.1, ymax-0.05, xmax-0.2, ymax-0.05, xmax-0.2, ymax-0.1), ncol=2, byrow=TRUE)))
   
-  fallback_sf <- sf::st_sf(df, geometry = geom_sfc)
-  fallback_sf <- sf::st_transform(fallback_sf, crs_target)
-  clipped <- suppressWarnings(sf::st_intersection(fallback_sf, huc_layer))
-  return(clipped)
+  sfc <- sf::st_sfc(l1, l2, crs = sf::st_crs(huc_layer))
+  sf::st_sf(habitat_type = c("Lake/Pond", "Lake/Pond"), geometry = sfc)
 }
 
-#' Geocode Notable Moose Sighting Landmarks
+#' Moose Sighting Landmark Geometries
 #'
-#' Retrieves key moose sighting landmarks on Isle Royale (or customizable spatial targets):
-#' Washington Creek in Windigo, Ojibway Lake, Feldtmann Lake, and Hidden Lake in Tobin Harbor.
+#' Retrieves notable moose sighting locations (Washington Creek, Ojibway Lake, Feldtmann Lake, Hidden Lake).
 #'
-#' @param watershed_obj Watershed object from `get_watershed()`.
-#' @param use_cache Logical; if TRUE, uses pre-fetched local landmark definitions when available.
+#' @param watershed_obj Target spatial watershed or landscape object.
+#' @param use_cache Logical; if TRUE, uses local pre-fetched dataset when available.
+#' @param site Target simulation landscape/site folder name (default: `"isle_royale"`).
 #'
-#' @return `get_moose_landmarks`: An `sf` object containing landmark point geometries and attributes.
+#' @return An `sf` data frame of point landmark geometries.
 #' @export
 #' @rdname habitat
 get_moose_landmarks <- function(watershed_obj = NULL, use_cache = TRUE, site = "isle_royale") {
@@ -235,61 +185,114 @@ get_moose_landmarks <- function(watershed_obj = NULL, use_cache = TRUE, site = "
   }
   
   if (use_cache) {
-    cached_pts <- NULL
+    cached_sf <- NULL
     lm_key <- paste0(site, "_landmarks")
     lm_file <- paste0(site, "_landmarks.rds")
     if (exists("isle_royale_datasets") && is.list(isle_royale_datasets) && !is.null(isle_royale_datasets[[lm_key]])) {
-      cached_pts <- isle_royale_datasets[[lm_key]]
+      cached_sf <- isle_royale_datasets[[lm_key]]
     } else if (exists(lm_key) && inherits(get(lm_key), "sf")) {
-      cached_pts <- get(lm_key)
+      cached_sf <- get(lm_key)
     } else {
       cache_file <- get_site_cache_file(lm_file, site = site)
       if (file.exists(cache_file)) {
-        cached_pts <- tryCatch(readRDS(cache_file), error = function(e) NULL)
+        cached_sf <- tryCatch(readRDS(cache_file), error = function(e) NULL)
       }
     }
     
-    if (!is.null(cached_pts) && inherits(cached_pts, "sf")) {
-      if (is.null(huc_layer)) return(cached_pts)
-      return(sf::st_transform(cached_pts, sf::st_crs(huc_layer)))
+    if (!is.null(cached_sf) && inherits(cached_sf, "sf")) {
+      if (is.null(huc_layer)) return(cached_sf)
+      cached_sf <- sf::st_transform(cached_sf, sf::st_crs(huc_layer))
+      return(cached_sf)
     }
   }
   
-  df <- data.frame(
-    name = c(
-      "Washington Creek (Windigo)",
-      "Ojibway Lake",
-      "Feldtmann Lake",
-      "Hidden Lake (Tobin Harbor)"
-    ),
-    location = c("Windigo", "Ojibway", "Feldtmann", "Tobin Harbor"),
-    description = c(
-      "Feeding area along stream & forest cover",
-      "Aquatic vegetation feeding lake",
-      "Major southwest inland lake habitat",
-      "Aquatic plant feeding area near Tobin Harbor"
-    ),
-    lon = c(-89.146, -88.618, -88.961, -88.490),
-    lat = c(47.923, 48.113, 47.876, 48.151),
+  # Fallback coordinate table for notable Isle Royale moose sighting locations
+  landmarks <- data.frame(
+    name = c("Washington Creek", "Ojibway Lake", "Feldtmann Lake", "Hidden Lake"),
+    lon = c(-89.145, -88.618, -88.948, -88.647),
+    lat = c(47.922, 48.113, 47.887, 48.148),
+    description = c("Major feeding stream near Windigo",
+                    "Highland lake surrounded by moose browse",
+                    "SW inland lake with heavy aquatic vegetation",
+                    "Shaded lake near Tobin Harbor"),
     stringsAsFactors = FALSE
   )
   
-  pts_sf <- sf::st_as_sf(df, coords = c("lon", "lat"), crs = 4326)
+  pts <- sf::st_as_sf(landmarks, coords = c("lon", "lat"), crs = 4326)
   if (!is.null(huc_layer)) {
-    pts_sf <- sf::st_transform(pts_sf, sf::st_crs(huc_layer))
+    pts <- sf::st_transform(pts, sf::st_crs(huc_layer))
   }
-  return(pts_sf)
+  return(pts)
 }
 
-#' Construct Base Isle Royale Spatial Hexagonal Overlay
+#' Construct Spatial Substrate Hexagonal Overlay
 #'
-#' Generates a spatial hexagonal grid across Isle Royale island geometry using
-#' pre-computed local habitat features (`isle_royale_features.rds`), without requiring
-#' external watershed GIS service calls.
+#' Projects a mathematical hexagonal substrate grid overlay across an extracted watershed or landscape boundary.
 #'
+#' @param huc_info Watershed object or list containing a `layer` geometry.
 #' @param hex_diameter Diameter of hexagonal grid cells in degrees (default = `0.01`).
-#' @param features Optional path or `sf` object containing habitat features.
-#' @param layer Optional path or `sf` boundary layer object.
+#'
+#' @return `add_watershed_hex_overlay`: An S3 object of class `watershed_hex_overlay` containing the original geometry plus the hex layer.
+#' @export
+#' @rdname habitat
+#'
+#' @importFrom sf st_make_grid st_intersects
+add_watershed_hex_overlay <- function(huc_info, hex_diameter = 0.01) {
+  huc_layer <- huc_info$layer
+  
+  hex_mesh <- sf::st_make_grid(huc_layer, square = FALSE, cellsize = c(hex_diameter, hex_diameter))
+  hex_overlay <- hex_mesh[lengths(safe_st_intersects(hex_mesh, huc_layer)) > 0]
+  
+  huc_info$hex_overlay <- hex_overlay
+  huc_info$hex_diameter <- hex_diameter
+  
+  class(huc_info) <- "watershed_hex_overlay"
+  return(huc_info)
+}
+
+#' @param object An S3 object of class `watershed_hex_overlay`.
+#' @param ... Additional arguments passed to plotting functions.
+#'
+#' @return `autoplot.watershed_hex_overlay`: A `ggplot` object representing the spatial mesh.
+#' @export
+#' @rdname habitat
+#'
+#' @importFrom ggplot2 ggplot geom_sf theme_minimal ggtitle labs
+autoplot.watershed_hex_overlay <- function(object, ...) {
+  huc_str <- if (!is.null(object$huc_id) && length(object$huc_id) > 1) {
+    paste0(length(object$huc_id), " Combined Regions")
+  } else if (!is.null(object$huc_id)) {
+    paste("Region:", object$huc_id)
+  } else {
+    "Substrate Grid"
+  }
+  
+  title_txt <- paste("Geographic Hexagonal Grid (", huc_str, ")", 
+                     "\nHexagon Extent Diameter:", object$hex_diameter)
+  if (!is.null(object$feature_name) && object$feature_name != "") {
+    title_txt <- paste0(title_txt, " - Restricted to: ", object$feature_name)
+  }
+  
+  p <- ggplot2::ggplot()
+  if (!is.null(object$individual_hucs) && nrow(object$individual_hucs) > 1) {
+    p <- p + ggplot2::geom_sf(data = object$individual_hucs, fill = NA, color = "purple", linetype = "dashed", linewidth = 0.4)
+  }
+  
+  p +
+    ggplot2::geom_sf(data = object$layer, fill = "lightblue", alpha = 0.3, color = "blue", linewidth = 0.7) +
+    ggplot2::geom_sf(data = object$hex_overlay, fill = NA, color = "darkred", linewidth = 0.7) +
+    ggplot2::theme_minimal() +
+    ggplot2::ggtitle(title_txt) +
+    ggplot2::labs(x = "Longitude", y = "Latitude")
+}
+
+#' Create Isle Royale Spatial Substrate Overlay
+#'
+#' Standalone utility to construct the Isle Royale spatial hexagonal substrate grid.
+#'
+#' @param hex_diameter Hexagon extent diameter in degrees (default: `0.01`).
+#' @param features Optional sf object of habitat features.
+#' @param layer Optional sf object of landscape boundary layer.
 #' @param site Target simulation landscape/site folder name (default: `"isle_royale"`).
 #'
 #' @return An S3 object of class `watershed_hex_overlay`.
@@ -297,14 +300,10 @@ get_moose_landmarks <- function(watershed_obj = NULL, use_cache = TRUE, site = "
 #' @rdname habitat
 create_isle_royale_hex_overlay <- function(hex_diameter = 0.01, features = NULL, layer = NULL, site = "isle_royale") {
   boundary_layer <- layer
-  if (is.character(boundary_layer) && file.exists(boundary_layer)) {
-    boundary_layer <- tryCatch(readRDS(boundary_layer), error = function(e) NULL)
-  }
-  
   layer_key <- paste0(site, "_layer")
   layer_file <- paste0(site, "_layer.rds")
-  feat_key  <- paste0(site, "_features")
-  feat_file  <- paste0(site, "_features.rds")
+  feat_key <- paste0(site, "_features")
+  feat_file <- paste0(site, "_features.rds")
   
   if (is.null(boundary_layer)) {
     if (exists("isle_royale_datasets") && is.list(isle_royale_datasets) && !is.null(isle_royale_datasets[[layer_key]])) {
@@ -341,13 +340,7 @@ create_isle_royale_hex_overlay <- function(hex_diameter = 0.01, features = NULL,
   }
   
   if (is.null(boundary_layer)) {
-    pts <- matrix(c(
-      -89.17, 47.87,
-      -88.48, 47.87,
-      -88.48, 48.16,
-      -89.17, 48.16,
-      -89.17, 47.87
-    ), ncol = 2, byrow = TRUE)
+    pts <- matrix(c(-89.17, 47.87, -88.48, 47.87, -88.48, 48.16, -89.17, 48.16, -89.17, 47.87), ncol = 2, byrow = TRUE)
     boundary_layer <- sf::st_sfc(sf::st_polygon(list(pts)), crs = 4326)
   } else if (inherits(boundary_layer, "sf")) {
     boundary_layer <- sf::st_geometry(boundary_layer)
@@ -368,24 +361,24 @@ create_isle_royale_hex_overlay <- function(hex_diameter = 0.01, features = NULL,
     hex_overlay = hex_overlay,
     hex_diameter = hex_diameter
   )
-  
   class(res) <- "watershed_hex_overlay"
   return(res)
 }
 
-#' Construct Moose Habitat & Substrate Overlay Object
+#' Add Moose Habitat Features & Compute Hex Substrate Suitability
 #'
-#' Intersects habitat features (lakes, waterways, forests, bogs) and sighting landmarks
-#' with a hexagonal substrate grid overlay, calculating habitat suitability weights per hex cell.
-#'
-#' @param hex_obj An S3 object of class `watershed_hex_overlay`.
-#' @param habitat_sf Optional pre-extracted `sf` data frame of habitat features.
-#' @param landmarks_sf Optional pre-geocoded `sf` points of sighting landmarks.
+#' @param hex_obj S3 object returned from `add_watershed_hex_overlay()` or `create_isle_royale_hex_overlay()`.
+#' @param habitat_sf Optional sf object of habitat features.
+#' @param landmarks_sf Optional sf object of sighting landmarks.
+#' @param features Deprecated alias for `habitat_sf`.
+#' @param landmarks Deprecated alias for `landmarks_sf`.
+#' @param site Target simulation landscape/site folder name (default: `"isle_royale"`).
 #'
 #' @return `add_habitat_hex_overlay`: An S3 object of class `habitat_hex_overlay`.
 #' @export
 #' @rdname habitat
-add_habitat_hex_overlay <- function(hex_obj, habitat_sf = NULL, landmarks_sf = NULL, features = NULL, landmarks = NULL, site = "isle_royale") {
+add_habitat_hex_overlay <- function(hex_obj, habitat_sf = NULL, landmarks_sf = NULL, 
+                                    features = NULL, landmarks = NULL, site = "isle_royale") {
   if (is.null(habitat_sf)) habitat_sf <- features
   if (is.null(landmarks_sf)) landmarks_sf <- landmarks
   
@@ -404,9 +397,6 @@ add_habitat_hex_overlay <- function(hex_obj, habitat_sf = NULL, landmarks_sf = N
   }
   
   hex_mesh <- hex_obj$hex_overlay
-  
-  # Calculate habitat preference score per hexagon
-  # Base weight = 1.0; bonus for lake (+2.0), waterway (+1.5), forest (+1.0), bog (+1.8)
   scores <- numeric(length(hex_mesh))
   types_list <- character(length(hex_mesh))
   
@@ -416,20 +406,20 @@ add_habitat_hex_overlay <- function(hex_obj, habitat_sf = NULL, landmarks_sf = N
       indices <- inter[[i]]
       if (length(indices) > 0) {
         sub_types <- habitat_sf$habitat_type[indices]
-        score <- 1.0
-        if ("Lake/Pond" %in% sub_types) score <- score + 2.0
+        score <- 1
+        if ("Lake/Pond" %in% sub_types) score <- score + 2
         if ("Waterway" %in% sub_types) score <- score + 1.5
         if ("Bog/Wetland" %in% sub_types) score <- score + 1.8
-        if ("Forest" %in% sub_types) score <- score + 1.0
+        if ("Forest" %in% sub_types) score <- score + 1
         scores[i] <- score
         types_list[i] <- paste(unique(sub_types), collapse = ", ")
       } else {
-        scores[i] <- 1.0
+        scores[i] <- 1
         types_list[i] <- "Upland/Open"
       }
     }
   } else {
-    scores[] <- 1.0
+    scores[] <- 1
     types_list[] <- "General"
   }
   
@@ -444,55 +434,38 @@ add_habitat_hex_overlay <- function(hex_obj, habitat_sf = NULL, landmarks_sf = N
   res$habitat_sf <- habitat_sf
   res$landmarks_sf <- landmarks_sf
   res$hex_habitat_sf <- hex_sf
-  class(res) <- c("habitat_hex_overlay", class(hex_obj))
   
+  class(res) <- c("habitat_hex_overlay", class(hex_obj))
   return(res)
 }
 
-#' Autoplot Method for Moose Habitat Hexagonal Overlay
+#' Visual Autoplot for Habitat Substrate Overlay
 #'
 #' @param object An S3 object of class `habitat_hex_overlay`.
-#' @param show_landmarks Logical; whether to draw moose sighting POIs.
+#' @param show_landmarks Logical; if TRUE, renders moose sighting landmarks on map.
 #' @param ... Additional arguments passed to plotting functions.
 #'
-#' @return A `ggplot` visualization of the Isle Royale Moose Habitat Overlay.
+#' @return A `ggplot` object.
 #' @export
 #' @rdname habitat
 #'
-#' @importFrom ggplot2 ggplot geom_sf theme_minimal ggtitle labs scale_fill_viridis_c aes geom_sf_text
+#' @importFrom ggplot2 ggplot geom_sf aes scale_color_viridis_c theme_minimal ggtitle labs geom_sf_text
 autoplot.habitat_hex_overlay <- function(object, show_landmarks = TRUE, ...) {
   p <- ggplot2::ggplot() +
-    # Underlying island boundary
     ggplot2::geom_sf(data = object$layer, fill = "#eef4f8", color = "#2c3e50", linewidth = 0.8)
   
-  # Render habitat layers if available
   if (!is.null(object$habitat_sf) && nrow(object$habitat_sf) > 0) {
-    p <- p + ggplot2::geom_sf(
-      data = object$habitat_sf, 
-      ggplot2::aes(fill = .data$habitat_type), 
-      alpha = 0.5, color = NA
-    )
+    p <- p + ggplot2::geom_sf(data = object$habitat_sf, ggplot2::aes(fill = .data$habitat_type), alpha = 0.5, color = NA)
   }
   
-  # Hexagonal substrate overlay colored by habitat suitability score
   if (!is.null(object$hex_habitat_sf)) {
-    p <- p + ggplot2::geom_sf(
-      data = object$hex_habitat_sf,
-      ggplot2::aes(color = .data$habitat_score),
-      fill = NA, linewidth = 0.6
-    ) +
-    ggplot2::scale_color_viridis_c(option = "viridis", name = "Habitat Weight")
+    p <- p + ggplot2::geom_sf(data = object$hex_habitat_sf, ggplot2::aes(color = .data$habitat_score), fill = NA, linewidth = 0.6) +
+      ggplot2::scale_color_viridis_c(option = "viridis", name = "Habitat Weight")
   }
   
-  # Render Moose Sighting Landmarks
   if (show_landmarks && !is.null(object$landmarks_sf) && nrow(object$landmarks_sf) > 0) {
-    p <- p + 
-      ggplot2::geom_sf(data = object$landmarks_sf, color = "#d35400", size = 3, shape = 18) +
-      ggplot2::geom_sf_text(
-        data = object$landmarks_sf, 
-        ggplot2::aes(label = .data$name), 
-        color = "#900c3f", size = 3, fontface = "bold", vjust = -0.7
-      )
+    p <- p + ggplot2::geom_sf(data = object$landmarks_sf, color = "#d35400", size = 3, shape = 18) +
+      ggplot2::geom_sf_text(data = object$landmarks_sf, ggplot2::aes(label = .data$name), color = "#900c3f", size = 3, fontface = "bold", vjust = -0.7)
   }
   
   title_txt <- "Isle Royale Moose Habitat & Substrate Overlay Model"
@@ -507,51 +480,4 @@ autoplot.habitat_hex_overlay <- function(object, show_landmarks = TRUE, ...) {
       x = "Longitude", y = "Latitude",
       caption = "Habitats: Inland Lakes, Beaver Ponds/Waterways, Shaded Forests & Bogs"
     )
-}
-
-#' Add Leaflet Habitat Layers
-#'
-#' @param map A `leaflet` map object.
-#' @param object An S3 object of class `habitat_hex_overlay`.
-#'
-#' @return An updated `leaflet` map.
-#' @export
-#' @rdname habitat
-#'
-#' @importFrom leaflet addPolygons addCircleMarkers addPopups
-add_leaflet_habitat_overlay <- function(map, object) {
-  if (is.null(map) || is.null(object)) return(map)
-  
-  # Render habitat suitability polygons/hexagons
-  if (!is.null(object$hex_habitat_sf)) {
-    hex_wgs <- sf::st_transform(object$hex_habitat_sf, 4326)
-    map <- map |>
-      leaflet::addPolygons(
-        data = hex_wgs,
-        color = "#e74c3c",
-        weight = 1,
-        fillOpacity = 0.15,
-        popup = paste0("<b>Hex ID:</b> ", hex_wgs$hex_id, 
-                       "<br/><b>Habitat Score:</b> ", hex_wgs$habitat_score,
-                       "<br/><b>Habitat Types:</b> ", hex_wgs$habitat_type),
-        group = "Habitat Substrate Mesh"
-      )
-  }
-  
-  # Render Moose Sighting Area Markers
-  if (!is.null(object$landmarks_sf)) {
-    lm_wgs <- sf::st_transform(object$landmarks_sf, 4326)
-    map <- map |>
-      leaflet::addCircleMarkers(
-        data = lm_wgs,
-        color = "#d35400",
-        radius = 7,
-        fillOpacity = 0.9,
-        popup = paste0("<b>Moose Sighting Area:</b> ", lm_wgs$name,
-                       "<br/><b>Description:</b> ", lm_wgs$description),
-        group = "Moose Sighting Areas"
-      )
-  }
-  
-  return(map)
 }

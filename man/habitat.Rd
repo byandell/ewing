@@ -3,11 +3,13 @@
 \name{habitat}
 \alias{habitat}
 \alias{get_habitat_features}
+\alias{get_fallback_habitat_features}
 \alias{get_moose_landmarks}
+\alias{add_watershed_hex_overlay}
+\alias{autoplot.watershed_hex_overlay}
 \alias{create_isle_royale_hex_overlay}
 \alias{add_habitat_hex_overlay}
 \alias{autoplot.habitat_hex_overlay}
-\alias{add_leaflet_habitat_overlay}
 \title{Moose Habitat & Substrate Overlay Utilities}
 \usage{
 get_habitat_features(
@@ -17,11 +19,17 @@ get_habitat_features(
   site = "isle_royale"
 )
 
+get_fallback_habitat_features(huc_layer = NULL)
+
 get_moose_landmarks(
   watershed_obj = NULL,
   use_cache = TRUE,
   site = "isle_royale"
 )
+
+add_watershed_hex_overlay(huc_info, hex_diameter = 0.01)
+
+\method{autoplot}{watershed_hex_overlay}(object, ...)
 
 create_isle_royale_hex_overlay(
   hex_diameter = 0.01,
@@ -40,50 +48,56 @@ add_habitat_hex_overlay(
 )
 
 \method{autoplot}{habitat_hex_overlay}(object, show_landmarks = TRUE, ...)
-
-add_leaflet_habitat_overlay(map, object)
 }
 \arguments{
-\item{watershed_obj}{Watershed object from `get_watershed()`.}
+\item{watershed_obj}{Target spatial watershed or landscape object.}
 
 \item{categories}{Character vector of habitat feature categories to extract.}
 
-\item{use_cache}{Logical; if TRUE, uses pre-fetched local landmark definitions when available.}
+\item{use_cache}{Logical; if TRUE, uses local pre-fetched dataset when available.}
 
 \item{site}{Target simulation landscape/site folder name (default: `"isle_royale"`).}
 
-\item{hex_diameter}{Diameter of hexagonal grid cells in degrees (default = `0.01`).}
+\item{huc_layer}{An `sf` polygon representation of the region.}
 
-\item{features}{Optional path or `sf` object containing habitat features.}
+\item{huc_info}{Watershed object or list containing a `layer` geometry.}
 
-\item{layer}{Optional path or `sf` boundary layer object.}
-
-\item{hex_obj}{An S3 object of class `watershed_hex_overlay`.}
-
-\item{habitat_sf}{Optional pre-extracted `sf` data frame of habitat features.}
-
-\item{landmarks_sf}{Optional pre-geocoded `sf` points of sighting landmarks.}
+\item{hex_diameter}{Hexagon extent diameter in degrees (default: `0.01`).}
 
 \item{object}{An S3 object of class `habitat_hex_overlay`.}
 
-\item{show_landmarks}{Logical; whether to draw moose sighting POIs.}
-
 \item{...}{Additional arguments passed to plotting functions.}
 
-\item{map}{A `leaflet` map object.}
+\item{features}{Deprecated alias for `habitat_sf`.}
+
+\item{layer}{Optional sf object of landscape boundary layer.}
+
+\item{hex_obj}{S3 object returned from `add_watershed_hex_overlay()` or `create_isle_royale_hex_overlay()`.}
+
+\item{habitat_sf}{Optional sf object of habitat features.}
+
+\item{landmarks_sf}{Optional sf object of sighting landmarks.}
+
+\item{landmarks}{Deprecated alias for `landmarks_sf`.}
+
+\item{show_landmarks}{Logical; if TRUE, renders moose sighting landmarks on map.}
 }
 \value{
 `get_habitat_features`: An `sf` data frame of habitat features clipped to the target geometry.
 
-`get_moose_landmarks`: An `sf` object containing landmark point geometries and attributes.
+Fallback `sf` data frame of habitat features.
+
+An `sf` data frame of point landmark geometries.
+
+`add_watershed_hex_overlay`: An S3 object of class `watershed_hex_overlay` containing the original geometry plus the hex layer.
+
+`autoplot.watershed_hex_overlay`: A `ggplot` object representing the spatial mesh.
 
 An S3 object of class `watershed_hex_overlay`.
 
 `add_habitat_hex_overlay`: An S3 object of class `habitat_hex_overlay`.
 
-A `ggplot` visualization of the Isle Royale Moose Habitat Overlay.
-
-An updated `leaflet` map.
+A `ggplot` object.
 }
 \description{
 Functions for extracting geographic habitat features that attract moose
@@ -91,13 +105,9 @@ Functions for extracting geographic habitat features that attract moose
 geocoding notable sighting landmarks (Washington Creek, Ojibway Lake, Feldtmann Lake, Hidden Lake),
 computing habitat suitability weights on hexagonal substrate grids, and visualizing overlays.
 
-Retrieves key moose sighting landmarks on Isle Royale (or customizable spatial targets):
-Washington Creek in Windigo, Ojibway Lake, Feldtmann Lake, and Hidden Lake in Tobin Harbor.
+Retrieves notable moose sighting locations (Washington Creek, Ojibway Lake, Feldtmann Lake, Hidden Lake).
 
-Generates a spatial hexagonal grid across Isle Royale island geometry using
-pre-computed local habitat features (`isle_royale_features.rds`), without requiring
-external watershed GIS service calls.
+Projects a mathematical hexagonal substrate grid overlay across an extracted watershed or landscape boundary.
 
-Intersects habitat features (lakes, waterways, forests, bogs) and sighting landmarks
-with a hexagonal substrate grid overlay, calculating habitat suitability weights per hex cell.
+Standalone utility to construct the Isle Royale spatial hexagonal substrate grid.
 }

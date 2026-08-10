@@ -19,7 +19,6 @@ ewing/
 │   ├── fiveShowApp.qmd       # Target relative mean binary search utility
 │   ├── tempApp.qmd           # Daily temperature-time spline knot editor
 │   ├── triangleApp.qmd       # Triangular coordinate substrate geometry demo
-│   ├── hexmapApp.qmd         # USGS watershed GIS spatial projection tutorial
 │   └── hexmoveApp.qmd        # Hexagonal grid organism dispersal tracker
 └── docs/                     # Compiled static website directory published to gh-pages
     ├── .nojekyll             # Disables GitHub Pages Jekyll processing

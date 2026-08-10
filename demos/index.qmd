@@ -12,7 +12,6 @@ listing:
     - tempApp.qmd
     - triangleApp.qmd
     - hexmoveApp.qmd
-    - hexmapApp.qmd
   type: grid
   categories: false
 ---

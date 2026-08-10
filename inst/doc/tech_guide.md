@@ -23,8 +23,7 @@ The Technical Guide is organized into five specialized domain vignettes under `v
 | **[engine.Rmd](../../vignettes/tech_guide/engine.Rmd)** | Simulation Engine & Event Scheduling | `R/community.R`, `R/Org.R`, `R/event.R` | [demos/sysetholApp.qmd](../../demos/sysetholApp.qmd) |
 | **[geometry.Rmd](../../vignettes/tech_guide/geometry.Rmd)** | Substrate Geometry & Grid Movement | `R/triangle.R`, `R/substrate_triangle.R`, `R/ewing_substrate.R` | [demos/triangleApp.qmd](../../demos/triangleApp.qmd), [demos/hexmoveApp.qmd](../../demos/hexmoveApp.qmd) |
 | **[thermal.Rmd](../../vignettes/tech_guide/thermal.Rmd)** | Thermal Regimes & Spline Sensitivity | `R/temp.R`, `R/spline.R`, `R/five.R` | [demos/tempApp.qmd](../../demos/tempApp.qmd), [demos/fivePlotApp.qmd](../../demos/fivePlotApp.qmd), [demos/fiveShowApp.qmd](../../demos/fiveShowApp.qmd) |
-| **[gis.Rmd](../../vignettes/tech_guide/gis.Rmd)** | GIS Watersheds & Spatial Overlay | `R/leaflet.R`, `R/watershed.R`, `inst/scripts/watershed_overlay.R` | [demos/hexmapApp.qmd](../../demos/hexmapApp.qmd) |
-| **[ui.Rmd](../../vignettes/tech_guide/ui.Rmd)** | Systems Ethology UI Architecture | `R/sysetholApp.R`, `R/inputApp.R`, `R/downloadApp.R` | [demos/sysetholApp.qmd](../../demos/sysetholApp.qmd) |
+| **[gis.Rmd](../../vignettes/tech_guide/gis.Rmd)** | GIS Watersheds & Spatial Overlay | `R/habitat.R`, `R/ewing_substrate.R` | [byandell/hexmap](https://github.com/byandell/hexmap) |
 
 ---
 
@@ -51,10 +50,10 @@ The Technical Guide is organized into five specialized domain vignettes under `v
   - Implemented interactive spline knot drag-and-drop in `demos/tempApp.qmd`, `demos/fivePlotApp.qmd`, and `demos/fiveShowApp.qmd`.
 
 ### IV. GIS Watershed Overlays ([gis.Rmd](../../vignettes/tech_guide/gis.Rmd))
-- **Prompts**: Document geographic subwatershed boundary retrieval (USGS HUC12), spatial projection of simulation triangular substrate grids onto polygon shapefiles, and Leaflet interactive map rendering.
+- **Prompts**: Document offline spatial hex substrate overlays (`R/habitat.R`), and reference interactive Leaflet subwatershed mapping in the external [`hexmap`](https://github.com/byandell/hexmap) package.
 - **Results**:
-  - Documented `get_huc_from_point()`, `get_hucs_from_polygon()`, and spatial intersection (`sf::st_intersects`).
-  - Published `demos/hexmapApp.qmd` linking static autoplots and live Posit Connect web applications.
+  - Refactored interactive Leaflet discovery and live USGS subwatershed querying into the standalone [`hexmap`](https://github.com/byandell/hexmap) package.
+  - Retained offline spatial hex substrate overlays (`create_isle_royale_hex_overlay`, `add_habitat_hex_overlay`) in `ewing`.
 
 ### V. UI Architecture ([ui.Rmd](../../vignettes/tech_guide/ui.Rmd))
 - **Prompts**: Detail the modular Shiny architecture upgrading `ewingApp()`, standard `webr::install("byandell/ewing")` WebAssembly package loading for Shinylive documents, and download safety wrappers.
