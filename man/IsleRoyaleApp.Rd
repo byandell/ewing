@@ -5,6 +5,10 @@
 \alias{IsleRoyaleInput}
 \alias{IsleRoyaleOutput}
 \alias{IsleRoyaleServer}
+\alias{isleRoyaleApp}
+\alias{isleRoyaleInput}
+\alias{isleRoyaleOutput}
+\alias{isleRoyaleServer}
 \title{Isle Royale Wolf-Moose Simulation App (Wrapper Shell)}
 \usage{
 IsleRoyaleApp(title = "Isle Royale Wolf-Moose Simulation Platform")
@@ -14,11 +18,19 @@ IsleRoyaleInput(id)
 IsleRoyaleOutput(id)
 
 IsleRoyaleServer(id)
+
+isleRoyaleApp(title = "Isle Royale Wolf-Moose Simulation Platform")
+
+isleRoyaleInput(id)
+
+isleRoyaleOutput(id)
+
+isleRoyaleServer(id)
 }
 \arguments{
 \item{title}{Application title string (default: `"Isle Royale Wolf-Moose Simulation Platform"`).}
 
-\item{id}{Module ID string.}
+\item{id}{Module ID string}
 }
 \description{
 Backward-compatible wrapper for launching the Isle Royale wolf-moose spatial predator-prey

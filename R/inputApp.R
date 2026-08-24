@@ -1,98 +1,50 @@
 #' Input Data App
 #'
 #' Shiny module for inspecting simulation input parameter data tables, organism features,
-#' stage transition futures, and substrate interaction matrices.
+#' stage transition futures, and substrate interaction matrices across ecosystems.
 #'
 #' @param title Application title
-#' @param id module ID string
+#' @param id Module ID string
+#' @param ecosystem Target ecosystem name (e.g. `"default"`, `"isle_royale"`) or directory path. Defaults to `"default"`.
 #' @param simres Reactive simulation state (`ewing` object)
 #' @param datafile Reactive optional datafile path
 #' @export
-#' @importFrom shiny moduleServer NS renderTable req selectInput tableOutput tagList uiOutput observe updateSelectInput
+#' @importFrom shiny moduleServer NS renderTable req selectInput tableOutput tagList uiOutput observe updateSelectInput reactive
 #' @importFrom bslib page_sidebar sidebar card
 #' @importFrom tools file_path_sans_ext
 #' @importFrom utils read.table read.csv
-inputApp <- function(title = "Input Data Explorer") {
+inputApp <- function(title = "Input Data Explorer", ecosystem = "default") {
   ui <- bslib::page_sidebar(
     title = title,
     sidebar = bslib::sidebar(
-      inputAppInput("input_app")
+      inputSystemInput("sys_select", selected = ecosystem),
+      shiny::hr(),
+      inputAppInput("input_app", ecosystem = ecosystem)
     ),
     bslib::card(
       inputAppOutput("input_app")
     )
   )
   server <- function(input, output, session) {
-    inputAppServer("input_app")
+    eco <- inputSystemServer("sys_select")
+    inputAppServer("input_app", ecosystem = eco)
   }
   shiny::shinyApp(ui = ui, server = server)
-}
-
-#' Helper to dynamically discover available dataset tables from an input folder or simulation instance
-#' @param datafile Character path to folder or Excel file containing input tables
-#' @param sim Simulation instance (`ewing` or `isle_royale_sim`)
-#' @export
-#' @rdname inputApp
-discover_dataset_tables <- function(datafile = "", sim = NULL) {
-  found <- character(0)
-  
-  # 1. Inspect datafile directory
-  d_path <- if (is.character(datafile) && datafile != "") datafile else if (!is.null(sim) && !is.null(sim$datafile)) sim$datafile else ""
-  
-  if (d_path != "" && file.exists(d_path)) {
-    if (dir.exists(d_path)) {
-      files <- list.files(d_path, pattern = "\\.(txt|csv|tsv)$", full.names = FALSE)
-      if (length(files) > 0) {
-        found <- tools::file_path_sans_ext(files)
-      }
-    } else if (grepl("\\.xlsx$", d_path, ignore.case = TRUE)) {
-      sheets <- tryCatch(readxl::excel_sheets(d_path), error = function(e) character(0))
-      if (length(sheets) > 0) found <- sheets
-    }
-  }
-  
-  # 2. Inspect sim$datasets if present
-  if (!is.null(sim) && !is.null(sim$datasets)) {
-    found <- unique(c(found, names(sim$datasets)))
-  }
-  if (!is.null(sim) && !is.null(sim$community) && !is.null(sim$community$datasets)) {
-    found <- unique(c(found, names(sim$community$datasets)))
-  }
-  if (exists("isle_royale_datasets") && is.list(isle_royale_datasets)) {
-    found <- unique(c(found, names(isle_royale_datasets)))
-  }
-  
-  # Filter out any .rds spatial layers or non-table objects
-  found <- found[!grepl("\\.rds$", found, ignore.case = TRUE) & !found %in% c("isle_royale_features", "isle_royale_landmarks", "isle_royale_layer", "huc_features")]
-
-  # 3. Default fallback choices if nothing found
-  if (length(found) == 0) {
-    found <- c(
-      "organism.features", "future.moose", "future.wolf",
-      "substrate.moose", "substrate.wolf", "substrate.substrate",
-      "moose.wolf", "future.host", "future.parasite"
-    )
-  }
-  
-  unique(found)
 }
 
 #' Input Data Controls Module
 #' @param id Module ID string
 #' @param choices Optional vector of initial table choices
+#' @param ecosystem Target ecosystem name or directory path. Defaults to `"default"`.
 #' @export
 #' @rdname inputApp
-inputAppInput <- function(id, choices = NULL) {
+inputAppInput <- function(id, choices = NULL, ecosystem = "default") {
   ns <- shiny::NS(id)
-  default_choices <- if (!is.null(choices)) choices else c(
-    "organism.features", "future.moose", "future.wolf",
-    "substrate.moose", "substrate.wolf", "substrate.substrate",
-    "moose.wolf", "future.host", "future.parasite"
-  )
+  default_ch <- if (!is.null(choices)) choices else default_choices(ecosystem)
   shiny::tagList(
     shiny::selectInput(ns("dataname"), "Select Dataset Table:",
-      choices = default_choices,
-      selected = default_choices[1]
+      choices = default_ch,
+      selected = default_ch[1]
     )
   )
 }
@@ -107,20 +59,25 @@ inputAppOutput <- function(id) {
 
 #' Input Data Server Module
 #' @param id Module ID string
-#' @param simres Reactive simulation state (`ewing` or `isle_royale_sim` object)
+#' @param simres Reactive simulation state (`ewing` object)
 #' @param datafile Reactive optional datafile path or string
+#' @param ecosystem Reactive or character target ecosystem name or directory path. Defaults to `"default"`.
 #' @export
 #' @rdname inputApp
-inputAppServer <- function(id, simres = shiny::reactiveVal(NULL), datafile = shiny::reactiveVal("")) {
+inputAppServer <- function(id, simres = shiny::reactiveVal(NULL), datafile = shiny::reactiveVal(""), ecosystem = "default") {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # Dynamically update select choices based on folder / simulation contents
+    # Dynamically update select choices based on folder / simulation / ecosystem contents
     shiny::observe({
       sim <- if (is.reactive(simres)) simres() else simres
       dfile <- if (is.reactive(datafile)) datafile() else datafile
+      eco <- if (is.reactive(ecosystem)) ecosystem() else ecosystem
+      if (!is.null(sim) && !is.null(sim$ecosystem) && is.character(sim$ecosystem) && nzchar(sim$ecosystem)) {
+        eco <- sim$ecosystem
+      }
       
-      discovered <- discover_dataset_tables(dfile, sim)
+      discovered <- discover_dataset_tables(dfile, sim, ecosystem = eco)
       if (length(discovered) > 0) {
         current_sel <- input$dataname
         sel <- if (!is.null(current_sel) && current_sel %in% discovered) current_sel else discovered[1]
@@ -133,20 +90,44 @@ inputAppServer <- function(id, simres = shiny::reactiveVal(NULL), datafile = shi
         name <- input$dataname %||% "organism.features"
         sim <- if (is.reactive(simres)) simres() else simres
         dfile <- if (is.reactive(datafile)) datafile() else datafile
+        eco <- if (is.reactive(ecosystem)) ecosystem() else ecosystem
+        if (!is.null(sim) && !is.null(sim$ecosystem) && is.character(sim$ecosystem) && nzchar(sim$ecosystem)) {
+          eco <- sim$ecosystem
+        }
 
-        res <- NULL
-
-        # 0. Check direct file in datafile directory if points to folder
-        if (is.character(dfile) && dfile != "" && dir.exists(dfile)) {
-          txt_path <- file.path(dfile, paste0(name, ".txt"))
-          if (file.exists(txt_path)) res <- tryCatch(utils::read.table(txt_path, header = TRUE, sep = "\t", stringsAsFactors = FALSE, fill = TRUE), error = function(e) NULL)
-          if (is.null(res)) {
-            csv_path <- file.path(dfile, paste0(name, ".csv"))
-            if (file.exists(csv_path)) res <- tryCatch(utils::read.csv(csv_path, fill = TRUE, stringsAsFactors = FALSE), error = function(e) NULL)
+        # Resolve ecosystem directory if dfile is not given
+        target_eco_dir <- ""
+        if (is.character(eco) && length(eco) == 1 && nzchar(eco)) {
+          if (dir.exists(eco)) {
+            target_eco_dir <- eco
+          } else {
+            pkg_dir <- system.file(file.path("extdata", eco), package = "ewing")
+            if (pkg_dir == "" || !dir.exists(pkg_dir)) {
+              pkg_dir <- file.path("inst", "extdata", eco)
+            }
+            if (dir.exists(pkg_dir)) target_eco_dir <- pkg_dir
           }
         }
 
-        # 1. Check if dataset is stored in sim$datasets or sim$community$datasets or global isle_royale_datasets
+        effective_dfile <- if (is.character(dfile) && nzchar(dfile)) dfile else target_eco_dir
+
+        res <- NULL
+
+        # 0. Check direct file in effective datafile directory
+        if (is.character(effective_dfile) && effective_dfile != "" && dir.exists(effective_dfile)) {
+          txt_path <- file.path(effective_dfile, paste0(name, ".txt"))
+          if (file.exists(txt_path)) res <- tryCatch(utils::read.table(txt_path, header = TRUE, fill = TRUE, stringsAsFactors = FALSE), error = function(e) NULL)
+          if (is.null(res)) {
+            csv_path <- file.path(effective_dfile, paste0(name, ".csv"))
+            if (file.exists(csv_path)) res <- tryCatch(utils::read.csv(csv_path, fill = TRUE, stringsAsFactors = FALSE), error = function(e) NULL)
+          }
+          if (is.null(res)) {
+            tsv_path <- file.path(effective_dfile, paste0(name, ".tsv"))
+            if (file.exists(tsv_path)) res <- tryCatch(utils::read.table(tsv_path, header = TRUE, fill = TRUE, stringsAsFactors = FALSE), error = function(e) NULL)
+          }
+        }
+
+        # 1. Check if dataset is stored in sim$datasets or sim$community$datasets
         if (is.null(res) && !is.null(sim)) {
           if (!is.null(sim$datasets) && !is.null(sim$datasets[[name]])) {
             res <- sim$datasets[[name]]
@@ -154,15 +135,12 @@ inputAppServer <- function(id, simres = shiny::reactiveVal(NULL), datafile = shi
             res <- sim$community$datasets[[name]]
           }
         }
-        if (is.null(res) && exists("isle_royale_datasets") && is.list(isle_royale_datasets) && !is.null(isle_royale_datasets[[name]])) {
-          res <- isle_royale_datasets[[name]]
-        }
 
-        # 2. Extract dynamically via getOrgDataSimple or getOrg* package routines
-        if (is.null(res) && !is.null(sim) && inherits(sim, "ewing")) {
-          sim_single <- if (inherits(sim, "ewing_discrete")) sim[[1]] else sim
+        # 2. Extract dynamically via getOrgDataSimple
+        if (is.null(res)) {
+          sim_single <- if (!is.null(sim) && inherits(sim, "ewing_discrete")) sim[[1]] else sim
           res <- tryCatch({
-            getOrgDataSimple(sim_single, name, datafile = dfile)
+            getOrgDataSimple(sim_single, name, datafile = effective_dfile)
           }, error = function(e) NULL)
         }
 
@@ -187,6 +165,23 @@ inputAppServer <- function(id, simres = shiny::reactiveVal(NULL), datafile = shi
           }, error = function(e) NULL)
         }
 
+        # 4. Fallback to reading from default package directory
+        if (is.null(res) || !is.data.frame(res) || nrow(res) == 0) {
+          pkg_dir <- system.file("extdata/default", package = "ewing")
+          if (pkg_dir == "" || !dir.exists(pkg_dir)) pkg_dir <- file.path("inst", "extdata", "default")
+          if (dir.exists(pkg_dir)) {
+            txt_path <- file.path(pkg_dir, paste0(name, ".txt"))
+            if (file.exists(txt_path)) res <- tryCatch(utils::read.table(txt_path, header = TRUE, fill = TRUE, stringsAsFactors = FALSE), error = function(e) NULL)
+          }
+        }
+
+        # Ensure rownames are displayed as a column if present
+        if (!is.null(res) && is.data.frame(res) && nrow(res) > 0) {
+          if (!identical(rownames(res), as.character(seq_len(nrow(res)))) && !("rownames" %in% names(res))) {
+            res <- data.frame(rownames = rownames(res), res, check.names = FALSE, stringsAsFactors = FALSE)
+          }
+        }
+
         if (is.null(res) || !is.data.frame(res) || nrow(res) == 0) {
           res <- data.frame(Info = paste("Dataset", name, "is not available in current simulation instance."))
         }
@@ -198,4 +193,70 @@ inputAppServer <- function(id, simres = shiny::reactiveVal(NULL), datafile = shi
       bordered = TRUE
     )
   })
+}
+
+#' Input System Selection Module
+#'
+#' Shiny UI module to select from available ecosystem systems.
+#'
+#' @param id Module ID string
+#' @param choices Optional vector of system choices. Defaults to `available_ecosystems()`.
+#' @param selected Initial selected system. Defaults to `"default"`.
+#' @export
+#' @rdname inputApp
+inputSystemInput <- function(id, choices = NULL, selected = "default") {
+  ns <- shiny::NS(id)
+  sys_choices <- if (!is.null(choices)) choices else available_ecosystems()
+  if (!selected %in% sys_choices && length(sys_choices) > 0) {
+    selected <- sys_choices[1]
+  }
+  shiny::tagList(
+    shiny::selectInput(ns("ecosystem"), "Select System / Ecosystem:",
+      choices = sys_choices,
+      selected = selected
+    )
+  )
+}
+
+#' Input System Server Module
+#'
+#' Server module returning a reactive for the selected system.
+#'
+#' @param id Module ID string
+#' @return Reactive expression returning the selected system name or directory.
+#' @export
+#' @rdname inputApp
+inputSystemServer <- function(id) {
+  shiny::moduleServer(id, function(input, output, session) {
+    shiny::reactive({
+      input$ecosystem %||% "default"
+    })
+  })
+}
+
+#' Input System App
+#'
+#' Interactive Shiny application to explore datasets across different systems/ecosystems.
+#'
+#' @param title Application title
+#' @param selected Initial system selection. Defaults to `"default"`.
+#' @export
+#' @rdname inputApp
+inputSystem <- function(title = "System Data Explorer", selected = "default") {
+  ui <- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      inputSystemInput("sys_select", selected = selected),
+      shiny::hr(),
+      inputAppInput("sys_data")
+    ),
+    bslib::card(
+      inputAppOutput("sys_data")
+    )
+  )
+  server <- function(input, output, session) {
+    eco <- inputSystemServer("sys_select")
+    inputAppServer("sys_data", ecosystem = eco)
+  }
+  shiny::shinyApp(ui = ui, server = server)
 }

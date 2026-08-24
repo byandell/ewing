@@ -2,25 +2,33 @@
 % Please edit documentation in R/sysetholApp.R
 \name{sysetholApp}
 \alias{sysetholApp}
+\alias{sysetholSystem}
 \alias{sysetholInput}
 \alias{sysetholOutput}
 \alias{sysetholServer}
 \title{Systems Ethology App}
 \usage{
-sysetholApp(title = "Systems Ethology Platform")
+sysetholApp(title = "Systems Ethology Platform", ecosystem = "default")
+
+sysetholSystem(ecosystem = "default", title = NULL)
 
 sysetholInput(id)
 
 sysetholOutput(id)
 
-sysetholServer(id)
+sysetholServer(id, ecosystem = "default")
 }
 \arguments{
-\item{title}{Application title}
+\item{title}{Optional application title.}
+
+\item{ecosystem}{Target ecosystem name (default: `"default"`).}
 
 \item{id}{Module ID string}
 }
 \description{
 Interactive Systems Ethology platform orchestrating host-parasite individual-based simulations,
 age class distributions, hexagonal spatial substrate networks, variance envelopes, and input data tables.
+
+Unified platform wrapper launching the Systems Ethology simulation application
+for any target ecosystem (e.g. `"default"`, `"isle_royale"`).
 }

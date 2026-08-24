@@ -13,6 +13,7 @@ IsleRoyaleApp <- function(title = "Isle Royale Wolf-Moose Simulation Platform") 
 }
 
 #' Isle Royale Input Controls Module Wrapper
+#' @param id Module ID string
 #' @export
 #' @rdname IsleRoyaleApp
 IsleRoyaleInput <- function(id) {
@@ -20,15 +21,33 @@ IsleRoyaleInput <- function(id) {
 }
 
 #' Isle Royale Output Display Module Wrapper
+#' @param id Module ID string
 #' @export
 #' @rdname IsleRoyaleApp
 IsleRoyaleOutput <- function(id) {
-  ecosystemOutput(id)
+  ecosystemOutput(id, ecosystem = "isle_royale")
 }
 
 #' Isle Royale Server Logic Module Wrapper
+#' @param id Module ID string
 #' @export
 #' @rdname IsleRoyaleApp
 IsleRoyaleServer <- function(id) {
   ecosystemServer(id, ecosystem = "isle_royale")
 }
+
+#' @export
+#' @rdname IsleRoyaleApp
+isleRoyaleApp <- IsleRoyaleApp
+
+#' @export
+#' @rdname IsleRoyaleApp
+isleRoyaleInput <- IsleRoyaleInput
+
+#' @export
+#' @rdname IsleRoyaleApp
+isleRoyaleOutput <- IsleRoyaleOutput
+
+#' @export
+#' @rdname IsleRoyaleApp
+isleRoyaleServer <- IsleRoyaleServer

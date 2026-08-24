@@ -4,13 +4,14 @@
 #' age class distributions, hexagonal spatial substrate networks, variance envelopes, and input data tables.
 #' 
 #' @param title Application title
-#' @param id module ID string
+#' @param id Module ID string
+#' @param ecosystem Target ecosystem name (e.g. `"default"`, `"isle_royale"`). Defaults to `"default"`.
 #' @export
 #' @importFrom shiny actionButton checkboxInput checkboxGroupInput column div HTML h4 isTruthy moduleServer NS observeEvent plotOutput radioButtons reactive reactiveVal renderPlot renderTable renderUI req selectInput selectizeInput sidebarPanel sliderInput tableOutput tagList textInput uiOutput
 #' @importFrom ggplot2 autoplot ggplot ggtitle
 #' @importFrom cowplot plot_grid
 #' @importFrom bslib page_sidebar sidebar navset_tab nav_panel card card_header card_body bs_theme
-sysetholApp <- function(title = "Systems Ethology Platform") {
+sysetholApp <- function(title = "Systems Ethology Platform", ecosystem = "default") {
   ui <- bslib::page_sidebar(
     title = title,
     sidebar = bslib::sidebar(
@@ -21,10 +22,27 @@ sysetholApp <- function(title = "Systems Ethology Platform") {
   )
   
   server <- function(input, output, session) {
-    sysetholServer("sysethol")
+    sysetholServer("sysethol", ecosystem = ecosystem)
   }
   
   shiny::shinyApp(ui = ui, server = server)
+}
+
+#' Systems Ethology App for Specific Ecosystem
+#' 
+#' Unified platform wrapper launching the Systems Ethology simulation application
+#' for any target ecosystem (e.g. `"default"`, `"isle_royale"`).
+#' 
+#' @param ecosystem Target ecosystem (default: `"default"`).
+#' @param title Optional application title.
+#' @export
+#' @rdname sysetholApp
+sysetholSystem <- function(ecosystem = "default", title = NULL) {
+  if (identical(ecosystem, "default")) {
+    sysetholApp(title = title %||% "Systems Ethology Platform", ecosystem = "default")
+  } else {
+    ecosystemApp(ecosystem = ecosystem, title = title)
+  }
 }
 
 #' Systems Ethology Input Controls Module
@@ -104,9 +122,10 @@ sysetholOutput <- function(id) {
 
 #' Systems Ethology Server Module
 #' @param id Module ID string
+#' @param ecosystem Target ecosystem name (default: `"default"`).
 #' @export
 #' @rdname sysetholApp
-sysetholServer <- function(id) {
+sysetholServer <- function(id, ecosystem = "default") {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
     
@@ -159,7 +178,7 @@ sysetholServer <- function(id) {
     })
     
     # Input Data App Server
-    inputAppServer("input_app", simres = current_sim)
+    inputAppServer("input_app", simres = current_sim, ecosystem = ecosystem)
     
     # Compose Dist Plot Module for Age Classes
     distPlotServer("dist_plot", simres = current_sim, x_var = age_ctrls$x_var, total = age_ctrls$total, norm = age_ctrls$norm)
@@ -173,7 +192,7 @@ sysetholServer <- function(id) {
           bslib::nav_panel("Substrate Plots", bslib::card(substrateOutput(ns("substrate")))),
           bslib::nav_panel("Age Classes", bslib::card(distPlotOutput(ns("dist_plot")))),
           bslib::nav_panel("Input Data", bslib::card(
-            inputAppInput(ns("input_app")),
+            inputAppInput(ns("input_app"), ecosystem = ecosystem),
             inputAppOutput(ns("input_app"))
           ))
         )
@@ -184,7 +203,7 @@ sysetholServer <- function(id) {
           bslib::nav_panel("Age Classes", bslib::card(distPlotOutput(ns("dist_plot")))),
           bslib::nav_panel("Envelope Plots", bslib::card(shiny::plotOutput(ns("env_plot"), height = "500px"))),
           bslib::nav_panel("Input Data", bslib::card(
-            inputAppInput(ns("input_app")),
+            inputAppInput(ns("input_app"), ecosystem = ecosystem),
             inputAppOutput(ns("input_app"))
           ))
         )

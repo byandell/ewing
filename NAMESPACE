@@ -24,11 +24,14 @@ export(add_habitat_hex_overlay)
 export(add_watershed_hex_overlay)
 export(ageClassControlInput)
 export(ageClassControlServer)
+export(available_ecosystems)
 export(axisUnitInput)
 export(axisUnitServer)
 export(create_hex_overlay)
 export(create_isle_royale_hex_overlay)
 export(create_substrate)
+export(default_choice)
+export(default_choices)
 export(discover_dataset_tables)
 export(distPlotApp)
 export(distPlotInput)
@@ -102,6 +105,13 @@ export(inputApp)
 export(inputAppInput)
 export(inputAppOutput)
 export(inputAppServer)
+export(inputSystem)
+export(inputSystemInput)
+export(inputSystemServer)
+export(isleRoyaleApp)
+export(isleRoyaleInput)
+export(isleRoyaleOutput)
+export(isleRoyaleServer)
 export(make_ewing_discrete)
 export(multApp)
 export(multInput)
@@ -137,180 +147,215 @@ export(sysetholApp)
 export(sysetholInput)
 export(sysetholOutput)
 export(sysetholServer)
+export(sysetholSystem)
 export(temp.design)
 export(temp.plot)
 export(tempApp)
 export(triangleApp)
 export(tricoord)
 importFrom(DT,renderDataTable)
-importFrom(GET,create_curve_set)
-importFrom(GET,fBoxplot)
-importFrom(GET,forder)
-importFrom(bslib,bs_theme)
-importFrom(bslib,card)
-importFrom(bslib,card_body)
-importFrom(bslib,card_header)
-importFrom(bslib,font_google)
-importFrom(bslib,nav_panel)
-importFrom(bslib,navset_tab)
-importFrom(bslib,page_sidebar)
-importFrom(bslib,sidebar)
-importFrom(cowplot,draw_label)
-importFrom(cowplot,ggdraw)
-importFrom(cowplot,plot_grid)
-importFrom(dplyr,across)
-importFrom(dplyr,any_of)
-importFrom(dplyr,arrange)
-importFrom(dplyr,bind_rows)
-importFrom(dplyr,distinct)
-importFrom(dplyr,filter)
-importFrom(dplyr,group_by)
-importFrom(dplyr,matches)
-importFrom(dplyr,mutate)
-importFrom(dplyr,summarize)
-importFrom(dplyr,ungroup)
-importFrom(ggplot2,aes)
-importFrom(ggplot2,autoplot)
-importFrom(ggplot2,coord_fixed)
-importFrom(ggplot2,facet_grid)
-importFrom(ggplot2,facet_wrap)
-importFrom(ggplot2,geom_point)
-importFrom(ggplot2,geom_polygon)
-importFrom(ggplot2,geom_sf)
-importFrom(ggplot2,geom_sf_text)
-importFrom(ggplot2,geom_step)
-importFrom(ggplot2,geom_text)
-importFrom(ggplot2,ggplot)
-importFrom(ggplot2,ggtitle)
-importFrom(ggplot2,guide_legend)
-importFrom(ggplot2,guides)
-importFrom(ggplot2,labs)
-importFrom(ggplot2,margin)
-importFrom(ggplot2,scale_color_manual)
-importFrom(ggplot2,scale_color_viridis_c)
-importFrom(ggplot2,scale_shape_manual)
-importFrom(ggplot2,theme)
-importFrom(ggplot2,theme_minimal)
-importFrom(ggplot2,theme_void)
-importFrom(ggplot2,xlab)
-importFrom(ggplot2,ylab)
-importFrom(ggplot2,ylim)
-importFrom(grDevices,dev.off)
-importFrom(grDevices,pdf)
-importFrom(graphics,abline)
-importFrom(graphics,axis)
-importFrom(graphics,legend)
-importFrom(graphics,lines)
-importFrom(graphics,locator)
-importFrom(graphics,mtext)
-importFrom(graphics,par)
-importFrom(graphics,points)
-importFrom(graphics,text)
-importFrom(graphics,title)
-importFrom(purrr,map)
-importFrom(purrr,map_df)
-importFrom(readxl,excel_sheets)
-importFrom(readxl,read_excel)
-importFrom(readxl,read_xls)
-importFrom(readxl,read_xlsx)
+importFrom(GET,
+  create_curve_set,
+  fBoxplot,
+  forder
+)
+importFrom(bslib,
+  bs_theme,
+  card,
+  card_body,
+  card_header,
+  font_google,
+  nav_panel,
+  navset_tab,
+  page_sidebar,
+  sidebar
+)
+importFrom(cowplot,
+  draw_label,
+  ggdraw,
+  plot_grid
+)
+importFrom(dplyr,
+  across,
+  any_of,
+  arrange,
+  bind_rows,
+  distinct,
+  filter,
+  group_by,
+  matches,
+  mutate,
+  summarize,
+  ungroup
+)
+importFrom(ggplot2,
+  aes,
+  autoplot,
+  coord_fixed,
+  facet_grid,
+  facet_wrap,
+  geom_point,
+  geom_polygon,
+  geom_sf,
+  geom_sf_text,
+  geom_step,
+  geom_text,
+  ggplot,
+  ggtitle,
+  guide_legend,
+  guides,
+  labs,
+  margin,
+  scale_color_manual,
+  scale_color_viridis_c,
+  scale_shape_manual,
+  theme,
+  theme_minimal,
+  theme_void,
+  xlab,
+  ylab,
+  ylim
+)
+importFrom(grDevices,
+  dev.off,
+  pdf
+)
+importFrom(graphics,
+  abline,
+  axis,
+  legend,
+  lines,
+  locator,
+  mtext,
+  par,
+  points,
+  text,
+  title
+)
+importFrom(purrr,
+  map,
+  map_df
+)
+importFrom(readxl,
+  excel_sheets,
+  read_excel,
+  read_xls,
+  read_xlsx
+)
 importFrom(rlang,.data)
-importFrom(sf,st_as_sf)
-importFrom(sf,st_bbox)
-importFrom(sf,st_centroid)
-importFrom(sf,st_coordinates)
-importFrom(sf,st_crs)
-importFrom(sf,st_geometry)
-importFrom(sf,st_intersection)
-importFrom(sf,st_intersects)
-importFrom(sf,st_make_grid)
-importFrom(sf,st_make_valid)
-importFrom(sf,st_polygon)
-importFrom(sf,st_sample)
-importFrom(sf,st_sf)
-importFrom(sf,st_sfc)
-importFrom(sf,st_transform)
-importFrom(sf,st_union)
-importFrom(shiny,HTML)
-importFrom(shiny,NS)
-importFrom(shiny,actionButton)
-importFrom(shiny,bindCache)
-importFrom(shiny,bindEvent)
-importFrom(shiny,br)
-importFrom(shiny,checkboxGroupInput)
-importFrom(shiny,checkboxInput)
-importFrom(shiny,column)
-importFrom(shiny,div)
-importFrom(shiny,downloadButton)
-importFrom(shiny,downloadHandler)
-importFrom(shiny,fileInput)
-importFrom(shiny,fluidPage)
-importFrom(shiny,fluidRow)
-importFrom(shiny,h2)
-importFrom(shiny,h3)
-importFrom(shiny,h4)
-importFrom(shiny,hr)
-importFrom(shiny,incProgress)
-importFrom(shiny,isTruthy)
-importFrom(shiny,mainPanel)
-importFrom(shiny,moduleServer)
-importFrom(shiny,need)
-importFrom(shiny,numericInput)
-importFrom(shiny,observe)
-importFrom(shiny,observeEvent)
-importFrom(shiny,p)
-importFrom(shiny,plotOutput)
-importFrom(shiny,radioButtons)
-importFrom(shiny,reactive)
-importFrom(shiny,reactiveVal)
-importFrom(shiny,reactiveValues)
-importFrom(shiny,renderPlot)
-importFrom(shiny,renderTable)
-importFrom(shiny,renderText)
-importFrom(shiny,renderUI)
-importFrom(shiny,req)
-importFrom(shiny,selectInput)
-importFrom(shiny,selectizeInput)
-importFrom(shiny,shinyApp)
-importFrom(shiny,sidebarLayout)
-importFrom(shiny,sidebarPanel)
-importFrom(shiny,sliderInput)
-importFrom(shiny,span)
-importFrom(shiny,tableOutput)
-importFrom(shiny,tagList)
-importFrom(shiny,tags)
-importFrom(shiny,textInput)
-importFrom(shiny,textOutput)
-importFrom(shiny,titlePanel)
-importFrom(shiny,uiOutput)
-importFrom(shiny,updateCheckboxGroupInput)
-importFrom(shiny,updateNumericInput)
-importFrom(shiny,updateSelectInput)
-importFrom(shiny,updateSelectizeInput)
-importFrom(shiny,updateSliderInput)
-importFrom(shiny,updateTextInput)
-importFrom(shiny,validate)
-importFrom(shiny,verbatimTextOutput)
-importFrom(shiny,withProgress)
-importFrom(splines,backSpline)
-importFrom(splines,interpSpline)
-importFrom(splines,splineKnots)
-importFrom(stats,aggregate)
-importFrom(stats,coef)
-importFrom(stats,predict)
-importFrom(stats,qbinom)
-importFrom(stats,rexp)
-importFrom(stats,rpois)
-importFrom(stats,runif)
-importFrom(stringr,str_detect)
-importFrom(stringr,str_remove)
+importFrom(sf,
+  st_as_sf,
+  st_bbox,
+  st_centroid,
+  st_coordinates,
+  st_crs,
+  st_geometry,
+  st_intersection,
+  st_intersects,
+  st_make_grid,
+  st_make_valid,
+  st_polygon,
+  st_sample,
+  st_sf,
+  st_sfc,
+  st_transform,
+  st_union
+)
+importFrom(shiny,
+  HTML,
+  NS,
+  actionButton,
+  bindCache,
+  bindEvent,
+  br,
+  checkboxGroupInput,
+  checkboxInput,
+  column,
+  div,
+  downloadButton,
+  downloadHandler,
+  fileInput,
+  fluidPage,
+  fluidRow,
+  h2,
+  h3,
+  h4,
+  hr,
+  incProgress,
+  isTruthy,
+  mainPanel,
+  moduleServer,
+  need,
+  numericInput,
+  observe,
+  observeEvent,
+  p,
+  plotOutput,
+  radioButtons,
+  reactive,
+  reactiveVal,
+  reactiveValues,
+  renderPlot,
+  renderTable,
+  renderText,
+  renderUI,
+  req,
+  selectInput,
+  selectizeInput,
+  shinyApp,
+  sidebarLayout,
+  sidebarPanel,
+  sliderInput,
+  span,
+  tableOutput,
+  tagList,
+  tags,
+  textInput,
+  textOutput,
+  titlePanel,
+  uiOutput,
+  updateCheckboxGroupInput,
+  updateNumericInput,
+  updateSelectInput,
+  updateSelectizeInput,
+  updateSliderInput,
+  updateTextInput,
+  validate,
+  verbatimTextOutput,
+  withProgress
+)
+importFrom(splines,
+  backSpline,
+  interpSpline,
+  splineKnots
+)
+importFrom(stats,
+  aggregate,
+  coef,
+  predict,
+  qbinom,
+  rexp,
+  rpois,
+  runif
+)
+importFrom(stringr,
+  str_detect,
+  str_remove
+)
 importFrom(tibble,tibble)
-importFrom(tidyr,fill)
-importFrom(tidyr,pivot_wider)
-importFrom(tools,file_ext)
-importFrom(tools,file_path_sans_ext)
-importFrom(utils,capture.output)
-importFrom(utils,data)
-importFrom(utils,packageVersion)
-importFrom(utils,read.csv)
-importFrom(utils,read.table)
-importFrom(utils,write.csv)
+importFrom(tidyr,
+  fill,
+  pivot_wider
+)
+importFrom(tools,
+  file_ext,
+  file_path_sans_ext
+)
+importFrom(utils,
+  capture.output,
+  data,
+  packageVersion,
+  read.csv,
+  read.table,
+  write.csv
+)

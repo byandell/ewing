@@ -24,7 +24,7 @@ ecosystemApp <- function(ecosystem = "isle_royale", title = NULL) {
       width = 340,
       ecosystemInput("eco", ecosystem = ecosystem)
     ),
-    ecosystemOutput("eco")
+    ecosystemOutput("eco", ecosystem = ecosystem)
   )
 
   server <- function(input, output, session) {
@@ -108,9 +108,11 @@ ecosystemInput <- function(id, ecosystem = "isle_royale") {
 }
 
 #' Ecosystem Output Display UI Module
+#' @param id Module ID string
+#' @param ecosystem Target ecosystem (default: `"isle_royale"`).
 #' @export
 #' @rdname ecosystemApp
-ecosystemOutput <- function(id) {
+ecosystemOutput <- function(id, ecosystem = "isle_royale") {
   ns <- shiny::NS(id)
   shiny::tagList(
     shiny::tabsetPanel(
@@ -137,7 +139,7 @@ ecosystemOutput <- function(id) {
       shiny::tabPanel(
         "Input Data",
         shiny::br(),
-        inputAppInput(ns("input_data")),
+        inputAppInput(ns("input_data"), ecosystem = ecosystem),
         inputAppOutput(ns("input_data"))
       )
     )
@@ -145,6 +147,8 @@ ecosystemOutput <- function(id) {
 }
 
 #' Ecosystem Server Logic Module
+#' @param id Module ID string
+#' @param ecosystem Target ecosystem (default: `"isle_royale"`).
 #' @export
 #' @rdname ecosystemApp
 ecosystemServer <- function(id, ecosystem = "isle_royale") {
@@ -250,7 +254,7 @@ ecosystemServer <- function(id, ecosystem = "isle_royale") {
     })
 
     pkg_dir <- get_site_cache_file("", site = ecosystem)
-    inputAppServer("input_data", simres = sim_state, datafile = shiny::reactiveVal(pkg_dir))
+    inputAppServer("input_data", simres = sim_state, datafile = shiny::reactiveVal(pkg_dir), ecosystem = ecosystem)
 
     output$status <- shiny::renderUI({
       shiny::HTML(status_msg())

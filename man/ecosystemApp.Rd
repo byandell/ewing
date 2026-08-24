@@ -11,16 +11,16 @@ ecosystemApp(ecosystem = "isle_royale", title = NULL)
 
 ecosystemInput(id, ecosystem = "isle_royale")
 
-ecosystemOutput(id)
+ecosystemOutput(id, ecosystem = "isle_royale")
 
 ecosystemServer(id, ecosystem = "isle_royale")
 }
 \arguments{
-\item{ecosystem}{Target simulation landscape/site subfolder name under `extdata/` (default: `"isle_royale"`).}
+\item{ecosystem}{Target ecosystem (default: `"isle_royale"`).}
 
 \item{title}{Application title string.}
 
-\item{id}{Module ID string.}
+\item{id}{Module ID string}
 }
 \description{
 Interactive platform for exploring spatial predator-prey dynamics over customizable
