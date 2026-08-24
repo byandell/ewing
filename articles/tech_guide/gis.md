@@ -54,8 +54,7 @@ pak::pak("byandell/hexmap")
 
 1.  **Leaflet Map Discovery**: Interactive reverse-geocoding and
     landmark search (`get_huc_from_point`, `get_hucs_from_polygon`).
-2.  **Dynamic Feature Isolation**: Polygon clipping
-    ([`osmdata::getbb()`](https://docs.ropensci.org/osmdata/reference/getbb.html))
+2.  **Dynamic Feature Isolation**: Polygon clipping (`osmdata::getbb()`)
     for restricting watersheds to island landmasses.
 3.  **Interactive Hex Mapping**: `hexmapApp()` provides interactive
     Leaflet controls, slider extent scaling, and `.rds` spatial dataset

@@ -11,7 +11,7 @@ ecosystemApp(ecosystem = "isle_royale", title = NULL)
 
 ecosystemInput(id, ecosystem = "isle_royale")
 
-ecosystemOutput(id)
+ecosystemOutput(id, ecosystem = "isle_royale")
 
 ecosystemServer(id, ecosystem = "isle_royale")
 ```
@@ -20,8 +20,7 @@ ecosystemServer(id, ecosystem = "isle_royale")
 
 - ecosystem:
 
-  Target simulation landscape/site subfolder name under \`extdata/\`
-  (default: \`"isle_royale"\`).
+  Target ecosystem (default: \`"isle_royale"\`).
 
 - title:
 
@@ -29,4 +28,4 @@ ecosystemServer(id, ecosystem = "isle_royale")
 
 - id:
 
-  Module ID string.
+  Module ID string

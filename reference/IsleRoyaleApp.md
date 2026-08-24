@@ -14,6 +14,14 @@ IsleRoyaleInput(id)
 IsleRoyaleOutput(id)
 
 IsleRoyaleServer(id)
+
+isleRoyaleApp(title = "Isle Royale Wolf-Moose Simulation Platform")
+
+isleRoyaleInput(id)
+
+isleRoyaleOutput(id)
+
+isleRoyaleServer(id)
 ```
 
 ## Arguments
@@ -25,4 +33,4 @@ IsleRoyaleServer(id)
 
 - id:
 
-  Module ID string.
+  Module ID string

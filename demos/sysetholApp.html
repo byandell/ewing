@@ -82,7 +82,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-6ac2aec46ad7f46b16024ee4409aa65c.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-e3adbaa939bcd423dddc8c8a834270b4.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <meta name="shinylive:serviceworker_dir" content=".">
 <script src="site_libs/quarto-contrib/shinylive-0.10.12/shinylive/load-shinylive-sw.js" type="module"></script>
 <script src="site_libs/quarto-contrib/shinylive-0.10.12/shinylive/run-python-blocks.js" type="module"></script>
@@ -5968,77 +5968,32 @@ multOutput &lt;- function(id) {
 }
 
 # --- Source: inputApp.R ---
-inputApp &lt;- function(title = "Input Data Explorer") {
+inputApp &lt;- function(title = "Input Data Explorer", ecosystem = "default") {
   ui &lt;- bslib::page_sidebar(
     title = title,
     sidebar = bslib::sidebar(
-      inputAppInput("input_app")
+      inputSystemInput("sys_select", selected = ecosystem),
+      shiny::hr(),
+      inputAppInput("input_app", ecosystem = ecosystem)
     ),
     bslib::card(
       inputAppOutput("input_app")
     )
   )
   server &lt;- function(input, output, session) {
-    inputAppServer("input_app")
+    eco &lt;- inputSystemServer("sys_select")
+    inputAppServer("input_app", ecosystem = eco)
   }
   shiny::shinyApp(ui = ui, server = server)
 }
 
-discover_dataset_tables &lt;- function(datafile = "", sim = NULL) {
-  found &lt;- character(0)
-  
-  # 1. Inspect datafile directory
-  d_path &lt;- if (is.character(datafile) &amp;&amp; datafile != "") datafile else if (!is.null(sim) &amp;&amp; !is.null(sim$datafile)) sim$datafile else ""
-  
-  if (d_path != "" &amp;&amp; file.exists(d_path)) {
-    if (dir.exists(d_path)) {
-      files &lt;- list.files(d_path, pattern = "\\.(txt|csv|tsv)$", full.names = FALSE)
-      if (length(files) &gt; 0) {
-        found &lt;- tools::file_path_sans_ext(files)
-      }
-    } else if (grepl("\\.xlsx$", d_path, ignore.case = TRUE)) {
-      sheets &lt;- tryCatch(readxl::excel_sheets(d_path), error = function(e) character(0))
-      if (length(sheets) &gt; 0) found &lt;- sheets
-    }
-  }
-  
-  # 2. Inspect sim$datasets if present
-  if (!is.null(sim) &amp;&amp; !is.null(sim$datasets)) {
-    found &lt;- unique(c(found, names(sim$datasets)))
-  }
-  if (!is.null(sim) &amp;&amp; !is.null(sim$community) &amp;&amp; !is.null(sim$community$datasets)) {
-    found &lt;- unique(c(found, names(sim$community$datasets)))
-  }
-  if (exists("isle_royale_datasets") &amp;&amp; is.list(isle_royale_datasets)) {
-    found &lt;- unique(c(found, names(isle_royale_datasets)))
-  }
-  
-  # Filter out any .rds spatial layers or non-table objects
-  found &lt;- found[!grepl("\\.rds$", found, ignore.case = TRUE) &amp; !found %in% c("isle_royale_features", "isle_royale_landmarks", "isle_royale_layer", "huc_features")]
-
-  # 3. Default fallback choices if nothing found
-  if (length(found) == 0) {
-    found &lt;- c(
-      "organism.features", "future.moose", "future.wolf",
-      "substrate.moose", "substrate.wolf", "substrate.substrate",
-      "moose.wolf", "future.host", "future.parasite"
-    )
-  }
-  
-  unique(found)
-}
-
-inputAppInput &lt;- function(id, choices = NULL) {
+inputAppInput &lt;- function(id, choices = NULL, ecosystem = "default") {
   ns &lt;- shiny::NS(id)
-  default_choices &lt;- if (!is.null(choices)) choices else c(
-    "organism.features", "future.moose", "future.wolf",
-    "substrate.moose", "substrate.wolf", "substrate.substrate",
-    "moose.wolf", "future.host", "future.parasite"
-  )
+  default_ch &lt;- if (!is.null(choices)) choices else default_choices(ecosystem)
   shiny::tagList(
     shiny::selectInput(ns("dataname"), "Select Dataset Table:",
-      choices = default_choices,
-      selected = default_choices[1]
+      choices = default_ch,
+      selected = default_ch[1]
     )
   )
 }
@@ -6048,16 +6003,20 @@ inputAppOutput &lt;- function(id) {
   shiny::tableOutput(ns("org_table"))
 }
 
-inputAppServer &lt;- function(id, simres = shiny::reactiveVal(NULL), datafile = shiny::reactiveVal("")) {
+inputAppServer &lt;- function(id, simres = shiny::reactiveVal(NULL), datafile = shiny::reactiveVal(""), ecosystem = "default") {
   shiny::moduleServer(id, function(input, output, session) {
     ns &lt;- session$ns
 
-    # Dynamically update select choices based on folder / simulation contents
+    # Dynamically update select choices based on folder / simulation / ecosystem contents
     shiny::observe({
       sim &lt;- if (is.reactive(simres)) simres() else simres
       dfile &lt;- if (is.reactive(datafile)) datafile() else datafile
+      eco &lt;- if (is.reactive(ecosystem)) ecosystem() else ecosystem
+      if (!is.null(sim) &amp;&amp; !is.null(sim$ecosystem) &amp;&amp; is.character(sim$ecosystem) &amp;&amp; nzchar(sim$ecosystem)) {
+        eco &lt;- sim$ecosystem
+      }
       
-      discovered &lt;- discover_dataset_tables(dfile, sim)
+      discovered &lt;- discover_dataset_tables(dfile, sim, ecosystem = eco)
       if (length(discovered) &gt; 0) {
         current_sel &lt;- input$dataname
         sel &lt;- if (!is.null(current_sel) &amp;&amp; current_sel %in% discovered) current_sel else discovered[1]
@@ -6070,20 +6029,44 @@ inputAppServer &lt;- function(id, simres = shiny::reactiveVal(NULL), datafile = 
         name &lt;- input$dataname %||% "organism.features"
         sim &lt;- if (is.reactive(simres)) simres() else simres
         dfile &lt;- if (is.reactive(datafile)) datafile() else datafile
+        eco &lt;- if (is.reactive(ecosystem)) ecosystem() else ecosystem
+        if (!is.null(sim) &amp;&amp; !is.null(sim$ecosystem) &amp;&amp; is.character(sim$ecosystem) &amp;&amp; nzchar(sim$ecosystem)) {
+          eco &lt;- sim$ecosystem
+        }
 
-        res &lt;- NULL
-
-        # 0. Check direct file in datafile directory if points to folder
-        if (is.character(dfile) &amp;&amp; dfile != "" &amp;&amp; dir.exists(dfile)) {
-          txt_path &lt;- file.path(dfile, paste0(name, ".txt"))
-          if (file.exists(txt_path)) res &lt;- tryCatch(utils::read.table(txt_path, header = TRUE, sep = "\t", stringsAsFactors = FALSE, fill = TRUE), error = function(e) NULL)
-          if (is.null(res)) {
-            csv_path &lt;- file.path(dfile, paste0(name, ".csv"))
-            if (file.exists(csv_path)) res &lt;- tryCatch(utils::read.csv(csv_path, fill = TRUE, stringsAsFactors = FALSE), error = function(e) NULL)
+        # Resolve ecosystem directory if dfile is not given
+        target_eco_dir &lt;- ""
+        if (is.character(eco) &amp;&amp; length(eco) == 1 &amp;&amp; nzchar(eco)) {
+          if (dir.exists(eco)) {
+            target_eco_dir &lt;- eco
+          } else {
+            pkg_dir &lt;- system.file(file.path("extdata", eco), package = "ewing")
+            if (pkg_dir == "" || !dir.exists(pkg_dir)) {
+              pkg_dir &lt;- file.path("inst", "extdata", eco)
+            }
+            if (dir.exists(pkg_dir)) target_eco_dir &lt;- pkg_dir
           }
         }
 
-        # 1. Check if dataset is stored in sim$datasets or sim$community$datasets or global isle_royale_datasets
+        effective_dfile &lt;- if (is.character(dfile) &amp;&amp; nzchar(dfile)) dfile else target_eco_dir
+
+        res &lt;- NULL
+
+        # 0. Check direct file in effective datafile directory
+        if (is.character(effective_dfile) &amp;&amp; effective_dfile != "" &amp;&amp; dir.exists(effective_dfile)) {
+          txt_path &lt;- file.path(effective_dfile, paste0(name, ".txt"))
+          if (file.exists(txt_path)) res &lt;- tryCatch(utils::read.table(txt_path, header = TRUE, fill = TRUE, stringsAsFactors = FALSE), error = function(e) NULL)
+          if (is.null(res)) {
+            csv_path &lt;- file.path(effective_dfile, paste0(name, ".csv"))
+            if (file.exists(csv_path)) res &lt;- tryCatch(utils::read.csv(csv_path, fill = TRUE, stringsAsFactors = FALSE), error = function(e) NULL)
+          }
+          if (is.null(res)) {
+            tsv_path &lt;- file.path(effective_dfile, paste0(name, ".tsv"))
+            if (file.exists(tsv_path)) res &lt;- tryCatch(utils::read.table(tsv_path, header = TRUE, fill = TRUE, stringsAsFactors = FALSE), error = function(e) NULL)
+          }
+        }
+
+        # 1. Check if dataset is stored in sim$datasets or sim$community$datasets
         if (is.null(res) &amp;&amp; !is.null(sim)) {
           if (!is.null(sim$datasets) &amp;&amp; !is.null(sim$datasets[[name]])) {
             res &lt;- sim$datasets[[name]]
@@ -6091,15 +6074,12 @@ inputAppServer &lt;- function(id, simres = shiny::reactiveVal(NULL), datafile = 
             res &lt;- sim$community$datasets[[name]]
           }
         }
-        if (is.null(res) &amp;&amp; exists("isle_royale_datasets") &amp;&amp; is.list(isle_royale_datasets) &amp;&amp; !is.null(isle_royale_datasets[[name]])) {
-          res &lt;- isle_royale_datasets[[name]]
-        }
 
-        # 2. Extract dynamically via getOrgDataSimple or getOrg* package routines
-        if (is.null(res) &amp;&amp; !is.null(sim) &amp;&amp; inherits(sim, "ewing")) {
-          sim_single &lt;- if (inherits(sim, "ewing_discrete")) sim[[1]] else sim
+        # 2. Extract dynamically via getOrgDataSimple
+        if (is.null(res)) {
+          sim_single &lt;- if (!is.null(sim) &amp;&amp; inherits(sim, "ewing_discrete")) sim[[1]] else sim
           res &lt;- tryCatch({
-            getOrgDataSimple(sim_single, name, datafile = dfile)
+            getOrgDataSimple(sim_single, name, datafile = effective_dfile)
           }, error = function(e) NULL)
         }
 
@@ -6124,6 +6104,23 @@ inputAppServer &lt;- function(id, simres = shiny::reactiveVal(NULL), datafile = 
           }, error = function(e) NULL)
         }
 
+        # 4. Fallback to reading from default package directory
+        if (is.null(res) || !is.data.frame(res) || nrow(res) == 0) {
+          pkg_dir &lt;- system.file("extdata/default", package = "ewing")
+          if (pkg_dir == "" || !dir.exists(pkg_dir)) pkg_dir &lt;- file.path("inst", "extdata", "default")
+          if (dir.exists(pkg_dir)) {
+            txt_path &lt;- file.path(pkg_dir, paste0(name, ".txt"))
+            if (file.exists(txt_path)) res &lt;- tryCatch(utils::read.table(txt_path, header = TRUE, fill = TRUE, stringsAsFactors = FALSE), error = function(e) NULL)
+          }
+        }
+
+        # Ensure rownames are displayed as a column if present
+        if (!is.null(res) &amp;&amp; is.data.frame(res) &amp;&amp; nrow(res) &gt; 0) {
+          if (!identical(rownames(res), as.character(seq_len(nrow(res)))) &amp;&amp; !("rownames" %in% names(res))) {
+            res &lt;- data.frame(rownames = rownames(res), res, check.names = FALSE, stringsAsFactors = FALSE)
+          }
+        }
+
         if (is.null(res) || !is.data.frame(res) || nrow(res) == 0) {
           res &lt;- data.frame(Info = paste("Dataset", name, "is not available in current simulation instance."))
         }
@@ -6135,6 +6132,47 @@ inputAppServer &lt;- function(id, simres = shiny::reactiveVal(NULL), datafile = 
       bordered = TRUE
     )
   })
+}
+
+inputSystemInput &lt;- function(id, choices = NULL, selected = "default") {
+  ns &lt;- shiny::NS(id)
+  sys_choices &lt;- if (!is.null(choices)) choices else available_ecosystems()
+  if (!selected %in% sys_choices &amp;&amp; length(sys_choices) &gt; 0) {
+    selected &lt;- sys_choices[1]
+  }
+  shiny::tagList(
+    shiny::selectInput(ns("ecosystem"), "Select System / Ecosystem:",
+      choices = sys_choices,
+      selected = selected
+    )
+  )
+}
+
+inputSystemServer &lt;- function(id) {
+  shiny::moduleServer(id, function(input, output, session) {
+    shiny::reactive({
+      input$ecosystem %||% "default"
+    })
+  })
+}
+
+inputSystem &lt;- function(title = "System Data Explorer", selected = "default") {
+  ui &lt;- bslib::page_sidebar(
+    title = title,
+    sidebar = bslib::sidebar(
+      inputSystemInput("sys_select", selected = selected),
+      shiny::hr(),
+      inputAppInput("sys_data")
+    ),
+    bslib::card(
+      inputAppOutput("sys_data")
+    )
+  )
+  server &lt;- function(input, output, session) {
+    eco &lt;- inputSystemServer("sys_select")
+    inputAppServer("sys_data", ecosystem = eco)
+  }
+  shiny::shinyApp(ui = ui, server = server)
 }
 
 # --- Source: origEwingApp.R ---
@@ -6726,7 +6764,7 @@ futureOutput &lt;- function(id) {
 }
 
 # --- Source: sysetholApp.R ---
-sysetholApp &lt;- function(title = "Systems Ethology Platform") {
+sysetholApp &lt;- function(title = "Systems Ethology Platform", ecosystem = "default") {
   ui &lt;- bslib::page_sidebar(
     title = title,
     sidebar = bslib::sidebar(
@@ -6737,10 +6775,18 @@ sysetholApp &lt;- function(title = "Systems Ethology Platform") {
   )
   
   server &lt;- function(input, output, session) {
-    sysetholServer("sysethol")
+    sysetholServer("sysethol", ecosystem = ecosystem)
   }
   
   shiny::shinyApp(ui = ui, server = server)
+}
+
+sysetholSystem &lt;- function(ecosystem = "default", title = NULL) {
+  if (identical(ecosystem, "default")) {
+    sysetholApp(title = title %||% "Systems Ethology Platform", ecosystem = "default")
+  } else {
+    ecosystemApp(ecosystem = ecosystem, title = title)
+  }
 }
 
 sysetholInput &lt;- function(id) {
@@ -6812,7 +6858,7 @@ sysetholOutput &lt;- function(id) {
   shiny::uiOutput(ns("sysethol_tabs"))
 }
 
-sysetholServer &lt;- function(id) {
+sysetholServer &lt;- function(id, ecosystem = "default") {
   shiny::moduleServer(id, function(input, output, session) {
     ns &lt;- session$ns
     
@@ -6865,7 +6911,7 @@ sysetholServer &lt;- function(id) {
     })
     
     # Input Data App Server
-    inputAppServer("input_app", simres = current_sim)
+    inputAppServer("input_app", simres = current_sim, ecosystem = ecosystem)
     
     # Compose Dist Plot Module for Age Classes
     distPlotServer("dist_plot", simres = current_sim, x_var = age_ctrls$x_var, total = age_ctrls$total, norm = age_ctrls$norm)
@@ -6879,7 +6925,7 @@ sysetholServer &lt;- function(id) {
           bslib::nav_panel("Substrate Plots", bslib::card(substrateOutput(ns("substrate")))),
           bslib::nav_panel("Age Classes", bslib::card(distPlotOutput(ns("dist_plot")))),
           bslib::nav_panel("Input Data", bslib::card(
-            inputAppInput(ns("input_app")),
+            inputAppInput(ns("input_app"), ecosystem = ecosystem),
             inputAppOutput(ns("input_app"))
           ))
         )
@@ -6890,7 +6936,7 @@ sysetholServer &lt;- function(id) {
           bslib::nav_panel("Age Classes", bslib::card(distPlotOutput(ns("dist_plot")))),
           bslib::nav_panel("Envelope Plots", bslib::card(shiny::plotOutput(ns("env_plot"), height = "500px"))),
           bslib::nav_panel("Input Data", bslib::card(
-            inputAppInput(ns("input_app")),
+            inputAppInput(ns("input_app"), ecosystem = ecosystem),
             inputAppOutput(ns("input_app"))
           ))
         )

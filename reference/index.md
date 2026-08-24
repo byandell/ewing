@@ -6,6 +6,10 @@
   [`IsleRoyaleInput()`](https://byandell.github.io/ewing/reference/IsleRoyaleApp.md)
   [`IsleRoyaleOutput()`](https://byandell.github.io/ewing/reference/IsleRoyaleApp.md)
   [`IsleRoyaleServer()`](https://byandell.github.io/ewing/reference/IsleRoyaleApp.md)
+  [`isleRoyaleApp()`](https://byandell.github.io/ewing/reference/IsleRoyaleApp.md)
+  [`isleRoyaleInput()`](https://byandell.github.io/ewing/reference/IsleRoyaleApp.md)
+  [`isleRoyaleOutput()`](https://byandell.github.io/ewing/reference/IsleRoyaleApp.md)
+  [`isleRoyaleServer()`](https://byandell.github.io/ewing/reference/IsleRoyaleApp.md)
   : Isle Royale Wolf-Moose Simulation App (Wrapper Shell)
 - [`TemperatureBase`](https://byandell.github.io/ewing/reference/TemperatureBase.md)
   [`TemperaturePar`](https://byandell.github.io/ewing/reference/TemperatureBase.md)
@@ -135,12 +139,18 @@
   : Ewing Initialization App
 - [`initTemp()`](https://byandell.github.io/ewing/reference/initTemp.md)
   : temperature data tables for simulation
-- [`inputApp()`](https://byandell.github.io/ewing/reference/inputApp.md)
+- [`default_choices()`](https://byandell.github.io/ewing/reference/inputApp.md)
+  [`default_choice()`](https://byandell.github.io/ewing/reference/inputApp.md)
+  [`available_ecosystems()`](https://byandell.github.io/ewing/reference/inputApp.md)
   [`discover_dataset_tables()`](https://byandell.github.io/ewing/reference/inputApp.md)
+  [`inputApp()`](https://byandell.github.io/ewing/reference/inputApp.md)
   [`inputAppInput()`](https://byandell.github.io/ewing/reference/inputApp.md)
   [`inputAppOutput()`](https://byandell.github.io/ewing/reference/inputApp.md)
   [`inputAppServer()`](https://byandell.github.io/ewing/reference/inputApp.md)
-  : Input Data App
+  [`inputSystemInput()`](https://byandell.github.io/ewing/reference/inputApp.md)
+  [`inputSystemServer()`](https://byandell.github.io/ewing/reference/inputApp.md)
+  [`inputSystem()`](https://byandell.github.io/ewing/reference/inputApp.md)
+  : Default Choices for Input Datasets
 - [`init_isle_royale_sim()`](https://byandell.github.io/ewing/reference/isle_royale_sim.md)
   [`run_isle_royale_sim()`](https://byandell.github.io/ewing/reference/isle_royale_sim.md)
   [`ggplot_isle_royale_sim()`](https://byandell.github.io/ewing/reference/isle_royale_sim.md)
@@ -192,6 +202,7 @@
 - [`summary(`*`<ewing>`*`)`](https://byandell.github.io/ewing/reference/summary.ewing.md)
   : summary of Ewing simulation models
 - [`sysetholApp()`](https://byandell.github.io/ewing/reference/sysetholApp.md)
+  [`sysetholSystem()`](https://byandell.github.io/ewing/reference/sysetholApp.md)
   [`sysetholInput()`](https://byandell.github.io/ewing/reference/sysetholApp.md)
   [`sysetholOutput()`](https://byandell.github.io/ewing/reference/sysetholApp.md)
   [`sysetholServer()`](https://byandell.github.io/ewing/reference/sysetholApp.md)
